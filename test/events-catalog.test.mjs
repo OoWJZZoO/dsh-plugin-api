@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { catalogEntryOf, eventsCatalog } from '../lib/events-catalog.js'
+import { catalogEntryOf, eventsCatalog, mergeEventCatalogs } from '../lib/events-catalog.js'
+import { toolsEventsCatalog } from '../lib/tools-events-catalog.js'
 
 const EXPECTED_NAMES = [
   'fs/write-intent',
@@ -84,4 +85,30 @@ test('catalog and every entry are frozen', () => {
 test('catalogEntryOf returns the entry for known names and undefined otherwise', () => {
   assert.equal(catalogEntryOf('goal/changed')?.name, 'goal/changed')
   assert.equal(catalogEntryOf('not-a-real-event'), undefined)
+})
+
+test('mergeEventCatalogs combines base and tools catalogs into a frozen 25-entry catalog', () => {
+  const merged = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  assert.deepEqual(Object.keys(merged).sort(), [...EXPECTED_NAMES, ...Object.keys(toolsEventsCatalog)].sort())
+  assert.ok(Object.isFrozen(merged), 'merged catalog is frozen')
+  for (const entry of Object.values(merged)) {
+    assert.ok(Object.isFrozen(entry), `${entry.name} entry is frozen`)
+  }
+  assert.equal(merged['tools/execute']?.freeze, 'except-signal')
+  assert.equal(merged['goal/changed']?.mode, 'emit')
+})
+
+test('mergeEventCatalogs with only the base catalog is equivalent to the base catalog', () => {
+  const merged = mergeEventCatalogs(eventsCatalog)
+  assert.deepEqual(Object.keys(merged).sort(), [...EXPECTED_NAMES].sort())
+  assert.ok(Object.isFrozen(merged))
+})
+
+test('mergeEventCatalogs does not mutate the base catalogs', () => {
+  const before = Object.keys(eventsCatalog).length
+  mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  assert.equal(Object.keys(eventsCatalog).length, before)
+  assert.equal(eventsCatalog['tools/execute'], undefined)
+  assert.ok(Object.isFrozen(eventsCatalog))
+  assert.ok(Object.isFrozen(toolsEventsCatalog))
 })
