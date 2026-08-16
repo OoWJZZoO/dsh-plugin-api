@@ -34,7 +34,14 @@ function createMockCtx(options = {}) {
       }
 
   const services = {
-    llm: { resolveModelInfo() {} },
+    llm: {
+      resolveModelInfo() {},
+      prepareCall() {},
+      stream() {},
+      registerAdapter() {},
+      registerConfigurableProviders() {},
+      registerModelDiscovery() {},
+    },
     agents: { get() {}, list() {}, roots() {} },
     apiProxy: { sessions: { prompt() {}, selectModel() {} } },
     ...(tools ? { tools } : {}),
@@ -92,7 +99,7 @@ test('apply mounts events with the frozen catalog and usable bus', () => {
   const catalog = state.pluginApi.events.catalog
   assert.equal(catalog['tools/change']?.mode, 'emit')
   assert.ok(catalog)
-  assert.equal(Object.keys(catalog).length, 41)
+  assert.equal(Object.keys(catalog).length, 43)
   assert.ok(Object.isFrozen(catalog), 'composed catalog must be frozen')
   for (const name of [
     'session/created',
@@ -134,7 +141,7 @@ test('events guard failure disables only events and keeps facade active', () => 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 6)
+  assert.equal(features.length, 7)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.equal(features[1].name, 'events')
   assert.equal(features[1].isActive, false)
@@ -143,7 +150,8 @@ test('events guard failure disables only events and keeps facade active', () => 
   assert.equal(features[3].name, 'session')
   assert.equal(features[3].isActive, false)
   assert.deepEqual(features[4], { name: 'web', isActive: true })
-  assert.deepEqual(features[5], { name: 'llm/admission', isActive: true })
+  assert.deepEqual(features[5], { name: 'llm', isActive: true })
+  assert.deepEqual(features[6], { name: 'llm/admission', isActive: true })
 
   assert.throws(
     () => state.pluginApi.events.on('goal/changed', () => {}),
@@ -163,7 +171,7 @@ test('web guard failure disables only web and keeps facade active', () => {
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 6)
+  assert.equal(features.length, 7)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -171,7 +179,8 @@ test('web guard failure disables only web and keeps facade active', () => {
   assert.equal(features[4].name, 'web')
   assert.equal(features[4].isActive, false)
   assert.match(features[4].reason, /registerSearchProvider/)
-  assert.deepEqual(features[5], { name: 'llm/admission', isActive: true })
+  assert.deepEqual(features[5], { name: 'llm', isActive: true })
+  assert.deepEqual(features[6], { name: 'llm/admission', isActive: true })
 
   assert.throws(
     () => state.pluginApi.web.registerSearchProvider({}),

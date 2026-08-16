@@ -20,7 +20,16 @@ function healthyCtx(overrides = {}) {
     plugin() {},
     reflect: { provide() {} },
     get(name) {
-      if (name === 'llm') return { resolveModelInfo() {} }
+      if (name === 'llm') {
+        return {
+          resolveModelInfo() {},
+          prepareCall() {},
+          stream() {},
+          registerAdapter() {},
+          registerConfigurableProviders() {},
+          registerModelDiscovery() {},
+        }
+      }
       if (name === 'agents') return { get() {} }
       if (name === 'apiProxy') return { sessions: { prompt() {}, selectModel() {} } }
       return undefined
@@ -118,6 +127,70 @@ test('missing apiProxy.sessions is a feature failure and core stays healthy', ()
   assert.equal(feature.ok, false)
   assert.ok(feature.featureProblems['llm/admission'].some((p) => p.name === 'apiProxy.sessions'))
   assert.equal(core.ok, true)
+})
+
+test('llm feature guard passes when all six required llm methods exist', () => {
+  const result = runFeatureGuard('llm', healthyCtx(), healthyDeps())
+  assert.equal(result.ok, true)
+  assert.deepEqual(result.problems, [])
+  assert.equal(result.coreProblems.length, 0)
+  assert.deepEqual(result.featureProblems, { llm: [] })
+})
+
+test('missing ctx.get is a llm feature failure', () => {
+  const ctx = healthyCtx({ get: undefined })
+  const result = runFeatureGuard('llm', ctx, healthyDeps())
+  assert.equal(result.ok, false)
+  assert.ok(result.featureProblems.llm.some((p) => p.name === 'ctx.get'))
+})
+
+test('missing llm service is a llm feature failure', () => {
+  const ctx = healthyCtx({ get: () => undefined })
+  const result = runFeatureGuard('llm', ctx, healthyDeps())
+  assert.equal(result.ok, false)
+  for (const method of [
+    'llm.resolveModelInfo',
+    'llm.prepareCall',
+    'llm.stream',
+    'llm.registerAdapter',
+    'llm.registerConfigurableProviders',
+    'llm.registerModelDiscovery',
+  ]) {
+    assert.ok(result.featureProblems.llm.some((p) => p.name === method), `missing problem: ${method}`)
+  }
+})
+
+test('missing any one llm method is a llm feature failure', () => {
+  const methods = [
+    'resolveModelInfo',
+    'prepareCall',
+    'stream',
+    'registerAdapter',
+    'registerConfigurableProviders',
+    'registerModelDiscovery',
+  ]
+  for (const method of methods) {
+    const ctx = healthyCtx({
+      get: (name) => {
+        if (name === 'llm') {
+          const llm = {
+            resolveModelInfo() {},
+            prepareCall() {},
+            stream() {},
+            registerAdapter() {},
+            registerConfigurableProviders() {},
+            registerModelDiscovery() {},
+          }
+          delete llm[method]
+          return llm
+        }
+        return healthyCtx().get(name)
+      },
+    })
+    const result = runFeatureGuard('llm', ctx, healthyDeps())
+    assert.equal(result.ok, false, `llm guard should fail without ${method}`)
+    assert.ok(result.featureProblems.llm.some((p) => p.name === `llm.${method}`), `missing problem: llm.${method}`)
+  }
 })
 
 test('unknown feature guard fails without throwing', () => {

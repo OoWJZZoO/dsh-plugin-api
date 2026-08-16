@@ -107,13 +107,13 @@
 |---|---|---|---|---|---|
 | L1 图片准入注册 | `llm.admission.register(intent: ImageAdmissionIntent): () => boolean`；`llm.admission.isActive` | B | 本仓库 `docs/specs/llm-image-admission/*`；官方缺 `llm/admission` 事件 | M0 | **delivered** |
 | L2 准入泛化（image 之外） | `llm.admission.register` 扩展为可声明其他 inputModalities/策略，或新增 `llm/input-policy` 语义 | B/C | 官方 `LlmResolvedModelInfo.inputModalities`；首 feature 只做 image | M2/M4 | planned |
-| L3 模型请求瀑布 | `events.waterfall('llm/stream', options, next)` 的类型化稳定版 | A | `dsh-llm/lib/index.js:1389`；`dsh-llm/lib/types/index.d.ts` `Events['llm/stream']` | M1 | planned |
+| L3 模型请求瀑布 | `events.waterfall('llm/stream', options, next)` 的类型化稳定版 | A | `dsh-llm/lib/index.js:1389`；`dsh-llm/lib/types/index.d.ts` `Events['llm/stream']` | M1 | **delivered** |
 | L4 同步请求改写 | `llm.request.transform(fn)` 或 `events.waterfall('llm/request', options, next)`（同步、幂等收敛） | B | 官方无 `llm/request`；用 `llm/stream` 重入模拟（AGENTS.md 第 4.4 条） | M2 | planned |
 | L5 异步完整请求改写 | `llm/request` 的异步全量改写版 | C | 官方无 dispatch 点；AGENTS.md 第 2.5 条 C 类 | M4 | planned（proposal） |
-| L6 adapter 拓扑通知 | `events.on('llm/adapters-updated', listener)` 类型化（注意官方无 payload） | A | `dsh-llm/lib/index.js:929` | M1 | planned |
-| L7 模型信息只读查询 | `llm.modelInfo(provider, model, signal?): Promise<LlmResolvedModelInfo>`（只读，不提供修改） | A | `dsh-llm` `resolveModelInfo`；本仓库 design 已声明“不公开 ModelInfo 变更” | M1 | planned |
-| L8 调用准备与流式入口 | `llm.prepareCall(config, signal?)` / `llm.stream(options)` 稳定直通 | A | `dsh-llm/lib/index.js:1271/1384` | M1 | planned |
-| L9 provider 注册直通 | `llm.registerAdapter(providers, adapter)`、`llm.registerConfigurableProviders(entries)`、`llm.registerModelDiscovery(settingsNs, discover)` | A | `dsh-llm/lib/index.js:960` 起 | M1 | planned（面向 provider/adapter 插件） |
+| L6 adapter 拓扑通知 | `events.on('llm/adapters-updated', listener)` 类型化（注意官方无 payload） | A | `dsh-llm/lib/index.js:929` | M1 | **delivered** |
+| L7 模型信息只读查询 | `llm.modelInfo(provider, model, signal?): Promise<LlmResolvedModelInfo>`（只读，不提供修改） | A | `dsh-llm` `resolveModelInfo`；本仓库 design 已声明“不公开 ModelInfo 变更” | M1 | **delivered** |
+| L8 调用准备与流式入口 | `llm.prepareCall(config, signal?)` / `llm.stream(options)` 稳定直通 | A | `dsh-llm/lib/index.js:1271/1384` | M1 | **delivered** |
+| L9 provider 注册直通 | `llm.registerAdapter(providers, adapter)`、`llm.registerConfigurableProviders(entries)`、`llm.registerModelDiscovery(settingsNs, discover)` | A | `dsh-llm/lib/index.js:960` 起 | M1 | **delivered**（面向 provider/adapter 插件） |
 | L10 官方准入事件 | 官方 `llm/admission` 事件（payload 含 session/request 上下文） | C | 本仓库 `llm-image-admission` R6 提案 | M4 | planned（proposal） |
 
 ### 2.4 `pluginApi.agent` —— Agent 生命周期与驱动面（M1/M2）

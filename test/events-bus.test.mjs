@@ -1033,3 +1033,59 @@ test('monitor listeners on propagate agent events stay observe-only', async () =
   assert.equal(serialResult, undefined)
   assert.equal(monitorCalled, true)
 })
+test('llm/stream facade listener receives frozen (options, next)', () => {
+  const ctx = createMockCordisCtx()
+  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const seen = []
+
+  events.on('llm/stream', function (options, next) {
+    assert.ok(Object.isFrozen(options), 'options must be deep-frozen for the facade listener')
+    seen.push(options)
+    return next()
+  })
+
+  const options = { provider: 'deepseek', model: 'chat', messages: [] }
+  const result = ctx.waterfall('llm/stream', options, () => 'stream-result')
+
+  assert.equal(result, 'stream-result')
+  assert.equal(seen.length, 1)
+  assert.equal(seen[0], options)
+})
+
+test('events.waterfall("llm/stream") delegates to ctx.waterfall with the same args and returns its result', () => {
+  const base = createMockCordisCtx()
+  const calls = []
+  const ctx = { ...base }
+  const original = base.waterfall.bind(base)
+  ctx.waterfall = (name, ...args) => {
+    calls.push([name, ...args])
+    return original(name, ...args)
+  }
+
+  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const options = { provider: 'deepseek', model: 'chat', messages: [] }
+  const next = () => 'delegated-result'
+
+  const result = events.waterfall('llm/stream', options, next)
+
+  assert.equal(result, 'delegated-result')
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0][0], 'llm/stream')
+  assert.equal(calls[0][1], options)
+  assert.equal(calls[0][2], next)
+})
+
+test('llm/adapters-updated facade listener is invoked with no payload arguments', () => {
+  const ctx = createMockCordisCtx()
+  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const calls = []
+
+  events.on('llm/adapters-updated', function (...args) {
+    calls.push(args)
+  })
+
+  ctx.emit('llm/adapters-updated')
+
+  assert.equal(calls.length, 1)
+  assert.deepEqual(calls[0], [])
+})

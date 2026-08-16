@@ -23,7 +23,10 @@ const PRE_EXISTING_NAMES = [
   'credentials/updated',
   'goal/changed',
   'session-telemetry/record',
+  'llm/stream',
+  'llm/adapters-updated',
 ]
+
 
 const AGENT_NAMES = [
   'agent/created',
@@ -42,7 +45,7 @@ const AGENT_NAMES = [
 
 const EXPECTED_NAMES = [...PRE_EXISTING_NAMES, ...AGENT_NAMES]
 
-test('catalog contains exactly the 31 in-scope event names', () => {
+test('catalog contains exactly the 33 in-scope event names', () => {
   assert.deepEqual(Object.keys(eventsCatalog).sort(), [...EXPECTED_NAMES].sort())
 })
 
@@ -84,6 +87,8 @@ test('pre-existing entries keep the events-m1 behavior (fault contain, freeze al
     'credentials/updated': ['emit', false, undefined],
     'goal/changed': ['emit', true, 'args[0].agent'],
     'session-telemetry/record': ['waterfall', false, undefined],
+    'llm/stream': ['waterfall', false, undefined],
+    'llm/adapters-updated': ['emit', false, undefined],
   }
   for (const [name, [mode, scopeFiltered, scopeKey]] of Object.entries(matrix)) {
     const entry = catalogEntryOf(name)
@@ -120,6 +125,26 @@ test('agent entries match the design matrix (mode, scopeKey, fault, freeze)', ()
     assert.deepEqual(entry.freeze.deep, deep, `${name}: freeze.deep`)
     assert.equal(entry.type, 'A', `${name}: type`)
   }
+})
+
+test('llm/stream and llm/adapters-updated entries carry the L3/L6 metadata', () => {
+  const stream = catalogEntryOf('llm/stream')
+  assert.equal(stream.mode, 'waterfall')
+  assert.equal(stream.scopeFiltered, false)
+  assert.equal(stream.subject, undefined)
+  assert.match(stream.payload, /GenerateOptions/)
+  assert.equal(stream.args, '(options, next)')
+  assert.equal(stream.source, 'L3')
+  assert.equal(stream.type, 'A')
+
+  const updated = catalogEntryOf('llm/adapters-updated')
+  assert.equal(updated.mode, 'emit')
+  assert.equal(updated.scopeFiltered, false)
+  assert.equal(updated.subject, undefined)
+  assert.equal(updated.payload, 'none')
+  assert.equal(updated.args, '()')
+  assert.equal(updated.source, 'L6')
+  assert.equal(updated.type, 'A')
 })
 
 test('catalog and every entry are frozen', () => {

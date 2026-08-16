@@ -5,7 +5,14 @@ import { PluginApiFeatureDisabledError, PluginApiInactiveError } from '../lib/er
 
 function createMockCtx(options = {}) {
   const services = {
-    llm: { resolveModelInfo() {} },
+    llm: {
+      resolveModelInfo() {},
+      prepareCall() {},
+      stream() {},
+      registerAdapter() {},
+      registerConfigurableProviders() {},
+      registerModelDiscovery() {},
+    },
     agents: { get() {}, list() {}, roots() {} },
     apiProxy: { sessions: { prompt() {}, selectModel() {} } },
     tools: {
@@ -76,10 +83,13 @@ test('apply with healthy ctx registers active service and mounts llm/admission',
     { name: 'agent', isActive: true },
     { name: 'session', isActive: true },
     { name: 'web', isActive: true },
+    { name: 'llm', isActive: true },
     { name: 'llm/admission', isActive: true },
   ])
+  assert.equal(state.pluginApi.llm.isActive, true)
   assert.equal(state.pluginApi.llm.admission.isActive, true)
   assert.equal(typeof state.pluginApi.llm.admission.register, 'function')
+  assert.equal(typeof state.pluginApi.llm.modelInfo, 'function')
   assert.equal(typeof state.pluginApi.events.on, 'function')
   assert.equal(typeof state.pluginApi.session.get, 'function')
   assert.equal(typeof state.pluginApi.web.registerSearchProvider, 'function')
@@ -127,15 +137,16 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 6)
+  assert.equal(features.length, 7)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
   assert.deepEqual(features[3], { name: 'session', isActive: true })
   assert.deepEqual(features[4], { name: 'web', isActive: true })
-  assert.equal(features[5].name, 'llm/admission')
-  assert.equal(features[5].isActive, false)
-  assert.match(features[5].reason, /apiProxy/)
+  assert.deepEqual(features[5], { name: 'llm', isActive: true })
+  assert.equal(features[6].name, 'llm/admission')
+  assert.equal(features[6].isActive, false)
+  assert.match(features[6].reason, /apiProxy/)
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),

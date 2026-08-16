@@ -28,7 +28,14 @@ function createMockCtx(options = {}) {
       }
 
   const services = {
-    llm: { resolveModelInfo() {} },
+    llm: {
+      resolveModelInfo() {},
+      prepareCall() {},
+      stream() {},
+      registerAdapter() {},
+      registerConfigurableProviders() {},
+      registerModelDiscovery() {},
+    },
     agents: { get() {}, list() {}, roots() {} },
     tools: { register() {}, restrict() {}, guard() {}, get() {}, schemas() {}, execute() {}, presentAs() {} },
     apiProxy: { sessions: { prompt() {}, selectModel() {} } },
@@ -92,7 +99,7 @@ test('apply mounts session after events with a composed events catalog', () => {
 
   const catalog = state.pluginApi.events.catalog
   assert.ok(catalog, 'events catalog must exist')
-  assert.equal(Object.keys(catalog).length, 41)
+  assert.equal(Object.keys(catalog).length, 43)
   assert.ok(Object.isFrozen(catalog), 'composed catalog must be frozen')
   for (const name of [
     'session/created',
@@ -127,8 +134,8 @@ test('session guard failure disables only session and keeps the facade active', 
   assert.equal(state.pluginApi.isActive, true)
 
   const features = state.pluginApi.features
-  assert.equal(features.length, 6)
-  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'session', 'web', 'llm/admission'])
+  assert.equal(features.length, 7)
+  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'session', 'web', 'llm', 'llm/admission'])
   assert.equal(features[0].isActive, true)
   assert.equal(features[1].isActive, true)
   assert.equal(features[2].isActive, true)
@@ -136,6 +143,7 @@ test('session guard failure disables only session and keeps the facade active', 
   assert.match(features[3].reason, /sessions\.get/)
   assert.equal(features[4].isActive, true)
   assert.equal(features[5].isActive, true)
+  assert.equal(features[6].isActive, true)
 
   assert.throws(
     () => state.pluginApi.session.get('s1'),
