@@ -213,7 +213,7 @@ function servicesCtx({ missing = [], getMissing = false } = {}) {
   }
 }
 
-test('services feature guard passes when all 17 official services are present', () => {
+test('services feature guard passes when all 18 official services are present', () => {
   const result = runFeatureGuard('services', servicesCtx(), {})
   assert.equal(result.ok, true)
   assert.deepEqual(result.problems, [])
@@ -225,7 +225,7 @@ test('services feature guard passes when only some services are present', () => 
   assert.deepEqual(result.problems, [])
 })
 
-test('services feature guard fails when none of the 17 services is present', () => {
+test('services feature guard fails when none of the 18 services is present', () => {
   const result = runFeatureGuard('services', servicesCtx({ getMissing: true }), {})
   assert.equal(result.ok, false)
   assert.ok(result.featureProblems.services.some((p) => p.name === 'capability services'))

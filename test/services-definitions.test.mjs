@@ -20,11 +20,12 @@ const EXPECTED_KEYS = [
   'sessionReferences',
   'tokenMeter',
   'agentDefaultModel',
+  'web',
 ]
 
-test('SERVICE_DEFINITIONS declares exactly the 17 capability namespace keys', () => {
+test('SERVICE_DEFINITIONS declares exactly the 18 capability namespace keys', () => {
   assert.deepEqual(SERVICES_NAMESPACE_KEYS, EXPECTED_KEYS)
-  assert.equal(SERVICE_DEFINITIONS.length, 17)
+  assert.equal(SERVICE_DEFINITIONS.length, 18)
 })
 
 test('capability namespace excludes compaction and any other unofficial service', () => {

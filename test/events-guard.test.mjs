@@ -53,21 +53,8 @@ test('events guard fails with a problem when any Cordis event method is missing'
   assert.deepEqual(result.featureProblems, { events: result.problems })
 })
 
-test('web guard passes when the official web service exposes both providers', () => {
-  const result = runFeatureGuard('web', ctxWith())
-  assert.equal(result.ok, true)
-  assert.deepEqual(result.problems, [])
-})
-
-test('web guard fails with a problem when a web provider method is missing', () => {
-  const ctx = ctxWith({ web: true })
-  ctx.get = (name) => (name === 'web' ? { registerSearchProvider() {} } : undefined)
-  const result = runFeatureGuard('web', ctx)
-  assert.equal(result.ok, false)
-  assert.equal(result.problems.length, 1)
-  assert.equal(result.problems[0].name, 'web.registerFetchProvider')
-  assert.deepEqual(result.featureProblems, { web: result.problems })
-})
+// web is no longer an independent feature (task 2.9): pluginApi.services.web
+// is covered by the services guard (SERVICE_DEFINITIONS includes web).
 
 test('agent guard passes when the official agents service exposes get/list/roots', () => {
   const result = runFeatureGuard('agent', ctxWith())

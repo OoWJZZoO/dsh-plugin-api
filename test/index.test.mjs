@@ -91,15 +91,12 @@ test('apply with healthy ctx registers active service and mounts llm/admission',
     { name: 'tools', isActive: true },
     { name: 'events', isActive: true },
     { name: 'agent', isActive: true },
-    { name: 'session', isActive: true },
-    { name: 'web', isActive: true },
-
     { name: 'llm', isActive: true },
-    { name: 'systemPrompt', isActive: true },
     { name: 'llm/admission', isActive: true },
-
+    { name: 'session', isActive: true },
     { name: 'settings', isActive: true },
-    { name: 'services', isActive: false, reason: 'capability services: none of the 17 official capability services is available' },
+    { name: 'systemPrompt', isActive: true },
+    { name: 'services', isActive: true },
   ])
   assert.equal(state.pluginApi.llm.isActive, true)
   assert.equal(state.pluginApi.llm.admission.isActive, true)
@@ -107,7 +104,7 @@ test('apply with healthy ctx registers active service and mounts llm/admission',
   assert.equal(typeof state.pluginApi.llm.modelInfo, 'function')
   assert.equal(typeof state.pluginApi.events.on, 'function')
   assert.equal(typeof state.pluginApi.session.get, 'function')
-  assert.equal(typeof state.pluginApi.web.registerSearchProvider, 'function')
+  assert.equal(typeof state.pluginApi.services.web.registerSearchProvider, 'function')
 
   assert.equal(typeof state.pluginApi.systemPrompt.section, 'function')
   assert.equal(state.pluginApi.settings.isActive, true)
@@ -158,21 +155,18 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-  assert.equal(features.length, 10)
+  assert.equal(features.length, 9)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
-  assert.deepEqual(features[3], { name: 'session', isActive: true })
-  assert.deepEqual(features[4], { name: 'web', isActive: true })
-  assert.deepEqual(features[5], { name: 'llm', isActive: true })
-  assert.deepEqual(features[6], { name: 'systemPrompt', isActive: true })
-  assert.equal(features[7].name, 'llm/admission')
-  assert.equal(features[7].isActive, false)
-  assert.match(features[7].reason, /apiProxy/)
-  assert.deepEqual(features[8], { name: 'settings', isActive: true })
-  assert.equal(features[9].name, 'services')
-  assert.equal(features[9].isActive, false)
-  assert.match(features[9].reason, /capability services/)
+  assert.deepEqual(features[3], { name: 'llm', isActive: true })
+  assert.equal(features[4].name, 'llm/admission')
+  assert.equal(features[4].isActive, false)
+  assert.match(features[4].reason, /apiProxy/)
+  assert.deepEqual(features[5], { name: 'session', isActive: true })
+  assert.deepEqual(features[6], { name: 'settings', isActive: true })
+  assert.deepEqual(features[7], { name: 'systemPrompt', isActive: true })
+  assert.deepEqual(features[8], { name: 'services', isActive: true })
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),

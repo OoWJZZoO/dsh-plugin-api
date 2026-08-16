@@ -97,9 +97,8 @@ test('apply mounts agent after events and exposes a working registry read API', 
   assert.deepEqual(agents.getCalls, ['agent-1'])
 
   const features = state.pluginApi.features
-  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'session', 'web', 'llm', 'systemPrompt', 'llm/admission', 'settings', 'services'])
-  assert.ok(features.filter((f) => f.name !== 'services').every((f) => f.isActive))
-  assert.equal(features.find((f) => f.name === 'services').isActive, false)
+  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/admission', 'session', 'settings', 'systemPrompt', 'services'])
+  assert.ok(features.every((f) => f.isActive), 'all features active (web seam satisfies the services guard)')
 })
 
 test('agent guard failure disables only agent and keeps facade active', () => {
@@ -109,23 +108,20 @@ test('agent guard failure disables only agent and keeps facade active', () => {
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 10)
+  assert.equal(features.length, 9)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.equal(features[2].name, 'agent')
   assert.equal(features[2].isActive, false)
   assert.match(features[2].reason, /agents\.get/)
-  assert.deepEqual(features[3], { name: 'session', isActive: true })
-  assert.deepEqual(features[4], { name: 'web', isActive: true })
-  assert.deepEqual(features[5], { name: 'llm', isActive: true })
-  assert.deepEqual(features[6], { name: 'systemPrompt', isActive: true })
-  assert.equal(features[7].name, 'llm/admission')
-  assert.equal(features[7].isActive, false)
-  assert.match(features[7].reason, /agents\.get/)
-  assert.deepEqual(features[8], { name: 'settings', isActive: true })
-  assert.equal(features[9].name, 'services')
-  assert.equal(features[9].isActive, false)
-  assert.match(features[9].reason, /capability services/)
+  assert.deepEqual(features[3], { name: 'llm', isActive: true })
+  assert.equal(features[4].name, 'llm/admission')
+  assert.equal(features[4].isActive, false)
+  assert.match(features[4].reason, /agents\.get/)
+  assert.deepEqual(features[5], { name: 'session', isActive: true })
+  assert.deepEqual(features[6], { name: 'settings', isActive: true })
+  assert.deepEqual(features[7], { name: 'systemPrompt', isActive: true })
+  assert.deepEqual(features[8], { name: 'services', isActive: true })
 
   for (const method of ['get', 'list', 'roots']) {
     assert.throws(
@@ -138,7 +134,7 @@ test('agent guard failure disables only agent and keeps facade active', () => {
     )
   }
   assert.equal(typeof state.pluginApi.events.on, 'function')
-  assert.equal(typeof state.pluginApi.web.registerSearchProvider, 'function')
+  assert.equal(typeof state.pluginApi.services.web.registerSearchProvider, 'function')
 })
 
 test('events guard failure does not block the agent registry read API', () => {
@@ -148,26 +144,25 @@ test('events guard failure does not block the agent registry read API', () => {
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 10)
+  assert.equal(features.length, 9)
   assert.equal(features[0].name, 'tools')
   assert.equal(features[0].isActive, true)
   assert.equal(features[1].name, 'events')
   assert.equal(features[1].isActive, false)
   assert.equal(features[2].name, 'agent')
   assert.equal(features[2].isActive, true)
-  assert.equal(features[3].name, 'session')
-  assert.equal(features[3].isActive, false)
-  assert.equal(features[5].name, 'llm')
-  assert.equal(features[5].isActive, true)
-  assert.equal(features[6].name, 'systemPrompt')
+  assert.equal(features[3].name, 'llm')
+  assert.equal(features[3].isActive, true)
+  assert.equal(features[4].name, 'llm/admission')
+  assert.equal(features[4].isActive, true)
+  assert.equal(features[5].name, 'session')
+  assert.equal(features[5].isActive, false)
+  assert.equal(features[6].name, 'settings')
   assert.equal(features[6].isActive, true)
-  assert.equal(features[7].name, 'llm/admission')
+  assert.equal(features[7].name, 'systemPrompt')
   assert.equal(features[7].isActive, true)
-  assert.equal(features[8].name, 'settings')
+  assert.equal(features[8].name, 'services')
   assert.equal(features[8].isActive, true)
-  assert.equal(features[9].name, 'services')
-  assert.equal(features[9].isActive, false)
-  assert.match(features[9].reason, /capability services/)
 
   assert.equal(state.pluginApi.agent.get('agent-1').id, 'agent-1')
   assert.throws(

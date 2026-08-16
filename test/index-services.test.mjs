@@ -53,7 +53,7 @@ function createMockCtx(options = {}) {
   return { ctx, state, services }
 }
 
-test('apply mounts an active frozen services namespace when all 17 official services are present', () => {
+test('apply mounts an active frozen services namespace when all 18 official services are present', () => {
   const allServices = {}
   for (const def of SERVICE_DEFINITIONS) {
     const svc = {}
@@ -85,7 +85,7 @@ test('apply mounts an active frozen services namespace when all 17 official serv
   assert.equal(state.pluginApi.isActive, true)
   assert.equal(state.pluginApi.services[servicesNamespaceBrand], true)
   assert.ok(Object.isFrozen(state.pluginApi.services))
-  assert.equal(Object.keys(state.pluginApi.services).length, 17)
+  assert.equal(Object.keys(state.pluginApi.services).length, 18)
   assert.equal(state.pluginApi.services.fs.isActive, true)
   assert.equal(state.pluginApi.services.agentDefaultModel.isActive, true)
 })
@@ -128,16 +128,12 @@ test('apply degrades a missing capability service per-service while keeping the 
   assert.equal(state.pluginApi.features.find((f) => f.name === 'services').isActive, true)
 })
 
-test('apply keeps the facade active and disables services when none of the 17 services is present', () => {
+test('apply keeps the facade active and disables services when none of the 18 services is present', () => {
   const { ctx, state } = createMockCtx({
     services: {
       llm: { resolveModelInfo() {} },
       agents: { get() {} },
       apiProxy: { sessions: { prompt() {}, selectModel() {} } },
-      web: {
-        registerSearchProvider() {},
-        registerFetchProvider() {},
-      },
     },
   })
 

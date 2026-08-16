@@ -103,22 +103,19 @@ test('systemPrompt guard failure disables only systemPrompt and keeps the facade
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 10)
+  assert.equal(features.length, 9)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
-  assert.deepEqual(features[3], { name: 'session', isActive: true })
-  assert.deepEqual(features[4], { name: 'web', isActive: true })
-  assert.deepEqual(features[5], { name: 'llm', isActive: true })
-  assert.equal(features[6].name, 'systemPrompt')
-  assert.equal(features[6].isActive, false)
-  assert.match(features[6].reason, /systemPrompt\.service/)
-  assert.deepEqual(features[7], { name: 'llm/admission', isActive: true })
-  assert.deepEqual(features[8], { name: 'settings', isActive: true })
-  assert.equal(features[9].name, 'services')
-  assert.equal(features[9].isActive, false)
-  assert.match(features[9].reason, /capability services/)
+  assert.deepEqual(features[3], { name: 'llm', isActive: true })
+  assert.deepEqual(features[4], { name: 'llm/admission', isActive: true })
+  assert.deepEqual(features[5], { name: 'session', isActive: true })
+  assert.deepEqual(features[6], { name: 'settings', isActive: true })
+  assert.equal(features[7].name, 'systemPrompt')
+  assert.equal(features[7].isActive, false)
+  assert.match(features[7].reason, /systemPrompt\.service/)
+  assert.deepEqual(features[8], { name: 'services', isActive: true })
 
   assert.throws(
     () => state.pluginApi.systemPrompt.section({ name: 's', order: 0, text: 'x' }),

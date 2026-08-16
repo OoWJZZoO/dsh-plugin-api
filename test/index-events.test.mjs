@@ -127,15 +127,15 @@ test('apply mounts events with the frozen catalog and usable bus', () => {
   assert.ok(state.listeners.some((l) => l.name === 'goal/changed'))
 })
 
-test('web API passes providers through to the official web service unchanged', () => {
+test('services.web passes providers through to the official web service unchanged', () => {
   const { ctx, state, web } = createMockCtx()
   apply(ctx)
 
   const searchProvider = { id: 'search-1' }
   const fetchProvider = { id: 'fetch-1' }
 
-  const searchResult = state.pluginApi.web.registerSearchProvider(searchProvider)
-  const fetchResult = state.pluginApi.web.registerFetchProvider(fetchProvider)
+  const searchResult = state.pluginApi.services.web.registerSearchProvider(searchProvider)
+  const fetchResult = state.pluginApi.services.web.registerFetchProvider(fetchProvider)
 
   assert.equal(web.searchProviderCalls.length, 1)
   assert.equal(web.searchProviderCalls[0], searchProvider)
@@ -156,22 +156,19 @@ test('events guard failure disables only events and keeps facade active', () => 
 
 
 
-  assert.equal(features.length, 10)
+  assert.equal(features.length, 9)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.equal(features[1].name, 'events')
   assert.equal(features[1].isActive, false)
   assert.match(features[1].reason, /ctx\.waterfall/)
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
-  assert.equal(features[3].name, 'session')
-  assert.equal(features[3].isActive, false)
-  assert.deepEqual(features[4], { name: 'web', isActive: true })
-  assert.deepEqual(features[5], { name: 'llm', isActive: true })
-  assert.deepEqual(features[6], { name: 'systemPrompt', isActive: true })
-  assert.deepEqual(features[7], { name: 'llm/admission', isActive: true })
-  assert.deepEqual(features[8], { name: 'settings', isActive: true })
-  assert.equal(features[9].name, 'services')
-  assert.equal(features[9].isActive, false)
-  assert.match(features[9].reason, /capability services/)
+  assert.deepEqual(features[3], { name: 'llm', isActive: true })
+  assert.deepEqual(features[4], { name: 'llm/admission', isActive: true })
+  assert.equal(features[5].name, 'session')
+  assert.equal(features[5].isActive, false)
+  assert.deepEqual(features[6], { name: 'settings', isActive: true })
+  assert.deepEqual(features[7], { name: 'systemPrompt', isActive: true })
+  assert.deepEqual(features[8], { name: 'services', isActive: true })
 
   assert.throws(
     () => state.pluginApi.events.on('goal/changed', () => {}),
@@ -181,10 +178,10 @@ test('events guard failure disables only events and keeps facade active', () => 
       return true
     },
   )
-  assert.equal(typeof state.pluginApi.web.registerSearchProvider, 'function')
+  assert.equal(typeof state.pluginApi.services.web.registerSearchProvider, 'function')
 })
 
-test('web guard failure disables only web and keeps facade active', () => {
+test('web service absence disables the services feature when no other capability seam is present (task 2.9)', () => {
   const { ctx, state } = createMockCtx({ web: false })
   assert.doesNotThrow(() => apply(ctx))
 
@@ -192,29 +189,25 @@ test('web guard failure disables only web and keeps facade active', () => {
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
 
-
-
-  assert.equal(features.length, 10)
+  assert.equal(features.length, 9)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
-  assert.deepEqual(features[3], { name: 'session', isActive: true })
-  assert.equal(features[4].name, 'web')
-  assert.equal(features[4].isActive, false)
-  assert.match(features[4].reason, /registerSearchProvider/)
-  assert.deepEqual(features[5], { name: 'llm', isActive: true })
-  assert.deepEqual(features[6], { name: 'systemPrompt', isActive: true })
-  assert.deepEqual(features[7], { name: 'llm/admission', isActive: true })
-  assert.deepEqual(features[8], { name: 'settings', isActive: true })
-  assert.equal(features[9].name, 'services')
-  assert.equal(features[9].isActive, false)
-  assert.match(features[9].reason, /capability services/)
+  assert.deepEqual(features[3], { name: 'llm', isActive: true })
+  assert.deepEqual(features[4], { name: 'llm/admission', isActive: true })
+  assert.deepEqual(features[5], { name: 'session', isActive: true })
+  assert.deepEqual(features[6], { name: 'settings', isActive: true })
+  assert.deepEqual(features[7], { name: 'systemPrompt', isActive: true })
+  assert.equal(features[8].name, 'services')
+  assert.equal(features[8].isActive, false)
+  assert.match(features[8].reason, /capability services/)
 
+  // the disabled services namespace throws typed errors for web too
   assert.throws(
-    () => state.pluginApi.web.registerSearchProvider({}),
+    () => state.pluginApi.services.web.registerSearchProvider({}),
     (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'web')
+      assert.equal(error.feature, 'services')
       return true
     },
   )

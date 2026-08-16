@@ -198,13 +198,13 @@ test('no official service calls happen before inactive or feature-disabled throw
   assert.throws(() => activeService.llm.admission.register({}), PluginApiFeatureDisabledError)
 })
 
-test('default services namespace exposes the 17 disabled facades before mount', () => {
+test('default services namespace exposes the 18 disabled facades before mount', () => {
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
   const service = instantiate(ServiceClass, mockCtx())
 
   assert.equal(typeof service.services, 'object')
-  assert.equal(Object.keys(service.services).length, 17)
+  assert.equal(Object.keys(service.services).length, 18)
   assert.ok(Object.isFrozen(service.services))
   for (const key of Object.keys(service.services)) {
     assert.equal(service.services[key].isActive, false)
