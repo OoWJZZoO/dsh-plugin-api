@@ -56,7 +56,14 @@ function createMockCtx(options = {}) {
 test('apply mounts an active frozen services namespace when all 17 official services are present', () => {
   const allServices = {}
   for (const def of SERVICE_DEFINITIONS) {
-    allServices[def.ctxService] = {}
+    const svc = {}
+    for (const member of def.members) {
+      if (member.kind === 'method') svc[member.name] = () => {}
+      else if (member.kind === 'getter') {
+        Object.defineProperty(svc, member.name, { enumerable: true, get() { return null } })
+      }
+    }
+    allServices[def.ctxService] = svc
   }
   // llm/admission and events/web guards need their own probes satisfied too.
   const { ctx, state } = createMockCtx({
@@ -86,7 +93,14 @@ test('apply mounts an active frozen services namespace when all 17 official serv
 test('apply degrades a missing capability service per-service while keeping the services feature active', () => {
   const allServices = {}
   for (const def of SERVICE_DEFINITIONS) {
-    allServices[def.ctxService] = {}
+    const svc = {}
+    for (const member of def.members) {
+      if (member.kind === 'method') svc[member.name] = () => {}
+      else if (member.kind === 'getter') {
+        Object.defineProperty(svc, member.name, { enumerable: true, get() { return null } })
+      }
+    }
+    allServices[def.ctxService] = svc
   }
   delete allServices.fs
 
@@ -146,7 +160,14 @@ test('apply keeps the facade active and disables services when none of the 17 se
 test('apply never throws when services mount throws and disables the services feature', () => {
   const allServices = {}
   for (const def of SERVICE_DEFINITIONS) {
-    allServices[def.ctxService] = {}
+    const svc = {}
+    for (const member of def.members) {
+      if (member.kind === 'method') svc[member.name] = () => {}
+      else if (member.kind === 'getter') {
+        Object.defineProperty(svc, member.name, { enumerable: true, get() { return null } })
+      }
+    }
+    allServices[def.ctxService] = svc
   }
 
   const { ctx, state } = createMockCtx({

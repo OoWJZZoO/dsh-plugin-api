@@ -90,8 +90,9 @@ test('active facade delegates every declared method 1:1 for all 17 services', ()
 test('active facade propagates synchronous official method errors unchanged', () => {
   for (const def of SERVICE_DEFINITIONS) {
     const member = methodMembers(def)[0]
-    const service = { [member.name]() { throw new Error('official boom') } }
-    const facade = buildActiveFacade(def, service, {})
+    const { service, uriHelpers } = createMockServiceAndHelpers(def)
+    service[member.name] = () => { throw new Error('official boom') }
+    const facade = buildActiveFacade(def, service, uriHelpers)
     assert.throws(
       () => facade[member.name](),
       (error) => {
@@ -105,8 +106,9 @@ test('active facade propagates synchronous official method errors unchanged', ()
 test('active facade propagates official method rejections unchanged', async () => {
   for (const def of SERVICE_DEFINITIONS) {
     const member = methodMembers(def)[0]
-    const service = { [member.name]() { return Promise.reject(new Error('official rejection')) } }
-    const facade = buildActiveFacade(def, service, {})
+    const { service, uriHelpers } = createMockServiceAndHelpers(def)
+    service[member.name] = () => Promise.reject(new Error('official rejection'))
+    const facade = buildActiveFacade(def, service, uriHelpers)
     await assert.rejects(
       () => facade[member.name](),
       (error) => {
@@ -122,11 +124,13 @@ test('optional method is omitted when absent and present when the official servi
   const withFlush = {
     emit() {},
     shutdown() {},
+    sharing: false,
     flush() {},
   }
   const withoutFlush = {
     emit() {},
     shutdown() {},
+    sharing: false,
   }
 
   const facadeWith = buildActiveFacade(def, withFlush, {})

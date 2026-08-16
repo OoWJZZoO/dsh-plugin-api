@@ -7,6 +7,7 @@ test('optional method flush is omitted when the official service lacks it', () =
   const service = {
     emit() {},
     shutdown() {},
+    sharing: false,
   }
   const facade = buildActiveFacade(def, service, {})
   assert.equal(facade.isActive, true)
@@ -21,6 +22,7 @@ test('optional method flush is present and delegates when the official service h
   const service = {
     emit() {},
     shutdown() {},
+    sharing: false,
     flush(reason) {
       calls.push(reason)
       return 'flushed'
@@ -32,9 +34,18 @@ test('optional method flush is present and delegates when the official service h
   assert.deepEqual(calls, ['turn'])
 })
 
-test('non-optional missing method is also omitted, never faked', () => {
+test('non-optional missing member degrades the whole facade to disabled (never silently omitted)', () => {
   const def = SERVICE_DEFINITIONS.find((d) => d.key === 'codeRuntime')
   const facade = buildActiveFacade(def, {}, {})
-  assert.equal(facade.isActive, true)
-  assert.ok(!('run' in facade))
+  assert.equal(facade.isActive, false)
+  assert.ok('run' in facade, 'declared member stays observable')
+  assert.throws(
+    () => facade.run(),
+    (error) => {
+      assert.equal(error.code, 'PLUGIN_API_FEATURE_DISABLED')
+      assert.equal(error.feature, 'services.codeRuntime')
+      assert.match(error.message, /missing declared member/)
+      return true
+    },
+  )
 })
