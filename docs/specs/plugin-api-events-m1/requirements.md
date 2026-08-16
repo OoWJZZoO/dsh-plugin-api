@@ -133,15 +133,15 @@
 **Acceptance Criteria:**
 
 1. WHEN the events feature is active, THEN `pluginApi.events.catalog` SHALL be available as a read-only object keyed by event name.
-2. WHEN a catalog entry is read, THEN it SHALL contain at least: `mode` (`on` | `emit` | `serial` | `parallel` | `bail` | `waterfall`), `payload` type description/reference, `scopeFiltered` boolean, `source` feature id, and `type` (`A` | `B`).
-3. WHEN the catalog is read, THEN it SHALL contain exactly the event names stabilized by this spec plus the M1 LLM extension (`plugin-api-llm-m1`): all event names implied by E1–E12 dispatch coverage plus `fs/write-intent`, `fs/edit-intent`, `fs/observed`, `subagent/start`, `subagent/end`, `subagent/provider-added`, `subagent/provider-removed`, `workflow/start`, `workflow/phase`, `workflow/log`, `workflow/agent-start`, `workflow/agent-end`, `workflow/end`, `approval/request`, `commands/change`, `skills/change`, `credentials/updated`, `goal/changed`, `session-telemetry/record`, `llm/stream`, and `llm/adapters-updated`.
-4. WHEN the catalog is read, THEN it SHALL NOT include event names outside this spec's 25-feature scope, except for the two event names added by `plugin-api-llm-m1` (`llm/stream`, `llm/adapters-updated`).
+2. WHEN a catalog entry is read, THEN it SHALL contain at least: `mode` (`on` | `emit` | `serial` | `parallel` | `bail` | `waterfall`), `payload` type description/reference, `scopeFiltered` boolean, `source` feature id, `type` (`A` | `B`), and the unified policy fields per `plugin-api-m1-integration`: `scopeKey` (`'args[0].agent' | 'args[1].scope' | null | undefined`), optional `fault` (`'contain' | 'created' | 'propagate'`, default `'contain'`), optional `freeze` (`'all' | { deep: string[] } | 'except-signal'`, default `'all'`).
+3. WHEN the catalog is read, THEN it SHALL contain the union of (a) the baseline event names stabilized by this spec — all event names implied by E1–E12 dispatch coverage plus `fs/write-intent`, `fs/edit-intent`, `fs/observed`, `subagent/start`, `subagent/end`, `subagent/provider-added`, `subagent/provider-removed`, `workflow/start`, `workflow/phase`, `workflow/log`, `workflow/agent-start`, `workflow/agent-end`, `workflow/end`, `approval/request`, `commands/change`, `skills/change`, `credentials/updated`, `goal/changed`, `session-telemetry/record` — and (b) the catalog slices contributed by every delivered feature that stabilizes additional events (as of M1 integration: `plugin-api-llm-m1`, `plugin-api-system-prompt-m1`, `plugin-api-settings-m1`, `plugin-api-session-m1`, `plugin-api-tools-m1`, `plugin-api-agent-m1`), composed fail-loud by `composeCatalogs` with guard-driven slice inclusion.
+4. WHEN the catalog is read, THEN it SHALL NOT include event names outside the union defined in AC 7.3; slices of disabled features SHALL be absent from the composed catalog (mount-time exclusion is the one and only gating mechanism, per `plugin-api-m1-integration`).
 5. WHEN the catalog object or any of its entry objects is mutated, THEN the mutation SHALL NOT be observable (the catalog SHALL be frozen or otherwise read-only at runtime).
 6. WHEN a catalog entry's `scopeFiltered` is `true`, THEN the entry SHALL identify the scope key per AC 5.4.
 
-**Type:** 门面基础（事件目录；首版范围仅本次 25 个 feature，后由 `plugin-api-llm-m1` 扩展 `llm/stream` 与 `llm/adapters-updated` 两个事件名）
+**Type:** 门面基础（事件目录；首版范围为基线 19 条，M1 整合后为各 delivered feature slice 的并集，共 47 条）
 
-> **修订注记（`plugin-api-agent-m1`）**：目录 schema 已升级：`subject` 更名为 `scopeKey`，每个 entry 新增 `fault`（`'contain' | 'created' | 'propagate'`）与 `freeze`（`'all' | { deep: string[] }`）字段。`plugin-api-agent-m1` 交付后目录新增 12 个 `agent/*` 条目，运行时总数为 31；AC 7.3/7.4 的“恰好 19 个”仅适用于本 spec 首版，后续 feature 扩展以各自 spec 为准。
+> **修订注记（`plugin-api-agent-m1`，经 `plugin-api-m1-integration` 泛化）**：目录 schema 已升级：`subject` 更名为 `scopeKey`，每个 entry 含 `fault`（`'contain' | 'created' | 'propagate'`）与 `freeze`（`'all' | { deep: string[] } | 'except-signal'`）策略字段。AC 7.3/7.4 已由 integration 泛化为并集语义：目录 = 本 spec 基线 19 条 + 各 delivered feature 贡献的 slice（每个 feature 一个 slice 模块，`composeCatalogs` 重名即抛错；挂载期按 guard 结果取舍 slice）。M1 整合后运行时目录共 47 条。
 
 ---
 

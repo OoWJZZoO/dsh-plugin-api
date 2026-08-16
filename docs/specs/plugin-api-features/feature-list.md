@@ -4,7 +4,9 @@
 >
 > feature_name: `plugin-api-features`
 > 范围：全量（host 面 + client 面 + C 类上游提案）
-> 组织方式：按 API 命名空间分组，每项标注 A/B/C 类型与建议里程碑；已交付项标注 `delivered`。
+> 组织方式：按 API 命名空间分组，每项标注 A/B/C 类型与建议里程碑；已交付项标注 `**delivered**`。
+>
+> **命名空间安置规则**（`plugin-api-m1-integration` 确立）：顶层命名空间保留给**核心域**（`llm`、`agent`、`session`、`tools`、`systemPrompt`、`settings`）与**基础设施**（`events`）；二线**纯直通 capability seam** 统一收敛在 `pluginApi.services.<name>` 之下。未来新增的纯直通 feature 一律进 `services.*`；带门面附加语义的 feature 自建顶层命名空间。
 
 ---
 
@@ -78,11 +80,11 @@
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| F0.1 门面服务 | `ctx.pluginApi`（Cordis Service，`inject: ['pluginApi']`）；**推荐、受支持**的门面入口；直连 `@deepseek-ai/dsh-*` 内部包为 unsupported escape hatch | 门面基础 | 本仓库 `lib/index.js` / `lib/plugin-api-service.js`；spec `plugin-api-foundation` | M0 | delivered |
-| F0.2 fail-safe guard | `pluginApi.isActive: boolean`；核心 guard 失败时服务仍注册为 inert；非核心 feature 失败时只禁用该 feature 并显式报错 | 门面基础 | 本仓库 `lib/guards.js`；对齐 dsh-read-image G1；spec `plugin-api-foundation` | M0 | delivered |
-| F0.3 版本协商 | `package.json` 增加 `dsh.api` 声明；双向协商——runtime 不匹配时门面 inert，插件要求不满足时插件收到 typed 错误 | 门面基础 | 本仓库 `lib/version.js` / `lib/guards.js` / `package.json`；spec `plugin-api-foundation` | M0 | delivered |
+| F0.1 门面服务 | `ctx.pluginApi`（Cordis Service，`inject: ['pluginApi']`）；**推荐、受支持**的门面入口；直连 `@deepseek-ai/dsh-*` 内部包为 unsupported escape hatch | 门面基础 | 本仓库 `lib/index.js` / `lib/plugin-api-service.js`；spec `plugin-api-foundation` | M0 | **delivered** |
+| F0.2 fail-safe guard | `pluginApi.isActive: boolean`；核心 guard 失败时服务仍注册为 inert；非核心 feature 失败时只禁用该 feature 并显式报错 | 门面基础 | 本仓库 `lib/guards.js`；对齐 dsh-read-image G1；spec `plugin-api-foundation` | M0 | **delivered** |
+| F0.3 版本协商 | 门面全量唯一版本号 = `<runtime全量版本>-<API协议大版本.迭代小版本>`（如 `0.1.0-rc.6-0.2`，写入 `package.json.version`）；`dsh.api` 仅承载 API 协议版本。双向协商——方向① runtime 部分与安装的官方 runtime 不匹配时门面 inert；方向② 插件要求不满足时插件收到 typed 错误 | 门面基础 | 本仓库 `lib/version.js` / `lib/guards.js` / `package.json`；spec `plugin-api-foundation`（修订注记见 `plugin-api-m1-integration` 任务 2.10） | M0 | **delivered** |
 | F0.4 符号解析门面 | `pluginApi` 作为**推荐** import/inject 面；第三方插件默认经门面解析符号；直连 `dsh-tools`/`dsh-llm` 等内部包属于 unsupported escape hatch（门面不拦截、不保障） | 门面基础 | `docs/specs/plugin-api-facade-integrity/requirements.md` §1（权威定义）；`README.md` | M0–M3 | delivered（F0.4 策略；符号覆盖随命名空间逐步扩展） |
-| F0.5 包装链安全 | dispose 用 identity-guard；目标被其他插件包装时降级透传，不拆别人的链 | 门面基础 | 本仓库 `lib/wrap-safety.js` / `lib/admission-bridge.js`；dsh-read-image A1 加固；spec `plugin-api-facade-integrity` | M0 | delivered |
+| F0.5 包装链安全 | dispose 用 identity-guard；目标被其他插件包装时降级透传，不拆别人的链 | 门面基础 | 本仓库 `lib/wrap-safety.js` / `lib/admission-bridge.js`；dsh-read-image A1 加固；spec `plugin-api-facade-integrity` | M0 | **delivered** |
 
 ### 2.2 `pluginApi.events` —— 稳定事件总线（M1）
 
@@ -99,7 +101,7 @@
 | E9 只读 payload | 对事件 payload 做 deepFreeze（或官方已冻结的透传），禁止监听器改写共享事件对象 | B | `dsh-llm` 对 loop-built 请求已 deepFreeze；门面统一契约 | M1 | **delivered** |
 | E10 scope 感知订阅 | `opts.scope` / agent-scoped `events.on`（scope-filtered dispatch 的稳定包装） | A | `dsh-scope` `lib/invariant.js` 权威事件表；`dsh-agent` `agentEvents()` | M1 | **delivered** |
 | E11 监听器故障隔离 | 监听器抛错/异步 rejection 的 contained 报告与日志，不中断事件派发 | A/B | 官方各 emit 点多已 per-listener contained；门面统一 | M1 | **delivered** |
-| E12 事件目录 | `pluginApi.events.catalog`（事件名 → 模式 / payload 类型 / 是否 scope-filtered / A-B-C 来源） | 门面基础 | 本文第 2.3–2.11 节；首版目录覆盖本次 25 个 feature | M1 | **delivered** |
+| E12 事件目录 | `pluginApi.events.catalog`（事件名 → 模式 / scopeKey / payload 类型 / fault / freeze / 是否 scope-filtered / A-B-C 来源） | 门面基础 | 本文第 2.3–2.11 节；目录为各 delivered feature 贡献切片的并集（`plugin-api-events-m1` 基线 19 条，M1 整合后共 47 条） | M1 | **delivered** |
 
 ### 2.3 `pluginApi.llm` —— 模型调用面（M1/M2/M4）
 
@@ -132,32 +134,32 @@
 | A10 官方路由 API | 官方 `exec.route` / `routeOf(exec)` 或等价字段 | C | AGENTS.md 第 2.5 条 C 类 | M4 | planned（proposal） |
 | A11 Agent 创建/注册高级面 | `agent.create/resume/register/enter/announce`、`agent.setFactory` 稳定直通（按能力分级暴露） | A | `dsh-agent/lib/index.js:519` 起；`dsh-agent-loop/lib/index.js:1000` | M2 | planned |
 
-> A1–A8 已由 `plugin-api-agent-m1` 交付（spec 目录 `docs/specs/plugin-api-agent-m1/`）。关键约束：12 个 `agent/*` 事件已纳入 `pluginApi.events.catalog`（共 31 条）；catalog 新增 `scopeKey/fault/freeze` 字段；`agent/created` 保留官方 sync-veto / async-report 语义；A3–A6 为 `fault:'propagate'`；`agent`/`signal` 永不 deepFreeze。
+> A1–A8 已由 `plugin-api-agent-m1` 交付（spec 目录 `docs/specs/plugin-api-agent-m1/`）。关键约束：12 个 `agent/*` 事件作为独立 slice 纳入 `pluginApi.events.catalog` 并集；catalog 统一 schema 含 `scopeKey/fault/freeze` 字段（`plugin-api-m1-integration`）；`agent/created` 保留官方 sync-veto / async-report 语义；A3–A6 为 `fault:'propagate'`；`agent`/`signal` 永不 deepFreeze。
 
 ### 2.5 `pluginApi.session` —— 会话与上屏事件面（M1/M2）
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| S1 会话生命周期事件 | `session/created`、`session/disposed`、`session/event`、`session/flush` 类型化订阅 | A | `dsh-session/lib/types/index.d.ts:44-75` | M1 | delivered |
+| S1 会话生命周期事件 | `session/created`、`session/disposed`、`session/event`、`session/flush` 类型化订阅 | A | `dsh-session/lib/types/index.d.ts:44-75` | M1 | **delivered** |
 | S2 上屏事件构造 helper | `session.appendMessage(kind, payload)`：自动补齐 `surfaceOp: 'append'` 与 `sourceEventSeqs`，拒绝非法 surface 事件形状 | B | `dsh-session` `append` 上屏契约；dsh-pro-ex-ability-anchor 第 4 条不变量 | M2 | planned |
-| S3 会话读面 | `session.get(id)`、`session.list()`、`session.fork(source, boundary?, childId?)` 稳定直通 | A | `dsh-session/lib/types/index.d.ts:315-413` | M1 | delivered |
-| S4 会话状态访问器 | `session.header/events/seq/surface`、`requestHeader()`、`requestContext()`、`deriveMessages()` 的稳定只读访问 | A | `dsh-session/lib/types/index.d.ts:106-267` | M1 | delivered |
-| S5 会话事件目录 | `sessionEventTypes` / `surfaceEventTypes` 常量与类型守卫 | A | `dsh-session` `known-event-types`（`session/end-seed`、`session/title` 等） | M1 | delivered |
+| S3 会话读面 | `session.get(id)`、`session.list()`、`session.fork(source, boundary?, childId?)` 稳定直通 | A | `dsh-session/lib/types/index.d.ts:315-413` | M1 | **delivered** |
+| S4 会话状态访问器 | `session.header/events/seq/surface`、`requestHeader()`、`requestContext()`、`deriveMessages()` 的稳定只读访问 | A | `dsh-session/lib/types/index.d.ts:106-267` | M1 | **delivered** |
+| S5 会话事件目录 | `sessionEventTypes` / `surfaceEventTypes` 常量与类型守卫 | A | `dsh-session` `known-event-types`（`session/end-seed`、`session/title` 等） | M1 | **delivered** |
 | S6 官方上屏 helper | 官方提供 `session.appendSurface(...)` 级别的高级构造 API | C | 当前 surface 契约靠插件自维护（dsh-pro-ex-ability-anchor） | M4 | planned（proposal，可选） |
 
 ### 2.6 `pluginApi.tools` —— 工具注册与执行管线面（M1/M2）
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| T1 工具注册 | `tools.register(definition: ToolDefinition): () => void`（`defineTool` 的类型化稳定版） | A | `dsh-tools/lib/types/index.d.ts:106-208` | M1 | delivered |
-| T2 工具变更通知 | `events.on('tools/change', listener)`（注意官方为 unfiltered） | A | `dsh-tools/lib/index.js:2572` | M1 | delivered |
-| T3 执行前瀑布 | `events.waterfall('tools/pre-execute', exec, next)`；default `{kind:'allow'}`，gate `allow|deny|ask`（`ask` 走 `ctx.approval` seam） | A | `dsh-tools/lib/index.js:3098` | M1 | delivered |
-| T4 执行环绕瀑布 | `events.waterfall('tools/execute', exec, next)`（around body；timeout/retry/metrics，可替换 `exec.signal`） | A | `dsh-tools/lib/index.js:3195` | M1 | delivered |
-| T5 执行后瀑布 | `events.waterfall('tools/post-execute', exec, result, next)`；default `{kind:'accept'}`，decision `accept({content?|value?})` / `block({feedback})` | A | `dsh-tools/lib/index.js:3360` | M1 | delivered |
-| T6 结果通知 | `events.on('tools/result', (exec, result) => void)`（contained；`exec`/`result` 均 frozen、observe-only） | A | `dsh-tools/lib/index.js:3266-3284` | M1 | delivered |
-| T7 代码分发日志瀑布 | `events.waterfall('tools/code-dispatch-log', dispatch, next)`；返回替换后的 content | A | `dsh-tools/lib/index.js:2953` | M1 | delivered |
-| T8 工具限制与守卫 | `tools.restrict(filter)`、`tools.guard(guard)` 稳定直通 | A | `dsh-tools` `ToolRuntime.restrict/guard` | M1 | delivered |
-| T9 工具查询与执行 | `tools.get(name, scope?)`、`tools.schemas(scope?)`、`tools.execute(input)`、`tools.presentAs` 稳定直通 | A | `dsh-tools` `ToolRuntime` 公共方法 | M1 | delivered |
+| T1 工具注册 | `tools.register(definition: ToolDefinition): () => void`（`defineTool` 的类型化稳定版） | A | `dsh-tools/lib/types/index.d.ts:106-208` | M1 | **delivered** |
+| T2 工具变更通知 | `events.on('tools/change', listener)`（注意官方为 unfiltered） | A | `dsh-tools/lib/index.js:2572` | M1 | **delivered** |
+| T3 执行前瀑布 | `events.waterfall('tools/pre-execute', exec, next)`；default `{kind:'allow'}`，gate `allow|deny|ask`（`ask` 走 `ctx.approval` seam） | A | `dsh-tools/lib/index.js:3098` | M1 | **delivered** |
+| T4 执行环绕瀑布 | `events.waterfall('tools/execute', exec, next)`（around body；timeout/retry/metrics，可替换 `exec.signal`） | A | `dsh-tools/lib/index.js:3195` | M1 | **delivered** |
+| T5 执行后瀑布 | `events.waterfall('tools/post-execute', exec, result, next)`；default `{kind:'accept'}`，decision `accept({content?|value?})` / `block({feedback})` | A | `dsh-tools/lib/index.js:3360` | M1 | **delivered** |
+| T6 结果通知 | `events.on('tools/result', (exec, result) => void)`（contained；`exec`/`result` 均 frozen、observe-only） | A | `dsh-tools/lib/index.js:3266-3284` | M1 | **delivered** |
+| T7 代码分发日志瀑布 | `events.waterfall('tools/code-dispatch-log', dispatch, next)`；返回替换后的 content | A | `dsh-tools/lib/index.js:2953` | M1 | **delivered** |
+| T8 工具限制与守卫 | `tools.restrict(filter)`、`tools.guard(guard)` 稳定直通 | A | `dsh-tools` `ToolRuntime.restrict/guard` | M1 | **delivered** |
+| T9 工具查询与执行 | `tools.get(name, scope?)`、`tools.schemas(scope?)`、`tools.execute(input)`、`tools.presentAs` 稳定直通 | A | `dsh-tools` `ToolRuntime` 公共方法 | M1 | **delivered** |
 | T10 执行路由注入 | 在 `tools/pre-execute` 稳定 payload 中暴露 `exec.agent.session.requestContext()` 的 route 快照 | B | 官方无 `exec.route`；`exec.agent` 在 `tools/pre-execute` 保证存在；与 A9 同源 | M2 | planned |
 
 > 管线顺序（官方已定，门面只稳定化不重排）：`tools/pre-execute` → 单调 `guard()` 检查 → `tools/execute` → `tools/post-execute` → 工具 `finalizeContent` → `tools/result`。定义里的 `timeoutMs` 由 `dsh-tool-call-timeout-policy`（`tools/execute` wrapper）执行，不在门面内复制。
@@ -166,27 +168,27 @@
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| P1 段落注册 | `systemPrompt.section(section: PromptSection): () => void` | A | `dsh-system-prompt/lib/types/index.d.ts:187` | M1 | delivered |
-| P2 动态上下文注册 | `systemPrompt.context(context: PromptContext): () => void` | A | 同上 `:194` | M1 | delivered |
-| P3 变量注册 | `systemPrompt.variable(name, provider): () => void` | A | 同上 `:218` | M1 | delivered |
-| P4 工具 schema 提供者 | `systemPrompt.tools(provider): () => void` | A | 同上 `:209` | M1 | delivered |
-| P5 运行时上下文抑制 | `systemPrompt.suppressRuntimeContext(): () => void` | A | 同上 `:201` | M1 | delivered |
-| P6 组装瀑布 | `events.waterfall('system-prompt/assemble', assembly, context, next)` 类型化（经 `pluginApi.events` catalog） | A | `dsh-system-prompt/lib/index.js:283` | M1 | delivered |
-| P7 变更通知 | `events.on('system-prompt/change', listener)`（经 `pluginApi.events` catalog） | A | `dsh-system-prompt/lib/index.js:160` | M1 | delivered |
-| P8 渲染 helper | `systemPrompt.render(assembly)` / `renderContextSections(assembly)` 稳定直通（官方公开导出直通） | A | `dsh-system-prompt` 导出的 `renderPrompt/renderContextSections` | M1 | delivered |
+| P1 段落注册 | `systemPrompt.section(section: PromptSection): () => void` | A | `dsh-system-prompt/lib/types/index.d.ts:187` | M1 | **delivered** |
+| P2 动态上下文注册 | `systemPrompt.context(context: PromptContext): () => void` | A | 同上 `:194` | M1 | **delivered** |
+| P3 变量注册 | `systemPrompt.variable(name, provider): () => void` | A | 同上 `:218` | M1 | **delivered** |
+| P4 工具 schema 提供者 | `systemPrompt.tools(provider): () => void` | A | 同上 `:209` | M1 | **delivered** |
+| P5 运行时上下文抑制 | `systemPrompt.suppressRuntimeContext(): () => void` | A | 同上 `:201` | M1 | **delivered** |
+| P6 组装瀑布 | `events.waterfall('system-prompt/assemble', assembly, context, next)` 类型化（经 `pluginApi.events` catalog） | A | `dsh-system-prompt/lib/index.js:283` | M1 | **delivered** |
+| P7 变更通知 | `events.on('system-prompt/change', listener)`（经 `pluginApi.events` catalog） | A | `dsh-system-prompt/lib/index.js:160` | M1 | **delivered** |
+| P8 渲染 helper | `systemPrompt.render(assembly)` / `renderContextSections(assembly)` 稳定直通（官方公开导出直通） | A | `dsh-system-prompt` 导出的 `renderPrompt/renderContextSections` | M1 | **delivered** |
 
 ### 2.8 `pluginApi.settings` —— 设置与可视化配置桥（M1/M3/M4）
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| ST1 命名空间注册 | `settings.register(ns, schema, {base, applies, validate})` 类型化 | A | `dsh-settings/lib/types/index.d.ts:225` | M1 | delivered |
-| ST2 设置作用域 | `settings.scope<T>(ns): SettingsScope<T>`（`get/watch/update/replace/mutate`） | A | 同上 `:85-111` | M1 | delivered |
-| ST3 设置事件 | `events.on('settings/updated'\|'settings/document-updated', listener)` | A | `dsh-settings/lib/index.js:523,561` | M1 | delivered |
+| ST1 命名空间注册 | `settings.register(ns, schema, {base, applies, validate})` 类型化 | A | `dsh-settings/lib/types/index.d.ts:225` | M1 | **delivered** |
+| ST2 设置作用域 | `settings.scope<T>(ns): SettingsScope<T>`（`get/watch/update/replace/mutate`） | A | 同上 `:85-111` | M1 | **delivered** |
+| ST3 设置事件 | `events.on('settings/updated'\|'settings/document-updated', listener)` | A | `dsh-settings/lib/index.js:523,561` | M1 | **delivered** |
 | ST4 设置可视化桥（host 侧） | `settings.remote(namespace, serviceKey?)`：用 `TypertRemoteService` + `bindTypertRemote` 注册可远程调用的设置服务 | B | dsh-read-image A3（手搓 `@Remote`）；`dsh-typert-protocol` 导出 `TypertRemoteService/remoteMethods` | M3 | planned |
 | ST5 设置可视化桥（client 侧） | `client.mountRemoteContribution(contribution)`：封装 `ctx.remote.$mount` + face 校验 + 失败 UI 降级 | B | dsh-read-image A5（`ctx.remote.$mount` 自挂载）；`dsh-api-remotes/lib/client.js` | M3 | planned |
 | ST6 真 codec 生成 | client bundle 打包一份 zod，生成满足 `dsh-api-remotes` 校验的 descriptor（替代 looseSchema） | B | dsh-read-image A4（伪造 zod schema）；AGENTS.md 第 4.5 条 | M3 | planned |
 | ST7 插件设置命名空间动态化 | 官方 `WEB_SETTINGS_NAMESPACES` 支持第三方插件命名空间 | C | `dsh-host-apiproxy/lib/types/api-proxy.js:50-52` 当前硬编码 7 个命名空间 | M4 | planned（proposal） |
-| ST8 设置描述与安装 helper | `settings.describe({redactSecrets})` 稳定直通；`installSettingsSection(ctx, ns, schema, entry, hooks)` 作为注册便利封装 | A | `dsh-settings/lib/index.js`（`describe` L352；`installSettingsSection` L618） | M1 | delivered |
+| ST8 设置描述与安装 helper | `settings.describe({redactSecrets})` 稳定直通；`installSettingsSection(ctx, ns, schema, entry, hooks)` 作为注册便利封装 | A | `dsh-settings/lib/index.js`（`describe` L352；`installSettingsSection` L618） | M1 | **delivered** |
 
 ### 2.9 `pluginApi.client` —— 客户端 bundle / slot / remote（M3/M4）
 
@@ -220,7 +222,7 @@
 | O12 目标变更 | `goal/changed`（agent-scoped emit；payload `{agent, change}`） | A | `dsh-goal/index.js:793`；`dsh-scope` 权威表 | M1 | **delivered** |
 | O13 调度 durable 事件 | `schedule/change`（session-log 事件；payload `{version:1, operation: create|delete|dispatch}`） | A | `dsh-schedule/lib/index.js:310-357` | M2 | planned |
 | O14 子代理 descriptor | `subagent/descriptor`（session-log 事件，非 ctx 事件） | A | `dsh-subagent/lib/index.js:640` | M2 | planned |
-| O15 Web 检索/抓取 provider | `web.registerSearchProvider(provider)`、`web.registerFetchProvider(provider)` 稳定直通 | A | `dsh-web/lib/index.js:67-77` | M1 | **delivered** |
+| O15 Web 检索/抓取 provider | `services.web.registerSearchProvider(provider)`、`services.web.registerFetchProvider(provider)` 稳定直通（`plugin-api-m1-integration` 任务 2.9 起经 `pluginApi.services.web` 提供；原顶层 `pluginApi.web` 已移除） | A | `dsh-web/lib/index.js:67-77` | M1 | **delivered** |
 | O16 会话遥测记录 | `session-telemetry/record`（waterfall；payload `{record}`） | A | `dsh-session-telemetry/lib/index.js:174` | M1 | **delivered** |
 
 ### 2.11 其他宿主服务稳定化（capability seams，M1）
@@ -229,24 +231,24 @@
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| SV1 文件系统 seam | `pluginApi.services.fs`：`resolve/processPath/fileUrl/contains/stat/lstat/readText/streamText/readBytes/listDir/writeText/editText` + `sandboxMode` 直通 | A | `dsh-fs/lib/index.js`（服务 `fs`） | M1 | delivered |
-| SV2 代码执行 seam | `pluginApi.services.codeRuntime`：`run` + `language/isolation` 直通 | A | `dsh-code-runtime/lib/index.js`（服务 `codeRuntime`） | M1 | delivered |
-| SV3 工作区注册表 | `pluginApi.services.workspaces`：`create/get/list/delete/insertBefore/archiveSession/resolveByPath` + `archivedSessionIds` 直通 | A | `dsh-workspace/lib/index.js:309`（服务 `workspaceRegistry`） | M1 | delivered |
-| SV4 子代理运行时 | `pluginApi.services.subagents`：`registerProvider/getProvider/list/start` 等 12 个公开方法直通 | A | `dsh-subagent/lib/index.js:2467`（服务 `subagents`） | M1 | delivered |
-| SV5 工作流引擎 | `pluginApi.services.workflows.start(request)` 直通 | A | `dsh-workflow/lib/index.js:59`（服务 `workflowEngine`） | M1 | delivered |
-| SV6 审批服务 | `pluginApi.services.approval.request()` / `setPolicy()` / `overrideOf()` 直通（fail-closed 不变） | A | `dsh-user-approval/lib/index.js:89`（服务 `approval`） | M1 | delivered |
-| SV7 用户提问服务 | `pluginApi.services.userQuestions.registerProvider()` / `ask()` 直通 | A | `dsh-user-questions/lib/index.js:23`（服务 `userQuestions`） | M1 | delivered |
-| SV8 附件存储 | `pluginApi.services.attachments`：`validateImage/saveImage/readImage` + `imageLimits` 直通 | A | `dsh-attachment/lib/index.js:44`（服务 `attachments`） | M1 | delivered |
-| SV9 技能注册表 | `pluginApi.services.skills.registerProvider/register/list/snapshot/get` 直通 | A | `dsh-skill/lib/index.js:132`（服务 `skills`） | M1 | delivered |
-| SV10 存储后端注册表 | `pluginApi.services.storage`：`backend/domain/mount/form` 直通 | A | `dsh-storage/lib/index.js:109`（服务 `storage`） | M1 | delivered |
-| SV11 会话投影注册表 | `pluginApi.services.sessionProjections.register({key,stateVersion,init,apply,view,schema})` / `onChanged` / `snapshot(session)` 等直通 | A | `dsh-session-projection`（服务 `sessionProjections`） | M1 | delivered |
-| SV12 会话查询 | `pluginApi.services.sessionQuery.listSessions/readSession/filterSessions` 等 14 个公开方法直通 | A | `dsh-session-query`（服务 `sessionQuery`） | M1 | delivered |
-| SV13 会话标题 provider | `pluginApi.services.sessionTitle.register(provider)` 等直通（官方为单 provider） | A | `dsh-session-title/lib/index.js:294`（服务 `sessionTitle`） | M1 | delivered |
-| SV14 会话遥测 seam | `pluginApi.services.sessionTelemetry`（backend seam 直通；`session-telemetry/record` 事件已由 O16 交付） | A | `dsh-session-telemetry/lib/index.js:174`（服务 `sessionTelemetry`） | M1 | delivered |
-| SV15 会话引用解析 | `pluginApi.services.sessionReferences.listCandidates/prepare` + `encodeSessionReferenceUri/decodeSessionReferenceUri` 转发 | A | `dsh-session-reference`（服务 `sessionReferenceResolver`） | M1 | delivered |
-| SV16 Token 计量 | `pluginApi.services.tokenMeter.measure(session, requestHeader)` / `estimateMessage` 直通 | A | `dsh-token-meter`（服务 `tokenMeter`） | M1 | delivered |
+| SV1 文件系统 seam | `pluginApi.services.fs`：`resolve/processPath/fileUrl/contains/stat/lstat/readText/streamText/readBytes/listDir/writeText/editText` + `sandboxMode` 直通 | A | `dsh-fs/lib/index.js`（服务 `fs`） | M1 | **delivered** |
+| SV2 代码执行 seam | `pluginApi.services.codeRuntime`：`run` + `language/isolation` 直通 | A | `dsh-code-runtime/lib/index.js`（服务 `codeRuntime`） | M1 | **delivered** |
+| SV3 工作区注册表 | `pluginApi.services.workspaces`：`create/get/list/delete/insertBefore/archiveSession/resolveByPath` + `archivedSessionIds` 直通 | A | `dsh-workspace/lib/index.js:309`（服务 `workspaceRegistry`） | M1 | **delivered** |
+| SV4 子代理运行时 | `pluginApi.services.subagents`：`registerProvider/getProvider/list/start` 等 12 个公开方法直通 | A | `dsh-subagent/lib/index.js:2467`（服务 `subagents`） | M1 | **delivered** |
+| SV5 工作流引擎 | `pluginApi.services.workflows.start(request)` 直通 | A | `dsh-workflow/lib/index.js:59`（服务 `workflowEngine`） | M1 | **delivered** |
+| SV6 审批服务 | `pluginApi.services.approval.request()` / `setPolicy()` / `overrideOf()` 直通（fail-closed 不变） | A | `dsh-user-approval/lib/index.js:89`（服务 `approval`） | M1 | **delivered** |
+| SV7 用户提问服务 | `pluginApi.services.userQuestions.registerProvider()` / `ask()` 直通 | A | `dsh-user-questions/lib/index.js:23`（服务 `userQuestions`） | M1 | **delivered** |
+| SV8 附件存储 | `pluginApi.services.attachments`：`validateImage/saveImage/readImage` + `imageLimits` 直通 | A | `dsh-attachment/lib/index.js:44`（服务 `attachments`） | M1 | **delivered** |
+| SV9 技能注册表 | `pluginApi.services.skills.registerProvider/register/list/snapshot/get` 直通 | A | `dsh-skill/lib/index.js:132`（服务 `skills`） | M1 | **delivered** |
+| SV10 存储后端注册表 | `pluginApi.services.storage`：`backend/domain/mount/form` 直通 | A | `dsh-storage/lib/index.js:109`（服务 `storage`） | M1 | **delivered** |
+| SV11 会话投影注册表 | `pluginApi.services.sessionProjections.register({key,stateVersion,init,apply,view,schema})` / `onChanged` / `snapshot(session)` 等直通 | A | `dsh-session-projection`（服务 `sessionProjections`） | M1 | **delivered** |
+| SV12 会话查询 | `pluginApi.services.sessionQuery.listSessions/readSession/filterSessions` 等 14 个公开方法直通 | A | `dsh-session-query`（服务 `sessionQuery`） | M1 | **delivered** |
+| SV13 会话标题 provider | `pluginApi.services.sessionTitle.register(provider)` 等直通（官方为单 provider） | A | `dsh-session-title/lib/index.js:294`（服务 `sessionTitle`） | M1 | **delivered** |
+| SV14 会话遥测 seam | `pluginApi.services.sessionTelemetry`（backend seam 直通；`session-telemetry/record` 事件已由 O16 交付） | A | `dsh-session-telemetry/lib/index.js:174`（服务 `sessionTelemetry`） | M1 | **delivered** |
+| SV15 会话引用解析 | `pluginApi.services.sessionReferences.listCandidates/prepare` + `encodeSessionReferenceUri/decodeSessionReferenceUri` 转发 | A | `dsh-session-reference`（服务 `sessionReferenceResolver`） | M1 | **delivered** |
+| SV16 Token 计量 | `pluginApi.services.tokenMeter.measure(session, requestHeader)` / `estimateMessage` 直通 | A | `dsh-token-meter`（服务 `tokenMeter`） | M1 | **delivered** |
 | SV17 压缩服务 seam | `pluginApi.services.compaction`（`summarize()` 子类钩子；官方无 `compaction/*` 事件） | A | `dsh-compaction`（服务 `compaction`） | M2 | planned |
-| SV18 默认模型选择 | `pluginApi.services.agentDefaultModel.currentSelection()` / `saveSelection(next)` 直通 | A | `dsh-agent-default-model`（服务 `agentDefaultModel`） | M1 | delivered |
+| SV18 默认模型选择 | `pluginApi.services.agentDefaultModel.currentSelection()` / `saveSelection(next)` 直通 | A | `dsh-agent-default-model`（服务 `agentDefaultModel`） | M1 | **delivered** |
 
 ---
 
