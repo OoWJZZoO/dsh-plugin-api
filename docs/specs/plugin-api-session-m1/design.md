@@ -216,6 +216,8 @@ import { deepFreeze } from './deep-freeze.js'
 - **S1 `on/once`**：
   - `name ∈ SESSION_LIFECYCLE_EVENT_NAMES`：`return eventsApi.on(name, listener, opts)` / `eventsApi.once(name, listener, opts)`。
   - 否则：`return ctx.on(name, listener)` / `ctx.once(name, listener)`，忽略 `opts`（untyped/unsupported 透传，对齐 `plugin-api-events-m1` AC 1.5）。
+
+> **集成决议注记（`plugin-api-m1-integration` 任务 2.8）**：该裸透传行为在整合时经复核**予以保留**——与 `pluginApi.events` 对非目录事件名的 passthrough 语义保持同源一致，并明确标注为 unsupported escape hatch（无门面待遇：不排序、不冻结、不包含故障）。备选方案"收紧为仅接受四个生命周期名、其余抛错"被否决，理由是与 events 总线的既有 passthrough 契约不一致会造成双重标准。
 - **S3 读面**：
   - `get(id)`：`return sessions.get(id)`。
   - `list()`：`return sessions.list()`。
