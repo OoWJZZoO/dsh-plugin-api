@@ -154,3 +154,30 @@ test('mountFeature still rejects unknown feature names', () => {
     },
   )
 })
+
+test('tools accessor fail-safe: throwing or vanished official service yields a typed error (task 2.7)', () => {
+  for (const mode of ['throw', 'undefined']) {
+    const ServiceClass = createPluginApiService({ apiVersion: '0.1', coreActive: true })
+    const ctx = {
+      reflect: { provide() {} },
+      get(name) {
+        if (name === 'tools') {
+          if (mode === 'throw') throw new Error('fiber torn down')
+          return undefined
+        }
+        return undefined
+      },
+    }
+    const service = new ServiceClass(ctx, undefined)
+    service.mountFeature('tools', { scoped: true })
+    assert.throws(
+      () => service.tools,
+      (error) => {
+        assert.ok(error instanceof PluginApiFeatureDisabledError)
+        assert.equal(error.feature, 'tools')
+        return true
+      },
+      `mode ${mode} must throw typed PluginApiFeatureDisabledError`,
+    )
+  }
+})
