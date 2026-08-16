@@ -20,4 +20,6 @@ test('dsh.api is a major.minor contract', () => {
 test('peerDependencies keep shared host instances for the facade base', () => {
   assert.equal(typeof pkg.peerDependencies['@deepseek-ai/cordis'], 'string')
   assert.equal(typeof pkg.peerDependencies['@deepseek-ai/dsh-llm'], 'string')
+  assert.equal(typeof pkg.peerDependencies['@deepseek-ai/dsh-scope'], 'string')
+  assert.equal(typeof pkg.peerDependencies['@deepseek-ai/dsh-session'], 'string')
 })
