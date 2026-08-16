@@ -87,7 +87,7 @@ test('llm feature guard passes: apply mounts all six llm methods and keeps admis
   assert.equal(typeof state.pluginApi.llm.admission.isActive, 'boolean')
 })
 
-test('llm guard failure disables only llm and keeps facade active with LLM catalog entries', () => {
+test('llm guard failure disables only llm, keeps facade active, and excludes LLM catalog entries', () => {
   const llm = {
     resolveModelInfo() {},
     stream() {},
@@ -111,8 +111,8 @@ test('llm guard failure disables only llm and keeps facade active with LLM catal
 
   assert.ok(llmEventsCatalog['llm/stream'])
   assert.ok(llmEventsCatalog['llm/adapters-updated'])
-  assert.ok(state.pluginApi.events.catalog['llm/stream'])
-  assert.ok(state.pluginApi.events.catalog['llm/adapters-updated'])
+  assert.equal(state.pluginApi.events.catalog['llm/stream'], undefined, 'disabled feature slice is excluded')
+  assert.equal(state.pluginApi.events.catalog['llm/adapters-updated'], undefined, 'disabled feature slice is excluded')
 
   for (const method of [
     'modelInfo',
