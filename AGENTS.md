@@ -38,6 +38,8 @@ agent/dsh-plugin-api/
 
 采用 [kevinlin/spec-coding-mcp](https://github.com/kevinlin/spec-coding-mcp) 的 spec-driven 五阶段流程。**每个阶段必须得到人类明确确认，才能进入下一阶段。**
 
+运行时工作流由本仓库 skill `spec-coding` 驱动（`.dsh/skills/spec-coding/SKILL.md`）；AGENTS.md 是 constitution，两者冲突时以本文件铁律为准。
+
 ### 3.1 五阶段
 
 | 阶段 | 制品 | 说明 |
