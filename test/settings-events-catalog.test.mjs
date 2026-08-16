@@ -18,8 +18,6 @@ test('settings/updated entry matches the confirmed emit metadata', () => {
   assert.equal(updated.type, 'A')
   assert.equal(updated.args, '(ns, next, prev, source)')
   assert.match(updated.payload, /source/)
-  // NOTE: the transitional `feature` gating field is removed by task 2.4.
-  assert.equal(updated.feature, 'settings')
 })
 
 test('settings/document-updated entry matches the confirmed emit metadata', () => {
@@ -33,5 +31,4 @@ test('settings/document-updated entry matches the confirmed emit metadata', () =
   assert.equal(documentUpdated.type, 'A')
   assert.equal(documentUpdated.args, '(ns, revision)')
   assert.match(documentUpdated.payload, /revision/)
-  assert.equal(documentUpdated.feature, 'settings')
 })
