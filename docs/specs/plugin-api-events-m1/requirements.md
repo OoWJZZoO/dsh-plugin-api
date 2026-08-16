@@ -132,12 +132,12 @@
 
 1. WHEN the events feature is active, THEN `pluginApi.events.catalog` SHALL be available as a read-only object keyed by event name.
 2. WHEN a catalog entry is read, THEN it SHALL contain at least: `mode` (`on` | `emit` | `serial` | `parallel` | `bail` | `waterfall`), `payload` type description/reference, `scopeFiltered` boolean, `source` feature id, and `type` (`A` | `B`).
-3. WHEN the catalog is read, THEN it SHALL contain exactly the event names stabilized by this spec: all event names implied by E1–E12 dispatch coverage plus `fs/write-intent`, `fs/edit-intent`, `fs/observed`, `subagent/start`, `subagent/end`, `subagent/provider-added`, `subagent/provider-removed`, `workflow/start`, `workflow/phase`, `workflow/log`, `workflow/agent-start`, `workflow/agent-end`, `workflow/end`, `approval/request`, `commands/change`, `skills/change`, `credentials/updated`, `goal/changed`, and `session-telemetry/record`.
-4. WHEN the catalog is read, THEN it SHALL NOT include event names outside this spec's 25-feature scope.
+3. WHEN the catalog is read, THEN it SHALL contain exactly the event names stabilized by this spec plus the M1 LLM extension (`plugin-api-llm-m1`): all event names implied by E1–E12 dispatch coverage plus `fs/write-intent`, `fs/edit-intent`, `fs/observed`, `subagent/start`, `subagent/end`, `subagent/provider-added`, `subagent/provider-removed`, `workflow/start`, `workflow/phase`, `workflow/log`, `workflow/agent-start`, `workflow/agent-end`, `workflow/end`, `approval/request`, `commands/change`, `skills/change`, `credentials/updated`, `goal/changed`, `session-telemetry/record`, `llm/stream`, and `llm/adapters-updated`.
+4. WHEN the catalog is read, THEN it SHALL NOT include event names outside this spec's 25-feature scope, except for the two event names added by `plugin-api-llm-m1` (`llm/stream`, `llm/adapters-updated`).
 5. WHEN the catalog object or any of its entry objects is mutated, THEN the mutation SHALL NOT be observable (the catalog SHALL be frozen or otherwise read-only at runtime).
 6. WHEN a catalog entry's `scopeFiltered` is `true`, THEN the entry SHALL identify the scope key per AC 5.4.
 
-**Type:** 门面基础（事件目录；首版范围仅本次 25 个 feature）
+**Type:** 门面基础（事件目录；首版范围仅本次 25 个 feature，后由 `plugin-api-llm-m1` 扩展 `llm/stream` 与 `llm/adapters-updated` 两个事件名）
 
 ---
 

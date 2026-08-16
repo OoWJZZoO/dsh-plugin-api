@@ -22,9 +22,11 @@ const EXPECTED_NAMES = [
   'credentials/updated',
   'goal/changed',
   'session-telemetry/record',
+  'llm/stream',
+  'llm/adapters-updated',
 ]
 
-test('catalog contains exactly the 19 in-scope event names', () => {
+test('catalog contains exactly the 21 in-scope event names', () => {
   assert.deepEqual(Object.keys(eventsCatalog).sort(), [...EXPECTED_NAMES].sort())
 })
 
@@ -64,6 +66,8 @@ test('catalog entries match the confirmed mode/scope/subject matrix', () => {
     'credentials/updated': ['emit', false, undefined],
     'goal/changed': ['emit', true, 'args[0].agent'],
     'session-telemetry/record': ['waterfall', false, undefined],
+    'llm/stream': ['waterfall', false, undefined],
+    'llm/adapters-updated': ['emit', false, undefined],
   }
   for (const [name, [mode, scopeFiltered, subject]] of Object.entries(matrix)) {
     const entry = catalogEntryOf(name)
@@ -72,6 +76,26 @@ test('catalog entries match the confirmed mode/scope/subject matrix', () => {
     assert.equal(entry.subject, subject, `${name}: subject`)
     assert.equal(entry.type, 'A', `${name}: type`)
   }
+})
+
+test('llm/stream and llm/adapters-updated entries carry the L3/L6 metadata', () => {
+  const stream = catalogEntryOf('llm/stream')
+  assert.equal(stream.mode, 'waterfall')
+  assert.equal(stream.scopeFiltered, false)
+  assert.equal(stream.subject, undefined)
+  assert.match(stream.payload, /GenerateOptions/)
+  assert.equal(stream.args, '(options, next)')
+  assert.equal(stream.source, 'L3')
+  assert.equal(stream.type, 'A')
+
+  const updated = catalogEntryOf('llm/adapters-updated')
+  assert.equal(updated.mode, 'emit')
+  assert.equal(updated.scopeFiltered, false)
+  assert.equal(updated.subject, undefined)
+  assert.equal(updated.payload, 'none')
+  assert.equal(updated.args, '()')
+  assert.equal(updated.source, 'L6')
+  assert.equal(updated.type, 'A')
 })
 
 test('catalog and every entry are frozen', () => {
