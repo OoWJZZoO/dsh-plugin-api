@@ -164,14 +164,14 @@
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| P1 段落注册 | `systemPrompt.section(section: PromptSection): () => void` | A | `dsh-system-prompt/lib/types/index.d.ts:187` | M1 | planned |
-| P2 动态上下文注册 | `systemPrompt.context(context: PromptContext): () => void` | A | 同上 `:194` | M1 | planned |
-| P3 变量注册 | `systemPrompt.variable(name, provider): () => void` | A | 同上 `:218` | M1 | planned |
-| P4 工具 schema 提供者 | `systemPrompt.tools(provider): () => void` | A | 同上 `:209` | M1 | planned |
-| P5 运行时上下文抑制 | `systemPrompt.suppressRuntimeContext(): () => void` | A | 同上 `:201` | M1 | planned |
-| P6 组装瀑布 | `events.waterfall('system-prompt/assemble', assembly, context, next)` 类型化 | A | `dsh-system-prompt/lib/index.js:283` | M1 | planned |
-| P7 变更通知 | `events.on('system-prompt/change', listener)` | A | `dsh-system-prompt/lib/index.js:160` | M1 | planned |
-| P8 渲染 helper | `systemPrompt.render(assembly)` / `renderContextSections(assembly)` 稳定直通 | A | `dsh-system-prompt` 导出的 `renderPrompt/renderContextSections` | M1 | planned |
+| P1 段落注册 | `systemPrompt.section(section: PromptSection): () => void` | A | `dsh-system-prompt/lib/types/index.d.ts:187` | M1 | delivered |
+| P2 动态上下文注册 | `systemPrompt.context(context: PromptContext): () => void` | A | 同上 `:194` | M1 | delivered |
+| P3 变量注册 | `systemPrompt.variable(name, provider): () => void` | A | 同上 `:218` | M1 | delivered |
+| P4 工具 schema 提供者 | `systemPrompt.tools(provider): () => void` | A | 同上 `:209` | M1 | delivered |
+| P5 运行时上下文抑制 | `systemPrompt.suppressRuntimeContext(): () => void` | A | 同上 `:201` | M1 | delivered |
+| P6 组装瀑布 | `events.waterfall('system-prompt/assemble', assembly, context, next)` 类型化（经 `pluginApi.events` catalog） | A | `dsh-system-prompt/lib/index.js:283` | M1 | delivered |
+| P7 变更通知 | `events.on('system-prompt/change', listener)`（经 `pluginApi.events` catalog） | A | `dsh-system-prompt/lib/index.js:160` | M1 | delivered |
+| P8 渲染 helper | `systemPrompt.render(assembly)` / `renderContextSections(assembly)` 稳定直通（官方公开导出直通） | A | `dsh-system-prompt` 导出的 `renderPrompt/renderContextSections` | M1 | delivered |
 
 ### 2.8 `pluginApi.settings` —— 设置与可视化配置桥（M1/M3/M4）
 

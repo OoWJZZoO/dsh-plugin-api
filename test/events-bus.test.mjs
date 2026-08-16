@@ -373,6 +373,43 @@ test('opts.scope is ignored for non-scope-filtered events', () => {
   assert.equal(called, true)
 })
 
+test('system-prompt/assemble scope filtering uses args[1].scope', () => {
+  const ctx = createMockCordisCtx()
+  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const scopedCalls = []
+  const globalCalls = []
+
+  events.on('system-prompt/assemble', (assembly, context, next) => {
+    scopedCalls.push(context.scope)
+    return next()
+  }, { scope: 'agent-1' })
+  events.on('system-prompt/assemble', (assembly, context, next) => {
+    globalCalls.push(context.scope)
+    return next()
+  })
+
+  const assembly = { sections: [], contexts: [], tools: [], variables: {} }
+  const inner = () => assembly
+  ctx.waterfall('system-prompt/assemble', assembly, { scope: 'agent-2' }, inner)
+  ctx.waterfall('system-prompt/assemble', assembly, { scope: 'agent-1' }, inner)
+
+  assert.deepEqual(scopedCalls, ['agent-1'])
+  assert.deepEqual(globalCalls, ['agent-2', 'agent-1'])
+})
+
+test('opts.scope is ignored for system-prompt/change', () => {
+  const ctx = createMockCordisCtx()
+  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  let called = false
+
+  events.on('system-prompt/change', () => {
+    called = true
+  }, { scope: 'anything' })
+
+  ctx.emit('system-prompt/change')
+  assert.equal(called, true)
+})
+
 test('waterfall contains a throwing listener and continues with next()', () => {
   const ctx = createMockCordisCtx()
   const events = createEventsBus({ ctx, catalog: eventsCatalog })

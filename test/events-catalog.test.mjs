@@ -22,9 +22,11 @@ const EXPECTED_NAMES = [
   'credentials/updated',
   'goal/changed',
   'session-telemetry/record',
+  'system-prompt/assemble',
+  'system-prompt/change',
 ]
 
-test('catalog contains exactly the 19 in-scope event names', () => {
+test('catalog contains exactly the 21 in-scope event names', () => {
   assert.deepEqual(Object.keys(eventsCatalog).sort(), [...EXPECTED_NAMES].sort())
 })
 
@@ -64,6 +66,8 @@ test('catalog entries match the confirmed mode/scope/subject matrix', () => {
     'credentials/updated': ['emit', false, undefined],
     'goal/changed': ['emit', true, 'args[0].agent'],
     'session-telemetry/record': ['waterfall', false, undefined],
+    'system-prompt/assemble': ['waterfall', true, 'args[1].scope'],
+    'system-prompt/change': ['emit', false, undefined],
   }
   for (const [name, [mode, scopeFiltered, subject]] of Object.entries(matrix)) {
     const entry = catalogEntryOf(name)
@@ -79,6 +83,26 @@ test('catalog and every entry are frozen', () => {
   for (const entry of Object.values(eventsCatalog)) {
     assert.ok(Object.isFrozen(entry), `${entry.name} entry is frozen`)
   }
+})
+
+test('system-prompt catalog entries match the confirmed metadata', () => {
+  const assemble = catalogEntryOf('system-prompt/assemble')
+  assert.equal(assemble.mode, 'waterfall')
+  assert.equal(assemble.scopeFiltered, true)
+  assert.equal(assemble.subject, 'args[1].scope')
+  assert.equal(assemble.payload, 'assembly {sections, contexts, tools, variables}; context {scope?, signal?}')
+  assert.equal(assemble.args, '(assembly, context, next)')
+  assert.equal(assemble.source, 'P6')
+  assert.equal(assemble.type, 'A')
+
+  const change = catalogEntryOf('system-prompt/change')
+  assert.equal(change.mode, 'emit')
+  assert.equal(change.scopeFiltered, false)
+  assert.equal(change.subject, undefined)
+  assert.equal(change.payload, 'none')
+  assert.equal(change.args, '()')
+  assert.equal(change.source, 'P7')
+  assert.equal(change.type, 'A')
 })
 
 test('catalogEntryOf returns the entry for known names and undefined otherwise', () => {
