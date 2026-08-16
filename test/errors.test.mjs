@@ -1,0 +1,54 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {
+  PluginApiError,
+  PluginApiFeatureDisabledError,
+  PluginApiInactiveError,
+  PluginApiVersionError,
+} from '../lib/errors.js'
+
+test('PluginApiError is the base class and carries a code', () => {
+  const error = new PluginApiError('PLUGIN_API_BASE', 'base error')
+  assert.ok(error instanceof Error)
+  assert.equal(error.code, 'PLUGIN_API_BASE')
+  assert.match(error.message, /base error/)
+})
+
+test('PluginApiInactiveError has code PLUGIN_API_INACTIVE', () => {
+  const error = new PluginApiInactiveError('facade is inactive')
+  assert.ok(error instanceof PluginApiError)
+  assert.ok(error instanceof PluginApiInactiveError)
+  assert.equal(error.code, 'PLUGIN_API_INACTIVE')
+  assert.match(error.message, /inactive/)
+})
+
+test('PluginApiFeatureDisabledError carries feature and code', () => {
+  const error = new PluginApiFeatureDisabledError('llm/admission', 'feature is disabled')
+  assert.ok(error instanceof PluginApiError)
+  assert.equal(error.code, 'PLUGIN_API_FEATURE_DISABLED')
+  assert.equal(error.feature, 'llm/admission')
+  assert.match(error.message, /llm\/admission/)
+  assert.match(error.message, /disabled/)
+})
+
+test('PluginApiVersionError carries declared and required', () => {
+  const error = new PluginApiVersionError({
+    declared: '0.1',
+    required: '0.2',
+    pluginName: 'test-plugin',
+  })
+  assert.ok(error instanceof PluginApiError)
+  assert.equal(error.code, 'PLUGIN_API_VERSION_MISMATCH')
+  assert.equal(error.declared, '0.1')
+  assert.equal(error.required, '0.2')
+  assert.equal(error.pluginName, 'test-plugin')
+  assert.match(error.message, /0\.1/)
+  assert.match(error.message, /0\.2/)
+})
+
+test('PluginApiVersionError has a readable default message', () => {
+  const error = new PluginApiVersionError({ declared: '0.1', required: '0.2' })
+  assert.match(error.message, /version/i)
+  assert.match(error.message, /0\.1/)
+  assert.match(error.message, /0\.2/)
+})

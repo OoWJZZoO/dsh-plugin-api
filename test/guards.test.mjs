@@ -1,17 +1,27 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { AsyncLocalStorage } from 'node:async_hooks'
-import { checkHostEnvironment, guardFailNotice, guardLogPath, writeGuardLog } from '../lib/guards.js'
+import {
+  featureFailNotice,
+  guardFailNotice,
+  guardLogPath,
+  runCoreGuard,
+  runFeatureGuard,
+  writeGuardLog,
+} from '../lib/guards.js'
 import { existsSync, readFileSync, unlinkSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir, tmpdir } from 'node:os'
 
+const versions = { apiVersion: '0.1', runtimeVersion: '0.1.0-rc.6' }
+
 function healthyCtx(overrides = {}) {
   return {
     plugin() {},
-    llm: { resolveModelInfo() {} },
-    agents: { get() {} },
+    reflect: { provide() {} },
     get(name) {
+      if (name === 'llm') return { resolveModelInfo() {} }
+      if (name === 'agents') return { get() {} }
       if (name === 'apiProxy') return { sessions: { prompt() {}, selectModel() {} } }
       return undefined
     },
@@ -24,93 +34,128 @@ const healthyDeps = () => ({
   AsyncLocalStorage,
 })
 
-test('healthy environment passes with no problems', () => {
-  const result = checkHostEnvironment(healthyCtx(), healthyDeps())
+test('core guard passes with healthy ctx and matching versions', () => {
+  const result = runCoreGuard(healthyCtx(), versions)
   assert.equal(result.ok, true)
   assert.equal(result.skipped, false)
   assert.deepEqual(result.problems, [])
   assert.deepEqual(result.coreProblems, [])
-  assert.deepEqual(result.optionalProblems, [])
+  assert.deepEqual(result.featureProblems, {})
 })
 
 test('missing ctx.plugin is a core failure', () => {
-  const result = checkHostEnvironment(healthyCtx({ plugin: undefined }), healthyDeps())
+  const result = runCoreGuard(healthyCtx({ plugin: undefined }), versions)
   assert.equal(result.ok, false)
   assert.ok(result.coreProblems.some((p) => p.name === 'ctx.plugin'))
 })
 
-test('missing llm.resolveModelInfo is a core failure', () => {
-  const result = checkHostEnvironment(healthyCtx({ llm: {} }), healthyDeps())
+test('missing ctx.reflect.provide is a core failure', () => {
+  const result = runCoreGuard(healthyCtx({ reflect: {} }), versions)
   assert.equal(result.ok, false)
-  assert.ok(result.coreProblems.some((p) => p.name === 'llm.resolveModelInfo'))
+  assert.ok(result.coreProblems.some((p) => p.name === 'ctx.reflect.provide'))
 })
 
-test('missing agents.get is a core failure', () => {
-  const result = checkHostEnvironment(healthyCtx({ agents: {} }), healthyDeps())
-  assert.equal(result.ok, false)
-  assert.ok(result.coreProblems.some((p) => p.name === 'agents.get'))
+test('missing or unparseable dsh.api is a core failure', () => {
+  for (const apiVersion of [undefined, '0.1.0', 'abc', '1']) {
+    const result = runCoreGuard(healthyCtx(), { ...versions, apiVersion })
+    assert.equal(result.ok, false)
+    assert.ok(result.coreProblems.some((p) => p.name === 'dsh.api'))
+  }
 })
 
-test('missing dshLlm.contentHasImage is a core failure', () => {
-  const result = checkHostEnvironment(healthyCtx(), { dshLlm: {}, AsyncLocalStorage })
+test('runtime version mismatch is a core failure', () => {
+  const result = runCoreGuard(healthyCtx(), { apiVersion: '0.1', runtimeVersion: '0.2.0' })
   assert.equal(result.ok, false)
-  assert.ok(result.coreProblems.some((p) => p.name === 'dshLlm.contentHasImage'))
+  assert.ok(result.coreProblems.some((p) => p.name === 'runtime version'))
 })
 
-test('missing AsyncLocalStorage is a core failure', () => {
-  const result = checkHostEnvironment(healthyCtx(), { dshLlm: { contentHasImage() {} }, AsyncLocalStorage: null })
-  assert.equal(result.ok, false)
-  assert.ok(result.coreProblems.some((p) => p.name === 'AsyncLocalStorage'))
-})
-
-test('missing apiProxy is only an optional failure and guard stays ok', () => {
-  const ctx = healthyCtx({ get: () => undefined })
-  const result = checkHostEnvironment(ctx, healthyDeps())
+test('llm/admission feature guard passes when all required probes exist', () => {
+  const result = runFeatureGuard('llm/admission', healthyCtx(), healthyDeps())
   assert.equal(result.ok, true)
+  assert.deepEqual(result.problems, [])
   assert.equal(result.coreProblems.length, 0)
-  assert.equal(result.optionalProblems.length, 1)
-  assert.equal(result.optionalProblems[0].name, 'apiProxy.sessions')
-  assert.equal(result.problems.length, 1)
+  assert.deepEqual(result.featureProblems, { 'llm/admission': [] })
 })
 
-test('malformed apiProxy.sessions is only an optional failure and guard stays ok', () => {
-  const ctx = healthyCtx({ get: () => ({ sessions: {} }) })
-  const result = checkHostEnvironment(ctx, healthyDeps())
-  assert.equal(result.ok, true)
-  assert.ok(result.optionalProblems.some((p) => p.name === 'apiProxy.sessions'))
+test('missing llm.resolveModelInfo is a feature failure and core stays healthy', () => {
+  const ctx = healthyCtx({ get: (name) => (name === 'llm' ? {} : healthyCtx().get(name)) })
+  const feature = runFeatureGuard('llm/admission', ctx, healthyDeps())
+  const core = runCoreGuard(healthyCtx(), versions)
+  assert.equal(feature.ok, false)
+  assert.ok(feature.featureProblems['llm/admission'].some((p) => p.name === 'llm.resolveModelInfo'))
+  assert.equal(core.ok, true)
 })
 
-test('ctx.get throwing during apiProxy probe degrades to optional failure, never throws', () => {
-  const ctx = healthyCtx({
-    get() {
-      throw new Error('hostile ctx.get')
-    },
-  })
-  const result = checkHostEnvironment(ctx, healthyDeps())
-  assert.equal(result.ok, true)
-  assert.ok(result.optionalProblems.some((p) => p.name === 'apiProxy.sessions'))
+test('missing agents.get is a feature failure and core stays healthy', () => {
+  const ctx = healthyCtx({ get: (name) => (name === 'agents' ? {} : healthyCtx().get(name)) })
+  const feature = runFeatureGuard('llm/admission', ctx, healthyDeps())
+  const core = runCoreGuard(healthyCtx(), versions)
+  assert.equal(feature.ok, false)
+  assert.ok(feature.featureProblems['llm/admission'].some((p) => p.name === 'agents.get'))
+  assert.equal(core.ok, true)
 })
 
-test('hostile ctx with throwing getters never throws', () => {
+test('missing dshLlm.contentHasImage is a feature failure and core stays healthy', () => {
+  const feature = runFeatureGuard('llm/admission', healthyCtx(), { dshLlm: {}, AsyncLocalStorage })
+  const core = runCoreGuard(healthyCtx(), versions)
+  assert.equal(feature.ok, false)
+  assert.ok(feature.featureProblems['llm/admission'].some((p) => p.name === 'dshLlm.contentHasImage'))
+  assert.equal(core.ok, true)
+})
+
+test('unusable AsyncLocalStorage is a feature failure and core stays healthy', () => {
+  const feature = runFeatureGuard('llm/admission', healthyCtx(), { dshLlm: { contentHasImage() {} }, AsyncLocalStorage: {} })
+  const core = runCoreGuard(healthyCtx(), versions)
+  assert.equal(feature.ok, false)
+  assert.ok(feature.featureProblems['llm/admission'].some((p) => p.name === 'AsyncLocalStorage'))
+  assert.equal(core.ok, true)
+})
+
+test('missing apiProxy.sessions is a feature failure and core stays healthy', () => {
+  const ctx = healthyCtx({ get: () => undefined })
+  const feature = runFeatureGuard('llm/admission', ctx, healthyDeps())
+  const core = runCoreGuard(healthyCtx(), versions)
+  assert.equal(feature.ok, false)
+  assert.ok(feature.featureProblems['llm/admission'].some((p) => p.name === 'apiProxy.sessions'))
+  assert.equal(core.ok, true)
+})
+
+test('unknown feature guard fails without throwing', () => {
+  const result = runFeatureGuard('unknown/feature', healthyCtx(), healthyDeps())
+  assert.equal(result.ok, false)
+  assert.ok(result.featureProblems['unknown/feature'].some((p) => p.name === 'feature'))
+})
+
+test('hostile ctx with throwing getters never throws in core or feature guard', () => {
   const hostile = new Proxy({}, {
     get() {
       throw new Error('hostile getter')
     },
   })
-  const result = checkHostEnvironment(hostile, healthyDeps())
-  assert.equal(typeof result.ok, 'boolean')
-  assert.equal(result.ok, false)
-  assert.ok(result.coreProblems.length > 0)
+  const core = runCoreGuard(hostile, versions)
+  assert.equal(typeof core.ok, 'boolean')
+  assert.equal(core.ok, false)
+  assert.ok(core.coreProblems.length > 0)
+
+  const feature = runFeatureGuard('llm/admission', hostile, healthyDeps())
+  assert.equal(typeof feature.ok, 'boolean')
+  assert.equal(feature.ok, false)
+  assert.ok(feature.featureProblems['llm/admission'].length > 0)
 })
 
-test('DSH_PLUGIN_API_GUARD_DISABLE=1 skips all checks', () => {
+test('DSH_PLUGIN_API_GUARD_DISABLE=1 skips both core and feature checks', () => {
   const previous = process.env.DSH_PLUGIN_API_GUARD_DISABLE
   process.env.DSH_PLUGIN_API_GUARD_DISABLE = '1'
   try {
-    const result = checkHostEnvironment(healthyCtx({ plugin: undefined }), healthyDeps())
-    assert.equal(result.ok, true)
-    assert.equal(result.skipped, true)
-    assert.deepEqual(result.problems, [])
+    const core = runCoreGuard(healthyCtx({ plugin: undefined }), {})
+    assert.equal(core.ok, true)
+    assert.equal(core.skipped, true)
+    assert.deepEqual(core.problems, [])
+
+    const feature = runFeatureGuard('llm/admission', healthyCtx({ get: () => undefined }), healthyDeps())
+    assert.equal(feature.ok, true)
+    assert.equal(feature.skipped, true)
+    assert.deepEqual(feature.problems, [])
   } finally {
     if (previous === undefined) delete process.env.DSH_PLUGIN_API_GUARD_DISABLE
     else process.env.DSH_PLUGIN_API_GUARD_DISABLE = previous
@@ -121,7 +166,7 @@ test('DSH_PLUGIN_API_FORCE_GUARD_FAIL=1 forces a core failure', () => {
   const previous = process.env.DSH_PLUGIN_API_FORCE_GUARD_FAIL
   process.env.DSH_PLUGIN_API_FORCE_GUARD_FAIL = '1'
   try {
-    const result = checkHostEnvironment(healthyCtx(), healthyDeps())
+    const result = runCoreGuard(healthyCtx(), versions)
     assert.equal(result.ok, false)
     assert.ok(result.coreProblems.some((p) => p.name === 'forced'))
   } finally {
@@ -136,7 +181,7 @@ test('DSH_PLUGIN_API_GUARD_DISABLE wins over FORCE_GUARD_FAIL', () => {
   process.env.DSH_PLUGIN_API_GUARD_DISABLE = '1'
   process.env.DSH_PLUGIN_API_FORCE_GUARD_FAIL = '1'
   try {
-    const result = checkHostEnvironment(healthyCtx(), healthyDeps())
+    const result = runCoreGuard(healthyCtx(), versions)
     assert.equal(result.ok, true)
     assert.equal(result.skipped, true)
     assert.deepEqual(result.problems, [])
@@ -171,13 +216,19 @@ test('writeGuardLog writes a timestamped diagnostic file and overwrites it', () 
   }
 })
 
-test('guardFailNotice is bilingual and includes the log path and skip env var', () => {
+test('guardFailNotice is bilingual, includes log path and skip env var', () => {
   const notice = guardFailNotice('/tmp/example.log')
   assert.match(notice, /dsh-plugin-api/)
-  assert.match(notice, /llm-image-admission/)
+  assert.match(notice, /core self-check FAILED/)
+  assert.match(notice, /核心自检未通过/)
   assert.match(notice, /\/tmp\/example\.log/)
   assert.match(notice, /DSH_PLUGIN_API_GUARD_DISABLE=1/)
-  assert.match(notice, /self-check FAILED/)
-  assert.match(notice, /自检未通过/)
-  assert.match(notice, /日志/)
+})
+
+test('featureFailNotice is bilingual and includes feature name and log path', () => {
+  const notice = featureFailNotice('llm/admission', '/tmp/example.log')
+  assert.match(notice, /dsh-plugin-api/)
+  assert.match(notice, /llm\/admission/)
+  assert.match(notice, /feature .*self-check FAILED|自检未通过/)
+  assert.match(notice, /\/tmp\/example\.log/)
 })

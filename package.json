@@ -9,6 +9,7 @@
     "./package.json": "./package.json"
   },
   "dsh": {
+    "api": "0.1",
     "bundle": {
       "patch": "./cordis.patch.yml"
     }

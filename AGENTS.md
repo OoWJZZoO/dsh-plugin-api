@@ -89,7 +89,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 
 ## 4. 核心设计决策（已讨论，作为 constitution 输入）
 
-1. 插件作者只依赖一个门面 `dsh-plugin-api`（运行时通过 `ctx.pluginApi` 服务解析符号），不直接依赖 `dsh-tools`/`dsh-llm` 等内部实现包。
+1. 插件作者的**推荐、受支持**入口是门面 `dsh-plugin-api`（运行时通过 `ctx.pluginApi` 服务解析符号），由门面提供稳定性、版本协商与 fail-safe 保障。第三方插件**可以**绕过门面直接与 `dsh-tools`/`dsh-llm` 等内部包交互，但该路径被明确标记为 **unsupported escape hatch**：无兼容承诺、官方内部变化时可能破坏、自担风险。门面不强制、不拦截这种直连，也不为其提供任何保障。
 2. 版本协商：`package.json` 的 `dsh` 字段增加 `api` 声明；版本不匹配时安全停用并给出可读错误。
 3. 事件 API 保留 Cordis 的 `ctx.on` + `emit/serial/parallel/waterfall`，只增加稳定类型、只读 payload 与 `priority`（lowest/low/normal/high/highest/monitor）。
 4. 需要优先“转译”的语义钩子：
