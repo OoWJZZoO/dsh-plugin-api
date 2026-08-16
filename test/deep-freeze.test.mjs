@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { deepFreeze } from '../lib/deep-freeze.js'
+import { deepFreeze, deepFreezeExceptSignal } from '../lib/deep-freeze.js'
 
 test('deepFreeze freezes plain objects and arrays recursively', () => {
   const value = { a: { b: [1, 2, { c: 3 }] } }
@@ -63,4 +63,50 @@ test('deepFreeze never throws for exotic objects', () => {
   // Freezing an object with a throwing getter must not break the caller.
   const out = deepFreeze(exotic)
   assert.equal(out, exotic)
+})
+
+test('deepFreezeExceptSignal keeps signal writable while freezing every other property', () => {
+  const signal = new AbortController().signal
+  const exec = {
+    signal,
+    token: { id: 1 },
+    name: 'run_code',
+    arguments: { a: 1 },
+  }
+  const out = deepFreezeExceptSignal(exec)
+  assert.equal(out, exec)
+  assert.equal(exec.signal, signal)
+  assert.ok(!Object.isFrozen(signal), 'signal value must not be frozen')
+  assert.equal(Object.getOwnPropertyDescriptor(exec, 'signal').writable, true)
+  assert.equal(Object.getOwnPropertyDescriptor(exec, 'name').writable, false)
+  assert.equal(Object.getOwnPropertyDescriptor(exec, 'token').writable, false)
+  assert.ok(Object.isFrozen(exec.token))
+  assert.ok(Object.isFrozen(exec.arguments))
+  assert.equal(Object.isExtensible(exec), false)
+
+  const replacement = new AbortController().signal
+  assert.doesNotThrow(() => {
+    exec.signal = replacement
+  })
+  assert.equal(exec.signal, replacement)
+})
+
+test('deepFreezeExceptSignal is idempotent and total', () => {
+  const exec = {
+    signal: new AbortController().signal,
+    args: { nested: [1, 2] },
+  }
+  assert.doesNotThrow(() => deepFreezeExceptSignal(exec))
+  assert.doesNotThrow(() => deepFreezeExceptSignal(exec))
+  assert.equal(Object.getOwnPropertyDescriptor(exec, 'signal').writable, true)
+  assert.ok(Object.isFrozen(exec.args))
+  assert.ok(Object.isFrozen(exec.args.nested))
+
+  const fn = () => {}
+  assert.equal(deepFreezeExceptSignal(fn), fn)
+  assert.equal(deepFreezeExceptSignal(42), 42)
+  assert.equal(deepFreezeExceptSignal(null), null)
+
+  const exotic = { signal: undefined, get x() { throw new Error('boom') } }
+  assert.doesNotThrow(() => deepFreezeExceptSignal(exotic))
 })

@@ -147,15 +147,15 @@
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| T1 工具注册 | `tools.register(definition: ToolDefinition): () => void`（`defineTool` 的类型化稳定版） | A | `dsh-tools/lib/types/index.d.ts:106-208` | M1 | planned |
-| T2 工具变更通知 | `events.on('tools/change', listener)`（注意官方为 unfiltered） | A | `dsh-tools/lib/index.js:2572` | M1 | planned |
-| T3 执行前瀑布 | `events.waterfall('tools/pre-execute', exec, next)`；default `{kind:'allow'}`，gate `allow|deny|ask`（`ask` 走 `ctx.approval` seam） | A | `dsh-tools/lib/index.js:3098` | M1 | planned |
-| T4 执行环绕瀑布 | `events.waterfall('tools/execute', exec, next)`（around body；timeout/retry/metrics，可替换 `exec.signal`） | A | `dsh-tools/lib/index.js:3195` | M1 | planned |
-| T5 执行后瀑布 | `events.waterfall('tools/post-execute', exec, result, next)`；default `{kind:'accept'}`，decision `accept({content?|value?})` / `block({feedback})` | A | `dsh-tools/lib/index.js:3360` | M1 | planned |
-| T6 结果通知 | `events.on('tools/result', (exec, result) => void)`（contained；`exec`/`result` 均 frozen、observe-only） | A | `dsh-tools/lib/index.js:3266-3284` | M1 | planned |
-| T7 代码分发日志瀑布 | `events.waterfall('tools/code-dispatch-log', dispatch, next)`；返回替换后的 content | A | `dsh-tools/lib/index.js:2953` | M1 | planned |
-| T8 工具限制与守卫 | `tools.restrict(filter)`、`tools.guard(guard)` 稳定直通 | A | `dsh-tools` `ToolRuntime.restrict/guard` | M1 | planned |
-| T9 工具查询与执行 | `tools.get(name, scope?)`、`tools.schemas(scope?)`、`tools.execute(input)`、`tools.presentAs` 稳定直通 | A | `dsh-tools` `ToolRuntime` 公共方法 | M1 | planned |
+| T1 工具注册 | `tools.register(definition: ToolDefinition): () => void`（`defineTool` 的类型化稳定版） | A | `dsh-tools/lib/types/index.d.ts:106-208` | M1 | delivered |
+| T2 工具变更通知 | `events.on('tools/change', listener)`（注意官方为 unfiltered） | A | `dsh-tools/lib/index.js:2572` | M1 | delivered |
+| T3 执行前瀑布 | `events.waterfall('tools/pre-execute', exec, next)`；default `{kind:'allow'}`，gate `allow|deny|ask`（`ask` 走 `ctx.approval` seam） | A | `dsh-tools/lib/index.js:3098` | M1 | delivered |
+| T4 执行环绕瀑布 | `events.waterfall('tools/execute', exec, next)`（around body；timeout/retry/metrics，可替换 `exec.signal`） | A | `dsh-tools/lib/index.js:3195` | M1 | delivered |
+| T5 执行后瀑布 | `events.waterfall('tools/post-execute', exec, result, next)`；default `{kind:'accept'}`，decision `accept({content?|value?})` / `block({feedback})` | A | `dsh-tools/lib/index.js:3360` | M1 | delivered |
+| T6 结果通知 | `events.on('tools/result', (exec, result) => void)`（contained；`exec`/`result` 均 frozen、observe-only） | A | `dsh-tools/lib/index.js:3266-3284` | M1 | delivered |
+| T7 代码分发日志瀑布 | `events.waterfall('tools/code-dispatch-log', dispatch, next)`；返回替换后的 content | A | `dsh-tools/lib/index.js:2953` | M1 | delivered |
+| T8 工具限制与守卫 | `tools.restrict(filter)`、`tools.guard(guard)` 稳定直通 | A | `dsh-tools` `ToolRuntime.restrict/guard` | M1 | delivered |
+| T9 工具查询与执行 | `tools.get(name, scope?)`、`tools.schemas(scope?)`、`tools.execute(input)`、`tools.presentAs` 稳定直通 | A | `dsh-tools` `ToolRuntime` 公共方法 | M1 | delivered |
 | T10 执行路由注入 | 在 `tools/pre-execute` 稳定 payload 中暴露 `exec.agent.session.requestContext()` 的 route 快照 | B | 官方无 `exec.route`；`exec.agent` 在 `tools/pre-execute` 保证存在；与 A9 同源 | M2 | planned |
 
 > 管线顺序（官方已定，门面只稳定化不重排）：`tools/pre-execute` → 单调 `guard()` 检查 → `tools/execute` → `tools/post-execute` → 工具 `finalizeContent` → `tools/result`。定义里的 `timeoutMs` 由 `dsh-tool-call-timeout-policy`（`tools/execute` wrapper）执行，不在门面内复制。

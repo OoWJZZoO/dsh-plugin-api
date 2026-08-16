@@ -1,7 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createEventsBus } from '../lib/events-bus.js'
-import { eventsCatalog } from '../lib/events-catalog.js'
+import { eventsCatalog, mergeEventCatalogs } from '../lib/events-catalog.js'
+import { toolsEventsCatalog } from '../lib/tools-events-catalog.js'
 import { PluginApiEventPriorityError } from '../lib/errors.js'
 import { scopeTarget } from '@deepseek-ai/dsh-scope'
 
@@ -464,4 +465,139 @@ test('events.emit/serial/parallel/bail/waterfall delegate to ctx and return its 
   assert.equal(waterfallCall[1], 'session-telemetry/record')
   assert.deepEqual(waterfallCall[2], { record: {} })
   assert.equal(typeof waterfallCall[3], 'function')
+})
+
+test('tools/change is cataloged as a global emit and receives no payload', () => {
+  const ctx = createMockCordisCtx()
+  const catalog = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  const events = createEventsBus({ ctx, catalog })
+  const calls = []
+
+  events.on('tools/change', (...args) => calls.push(args), { scope: 'agent-1' })
+
+  ctx.emit('tools/change')
+  assert.equal(calls.length, 1)
+  assert.deepEqual(calls[0], [])
+})
+
+test('scope-filtered tools events deliver only to matching opts.scope', () => {
+  const ctx = createMockCordisCtx()
+  const catalog = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  const events = createEventsBus({ ctx, catalog })
+  const scoped = []
+  const global = []
+
+  events.on('tools/result', (exec) => scoped.push(exec.agent), { scope: 'agent-1' })
+  events.on('tools/result', (exec) => global.push(exec.agent))
+
+  ctx.emit('tools/result', { agent: 'agent-2', name: 'x' }, { isError: false, content: [] })
+  ctx.emit('tools/result', { agent: 'agent-1', name: 'x' }, { isError: false, content: [] })
+
+  assert.deepEqual(scoped, ['agent-1'])
+  assert.deepEqual(global, ['agent-2', 'agent-1'])
+})
+
+test('tools/execute applies except-signal freezing and observes in-place signal replacement', () => {
+  const ctx = createMockCordisCtx()
+  const catalog = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  const events = createEventsBus({ ctx, catalog })
+  const replacement = new AbortController().signal
+  let bodySignal
+
+  const exec = {
+    signal: new AbortController().signal,
+    agent: 'agent-1',
+    token: { id: 1 },
+    name: 'run_code',
+  }
+
+  events.on('tools/execute', (received, next) => {
+    assert.equal(received, exec, 'listener must receive the same exec object')
+    assert.equal(Object.isFrozen(received), false, 'exec itself is not fully frozen')
+    assert.equal(Object.getOwnPropertyDescriptor(received, 'signal').writable, true)
+    assert.equal(Object.getOwnPropertyDescriptor(received, 'name').writable, false)
+    assert.ok(Object.isFrozen(received.token))
+    received.signal = replacement
+    return next()
+  })
+
+  const result = ctx.waterfall('tools/execute', exec, () => {
+    bodySignal = exec.signal
+    return 'body-done'
+  })
+
+  assert.equal(result, 'body-done')
+  assert.equal(bodySignal, replacement)
+})
+
+test('tools/pre-execute waterfall receives a fully frozen exec payload', () => {
+  const ctx = createMockCordisCtx()
+  const catalog = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  const events = createEventsBus({ ctx, catalog })
+  const exec = { agent: 'agent-1', signal: new AbortController().signal, name: 'tool' }
+
+  events.on('tools/pre-execute', (received, next) => {
+    assert.equal(received, exec)
+    assert.ok(Object.isFrozen(received), 'pre-execute exec must be fully frozen')
+    return next()
+  })
+
+  const result = ctx.waterfall('tools/pre-execute', exec, () => ({ kind: 'allow' }))
+  assert.deepEqual(result, { kind: 'allow' })
+})
+
+test('tools/post-execute waterfall receives frozen exec and frozen result', () => {
+  const ctx = createMockCordisCtx()
+  const catalog = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  const events = createEventsBus({ ctx, catalog })
+  const exec = { agent: 'agent-1', signal: new AbortController().signal }
+  const result = { isError: false, content: [], value: { ok: true } }
+
+  events.on('tools/post-execute', (receivedExec, receivedResult, next) => {
+    assert.ok(Object.isFrozen(receivedExec))
+    assert.ok(Object.isFrozen(receivedResult))
+    return next()
+  })
+
+  const decision = ctx.waterfall('tools/post-execute', exec, result, () => ({ kind: 'accept' }))
+  assert.deepEqual(decision, { kind: 'accept' })
+})
+
+test('tools/code-dispatch-log waterfall receives frozen dispatch and can replace content', () => {
+  const ctx = createMockCordisCtx()
+  const catalog = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  const events = createEventsBus({ ctx, catalog })
+  const dispatch = {
+    agent: 'agent-1',
+    exec: { agent: 'agent-1', name: 'run_code' },
+    subCallId: 'run:code:0',
+    name: 'bash',
+    isError: false,
+    content: [{ type: 'text', text: 'original' }],
+  }
+  const replacementContent = [{ type: 'text', text: 'replaced' }]
+
+  events.on('tools/code-dispatch-log', (received, next) => {
+    assert.equal(received, dispatch)
+    assert.ok(Object.isFrozen(received))
+    return replacementContent
+  })
+
+  const result = ctx.waterfall('tools/code-dispatch-log', dispatch, () => dispatch.content)
+  assert.deepEqual(result, replacementContent)
+})
+
+test('tools/result emit receives frozen exec and frozen result', () => {
+  const ctx = createMockCordisCtx()
+  const catalog = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  const events = createEventsBus({ ctx, catalog })
+  const exec = { agent: 'agent-1', signal: new AbortController().signal }
+  const result = { isError: false, content: [], value: { ok: true } }
+
+  events.on('tools/result', (receivedExec, receivedResult) => {
+    assert.ok(Object.isFrozen(receivedExec))
+    assert.ok(Object.isFrozen(receivedResult))
+  })
+
+  ctx.emit('tools/result', exec, result)
 })
