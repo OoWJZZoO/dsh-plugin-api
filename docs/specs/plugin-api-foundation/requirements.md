@@ -44,6 +44,8 @@
 
 **Type:** 门面基础 / policy
 
+> F0.4 权威定义见 `plugin-api-facade-integrity/requirements.md` §1；本节仅保留政策概述，若冲突以该文件为准。
+
 ---
 
 ### 3. Layered fail-safe guard: core inert mode and per-feature degradation (F0.2)

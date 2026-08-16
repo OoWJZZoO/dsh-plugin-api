@@ -37,6 +37,11 @@ export function apply(ctx) {
 - 不受门面版本协商与 fail-safe guard 保护。
 - 风险自担。只有在门面尚未覆盖的命名空间上，才建议临时走逃生舱，并计划迁移回门面 API。
 
+## 门面完整性（F0.4 / F0.5）
+
+- 符号解析门面（F0.4）的权威定义见 `docs/specs/plugin-api-facade-integrity/requirements.md` §1。
+- 门面安装的所有包装都遵循链安全契约（F0.5）：dispose 只还原自己的包装；目标被其他插件包装时降级透传，绝不拆别人的链。
+
 ## 加载顺序
 
 `dsh-plugin-api` 必须在第三方插件之前加载（`cordis.patch.yml` 已声明对应 row），否则依赖 `inject: ['pluginApi']` 的第三方插件会 pending 并杀死 boot。
