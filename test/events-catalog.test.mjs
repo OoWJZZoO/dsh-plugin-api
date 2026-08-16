@@ -24,10 +24,13 @@ const PRE_EXISTING_NAMES = [
   'goal/changed',
   'session-telemetry/record',
 
+
   'llm/stream',
   'llm/adapters-updated',
   'system-prompt/assemble',
   'system-prompt/change',
+  'settings/updated',
+  'settings/document-updated',
 ]
 
 
@@ -48,7 +51,7 @@ const AGENT_NAMES = [
 
 const EXPECTED_NAMES = [...PRE_EXISTING_NAMES, ...AGENT_NAMES]
 
-test('catalog contains exactly the 35 in-scope event names', () => {
+test('catalog contains exactly the 37 in-scope event names', () => {
   assert.deepEqual(Object.keys(eventsCatalog).sort(), [...EXPECTED_NAMES].sort())
 })
 
@@ -91,10 +94,13 @@ test('pre-existing entries keep the events-m1 behavior (fault contain, freeze al
     'goal/changed': ['emit', true, 'args[0].agent'],
     'session-telemetry/record': ['waterfall', false, undefined],
 
+
     'llm/stream': ['waterfall', false, undefined],
     'llm/adapters-updated': ['emit', false, undefined],
     'system-prompt/assemble': ['waterfall', true, 'args[1].scope'],
     'system-prompt/change': ['emit', false, undefined],
+    'settings/updated': ['emit', false, undefined],
+    'settings/document-updated': ['emit', false, undefined],
   }
   for (const [name, [mode, scopeFiltered, scopeKey]] of Object.entries(matrix)) {
     const entry = catalogEntryOf(name)
@@ -163,6 +169,7 @@ test('catalog and every entry are frozen', () => {
   }
 })
 
+
 test('system-prompt catalog entries match the confirmed metadata', () => {
   const assemble = catalogEntryOf('system-prompt/assemble')
   assert.equal(assemble.mode, 'waterfall')
@@ -181,6 +188,22 @@ test('system-prompt catalog entries match the confirmed metadata', () => {
   assert.equal(change.args, '()')
   assert.equal(change.source, 'P7')
   assert.equal(change.type, 'A')
+})
+
+test('settings event entries carry ST3 payload metadata and settings feature gate', () => {
+  const updated = catalogEntryOf('settings/updated')
+  assert.equal(updated.source, 'ST3')
+  assert.equal(updated.type, 'A')
+  assert.equal(updated.feature, 'settings')
+  assert.equal(updated.args, '(ns, next, prev, source)')
+  assert.match(updated.payload, /source/)
+
+  const documentUpdated = catalogEntryOf('settings/document-updated')
+  assert.equal(documentUpdated.source, 'ST3')
+  assert.equal(documentUpdated.type, 'A')
+  assert.equal(documentUpdated.feature, 'settings')
+  assert.equal(documentUpdated.args, '(ns, revision)')
+  assert.match(documentUpdated.payload, /revision/)
 })
 
 test('catalogEntryOf returns the entry for known names and undefined otherwise', () => {

@@ -139,7 +139,7 @@ test('tools active: apply mounts pluginApi.tools and extends the events catalog 
   assert.equal(state.pluginApi.tools.isActive, true)
 
   const features = state.pluginApi.features
-  assert.equal(features.length, 8)
+  assert.equal(features.length, 9)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -148,7 +148,7 @@ test('tools active: apply mounts pluginApi.tools and extends the events catalog 
   const catalog = state.pluginApi.events.catalog
   assert.equal(catalog['tools/change']?.mode, 'emit')
   assert.equal(catalog['tools/execute']?.freeze, 'except-signal')
-  assert.equal(Object.keys(catalog).length, 45)
+  assert.equal(Object.keys(catalog).length, 47)
 
   const definition = { name: 'demo', output: {} }
   const disposer = state.pluginApi.tools.register(definition)
@@ -161,7 +161,7 @@ test('tools active: apply mounts pluginApi.tools and extends the events catalog 
   assert.equal(tools.executeCalls[0], input)
 })
 
-test('tools guard failure disables only tools and keeps the events catalog at base 39', () => {
+test('tools guard failure disables only tools and keeps the events catalog at base 41', () => {
   const { ctx, state } = createMockCtx({ tools: false })
   assert.doesNotThrow(() => apply(ctx))
 
@@ -169,7 +169,7 @@ test('tools guard failure disables only tools and keeps the events catalog at ba
   assert.equal(state.pluginApi.isActive, true)
 
   const features = state.pluginApi.features
-  assert.equal(features.length, 8)
+  assert.equal(features.length, 9)
   assert.equal(features[0].name, 'tools')
   assert.equal(features[0].isActive, false)
   assert.match(features[0].reason, /tools service/)
@@ -179,7 +179,7 @@ test('tools guard failure disables only tools and keeps the events catalog at ba
 
   assert.equal(state.pluginApi.events.catalog['session/created']?.mode, 'emit')
   assert.equal(state.pluginApi.events.catalog['tools/change'], undefined)
-  assert.equal(Object.keys(state.pluginApi.events.catalog).length, 39)
+  assert.equal(Object.keys(state.pluginApi.events.catalog).length, 41)
 
   assert.throws(
     () => state.pluginApi.tools.register({ name: 'x' }),

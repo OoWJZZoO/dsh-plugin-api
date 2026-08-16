@@ -97,6 +97,7 @@ test('apply with healthy ctx registers active service and mounts llm/admission',
     { name: 'llm', isActive: true },
     { name: 'systemPrompt', isActive: true },
     { name: 'llm/admission', isActive: true },
+    { name: 'settings', isActive: true },
   ])
   assert.equal(state.pluginApi.llm.isActive, true)
   assert.equal(state.pluginApi.llm.admission.isActive, true)
@@ -105,7 +106,9 @@ test('apply with healthy ctx registers active service and mounts llm/admission',
   assert.equal(typeof state.pluginApi.events.on, 'function')
   assert.equal(typeof state.pluginApi.session.get, 'function')
   assert.equal(typeof state.pluginApi.web.registerSearchProvider, 'function')
+
   assert.equal(typeof state.pluginApi.systemPrompt.section, 'function')
+  assert.equal(state.pluginApi.settings.isActive, true)
   assert.ok(state.listeners.some((l) => l.name === 'llm/stream'))
 })
 
@@ -151,7 +154,8 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
 
-  assert.equal(features.length, 8)
+
+  assert.equal(features.length, 9)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -162,6 +166,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.equal(features[7].name, 'llm/admission')
   assert.equal(features[7].isActive, false)
   assert.match(features[7].reason, /apiProxy/)
+  assert.deepEqual(features[8], { name: 'settings', isActive: true })
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),

@@ -103,7 +103,7 @@ test('systemPrompt guard failure disables only systemPrompt and keeps the facade
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 8)
+  assert.equal(features.length, 9)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
@@ -115,6 +115,7 @@ test('systemPrompt guard failure disables only systemPrompt and keeps the facade
   assert.equal(features[6].isActive, false)
   assert.match(features[6].reason, /systemPrompt\.service/)
   assert.deepEqual(features[7], { name: 'llm/admission', isActive: true })
+  assert.deepEqual(features[8], { name: 'settings', isActive: true })
 
   assert.throws(
     () => state.pluginApi.systemPrompt.section({ name: 's', order: 0, text: 'x' }),

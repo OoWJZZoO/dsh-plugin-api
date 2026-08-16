@@ -111,7 +111,7 @@ test('apply mounts events with the frozen catalog and usable bus', () => {
   const catalog = state.pluginApi.events.catalog
   assert.equal(catalog['tools/change']?.mode, 'emit')
   assert.ok(catalog)
-  assert.equal(Object.keys(catalog).length, 45)
+  assert.equal(Object.keys(catalog).length, 47)
   assert.ok(Object.isFrozen(catalog), 'composed catalog must be frozen')
   for (const name of [
     'session/created',
@@ -154,7 +154,8 @@ test('events guard failure disables only events and keeps facade active', () => 
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
 
-  assert.equal(features.length, 8)
+
+  assert.equal(features.length, 9)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.equal(features[1].name, 'events')
   assert.equal(features[1].isActive, false)
@@ -166,6 +167,7 @@ test('events guard failure disables only events and keeps facade active', () => 
   assert.deepEqual(features[5], { name: 'llm', isActive: true })
   assert.deepEqual(features[6], { name: 'systemPrompt', isActive: true })
   assert.deepEqual(features[7], { name: 'llm/admission', isActive: true })
+  assert.deepEqual(features[8], { name: 'settings', isActive: true })
 
   assert.throws(
     () => state.pluginApi.events.on('goal/changed', () => {}),
@@ -186,7 +188,8 @@ test('web guard failure disables only web and keeps facade active', () => {
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
 
-  assert.equal(features.length, 8)
+
+  assert.equal(features.length, 9)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -197,6 +200,7 @@ test('web guard failure disables only web and keeps facade active', () => {
   assert.deepEqual(features[5], { name: 'llm', isActive: true })
   assert.deepEqual(features[6], { name: 'systemPrompt', isActive: true })
   assert.deepEqual(features[7], { name: 'llm/admission', isActive: true })
+  assert.deepEqual(features[8], { name: 'settings', isActive: true })
 
   assert.throws(
     () => state.pluginApi.web.registerSearchProvider({}),
