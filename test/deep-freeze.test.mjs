@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { deepFreeze, deepFreezeExceptSignal, freezeByPolicy } from '../lib/deep-freeze.js'
+import { deepFreeze, freezeByPolicy } from '../lib/deep-freeze.js'
 
 test('deepFreeze freezes plain objects and arrays recursively', () => {
   const value = { a: { b: [1, 2, { c: 3 }] } }
@@ -65,7 +65,7 @@ test('deepFreeze never throws for exotic objects', () => {
   assert.equal(out, exotic)
 })
 
-test('deepFreezeExceptSignal keeps signal writable while freezing every other property', () => {
+test('freezeByPolicy except-signal keeps signal writable while freezing every other property', () => {
   const signal = new AbortController().signal
   const exec = {
     signal,
@@ -73,7 +73,7 @@ test('deepFreezeExceptSignal keeps signal writable while freezing every other pr
     name: 'run_code',
     arguments: { a: 1 },
   }
-  const out = deepFreezeExceptSignal(exec)
+  const out = freezeByPolicy(exec, 'except-signal')
   assert.equal(out, exec)
   assert.equal(exec.signal, signal)
   assert.ok(!Object.isFrozen(signal), 'signal value must not be frozen')
@@ -91,24 +91,24 @@ test('deepFreezeExceptSignal keeps signal writable while freezing every other pr
   assert.equal(exec.signal, replacement)
 })
 
-test('deepFreezeExceptSignal is idempotent and total', () => {
+test('freezeByPolicy except-signal is idempotent and total', () => {
   const exec = {
     signal: new AbortController().signal,
     args: { nested: [1, 2] },
   }
-  assert.doesNotThrow(() => deepFreezeExceptSignal(exec))
-  assert.doesNotThrow(() => deepFreezeExceptSignal(exec))
+  assert.doesNotThrow(() => freezeByPolicy(exec, 'except-signal'))
+  assert.doesNotThrow(() => freezeByPolicy(exec, 'except-signal'))
   assert.equal(Object.getOwnPropertyDescriptor(exec, 'signal').writable, true)
   assert.ok(Object.isFrozen(exec.args))
   assert.ok(Object.isFrozen(exec.args.nested))
 
   const fn = () => {}
-  assert.equal(deepFreezeExceptSignal(fn), fn)
-  assert.equal(deepFreezeExceptSignal(42), 42)
-  assert.equal(deepFreezeExceptSignal(null), null)
+  assert.equal(freezeByPolicy(fn, 'except-signal'), fn)
+  assert.equal(freezeByPolicy(42, 'except-signal'), 42)
+  assert.equal(freezeByPolicy(null, 'except-signal'), null)
 
   const exotic = { signal: undefined, get x() { throw new Error('boom') } }
-  assert.doesNotThrow(() => deepFreezeExceptSignal(exotic))
+  assert.doesNotThrow(() => freezeByPolicy(exotic, 'except-signal'))
 })
 
 test('freezeByPolicy with "all" behaves like deepFreeze', () => {
@@ -169,4 +169,12 @@ test('freezeByPolicy never throws for circular objects', () => {
   assert.equal(out, value)
   assert.ok(Object.isFrozen(value))
   assert.ok(Object.isFrozen(value.messages))
+})
+
+test('freezeByPolicy defaults to deep-freeze when the policy is absent (E9)', () => {
+  const value = { a: { b: 1 } }
+  const out = freezeByPolicy(value, undefined)
+  assert.equal(out, value)
+  assert.ok(Object.isFrozen(value))
+  assert.ok(Object.isFrozen(value.a))
 })

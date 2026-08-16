@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { baseEventsCatalog, catalogEntryOf } from '../lib/events-catalog.js'
+import { baseEventsCatalog } from '../lib/events-catalog.js'
 import { composeCatalogs } from '../lib/catalog-compose.js'
 import { agentEventsCatalog } from '../lib/agent-events-catalog.js'
 import { llmEventsCatalog } from '../lib/llm-events-catalog.js'
@@ -95,10 +95,4 @@ test('composition fails loud on duplicate event names', () => {
     () => composeCatalogs(baseEventsCatalog, { 'goal/changed': { name: 'goal/changed' } }),
     /duplicate catalog entry "goal\/changed"/,
   )
-})
-
-test('catalogEntryOf resolves base entries and returns undefined otherwise', () => {
-  assert.equal(catalogEntryOf('goal/changed')?.name, 'goal/changed')
-  assert.equal(catalogEntryOf('agent/created'), undefined, 'slice entries are not base-cataloged')
-  assert.equal(catalogEntryOf('not-a-real-event'), undefined)
 })
