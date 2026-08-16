@@ -6,7 +6,7 @@ import { PluginApiFeatureDisabledError, PluginApiInactiveError } from '../lib/er
 function createMockCtx(options = {}) {
   const services = {
     llm: { resolveModelInfo() {} },
-    agents: { get() {} },
+    agents: { get() {}, list() {}, roots() {} },
     apiProxy: { sessions: { prompt() {}, selectModel() {} } },
     web: { registerSearchProvider() {}, registerFetchProvider() {} },
     ...(options.services ?? {}),
@@ -62,6 +62,7 @@ test('apply with healthy ctx registers active service and mounts llm/admission',
   assert.equal(state.pluginApi.apiVersion, '0.1')
   assert.deepEqual(state.pluginApi.features, [
     { name: 'events', isActive: true },
+    { name: 'agent', isActive: true },
     { name: 'web', isActive: true },
     { name: 'llm/admission', isActive: true },
   ])
@@ -113,12 +114,13 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 3)
+  assert.equal(features.length, 4)
   assert.deepEqual(features[0], { name: 'events', isActive: true })
-  assert.deepEqual(features[1], { name: 'web', isActive: true })
-  assert.equal(features[2].name, 'llm/admission')
-  assert.equal(features[2].isActive, false)
-  assert.match(features[2].reason, /apiProxy/)
+  assert.deepEqual(features[1], { name: 'agent', isActive: true })
+  assert.deepEqual(features[2], { name: 'web', isActive: true })
+  assert.equal(features[3].name, 'llm/admission')
+  assert.equal(features[3].isActive, false)
+  assert.match(features[3].reason, /apiProxy/)
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),

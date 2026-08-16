@@ -24,7 +24,7 @@ function createMockCtx(options = {}) {
 
   const services = {
     llm: { resolveModelInfo() {} },
-    agents: { get() {} },
+    agents: { get() {}, list() {}, roots() {} },
     apiProxy: { sessions: { prompt() {}, selectModel() {} } },
     ...(web ? { web } : {}),
     ...(options.services ?? {}),
@@ -109,12 +109,13 @@ test('events guard failure disables only events and keeps facade active', () => 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 3)
+  assert.equal(features.length, 4)
   assert.equal(features[0].name, 'events')
   assert.equal(features[0].isActive, false)
   assert.match(features[0].reason, /ctx\.waterfall/)
-  assert.deepEqual(features[1], { name: 'web', isActive: true })
-  assert.deepEqual(features[2], { name: 'llm/admission', isActive: true })
+  assert.deepEqual(features[1], { name: 'agent', isActive: true })
+  assert.deepEqual(features[2], { name: 'web', isActive: true })
+  assert.deepEqual(features[3], { name: 'llm/admission', isActive: true })
 
   assert.throws(
     () => state.pluginApi.events.on('goal/changed', () => {}),
@@ -134,12 +135,13 @@ test('web guard failure disables only web and keeps facade active', () => {
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 3)
+  assert.equal(features.length, 4)
   assert.deepEqual(features[0], { name: 'events', isActive: true })
-  assert.equal(features[1].name, 'web')
-  assert.equal(features[1].isActive, false)
-  assert.match(features[1].reason, /registerSearchProvider/)
-  assert.deepEqual(features[2], { name: 'llm/admission', isActive: true })
+  assert.deepEqual(features[1], { name: 'agent', isActive: true })
+  assert.equal(features[2].name, 'web')
+  assert.equal(features[2].isActive, false)
+  assert.match(features[2].reason, /registerSearchProvider/)
+  assert.deepEqual(features[3], { name: 'llm/admission', isActive: true })
 
   assert.throws(
     () => state.pluginApi.web.registerSearchProvider({}),
