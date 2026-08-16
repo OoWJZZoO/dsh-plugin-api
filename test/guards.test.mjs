@@ -12,6 +12,7 @@ import {
 import { existsSync, readFileSync, unlinkSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir, tmpdir } from 'node:os'
+import { SERVICE_DEFINITIONS } from '../lib/services.js'
 
 const versions = { apiVersion: '0.1', runtimeVersion: '0.1.0-rc.6' }
 
@@ -124,6 +125,54 @@ test('unknown feature guard fails without throwing', () => {
   const result = runFeatureGuard('unknown/feature', healthyCtx(), healthyDeps())
   assert.equal(result.ok, false)
   assert.ok(result.featureProblems['unknown/feature'].some((p) => p.name === 'feature'))
+})
+
+function servicesCtx({ missing = [], getMissing = false } = {}) {
+  return {
+    get(name) {
+      if (getMissing) return undefined
+      const def = SERVICE_DEFINITIONS.find((d) => d.ctxService === name)
+      if (def) {
+        return missing.includes(name) ? undefined : {}
+      }
+      return undefined
+    },
+  }
+}
+
+test('services feature guard passes when all 17 official services are present', () => {
+  const result = runFeatureGuard('services', servicesCtx(), {})
+  assert.equal(result.ok, true)
+  assert.deepEqual(result.problems, [])
+})
+
+test('services feature guard passes when only some services are present', () => {
+  const result = runFeatureGuard('services', servicesCtx({ missing: ['fs', 'skills'] }), {})
+  assert.equal(result.ok, true)
+  assert.deepEqual(result.problems, [])
+})
+
+test('services feature guard fails when none of the 17 services is present', () => {
+  const result = runFeatureGuard('services', servicesCtx({ getMissing: true }), {})
+  assert.equal(result.ok, false)
+  assert.ok(result.featureProblems.services.some((p) => p.name === 'capability services'))
+})
+
+test('services feature guard fails when ctx.get is missing', () => {
+  const result = runFeatureGuard('services', {}, {})
+  assert.equal(result.ok, false)
+  assert.ok(result.featureProblems.services.some((p) => p.name === 'ctx.get'))
+})
+
+test('hostile ctx with throwing getters is contained for the services guard', () => {
+  const hostile = new Proxy({}, {
+    get() {
+      throw new Error('hostile getter')
+    },
+  })
+  const result = runFeatureGuard('services', hostile, {})
+  assert.equal(typeof result.ok, 'boolean')
+  assert.equal(result.ok, false)
 })
 
 test('hostile ctx with throwing getters never throws in core or feature guard', () => {

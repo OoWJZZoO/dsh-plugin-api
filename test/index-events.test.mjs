@@ -109,12 +109,15 @@ test('events guard failure disables only events and keeps facade active', () => 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 3)
+  assert.equal(features.length, 4)
   assert.equal(features[0].name, 'events')
   assert.equal(features[0].isActive, false)
   assert.match(features[0].reason, /ctx\.waterfall/)
   assert.deepEqual(features[1], { name: 'web', isActive: true })
   assert.deepEqual(features[2], { name: 'llm/admission', isActive: true })
+  assert.equal(features[3].name, 'services')
+  assert.equal(features[3].isActive, false)
+  assert.match(features[3].reason, /capability services/)
 
   assert.throws(
     () => state.pluginApi.events.on('goal/changed', () => {}),
@@ -134,12 +137,15 @@ test('web guard failure disables only web and keeps facade active', () => {
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 3)
+  assert.equal(features.length, 4)
   assert.deepEqual(features[0], { name: 'events', isActive: true })
   assert.equal(features[1].name, 'web')
   assert.equal(features[1].isActive, false)
   assert.match(features[1].reason, /registerSearchProvider/)
   assert.deepEqual(features[2], { name: 'llm/admission', isActive: true })
+  assert.equal(features[3].name, 'services')
+  assert.equal(features[3].isActive, false)
+  assert.match(features[3].reason, /capability services/)
 
   assert.throws(
     () => state.pluginApi.web.registerSearchProvider({}),

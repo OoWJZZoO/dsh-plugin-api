@@ -15,9 +15,18 @@ test('dsh.api is a major.minor contract', () => {
   assert.ok(pkg.dsh, 'package.json must declare the dsh field')
   assert.equal(typeof pkg.dsh.api, 'string')
   assert.match(pkg.dsh.api, /^\d+\.\d+$/)
+  assert.equal(pkg.dsh.api, '0.1')
 })
 
 test('peerDependencies keep shared host instances for the facade base', () => {
   assert.equal(typeof pkg.peerDependencies['@deepseek-ai/cordis'], 'string')
   assert.equal(typeof pkg.peerDependencies['@deepseek-ai/dsh-llm'], 'string')
+})
+
+test('peerDependencies include the SV15 session-reference public export host package', () => {
+  assert.equal(typeof pkg.peerDependencies['@deepseek-ai/dsh-session-reference'], 'string')
+})
+
+test('capability services feature adds no runtime dependencies', () => {
+  assert.ok(!pkg.dependencies || Object.keys(pkg.dependencies).length === 0)
 })

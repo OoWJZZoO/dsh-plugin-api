@@ -227,24 +227,24 @@
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| SV1 文件系统 seam | `pluginApi.fs`：`read/write/edit/observe` 等官方 `FileSystem` 方法直通 | A | `dsh-fs/lib/index.js`（服务 `fs`） | M1 | planned |
-| SV2 代码执行 seam | `pluginApi.codeRuntime`：程序执行 seam 直通 | A | `dsh-code-runtime/lib/index.js`（服务 `codeRuntime`） | M1 | planned |
-| SV3 工作区注册表 | `pluginApi.workspaces`：`create/resolveByPath/attachSession` 等直通 | A | `dsh-workspace/lib/index.js:309`（服务 `workspaceRegistry`） | M1 | planned |
-| SV4 子代理运行时 | `pluginApi.subagents.registerProvider(provider)` 稳定直通 | A | `dsh-subagent/lib/index.js:2467`（服务 `subagents`） | M1 | planned |
-| SV5 工作流引擎 | `pluginApi.workflows.start(request)` 稳定直通 | A | `dsh-workflow/lib/index.js:59`（服务 `workflowEngine`） | M1 | planned |
-| SV6 审批服务 | `pluginApi.approval.request()` / `setPolicy()` 直通（fail-closed 不变） | A | `dsh-user-approval/lib/index.js:89`（服务 `approval`） | M1 | planned |
-| SV7 用户提问服务 | `pluginApi.userQuestions.registerProvider()` / `ask()` 直通 | A | `dsh-user-questions/lib/index.js:23`（服务 `userQuestions`） | M1 | planned |
-| SV8 附件存储 | `pluginApi.attachments` 不可变二进制存储直通 | A | `dsh-attachment/lib/index.js:44`（服务 `attachments`） | M1 | planned |
-| SV9 技能注册表 | `pluginApi.skills.list/snapshot/get/collect` 直通 | A | `dsh-skill/lib/index.js:132`（服务 `skills`） | M1 | planned |
-| SV10 存储后端注册表 | `pluginApi.storage` 命名后端注册表直通 | A | `dsh-storage/lib/index.js:109`（服务 `storage`） | M1 | planned |
-| SV11 会话投影注册表 | `pluginApi.sessionProjections.register({key,stateVersion,init,apply,view,schema})` / `onChanged` / `snapshot(session)` 直通 | A | `dsh-session-projection`（服务 `sessionProjections`） | M1 | planned |
-| SV12 会话查询 | `pluginApi.sessionQuery.listSessions/readSession/filterSessions` 等直通 | A | `dsh-session-query`（服务 `sessionQuery`） | M1 | planned |
-| SV13 会话标题 provider | `pluginApi.sessionTitle.register(provider)` 直通（官方为单 provider） | A | `dsh-session-title/lib/index.js:294`（服务 `sessionTitle`） | M1 | planned |
-| SV14 会话遥测 seam | `pluginApi.sessionTelemetry`（backend seam）与 `session-telemetry/record` 事件稳定化 | A | `dsh-session-telemetry/lib/index.js:174`（服务 `sessionTelemetry`） | M1 | planned |
-| SV15 会话引用解析 | `pluginApi.sessionReferences.listCandidates` / URI encode-decode 直通 | A | `dsh-session-reference`（服务 `sessionReferenceResolver`） | M1 | planned |
-| SV16 Token 计量 | `pluginApi.tokenMeter.measure(session, requestHeader)` 直通 | A | `dsh-token-meter`（服务 `tokenMeter`） | M1 | planned |
-| SV17 压缩服务 seam | `pluginApi.compaction`（`summarize()` 子类钩子；官方无 `compaction/*` 事件） | A | `dsh-compaction`（服务 `compaction`） | M2 | planned |
-| SV18 默认模型选择 | `pluginApi.agentDefaultModel.currentSelection()` / `saveSelection(next)` 直通 | A | `dsh-agent-default-model`（服务 `agentDefaultModel`） | M1 | planned |
+| SV1 文件系统 seam | `pluginApi.services.fs`：`resolve/processPath/fileUrl/contains/stat/lstat/readText/streamText/readBytes/listDir/writeText/editText` + `sandboxMode` 直通 | A | `dsh-fs/lib/index.js`（服务 `fs`） | M1 | delivered |
+| SV2 代码执行 seam | `pluginApi.services.codeRuntime`：`run` + `language/isolation` 直通 | A | `dsh-code-runtime/lib/index.js`（服务 `codeRuntime`） | M1 | delivered |
+| SV3 工作区注册表 | `pluginApi.services.workspaces`：`create/get/list/delete/insertBefore/archiveSession/resolveByPath` + `archivedSessionIds` 直通 | A | `dsh-workspace/lib/index.js:309`（服务 `workspaceRegistry`） | M1 | delivered |
+| SV4 子代理运行时 | `pluginApi.services.subagents`：`registerProvider/getProvider/list/start` 等 12 个公开方法直通 | A | `dsh-subagent/lib/index.js:2467`（服务 `subagents`） | M1 | delivered |
+| SV5 工作流引擎 | `pluginApi.services.workflows.start(request)` 直通 | A | `dsh-workflow/lib/index.js:59`（服务 `workflowEngine`） | M1 | delivered |
+| SV6 审批服务 | `pluginApi.services.approval.request()` / `setPolicy()` / `overrideOf()` 直通（fail-closed 不变） | A | `dsh-user-approval/lib/index.js:89`（服务 `approval`） | M1 | delivered |
+| SV7 用户提问服务 | `pluginApi.services.userQuestions.registerProvider()` / `ask()` 直通 | A | `dsh-user-questions/lib/index.js:23`（服务 `userQuestions`） | M1 | delivered |
+| SV8 附件存储 | `pluginApi.services.attachments`：`validateImage/saveImage/readImage` + `imageLimits` 直通 | A | `dsh-attachment/lib/index.js:44`（服务 `attachments`） | M1 | delivered |
+| SV9 技能注册表 | `pluginApi.services.skills.registerProvider/register/list/snapshot/get` 直通 | A | `dsh-skill/lib/index.js:132`（服务 `skills`） | M1 | delivered |
+| SV10 存储后端注册表 | `pluginApi.services.storage`：`backend/domain/mount/form` 直通 | A | `dsh-storage/lib/index.js:109`（服务 `storage`） | M1 | delivered |
+| SV11 会话投影注册表 | `pluginApi.services.sessionProjections.register({key,stateVersion,init,apply,view,schema})` / `onChanged` / `snapshot(session)` 等直通 | A | `dsh-session-projection`（服务 `sessionProjections`） | M1 | delivered |
+| SV12 会话查询 | `pluginApi.services.sessionQuery.listSessions/readSession/filterSessions` 等 14 个公开方法直通 | A | `dsh-session-query`（服务 `sessionQuery`） | M1 | delivered |
+| SV13 会话标题 provider | `pluginApi.services.sessionTitle.register(provider)` 等直通（官方为单 provider） | A | `dsh-session-title/lib/index.js:294`（服务 `sessionTitle`） | M1 | delivered |
+| SV14 会话遥测 seam | `pluginApi.services.sessionTelemetry`（backend seam 直通；`session-telemetry/record` 事件已由 O16 交付） | A | `dsh-session-telemetry/lib/index.js:174`（服务 `sessionTelemetry`） | M1 | delivered |
+| SV15 会话引用解析 | `pluginApi.services.sessionReferences.listCandidates/prepare` + `encodeSessionReferenceUri/decodeSessionReferenceUri` 转发 | A | `dsh-session-reference`（服务 `sessionReferenceResolver`） | M1 | delivered |
+| SV16 Token 计量 | `pluginApi.services.tokenMeter.measure(session, requestHeader)` / `estimateMessage` 直通 | A | `dsh-token-meter`（服务 `tokenMeter`） | M1 | delivered |
+| SV17 压缩服务 seam | `pluginApi.services.compaction`（`summarize()` 子类钩子；官方无 `compaction/*` 事件） | A | `dsh-compaction`（服务 `compaction`） | M2 | planned |
+| SV18 默认模型选择 | `pluginApi.services.agentDefaultModel.currentSelection()` / `saveSelection(next)` 直通 | A | `dsh-agent-default-model`（服务 `agentDefaultModel`） | M1 | delivered |
 
 ---
 
