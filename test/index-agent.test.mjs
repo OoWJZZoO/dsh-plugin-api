@@ -34,6 +34,7 @@ function createMockCtx(options = {}) {
   const services = {
     llm: { resolveModelInfo() {} },
     tools: { register() {}, restrict() {}, guard() {}, get() {}, schemas() {}, execute() {}, presentAs() {} },
+    sessions: { get() {}, list() {}, fork() {} },
     ...(agents ? { agents } : {}),
     apiProxy: { sessions: { prompt() {}, selectModel() {} } },
     ...(web ? { web } : {}),
@@ -88,7 +89,7 @@ test('apply mounts agent after events and exposes a working registry read API', 
   assert.deepEqual(agents.getCalls, ['agent-1'])
 
   const features = state.pluginApi.features
-  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'web', 'llm/admission'])
+  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'session', 'web', 'llm/admission'])
   assert.ok(features.every((f) => f.isActive))
 })
 
@@ -99,16 +100,17 @@ test('agent guard failure disables only agent and keeps facade active', () => {
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 5)
+  assert.equal(features.length, 6)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.equal(features[2].name, 'agent')
   assert.equal(features[2].isActive, false)
   assert.match(features[2].reason, /agents\.get/)
-  assert.deepEqual(features[3], { name: 'web', isActive: true })
-  assert.equal(features[4].name, 'llm/admission')
-  assert.equal(features[4].isActive, false)
-  assert.match(features[4].reason, /agents\.get/)
+  assert.deepEqual(features[3], { name: 'session', isActive: true })
+  assert.deepEqual(features[4], { name: 'web', isActive: true })
+  assert.equal(features[5].name, 'llm/admission')
+  assert.equal(features[5].isActive, false)
+  assert.match(features[5].reason, /agents\.get/)
 
   for (const method of ['get', 'list', 'roots']) {
     assert.throws(
@@ -131,13 +133,15 @@ test('events guard failure does not block the agent registry read API', () => {
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 5)
+  assert.equal(features.length, 6)
   assert.equal(features[0].name, 'tools')
   assert.equal(features[0].isActive, true)
   assert.equal(features[1].name, 'events')
   assert.equal(features[1].isActive, false)
   assert.equal(features[2].name, 'agent')
   assert.equal(features[2].isActive, true)
+  assert.equal(features[3].name, 'session')
+  assert.equal(features[3].isActive, false)
 
   assert.equal(state.pluginApi.agent.get('agent-1').id, 'agent-1')
   assert.throws(

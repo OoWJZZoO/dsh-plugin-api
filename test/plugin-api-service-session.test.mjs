@@ -1,0 +1,106 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { createFeatureRegistry } from '../lib/feature-registry.js'
+import {
+  PluginApiFeatureDisabledError,
+  PluginApiInactiveError,
+} from '../lib/errors.js'
+import { createPluginApiService } from '../lib/plugin-api-service.js'
+
+function instantiate(ServiceClass, ctx) {
+  return new ServiceClass(ctx)
+}
+
+function mockCtx() {
+  const getCalls = []
+  return {
+    getCalls,
+    reflect: { provide() {} },
+    get(name) {
+      getCalls.push(name)
+      return undefined
+    },
+  }
+}
+
+const SESSION_METHODS = [
+  'on',
+  'once',
+  'get',
+  'list',
+  'fork',
+  'header',
+  'events',
+  'seq',
+  'surface',
+  'requestHeader',
+  'requestContext',
+  'deriveMessages',
+  'isSessionEventType',
+  'isSurfaceEventType',
+]
+
+test('active service with unmounted session throws feature-disabled from every method', () => {
+  const registry = createFeatureRegistry()
+  const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
+  const ctx = mockCtx()
+  const service = instantiate(ServiceClass, ctx)
+
+  assert.equal(service.isActive, true)
+  assert.equal(service.session.sessionEventTypes, undefined)
+  assert.equal(service.session.surfaceEventTypes, undefined)
+
+  for (const method of SESSION_METHODS) {
+    assert.throws(
+      () => service.session[method](),
+      (error) => {
+        assert.ok(error instanceof PluginApiFeatureDisabledError)
+        assert.equal(error.code, 'PLUGIN_API_FEATURE_DISABLED')
+        assert.equal(error.feature, 'session')
+        return true
+      },
+      `${method} should throw feature-disabled`,
+    )
+  }
+  assert.equal(ctx.getCalls.length, 0)
+})
+
+test('inert service session methods throw inactive before touching any official service', () => {
+  const registry = createFeatureRegistry()
+  const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: false })
+  const ctx = mockCtx()
+  const service = instantiate(ServiceClass, ctx)
+
+  assert.equal(service.isActive, false)
+  for (const method of SESSION_METHODS) {
+    assert.throws(
+      () => service.session[method](),
+      (error) => {
+        assert.ok(error instanceof PluginApiInactiveError)
+        assert.equal(error.code, 'PLUGIN_API_INACTIVE')
+        return true
+      },
+      `${method} should throw inactive`,
+    )
+  }
+  assert.equal(ctx.getCalls.length, 0)
+})
+
+test('mountFeature injects the session API and unknown feature still throws', () => {
+  const registry = createFeatureRegistry()
+  const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
+  const service = instantiate(ServiceClass, mockCtx())
+
+  const sessionApi = { isActive: true, get() {}, list() {}, fork() {} }
+  service.mountFeature('session', sessionApi)
+  assert.equal(service.session, sessionApi)
+
+  assert.throws(
+    () => service.mountFeature('unknown/feature', {}),
+    (error) => {
+      assert.ok(error instanceof PluginApiFeatureDisabledError)
+      assert.equal(error.feature, 'unknown/feature')
+      return true
+    },
+  )
+})

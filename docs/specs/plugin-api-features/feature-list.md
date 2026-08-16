@@ -138,11 +138,11 @@
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| S1 会话生命周期事件 | `session/created`、`session/disposed`、`session/event`、`session/flush` 类型化订阅 | A | `dsh-session/lib/types/index.d.ts:44-75` | M1 | planned |
+| S1 会话生命周期事件 | `session/created`、`session/disposed`、`session/event`、`session/flush` 类型化订阅 | A | `dsh-session/lib/types/index.d.ts:44-75` | M1 | delivered |
 | S2 上屏事件构造 helper | `session.appendMessage(kind, payload)`：自动补齐 `surfaceOp: 'append'` 与 `sourceEventSeqs`，拒绝非法 surface 事件形状 | B | `dsh-session` `append` 上屏契约；dsh-pro-ex-ability-anchor 第 4 条不变量 | M2 | planned |
-| S3 会话读面 | `session.get(id)`、`session.list()`、`session.fork(source, boundary?, childId?)` 稳定直通 | A | `dsh-session/lib/types/index.d.ts:315-413` | M1 | planned |
-| S4 会话状态访问器 | `session.header/events/seq/surface`、`requestHeader()`、`requestContext()`、`deriveMessages()` 的稳定只读访问 | A | `dsh-session/lib/types/index.d.ts:106-267` | M1 | planned |
-| S5 会话事件目录 | `sessionEventTypes` / `surfaceEventTypes` 常量与类型守卫 | A | `dsh-session` `known-event-types`（`session/end-seed`、`session/title` 等） | M1 | planned |
+| S3 会话读面 | `session.get(id)`、`session.list()`、`session.fork(source, boundary?, childId?)` 稳定直通 | A | `dsh-session/lib/types/index.d.ts:315-413` | M1 | delivered |
+| S4 会话状态访问器 | `session.header/events/seq/surface`、`requestHeader()`、`requestContext()`、`deriveMessages()` 的稳定只读访问 | A | `dsh-session/lib/types/index.d.ts:106-267` | M1 | delivered |
+| S5 会话事件目录 | `sessionEventTypes` / `surfaceEventTypes` 常量与类型守卫 | A | `dsh-session` `known-event-types`（`session/end-seed`、`session/title` 等） | M1 | delivered |
 | S6 官方上屏 helper | 官方提供 `session.appendSurface(...)` 级别的高级构造 API | C | 当前 surface 契约靠插件自维护（dsh-pro-ex-ability-anchor） | M4 | planned（proposal，可选） |
 
 ### 2.6 `pluginApi.tools` —— 工具注册与执行管线面（M1/M2）
