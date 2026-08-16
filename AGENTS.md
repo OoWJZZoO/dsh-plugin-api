@@ -58,9 +58,9 @@ agent/dsh-plugin-api/
 ### 3.2 确认门（gate）
 
 - **Stage 0–3（Goal / Requirements / Design / Tasks）**：每个阶段完成后，把文档交给用户评审；**用户明确批准后才进入下一阶段**。未批准时，只能修订当前阶段文档，禁止提前写下一阶段文档，更禁止写实现代码。
-- **每个阶段（除 Stage 0）结束时**：Stage 1–3 在把该阶段文档交给用户评审前，必须先启动一个后台子 agent 做对抗性审查；Stage 4 在全部任务完成后、向用户交付结果报告前，也必须先做一次总体对抗性审查。审查只核对当前阶段制品与已确认上游文档的一致性，不向上溯源；审查返回“无偏差”，或代理已按审查意见修复并复跑通过后，才可提交用户评审或交付报告。
+- **每个阶段（除 Stage 0）结束时**：Stage 1–3 在把该阶段文档交给用户评审前，必须先启动一个后台子 agent 做对抗性审查；**仅小修改（如一两处文字或单点修正）无需再对抗性审查**。审查只核对当前阶段制品与已确认上游文档的一致性，不向上溯源；审查返回“无偏差”，或代理已按审查意见修复并复跑通过后，才可提交用户评审。Stage 4 全部任务完成后直接交付结果报告，**无需总体对抗性审查**。
 - **Stage 4（Execute）**：Tasks 获批后由代理**自主完成全部任务**，不再逐任务等待人类确认。
-  - 代理按 `tasks.md` 顺序一次执行一个任务；每完成一个任务，立即发起一个后台子 agent 做**对抗性审查**（只核对实现/测试与当前任务文档的一致性，不向上溯源）。
+  - 代理按 `tasks.md` 顺序一次执行一个任务；每完成一个任务，立即发起一个后台子 agent 做**对抗性审查**（只核对实现/测试与当前任务文档的一致性，不向上溯源）；**若该任务只是小修改（如一两处文字或单点修正），无需对抗性审查**。
   - 审查返回“无偏差”，或代理已按审查意见修复并复跑通过后，才继续下一个任务。
   - 若执行中发现 spec 错误：实现细节/设计矛盾由代理先修订对应 spec 文档（requirements/design/tasks）保持一致，并在最终报告中列出修订；若错误动摇已确认的 Goal 或 Requirements 验收标准，则暂停并请求人类裁决。
   - 代理仍需遵守 fail-safe、测试、不夹带 spec 外功能等全部约束；全部任务完成后向用户交付完整结果报告。
@@ -138,3 +138,14 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 
 - [PaperMC: Event Listeners](https://docs.papermc.io/paper/dev/event-listeners/)
 - [Cordis: The Plugin Kernel Behind DeepSeek Harness](https://floatboat.ai/blog/cordis-plugin-framework)
+
+## 8. 已交付 feature 登记（防过期）
+
+> 规则：每个 feature 在 Stage 4 交付后，必须在本节追加条目，并同步 `docs/specs/plugin-api-features/feature-list.md` 中对应状态；公开 API 形状或里程碑状态变化时同步更新，防止文档过期过时。
+
+| Feature | 范围 | 状态 | Spec 目录 | 关键约束 / 设计 |
+|---|---|---|---|---|
+| `plugin-api-foundation` | M0 F0.1–F0.3（`ctx.pluginApi` 服务、fail-safe guard、双向版本协商） | delivered | `docs/specs/plugin-api-foundation/` | host 插件 `inject=[]`；核心/feature 两级 guard；版本按 `major.minor` 比较 |
+| `plugin-api-facade-integrity` | M0 F0.4–F0.5（符号解析门面、包装链安全） | delivered | `docs/specs/plugin-api-facade-integrity/` | `lib/wrap-safety.js` identity-guard；F0.4 权威定义 |
+| `llm-image-admission` | L1（图片准入 B 类） | delivered | `docs/specs/llm-image-admission/` | AdmissionRegistry + ProjectionGuard + admission-bridge |
+| `plugin-api-events-m1` | M1 基底：E1–E12 + O1–O7, O9–O12, O15, O16（`pluginApi.events` 稳定事件总线 + 19 个宿主事件目录 + `pluginApi.web` 直通） | delivered | `docs/specs/plugin-api-events-m1/` | events-bus 原生 hook 按序重注册；deepFreeze 只读 payload；scope 过滤（`args[0].agent` + `carrierKeyOf`）；`@deepseek-ai/dsh-scope` peerDependency |

@@ -8,6 +8,7 @@ function createMockCtx(options = {}) {
     llm: { resolveModelInfo() {} },
     agents: { get() {} },
     apiProxy: { sessions: { prompt() {}, selectModel() {} } },
+    web: { registerSearchProvider() {}, registerFetchProvider() {} },
     ...(options.services ?? {}),
   }
   const state = {
@@ -41,6 +42,12 @@ function createMockCtx(options = {}) {
       state.listeners.push({ name, listener })
       return () => {}
     },
+    once() {},
+    emit() {},
+    serial() {},
+    parallel() {},
+    bail() {},
+    waterfall() {},
   }
   return { ctx, state, services }
 }
@@ -53,9 +60,15 @@ test('apply with healthy ctx registers active service and mounts llm/admission',
   assert.equal(state.provideCount, 1)
   assert.equal(state.pluginApi.isActive, true)
   assert.equal(state.pluginApi.apiVersion, '0.1')
-  assert.deepEqual(state.pluginApi.features, [{ name: 'llm/admission', isActive: true }])
+  assert.deepEqual(state.pluginApi.features, [
+    { name: 'events', isActive: true },
+    { name: 'web', isActive: true },
+    { name: 'llm/admission', isActive: true },
+  ])
   assert.equal(state.pluginApi.llm.admission.isActive, true)
   assert.equal(typeof state.pluginApi.llm.admission.register, 'function')
+  assert.equal(typeof state.pluginApi.events.on, 'function')
+  assert.equal(typeof state.pluginApi.web.registerSearchProvider, 'function')
   assert.ok(state.listeners.some((l) => l.name === 'llm/stream'))
 })
 
@@ -100,10 +113,12 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 1)
-  assert.equal(features[0].name, 'llm/admission')
-  assert.equal(features[0].isActive, false)
-  assert.match(features[0].reason, /apiProxy/)
+  assert.equal(features.length, 3)
+  assert.deepEqual(features[0], { name: 'events', isActive: true })
+  assert.deepEqual(features[1], { name: 'web', isActive: true })
+  assert.equal(features[2].name, 'llm/admission')
+  assert.equal(features[2].isActive, false)
+  assert.match(features[2].reason, /apiProxy/)
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),

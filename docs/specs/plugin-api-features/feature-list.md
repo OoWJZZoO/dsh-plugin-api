@@ -88,18 +88,18 @@
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| E1 类型化订阅 | `events.on<K>(name, listener, opts?): () => boolean` | A | Cordis `Context.on`；官方 `dsh-scope` scope-filtered 派发 | M1 | planned |
-| E2 一次性订阅 | `events.once<K>(name, listener, opts?): () => boolean` | A | Cordis `Context.once` | M1 | planned |
-| E3 同步 emit | `events.emit<K>(name, ...args): void` | A | Cordis `Context.emit` | M1 | planned |
-| E4 串行 bail | `events.serial<K>(name, ...args): Promise<BailValue>` | A | Cordis `Context.serial`（官方 `agent/turn-stopping` 用此模式） | M1 | planned |
-| E5 并发 barrier | `events.parallel<K>(name, ...args): Promise<void>` | A | Cordis `Context.parallel`（官方 `session/flush` 用此模式） | M1 | planned |
-| E6 同步 bail | `events.bail<K>(name, ...args): BailValue` | A | Cordis `Context.bail` | M1 | planned |
-| E7 瀑布组合 | `events.waterfall<K>(name, ...args, next): Return` | A | Cordis `Context.waterfall`（官方 `llm/stream`、`agent/pre-step|request`、`tools/*`、`system-prompt/assemble` 均用此模式） | M1 | planned |
-| E8 priority 排序 | `opts.priority: 'lowest'\|'low'\|'normal'\|'high'\|'highest'\|'monitor'` | B | Cordis 原生只有 `prepend`；门面在其上模拟有序分层 | M1 | planned |
-| E9 只读 payload | 对事件 payload 做 deepFreeze（或官方已冻结的透传），禁止监听器改写共享事件对象 | B | `dsh-llm` 对 loop-built 请求已 deepFreeze；门面统一契约 | M1 | planned |
-| E10 scope 感知订阅 | `opts.scope` / agent-scoped `events.on`（scope-filtered dispatch 的稳定包装） | A | `dsh-scope` `lib/invariant.js` 权威事件表；`dsh-agent` `agentEvents()` | M1 | planned |
-| E11 监听器故障隔离 | 监听器抛错/异步 rejection 的 contained 报告与日志，不中断事件派发 | A/B | 官方各 emit 点多已 per-listener contained；门面统一 | M1 | planned |
-| E12 事件目录 | `pluginApi.events.catalog`（事件名 → 模式 / payload 类型 / 是否 scope-filtered / A-B-C 来源） | 门面基础 | 本文第 2.3–2.11 节 | M1 | planned |
+| E1 类型化订阅 | `events.on<K>(name, listener, opts?): () => boolean` | A | Cordis `Context.on`；官方 `dsh-scope` scope-filtered 派发 | M1 | **delivered** |
+| E2 一次性订阅 | `events.once<K>(name, listener, opts?): () => boolean` | A | Cordis `Context.once` | M1 | **delivered** |
+| E3 同步 emit | `events.emit<K>(name, ...args): void` | A | Cordis `Context.emit` | M1 | **delivered** |
+| E4 串行 bail | `events.serial<K>(name, ...args): Promise<BailValue>` | A | Cordis `Context.serial`（官方 `agent/turn-stopping` 用此模式） | M1 | **delivered** |
+| E5 并发 barrier | `events.parallel<K>(name, ...args): Promise<void>` | A | Cordis `Context.parallel`（官方 `session/flush` 用此模式） | M1 | **delivered** |
+| E6 同步 bail | `events.bail<K>(name, ...args): BailValue` | A | Cordis `Context.bail` | M1 | **delivered** |
+| E7 瀑布组合 | `events.waterfall<K>(name, ...args, next): Return` | A | Cordis `Context.waterfall`（官方 `llm/stream`、`agent/pre-step|request`、`tools/*`、`system-prompt/assemble` 均用此模式） | M1 | **delivered** |
+| E8 priority 排序 | `opts.priority: 'lowest'\|'low'\|'normal'\|'high'\|'highest'\|'monitor'` | B | Cordis 原生只有 `prepend`；门面在其上模拟有序分层 | M1 | **delivered** |
+| E9 只读 payload | 对事件 payload 做 deepFreeze（或官方已冻结的透传），禁止监听器改写共享事件对象 | B | `dsh-llm` 对 loop-built 请求已 deepFreeze；门面统一契约 | M1 | **delivered** |
+| E10 scope 感知订阅 | `opts.scope` / agent-scoped `events.on`（scope-filtered dispatch 的稳定包装） | A | `dsh-scope` `lib/invariant.js` 权威事件表；`dsh-agent` `agentEvents()` | M1 | **delivered** |
+| E11 监听器故障隔离 | 监听器抛错/异步 rejection 的 contained 报告与日志，不中断事件派发 | A/B | 官方各 emit 点多已 per-listener contained；门面统一 | M1 | **delivered** |
+| E12 事件目录 | `pluginApi.events.catalog`（事件名 → 模式 / payload 类型 / 是否 scope-filtered / A-B-C 来源） | 门面基础 | 本文第 2.3–2.11 节；首版目录覆盖本次 25 个 feature | M1 | **delivered** |
 
 ### 2.3 `pluginApi.llm` —— 模型调用面（M1/M2/M4）
 
@@ -204,22 +204,22 @@
 
 | Feature | 事件名 | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| O1 文件写意图 | `fs/write-intent`（waterfall；payload `{target, exec}`） | A | `dsh-tool-fs/lib/index.js:658`（经 `dsh-fs` seam；`target = {targetKey, displayPath}`） | M1 | planned |
-| O2 文件编辑意图 | `fs/edit-intent`（waterfall；payload `{target, exec}`） | A | `dsh-tool-fs/lib/index.js:809` | M1 | planned |
-| O3 文件观测通知 | `fs/observed`（emit；payload `{target, observation, actor}`；`observation.kind: present|absent`） | A | `dsh-tool-fs/lib/index.js:278` | M1 | planned |
-| O4 子代理生命周期 | `subagent/start`（payload `{runId, provider, id, local}`）、`subagent/end`（payload `{runId, provider, id, local, stopReason, lastAssistantMessage?}`） | A | `dsh-subagent/lib/index.js:199-250` | M1 | planned |
-| O5 子代理 provider | `subagent/provider-added`（payload `provider`）、`subagent/provider-removed`（payload `providerName`） | A | `dsh-subagent/lib/index.js:2474-2476` | M1 | planned |
-| O6 工作流事件 | `workflow/start|phase|log|agent-start|agent-end|end`（payload 见 `dsh-workflow-worker-thread` 各 emit 点） | A | `dsh-workflow-worker-thread/lib/index.js:895-909` | M1 | planned |
-| O7 审批请求瀑布 | `approval/request`（waterfall；payload `req {agent, toolName, callId?, reason?, signal}`；outcome `allowed-once|rejected|cancelled|unavailable`，fail-closed） | A | `dsh-user-approval/lib/index.js:189`；scope 权威表 `dsh-scope/lib/invariant.js` | M1 | planned |
+| O1 文件写意图 | `fs/write-intent`（waterfall；payload `{target, exec}`） | A | `dsh-tool-fs/lib/index.js:658`（经 `dsh-fs` seam；`target = {targetKey, displayPath}`） | M1 | **delivered** |
+| O2 文件编辑意图 | `fs/edit-intent`（waterfall；payload `{target, exec}`） | A | `dsh-tool-fs/lib/index.js:809` | M1 | **delivered** |
+| O3 文件观测通知 | `fs/observed`（emit；payload `{target, observation, actor}`；`observation.kind: present|absent`） | A | `dsh-tool-fs/lib/index.js:278` | M1 | **delivered** |
+| O4 子代理生命周期 | `subagent/start`（payload `{runId, provider, id, local}`）、`subagent/end`（payload `{runId, provider, id, local, stopReason, lastAssistantMessage?}`） | A | `dsh-subagent/lib/index.js:199-250` | M1 | **delivered** |
+| O5 子代理 provider | `subagent/provider-added`（payload `provider`）、`subagent/provider-removed`（payload `providerName`） | A | `dsh-subagent/lib/index.js:2474-2476` | M1 | **delivered** |
+| O6 工作流事件 | `workflow/start|phase|log|agent-start|agent-end|end`（payload 见 `dsh-workflow-worker-thread` 各 emit 点） | A | `dsh-workflow-worker-thread/lib/index.js:895-909` | M1 | **delivered** |
+| O7 审批请求瀑布 | `approval/request`（waterfall；payload `req {agent, toolName, callId?, reason?, signal}`；outcome `allowed-once|rejected|cancelled|unavailable`，fail-closed） | A | `dsh-user-approval/lib/index.js:189`；scope 权威表 `dsh-scope/lib/invariant.js` | M1 | **delivered** |
 | O8 审批 durable 事件 | `approval/policy|asked|decided`（session-log 事件，非 ctx 事件） | A | `dsh-user-approval/lib/index.js:78,148,155` | M2 | planned |
-| O9 命令变更 | `commands/change`（emit） | A | `dsh-commands/lib/index.js:348` | M1 | planned |
-| O10 技能变更 | `skills/change`（emit） | A | `dsh-skill/lib/index.js:404` | M1 | planned |
-| O11 凭据更新 | `credentials/updated`（emit） | A | `dsh-credentials/lib/index.js:45` | M1 | planned |
-| O12 目标变更 | `goal/changed`（agent-scoped emit；payload `{agent, change}`） | A | `dsh-goal/index.js:793`；`dsh-scope` 权威表 | M1 | planned |
+| O9 命令变更 | `commands/change`（emit） | A | `dsh-commands/lib/index.js:348` | M1 | **delivered** |
+| O10 技能变更 | `skills/change`（emit） | A | `dsh-skill/lib/index.js:404` | M1 | **delivered** |
+| O11 凭据更新 | `credentials/updated`（emit） | A | `dsh-credentials/lib/index.js:45` | M1 | **delivered** |
+| O12 目标变更 | `goal/changed`（agent-scoped emit；payload `{agent, change}`） | A | `dsh-goal/index.js:793`；`dsh-scope` 权威表 | M1 | **delivered** |
 | O13 调度 durable 事件 | `schedule/change`（session-log 事件；payload `{version:1, operation: create|delete|dispatch}`） | A | `dsh-schedule/lib/index.js:310-357` | M2 | planned |
 | O14 子代理 descriptor | `subagent/descriptor`（session-log 事件，非 ctx 事件） | A | `dsh-subagent/lib/index.js:640` | M2 | planned |
-| O15 Web 检索/抓取 provider | `web.registerSearchProvider(provider)`、`web.registerFetchProvider(provider)` 稳定直通 | A | `dsh-web/lib/index.js:67-77` | M1 | planned |
-| O16 会话遥测记录 | `session-telemetry/record`（waterfall；payload `{record}`） | A | `dsh-session-telemetry/lib/index.js:174` | M1 | planned |
+| O15 Web 检索/抓取 provider | `web.registerSearchProvider(provider)`、`web.registerFetchProvider(provider)` 稳定直通 | A | `dsh-web/lib/index.js:67-77` | M1 | **delivered** |
+| O16 会话遥测记录 | `session-telemetry/record`（waterfall；payload `{record}`） | A | `dsh-session-telemetry/lib/index.js:174` | M1 | **delivered** |
 
 ### 2.11 其他宿主服务稳定化（capability seams，M1）
 

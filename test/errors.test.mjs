@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   PluginApiError,
+  PluginApiEventPriorityError,
   PluginApiFeatureDisabledError,
   PluginApiInactiveError,
   PluginApiVersionError,
@@ -51,4 +52,15 @@ test('PluginApiVersionError has a readable default message', () => {
   assert.match(error.message, /version/i)
   assert.match(error.message, /0\.1/)
   assert.match(error.message, /0\.2/)
+})
+
+test('PluginApiEventPriorityError carries the invalid priority value', () => {
+  const error = new PluginApiEventPriorityError('urgent')
+  assert.ok(error instanceof PluginApiError)
+  assert.ok(error instanceof PluginApiEventPriorityError)
+  assert.equal(error.code, 'PLUGIN_API_INVALID_PRIORITY')
+  assert.equal(error.name, 'PluginApiEventPriorityError')
+  assert.equal(error.priority, 'urgent')
+  assert.match(error.message, /urgent/)
+  assert.match(error.message, /priority/i)
 })
