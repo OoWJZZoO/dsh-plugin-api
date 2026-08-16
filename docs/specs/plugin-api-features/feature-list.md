@@ -78,11 +78,11 @@
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| F0.1 门面服务 | `ctx.pluginApi`（Cordis Service，`inject: ['pluginApi']`）；**推荐、受支持**的门面入口；直连 `@deepseek-ai/dsh-*` 内部包为 unsupported escape hatch | 门面基础 | 本仓库 `lib/index.js` / `lib/plugin-api-service.js` | M0 | delivered |
-| F0.2 fail-safe guard | `pluginApi.isActive: boolean`；guard 失败时服务仍注册为 inert | 门面基础 | 本仓库 `lib/guards.js`；对齐 dsh-read-image G1 | M0 | delivered（首 feature 范围） |
-| F0.3 版本协商 | `package.json` 增加 `dsh.api` 声明；不匹配时安全停用并给出可读错误 | 门面基础 | AGENTS.md 第 4.2 条 | M0 | planned |
-| F0.4 符号解析门面 | `pluginApi` 作为**推荐** import/inject 面；第三方插件默认经门面解析符号；直连 `dsh-tools`/`dsh-llm` 等内部包属于 unsupported escape hatch（门面不拦截、不保障） | 门面基础 | AGENTS.md 第 4.1 条 | M0–M3 | planned（随各命名空间逐步覆盖） |
-| F0.5 包装链安全 | dispose 用 identity-guard；目标被其他插件包装时降级透传，不拆别人的链 | 门面基础 | 本仓库 `lib/admission-bridge.js`；dsh-read-image A1 加固 | M0 | delivered（首 feature 范围） |
+| F0.1 门面服务 | `ctx.pluginApi`（Cordis Service，`inject: ['pluginApi']`）；**推荐、受支持**的门面入口；直连 `@deepseek-ai/dsh-*` 内部包为 unsupported escape hatch | 门面基础 | 本仓库 `lib/index.js` / `lib/plugin-api-service.js`；spec `plugin-api-foundation` | M0 | delivered |
+| F0.2 fail-safe guard | `pluginApi.isActive: boolean`；核心 guard 失败时服务仍注册为 inert；非核心 feature 失败时只禁用该 feature 并显式报错 | 门面基础 | 本仓库 `lib/guards.js`；对齐 dsh-read-image G1；spec `plugin-api-foundation` | M0 | delivered |
+| F0.3 版本协商 | `package.json` 增加 `dsh.api` 声明；双向协商——runtime 不匹配时门面 inert，插件要求不满足时插件收到 typed 错误 | 门面基础 | 本仓库 `lib/version.js` / `lib/guards.js` / `package.json`；spec `plugin-api-foundation` | M0 | delivered |
+| F0.4 符号解析门面 | `pluginApi` 作为**推荐** import/inject 面；第三方插件默认经门面解析符号；直连 `dsh-tools`/`dsh-llm` 等内部包属于 unsupported escape hatch（门面不拦截、不保障） | 门面基础 | `docs/specs/plugin-api-facade-integrity/requirements.md` §1（权威定义）；`README.md` | M0–M3 | delivered（F0.4 策略；符号覆盖随命名空间逐步扩展） |
+| F0.5 包装链安全 | dispose 用 identity-guard；目标被其他插件包装时降级透传，不拆别人的链 | 门面基础 | 本仓库 `lib/wrap-safety.js` / `lib/admission-bridge.js`；dsh-read-image A1 加固；spec `plugin-api-facade-integrity` | M0 | delivered |
 
 ### 2.2 `pluginApi.events` —— 稳定事件总线（M1）
 
