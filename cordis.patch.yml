@@ -1,0 +1,13 @@
+# dsh bundle patch: inserts this plugin into a profile's layer stack.
+# `dsh plugin --profile <name> add <repo>` composes this patch automatically
+# (see package.json -> dsh.bundle.patch).
+#
+# ROW ORDER (hard requirement): this row must be loaded BEFORE third-party
+# plugin rows. `dsh-plugin-api` registers the `pluginApi` Cordis service during
+# its own apply(); any third-party plugin that `inject: ['pluginApi']` must
+# therefore apply after this row, otherwise that plugin pends forever and kills
+# the harness boot (see AGENTS.md section 2, item 2).
+- insert:
+    - id: plugin-api
+      name: '@deepseek-ai/dsh-plugin-api'
+      config: {}

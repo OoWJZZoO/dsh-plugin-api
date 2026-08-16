@@ -1,0 +1,31 @@
+{
+  "name": "@deepseek-ai/dsh-plugin-api",
+  "description": "DeepSeek Harness community plugin API facade: stabilized semantic hooks over official extension points. First feature: llm-image-admission (scoped image input admission with enforced projection).",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "plugin",
+    "dsh-plugin-api",
+    "llm-admission"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-llm": "^0.1.0-rc.6"
+  }
+}

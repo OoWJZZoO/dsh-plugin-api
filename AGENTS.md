@@ -36,9 +36,14 @@ agent/dsh-plugin-api/
 
 ## 3. Kiro spec coding 工作流规范（本仓库铁律）
 
-采用 [kevinlin/spec-coding-mcp](https://github.com/kevinlin/spec-coding-mcp) 的 spec-driven 五阶段流程。**每个阶段必须得到人类明确确认，才能进入下一阶段。**
+采用 [kevinlin/spec-coding-mcp](https://github.com/kevinlin/spec-coding-mcp) 的 spec-driven 五阶段流程。**Stage 0–3（Goal / Requirements / Design / Tasks）必须得到人类明确确认，才能进入下一阶段；Stage 4（Execute）在 Tasks 获批后由代理自主完成，不再逐任务等待人类确认（见 3.2）。**
 
 运行时工作流由本仓库 skill `spec-coding` 驱动（`.dsh/skills/spec-coding/SKILL.md`）；AGENTS.md 是 constitution，两者冲突时以本文件铁律为准。
+
+### 3.0 最高原则：工程质量优先
+
+- **以工程质量为核心导向**：当交付速度、实现便利与工程质量冲突时，工程质量优先。任何阶段都不得以“先跑起来再说”为由跳过确认门、测试或 fail-safe 约束。
+- **代理是工作流规范的责任人**：用户可能不熟悉 Kiro spec coding，也可能给出与规范冲突的指示；代理发现冲突时必须直接指出、说明理由并等待澄清，不得盲从。宁多问一轮，不埋一颗雷。
 
 ### 3.1 五阶段
 
@@ -52,9 +57,12 @@ agent/dsh-plugin-api/
 
 ### 3.2 确认门（gate）
 
-- 每个阶段完成后，把文档交给用户评审；**用户明确批准后才进入下一阶段**。
-- 未批准时，只能修订当前阶段文档，禁止提前写下一阶段文档，更禁止写实现代码。
-- 执行阶段若发现 spec 错误，**先回改对应 spec 文档并重新确认**，不得在代码里悄悄偏离 spec。
+- **Stage 0–3（Goal / Requirements / Design / Tasks）**：每个阶段完成后，把文档交给用户评审；**用户明确批准后才进入下一阶段**。未批准时，只能修订当前阶段文档，禁止提前写下一阶段文档，更禁止写实现代码。
+- **Stage 4（Execute）**：Tasks 获批后由代理**自主完成全部任务**，不再逐任务等待人类确认。
+  - 代理按 `tasks.md` 顺序一次执行一个任务；每完成一个任务，立即发起一个后台子 agent 做**对抗性审查**（只核对实现/测试与当前任务文档的一致性，不向上溯源）。
+  - 审查返回“无偏差”，或代理已按审查意见修复并复跑通过后，才继续下一个任务。
+  - 若执行中发现 spec 错误：实现细节/设计矛盾由代理先修订对应 spec 文档（requirements/design/tasks）保持一致，并在最终报告中列出修订；若错误动摇已确认的 Goal 或 Requirements 验收标准，则暂停并请求人类裁决。
+  - 代理仍需遵守 fail-safe、测试、不夹带 spec 外功能等全部约束；全部任务完成后向用户交付完整结果报告。
 
 ### 3.3 EARS 需求写法
 
@@ -86,7 +94,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 3. 事件 API 保留 Cordis 的 `ctx.on` + `emit/serial/parallel/waterfall`，只增加稳定类型、只读 payload 与 `priority`（lowest/low/normal/high/highest/monitor）。
 4. 需要优先“转译”的语义钩子：
    - 同步 `llm/request`（基于 `llm/stream` 重入，必须幂等收敛）
-   - `llm/model-info`（集中化、链式包装 `resolveModelInfo`）
+   - 语义化 `llm/admission`（首个 feature 定为 `llm-image-admission`：第三方只声明“本会话/请求需要图片准入且承诺投影”，不公开 ModelInfo 变更；`resolveModelInfo` 包装仅作 B 类隐藏实现，并附 C 类上游提案）
    - `exec.route` / `routeOf(exec)`（基于 `agent.session.requestContext()` 或 `tools/pre-execute` 注入）
    - settings 可视化配置桥（`TypertRemoteService` + 客户端 `ctx.remote.$mount`）
    - session 上屏事件构造 helper（封装 `surfaceOp` / `sourceEventSeqs`）
@@ -101,7 +109,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 
 ## 6. 仓库规则
 
-- **当前阶段只允许写 `AGENTS.md` 与 `docs/specs/**`**；未走完 spec coding 确认门前禁止创建 `lib/`、`package.json`、`test/` 等实现产物。
+- **Stage 0–3 确认门未走完前只允许写 `AGENTS.md` 与 `docs/specs/**`**；Stage 4（Execute）获批后允许创建 `lib/`、`package.json`、`test/`、`scripts/` 等实现产物。
 - 制品目录：`docs/specs/<feature_name>/requirements.md`、`design.md`、`tasks.md`。
 - 测试（进入 execute 阶段后）：`node --test`；纯函数模块保持零 harness 依赖。
 - 不引入与门面无关的运行时依赖；需要宿主共享实例的包一律 `peerDependencies`。
