@@ -86,7 +86,7 @@ test('apply with healthy ctx registers active service and mounts llm/admission',
   assert.ok(state.pluginApi)
   assert.equal(state.provideCount, 1)
   assert.equal(state.pluginApi.isActive, true)
-  assert.equal(state.pluginApi.apiVersion, '0.1')
+  assert.equal(state.pluginApi.apiVersion, '0.2')
   assert.deepEqual(state.pluginApi.features, [
     { name: 'tools', isActive: true },
     { name: 'events', isActive: true },

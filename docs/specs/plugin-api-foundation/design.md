@@ -44,6 +44,8 @@
   - `"type": "module"`；`main`/`exports` 指向 `lib/index.js`。
   - `"version": "0.1.0"`（门面自身版本，`major.minor` 归一为 `0.1`）。
   - `"dsh": { "api": "0.1", "bundle": { "patch": "./cordis.patch.yml" } }`：`dsh.api` 是本门面 API 契约版本（`major.minor`），同时用于方向 ① 的 runtime 兼容判断。
+
+> **修订注记（`plugin-api-m1-integration` 任务 2.10）**：版本号语义规范化。`package.json.version` 采用全量唯一格式 `<runtime全量版本>-<API协议大版本.迭代小版本>`（如 `0.1.0-rc.6-0.2`，由 `parseFacadeVersion` 解析为 `{ runtime, api }`）。方向 ① 的比较改为：`version` 中的 runtime 部分与实际安装 runtime（`dsh-llm` 探针）做 major.minor 归一化相等；`dsh.api` 只承载 API 协议版本，仅用于方向 ②（`assertCompatible`）。core guard 探针为 `dsh.api`（格式）、`facade version`（全量格式可解析且 api 部分与 `dsh.api` 一致）、`runtime version`（runtime 部分与安装版本匹配）。
   - `peerDependencies`：`@deepseek-ai/cordis`、`@deepseek-ai/dsh-llm`（共享宿主实例；`dsh-llm` 同时是 runtime 版本探针）。
 - `cordis.patch.yml`：保持现有 insert row（`id: plugin-api`）。
 - Row 顺序硬约束不变：本插件必须先于第三方插件加载，否则 `inject: ['pluginApi']` 的第三方插件会 pending 并杀死 boot。

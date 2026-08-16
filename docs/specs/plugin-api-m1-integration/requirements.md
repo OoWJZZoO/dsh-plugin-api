@@ -88,8 +88,8 @@ M1 由 7 个 worktree 并行实现（`m1/agent`、`m1/capabilities`、`m1/llm`�
 
 **Acceptance Criteria**:
 
-1. WHEN the integration completes, THEN `package.json` `dsh.api` SHALL be `"0.2"`.
-2. WHEN future facade versions advance the minor, THEN the minor SHALL advance numerically (`0.9` is followed by `0.10`, never by `1.0`); `1.0` SHALL be reserved for the official public release (recorded in AGENTS.md §4.2 and this spec).
+1. WHEN the integration completes, THEN the facade version scheme SHALL be normalized: `package.json.version` SHALL be the full unique version `<runtime全量版本>-<API协议大版本.迭代小版本>` = `"0.1.0-rc.6-0.2"`, and `package.json.dsh.api` SHALL be the API protocol version `"0.2"` (direction-① runtime negotiation compares the runtime part of `version` against the installed runtime; `dsh.api` is used only for direction-② plugin↔facade negotiation — see foundation revision note, task 2.10).
+2. WHEN future facade versions advance the API protocol minor, THEN the minor SHALL advance numerically (`0.9` is followed by `0.10`, never by `1.0`); API protocol `1.0` SHALL be reserved for the official public release (recorded in AGENTS.md §4.2 and this spec). WHEN the official runtime line advances, THEN the runtime part of `version` SHALL be updated to the new runtime's full version.
 3. WHEN the integration completes, THEN AGENTS.md §8 and `feature-list.md` SHALL be synchronized: one entry per delivered feature, uniform `**delivered**` formatting, and catalog-count statements reworded as the union of each delivered feature's contributions (no stale absolute counts).
 4. WHEN the integration completes, THEN the conflicting revisions of `plugin-api-events-m1` AC 7.3/7.4 made by `m1/llm` and `m1/agent` SHALL be reconciled into one generalized union statement covering all contributed event names.
 5. WHEN the integration completes, THEN the four added peerDependencies (`dsh-session-reference`, `dsh-session`, `dsh-settings`, `dsh-system-prompt`) SHALL be merged into one `package.json` without introducing any non-peer runtime dependency.

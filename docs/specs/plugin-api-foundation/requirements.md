@@ -73,11 +73,13 @@
 
 **Contract granularity:** In this spec, "satisfies" (both directions) means: each version is normalized to `major.minor` and the two normalized values are equal. Patch and prerelease differences are considered compatible and SHALL NOT be treated as a mismatch.
 
+> **修订注记（`plugin-api-m1-integration` 任务 2.10）**：门面版本号语义规范化——本门面的**全量唯一版本号**定义为 `<runtime全量版本>-<API协议大版本.迭代小版本>`（如 `0.1.0-rc.6-0.2`）：前半记录门面为哪个 runtime 构建（含 rc 等预发布后缀），后半是门面自己的 API 协议世代，**不与官方包版本混同**。方向 ① 的比较对象因此修正为：自身版本号中的 runtime 部分 vs 实际安装的 runtime 版本（major.minor 归一化相等）；`dsh.api` 字段仅承载 API 协议版本（方向 ② 插件↔门面协商）。原实现把 `dsh.api` 直接与官方 runtime 版本相等比较，偏离本意，已纠正。
+
 **Acceptance Criteria — direction ① facade ↔ DSH runtime:**
 
 1. WHEN the `dsh-plugin-api` package is installed, THEN its `package.json` SHALL declare a machine-readable API version contract under the `dsh` field (`dsh.api`) that the facade checks at apply time.
-2. GIVEN the runtime satisfies the declared API contract, WHEN the host plugin applies, THEN the facade SHALL treat runtime version negotiation as passed and proceed with the environment guard checks.
-3. GIVEN the runtime does not satisfy the declared API contract, WHEN the host plugin applies, THEN the facade SHALL log a readable version-mismatch diagnostic and enter inert mode (`isActive === false`) without throwing through `apply`.
+2. GIVEN the installed runtime matches the runtime part of the facade's full unique version (major.minor normalized), WHEN the host plugin applies, THEN the facade SHALL treat runtime version negotiation as passed and proceed with the environment guard checks.
+3. GIVEN the installed runtime does not match the runtime part of the facade's full unique version, WHEN the host plugin applies, THEN the facade SHALL log a readable version-mismatch diagnostic and enter inert mode (`isActive === false`) without throwing through `apply`.
 4. GIVEN the `dsh.api` declaration or the runtime version metadata is missing or unparseable, WHEN the host plugin applies, THEN the facade SHALL treat the situation as a mismatch and enter inert mode with a readable diagnostic.
 5. WHEN runtime version negotiation fails, THEN the facade SHALL NOT install any official-boundary hook or wrapper.
 6. WHEN runtime version negotiation fails, THEN plugins using the unsupported escape hatch SHALL NOT be blocked, patched, or warned by the facade; the runtime version check SHALL govern facade consumers only.

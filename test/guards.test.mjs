@@ -14,7 +14,7 @@ import { join } from 'node:path'
 import { homedir, tmpdir } from 'node:os'
 import { SERVICE_DEFINITIONS } from '../lib/services.js'
 
-const versions = { apiVersion: '0.1', runtimeVersion: '0.1.0-rc.6' }
+const versions = { apiVersion: '0.2', facadeVersion: '0.1.0-rc.6-0.2', runtimeVersion: '0.1.0-rc.6' }
 
 function healthyCtx(overrides = {}) {
   return {
@@ -74,9 +74,24 @@ test('missing or unparseable dsh.api is a core failure', () => {
 })
 
 test('runtime version mismatch is a core failure', () => {
-  const result = runCoreGuard(healthyCtx(), { apiVersion: '0.1', runtimeVersion: '0.2.0' })
+  // facade built for runtime 0.1.0-rc.6 but 0.2.0 is installed
+  const result = runCoreGuard(healthyCtx(), { apiVersion: '0.2', facadeVersion: '0.1.0-rc.6-0.2', runtimeVersion: '0.2.0' })
   assert.equal(result.ok, false)
   assert.ok(result.coreProblems.some((p) => p.name === 'runtime version'))
+})
+
+test('runtime match ignores patch and prerelease differences', () => {
+  // built for 0.1.0-rc.6, installed 0.1.0 (same major.minor) => compatible
+  const result = runCoreGuard(healthyCtx(), { apiVersion: '0.2', facadeVersion: '0.1.0-rc.6-0.2', runtimeVersion: '0.1.0' })
+  assert.equal(result.ok, true)
+})
+
+test('unparseable or inconsistent facade version is a core failure', () => {
+  for (const facadeVersion of [undefined, '0.2', '0.1.0-rc.6', '0.1.0-rc.6-abc', '0.1.0-rc.6-0.3']) {
+    const result = runCoreGuard(healthyCtx(), { ...versions, facadeVersion })
+    assert.equal(result.ok, false, `facadeVersion=${facadeVersion}`)
+    assert.ok(result.coreProblems.some((p) => p.name === 'facade version'), `facadeVersion=${facadeVersion}`)
+  }
 })
 
 test('llm/admission feature guard passes when all required probes exist', () => {

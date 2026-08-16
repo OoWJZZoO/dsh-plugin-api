@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { normalizeVersion, parseContract, satisfiesContract } from '../lib/version.js'
+import { normalizeVersion, parseContract, parseFacadeVersion, satisfiesContract } from '../lib/version.js'
 
 test('normalizeVersion reduces patch and prerelease to major.minor', () => {
   assert.equal(normalizeVersion('0.1.0-rc.6'), '0.1')
@@ -45,4 +45,20 @@ test('satisfiesContract is false for missing or unparseable inputs', () => {
   assert.equal(satisfiesContract('abc', '0.1.0'), false)
   assert.equal(satisfiesContract(undefined, '0.1.0'), false)
   assert.equal(satisfiesContract('0.1', undefined), false)
+})
+
+test('parseFacadeVersion splits the full unique version into runtime and api parts', () => {
+  assert.deepEqual(parseFacadeVersion('0.1.0-rc.6-0.2'), { runtime: '0.1.0-rc.6', api: '0.2' })
+  assert.deepEqual(parseFacadeVersion('0.1.0-0.2'), { runtime: '0.1.0', api: '0.2' })
+  assert.deepEqual(parseFacadeVersion('1.2.3-rc.1-0.10'), { runtime: '1.2.3-rc.1', api: '0.10' })
+})
+
+test('parseFacadeVersion returns null for unparseable input', () => {
+  assert.equal(parseFacadeVersion(undefined), null)
+  assert.equal(parseFacadeVersion(null), null)
+  assert.equal(parseFacadeVersion(''), null)
+  assert.equal(parseFacadeVersion('0.2'), null)
+  assert.equal(parseFacadeVersion('0.1.0-rc.6'), null)
+  assert.equal(parseFacadeVersion('0.1.0-rc.6-abc'), null)
+  assert.equal(parseFacadeVersion('0.1.0-rc.6-0.2.1'), null)
 })
