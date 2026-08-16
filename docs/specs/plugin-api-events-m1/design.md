@@ -281,6 +281,8 @@ type EventsApi = {
 }
 ```
 
+> **修订注记（`plugin-api-agent-m1`）**：`plugin-api-agent-m1` 交付后，catalog schema 已升级：`subject` 更名为 `scopeKey`，每个 entry 新增 `fault`（`'contain' | 'created' | 'propagate'`）与 `freeze`（`'all' | { deep: string[] }`）两个策略字段。既有 19 个事件回填为 `fault:'contain'`、`freeze:'all'`、`scopeKey` 同原 `subject`；新增 12 个 `agent/*` 条目。运行时 catalog 总数从 19 增至 31。
+
 ---
 
 ## Error Handling
@@ -294,6 +296,8 @@ type EventsApi = {
 7. **注册失败回滚**：`reconcile` 中任一 `ctx.on` 失败 → dispose 本次已注册 hook，移除触发注册的新 entry，对旧列表重新 `reconcile`，最后 rethrow（调用方 fiber 已 dispose 等 misuse 场景）。
 8. **`deepFreeze` 永不 throw**：exotic/不可冻结对象原样返回，dispatch 继续。
 9. **scope carrier 缺失**：`carrierKeyOf(this)` 对非 carrier `this` 返回 `undefined`；presence-only 事件在无 carrier 派发时 scope 订阅不匹配，但该场景本身会先被官方 scope invariant 拒绝。
+
+> **修订注记（`plugin-api-agent-m1`）**：第 4 条的“一律 contain”不再适用于 `agent/*` 事件。`plugin-api-agent-m1` 为 catalog 增加 per-event `fault` 策略：7 个普通 `agent/*` emit 仍 contain；`agent/created` 为 `'created'`（同步 throw 传播以保留官方 sync-veto，异步 rejection contain）；`agent/pre-step`、`agent/request`、`agent/request-error`、`agent/turn-stopping` 为 `'propagate'`（保留 Cordis 原生传播）。Components 3.3 step 1 的全量 `deepFreeze` 实参也由 `freezeByPolicy(arg, meta.freeze)` 取代，以支持 `agent/*` 事件的 live object 不冻结策略。
 
 ---
 

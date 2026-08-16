@@ -601,3 +601,435 @@ test('tools/result emit receives frozen exec and frozen result', () => {
 
   ctx.emit('tools/result', exec, result)
 })
+
+// -- plugin-api-agent-m1 agent/* fault/freeze/scope tests --
+
+test('agent contain emit events contain sync throw while remaining listeners run', () => {
+  const ctx = createMockCordisCtx()
+  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const calls = []
+
+  for (const name of ['agent/disposed', 'agent/status', 'agent/session-start', 'agent/inbox/inserted', 'agent/inbox/claimed', 'agent/inbox/discarded', 'agent/error']) {
+    calls.length = 0
+    events.on(name, () => {
+      calls.push('first')
+      throw new Error(`${name} sync boom`)
+    })
+    events.on(name, () => calls.push('second'))
+
+    const payload = { agent: 'agent-1', message: {}, status: 'idle', source: 'fresh', turn: 1, step: 1, error: new Error('x') }
+    assert.doesNotThrow(() => ctx.emit(name, payload), `${name} sync throw must be contained`)
+    assert.deepEqual(calls, ['first', 'second'], `${name} sync containment`)
+
+    events.dispose()
+  }
+})
+
+test('agent contain emit events contain async rejection for all seven names', async () => {
+  const ctx = createMockCordisCtx()
+  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const calls = []
+
+  for (const name of ['agent/disposed', 'agent/status', 'agent/session-start', 'agent/inbox/inserted', 'agent/inbox/claimed', 'agent/inbox/discarded', 'agent/error']) {
+    calls.length = 0
+    events.on(name, async () => {
+      calls.push('first')
+      throw new Error(`${name} async boom`)
+    })
+    events.on(name, () => calls.push('second'))
+
+    const payload = { agent: 'agent-1', message: {}, status: 'idle', source: 'fresh', turn: 1, step: 1, error: new Error('x') }
+    ctx.emit(name, payload)
+    // Give the rejected-promise containment a microtask tick.
+    await Promise.resolve()
+    assert.deepEqual(calls, ['first', 'second'], `${name} async containment`)
+
+    events.dispose()
+  }
+})
+
+test('agent/created sync throw propagates and async rejection is contained', async () => {
+  const ctx = createMockCordisCtx()
+  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const calls = []
+
+  events.on('agent/created', () => {
+    calls.push('first')
+    throw new Error('veto')
+  })
+  events.on('agent/created', () => calls.push('second'))
+
+  assert.throws(() => ctx.emit('agent/created', { agent: 'agent-1' }), /veto/)
+  assert.deepEqual(calls, ['first'])
+
+  events.dispose()
+
+  events.on('agent/created', async () => {
+    calls.push('async')
+    throw new Error('reported')
+  })
+  events.on('agent/created', () => calls.push('after-async'))
+
+  assert.doesNotThrow(() => ctx.emit('agent/created', { agent: 'agent-2' }))
+  await Promise.resolve()
+  assert.deepEqual(calls, ['first', 'async', 'after-async'])
+})
+
+test('agent/pre-step waterfall propagates replacement, composition, scope, and listener failures', async () => {
+  const ctx = createMockCordisCtx()
+  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+
+  // Replacement without next() becomes the chain result.
+  events.on('agent/pre-step', (payload) => ({ kind: 'reject' }))
+  const replacement = ctx.waterfall('agent/pre-step', {
+    agent: 'agent-1',
+    messages: [{ role: 'user', content: 'hi' }],
+    turn: 1,
+    step: 1,
+    signal: new AbortController().signal,
+  }, () => ({ kind: 'enter' }))
+  assert.deepEqual(replacement, { kind: 'reject' })
+
+  events.dispose()
+
+  // Composition via next().
+  events.on('agent/pre-step', async (payload, next) => {
+    const downstream = await next()
+    return { ...downstream, kind: 'reject' }
+  })
+  events.on('agent/pre-step', (payload, next) => next())
+  const composed = ctx.waterfall('agent/pre-step', {
+    agent: 'agent-1',
+    messages: [],
+    turn: 1,
+    step: 1,
+    signal: new AbortController().signal,
+  }, () => ({ kind: 'enter' }))
+  assert.deepEqual(await composed, { kind: 'reject' })
+
+  events.dispose()
+
+  // Scope mismatch calls next() and cannot veto.
+  events.on('agent/pre-step', () => {
+    throw new Error('must not run')
+  }, { scope: 'agent-1' })
+  const scopedResult = ctx.waterfall('agent/pre-step', {
+    agent: 'agent-2',
+    messages: [],
+    turn: 1,
+    step: 1,
+    signal: new AbortController().signal,
+  }, () => 'unmatched-final')
+  assert.equal(scopedResult, 'unmatched-final')
+
+  events.dispose()
+
+  // Sync throw propagates to the official waterfall caller.
+  events.on('agent/pre-step', () => {
+    throw new Error('sync propagate')
+  })
+  assert.throws(() => ctx.waterfall('agent/pre-step', {
+    agent: 'agent-1',
+    messages: [],
+    turn: 1,
+    step: 1,
+    signal: new AbortController().signal,
+  }, () => 'final'), /sync propagate/)
+
+  events.dispose()
+
+  // Rejected promise propagates.
+  events.on('agent/pre-step', async () => {
+    throw new Error('async propagate')
+  })
+  await assert.rejects(() => ctx.waterfall('agent/pre-step', {
+    agent: 'agent-1',
+    messages: [],
+    turn: 1,
+    step: 1,
+    signal: new AbortController().signal,
+  }, () => 'final'), /async propagate/)
+})
+
+test('agent/request and agent/request-error waterfalls propagate listener failures', async () => {
+  const ctx = createMockCordisCtx()
+  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+
+  events.on('agent/request', () => {
+    throw new Error('request sync')
+  })
+  assert.throws(() => ctx.waterfall('agent/request', {
+    agent: 'agent-1',
+    turn: 1,
+    step: 1,
+    signal: new AbortController().signal,
+  }, () => ({ provider: 'p', model: 'm' })), /request sync/)
+
+  events.dispose()
+
+  events.on('agent/request', async () => {
+    throw new Error('request async')
+  })
+  await assert.rejects(() => ctx.waterfall('agent/request', {
+    agent: 'agent-1',
+    turn: 1,
+    step: 1,
+    signal: new AbortController().signal,
+  }, () => ({ provider: 'p', model: 'm' })), /request async/)
+
+  events.dispose()
+
+  events.on('agent/request-error', () => {
+    throw new Error('request-error sync')
+  })
+  assert.throws(() => ctx.waterfall('agent/request-error', {
+    agent: 'agent-1',
+    turn: 1,
+    step: 1,
+    provider: 'p',
+    failure: { code: 'UNKNOWN' },
+    retryPolicy: undefined,
+    signal: new AbortController().signal,
+  }, () => ({ kind: 'retry' })), /request-error sync/)
+
+  events.dispose()
+
+  events.on('agent/request-error', async () => {
+    throw new Error('request-error async')
+  })
+  await assert.rejects(() => ctx.waterfall('agent/request-error', {
+    agent: 'agent-1',
+    turn: 1,
+    step: 1,
+    provider: 'p',
+    failure: { code: 'UNKNOWN' },
+    retryPolicy: undefined,
+    signal: new AbortController().signal,
+  }, () => ({ kind: 'retry' })), /request-error async/)
+})
+
+test('agent/turn-stopping serial preserves order, bail, scope, and failure propagation', async () => {
+  const ctx = createMockCordisCtx()
+  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const calls = []
+
+  events.on('agent/turn-stopping', async () => {
+    calls.push('first')
+  })
+  events.on('agent/turn-stopping', async () => {
+    calls.push('second')
+    return 'bailed'
+  })
+  events.on('agent/turn-stopping', async () => calls.push('third'))
+
+  const result = await ctx.serial('agent/turn-stopping', {
+    agent: 'agent-1',
+    turn: 1,
+    signal: new AbortController().signal,
+  })
+  assert.equal(result, 'bailed')
+  assert.deepEqual(calls, ['first', 'second'])
+
+  events.dispose()
+
+  // Scope mismatch returns undefined and does not short-circuit.
+  events.on('agent/turn-stopping', () => 'should-not-bail', { scope: 'agent-1' })
+  const scopedResult = await ctx.serial('agent/turn-stopping', {
+    agent: 'agent-2',
+    turn: 1,
+    signal: new AbortController().signal,
+  })
+  assert.equal(scopedResult, undefined)
+
+  events.dispose()
+
+  // Sync throw propagates.
+  events.on('agent/turn-stopping', () => {
+    throw new Error('serial sync propagate')
+  })
+  await assert.rejects(() => ctx.serial('agent/turn-stopping', {
+    agent: 'agent-1',
+    turn: 1,
+    signal: new AbortController().signal,
+  }), /serial sync propagate/)
+
+  events.dispose()
+
+  // Async rejection propagates.
+  events.on('agent/turn-stopping', async () => {
+    throw new Error('serial async propagate')
+  })
+  await assert.rejects(() => ctx.serial('agent/turn-stopping', {
+    agent: 'agent-1',
+    turn: 1,
+    signal: new AbortController().signal,
+  }), /serial async propagate/)
+})
+
+test('agent/* scope filtering: matching scope only, omitted scope sees all events', async () => {
+  const ctx = createMockCordisCtx()
+  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+
+  const modes = {
+    'agent/created': 'emit',
+    'agent/disposed': 'emit',
+    'agent/status': 'emit',
+    'agent/session-start': 'emit',
+    'agent/inbox/inserted': 'emit',
+    'agent/inbox/claimed': 'emit',
+    'agent/inbox/discarded': 'emit',
+    'agent/pre-step': 'waterfall',
+    'agent/request': 'waterfall',
+    'agent/request-error': 'waterfall',
+    'agent/turn-stopping': 'serial',
+    'agent/error': 'emit',
+  }
+
+  for (const [name, mode] of Object.entries(modes)) {
+    events.dispose()
+    const scopedCalls = []
+    const globalCalls = []
+
+    events.on(name, (payload, next) => {
+      scopedCalls.push(payload.agent)
+      if (mode === 'waterfall') return next()
+      return undefined
+    }, { scope: 'agent-1' })
+
+    events.on(name, (payload, next) => {
+      globalCalls.push(payload.agent)
+      if (mode === 'waterfall') return next()
+      return undefined
+    })
+
+    const payload = {
+      agent: 'agent-2',
+      messages: [],
+      turn: 1,
+      step: 1,
+      signal: new AbortController().signal,
+      provider: 'p',
+      failure: { code: 'UNKNOWN' },
+      retryPolicy: undefined,
+      error: new Error('x'),
+    }
+
+    if (mode === 'emit') {
+      ctx.emit(name, payload)
+      assert.deepEqual(scopedCalls, [], `${name}: scoped listener must not receive other agent`)
+      assert.deepEqual(globalCalls, ['agent-2'], `${name}: global listener sees other agent`)
+
+      scopedCalls.length = 0
+      globalCalls.length = 0
+      const matchingPayload = { ...payload, agent: 'agent-1' }
+      ctx.emit(name, matchingPayload)
+      assert.deepEqual(scopedCalls, ['agent-1'], `${name}: scoped listener receives matching agent`)
+      assert.deepEqual(globalCalls, ['agent-1'], `${name}: global listener receives matching agent too`)
+    } else if (mode === 'waterfall') {
+      const result = ctx.waterfall(name, payload, () => 'final')
+      assert.equal(result, 'final', `${name}: non-matching scoped waterfall must call next()`)
+      assert.deepEqual(scopedCalls, [], `${name}: scoped listener not called for other agent`)
+      assert.deepEqual(globalCalls, ['agent-2'], `${name}: global listener sees other agent`)
+
+      scopedCalls.length = 0
+      globalCalls.length = 0
+      const matchingPayload = { ...payload, agent: 'agent-1' }
+      const matchingResult = ctx.waterfall(name, matchingPayload, () => 'final')
+      assert.equal(matchingResult, 'final', `${name}: matching scoped waterfall runs both listeners and reaches next()`)
+      assert.deepEqual(scopedCalls, ['agent-1'], `${name}: scoped listener receives matching agent`)
+      assert.deepEqual(globalCalls, ['agent-1'], `${name}: global listener receives matching agent too`)
+    } else if (mode === 'serial') {
+      const result = await ctx.serial(name, payload)
+      assert.equal(result, undefined, `${name}: non-matching scoped serial must not short-circuit`)
+      assert.deepEqual(scopedCalls, [], `${name}: scoped listener not called for other agent`)
+      assert.deepEqual(globalCalls, ['agent-2'], `${name}: global listener sees other agent`)
+
+      scopedCalls.length = 0
+      globalCalls.length = 0
+      const matchingPayload = { ...payload, agent: 'agent-1' }
+      await ctx.serial(name, matchingPayload)
+      assert.deepEqual(scopedCalls, ['agent-1'], `${name}: scoped listener receives matching agent`)
+      assert.deepEqual(globalCalls, ['agent-1'], `${name}: global listener receives matching agent too`)
+    }
+  }
+})
+
+test('agent event freeze policy keeps live objects unfrozen and freezes marked data fields', async () => {
+  const ctx = createMockCordisCtx()
+  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  let observed
+
+  events.on('agent/pre-step', (payload) => {
+    observed = payload
+    assert.ok(Object.isFrozen(payload), 'payload top level is shallow frozen')
+    assert.ok(Object.isFrozen(payload.messages), 'messages array is deep-frozen')
+    assert.ok(Object.isFrozen(payload.messages[0]), 'message object is deep-frozen')
+    assert.ok(!Object.isFrozen(payload.agent), 'agent must not be deep-frozen')
+    assert.ok(!Object.isFrozen(payload.signal), 'signal must not be deep-frozen')
+    return payload
+  })
+
+  const agent = { id: 'agent-1' }
+  const signal = new AbortController().signal
+  ctx.waterfall('agent/pre-step', {
+    agent,
+    messages: [{ role: 'user', content: 'hi' }],
+    turn: 1,
+    step: 1,
+    signal,
+  }, () => ({ kind: 'enter' }))
+
+  assert.equal(observed.agent, agent)
+  assert.equal(observed.signal, signal)
+
+  events.dispose()
+
+  events.on('agent/request', (payload) => {
+    assert.ok(Object.isFrozen(payload), 'request payload top level is shallow frozen')
+    assert.ok(!Object.isFrozen(payload.agent), 'request agent must not be deep-frozen')
+    assert.ok(!Object.isFrozen(payload.signal), 'request signal must not be deep-frozen')
+    return payload
+  })
+  ctx.waterfall('agent/request', {
+    agent,
+    turn: 1,
+    step: 1,
+    signal,
+  }, () => ({ provider: 'p', model: 'm' }))
+})
+
+test('monitor listeners on propagate agent events stay observe-only', async () => {
+  const ctx = createMockCordisCtx()
+  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  let monitorCalled = false
+
+  events.on('agent/pre-step', () => {
+    monitorCalled = true
+    throw new Error('monitor boom')
+  }, { priority: 'monitor' })
+
+  const result = ctx.waterfall('agent/pre-step', {
+    agent: 'agent-1',
+    messages: [],
+    turn: 1,
+    step: 1,
+    signal: new AbortController().signal,
+  }, () => ({ kind: 'enter' }))
+  assert.deepEqual(result, { kind: 'enter' })
+  assert.equal(monitorCalled, true)
+
+  events.dispose()
+
+  events.on('agent/turn-stopping', () => {
+    monitorCalled = true
+    return 'monitor-bail'
+  }, { priority: 'monitor' })
+
+  const serialResult = await ctx.serial('agent/turn-stopping', {
+    agent: 'agent-1',
+    turn: 1,
+    signal: new AbortController().signal,
+  })
+  assert.equal(serialResult, undefined)
+  assert.equal(monitorCalled, true)
+})

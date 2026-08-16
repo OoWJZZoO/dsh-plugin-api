@@ -122,6 +122,8 @@
 
 **Type:** A/B（官方各 emit 点多为 per-listener contained；门面把该行为统一为总线契约）
 
+> **修订注记（`plugin-api-agent-m1`）**：本节“统一 contain”规则在 `agent/*` 事件上被 `plugin-api-agent-m1` 细化为 per-event `fault` 策略：7 个普通 `agent/*` emit 仍 contain；`agent/created` 同步 throw 传播（官方 sync-veto）、异步 rejection contain；`agent/pre-step`、`agent/request`、`agent/request-error`、`agent/turn-stopping` 传播。详见 `docs/specs/plugin-api-agent-m1/requirements.md` §9.1。
+
 ---
 
 ### 7. Event catalog (E12)
@@ -138,6 +140,8 @@
 6. WHEN a catalog entry's `scopeFiltered` is `true`, THEN the entry SHALL identify the scope key per AC 5.4.
 
 **Type:** 门面基础（事件目录；首版范围仅本次 25 个 feature）
+
+> **修订注记（`plugin-api-agent-m1`）**：目录 schema 已升级：`subject` 更名为 `scopeKey`，每个 entry 新增 `fault`（`'contain' | 'created' | 'propagate'`）与 `freeze`（`'all' | { deep: string[] }`）字段。`plugin-api-agent-m1` 交付后目录新增 12 个 `agent/*` 条目，运行时总数为 31；AC 7.3/7.4 的“恰好 19 个”仅适用于本 spec 首版，后续 feature 扩展以各自 spec 为准。
 
 ---
 

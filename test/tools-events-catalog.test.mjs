@@ -22,7 +22,7 @@ test('every tools catalog entry has the required metadata fields', () => {
     assert.ok(typeof entry.name === 'string', `${name}: name`)
     assert.ok(['on', 'emit', 'serial', 'parallel', 'bail', 'waterfall'].includes(entry.mode), `${name}: mode`)
     assert.ok(typeof entry.scopeFiltered === 'boolean', `${name}: scopeFiltered`)
-    assert.ok('subject' in entry, `${name}: subject field`)
+    assert.ok('scopeKey' in entry, `${name}: scopeKey field`)
     assert.ok(['all', 'except-signal'].includes(entry.freeze), `${name}: freeze`)
     assert.ok(typeof entry.payload === 'string', `${name}: payload`)
     assert.ok(typeof entry.args === 'string', `${name}: args`)
@@ -31,7 +31,7 @@ test('every tools catalog entry has the required metadata fields', () => {
   }
 })
 
-test('tools catalog entries match the confirmed mode/scope/subject/freeze matrix', () => {
+test('tools catalog entries match the confirmed mode/scopeKey/freeze matrix', () => {
   const matrix = {
     'tools/change': ['emit', false, undefined, 'all', 'T2'],
     'tools/pre-execute': ['waterfall', true, 'args[0].agent', 'all', 'T3'],
@@ -44,7 +44,7 @@ test('tools catalog entries match the confirmed mode/scope/subject/freeze matrix
     const entry = toolsCatalogEntryOf(name)
     assert.equal(entry.mode, mode, `${name}: mode`)
     assert.equal(entry.scopeFiltered, scopeFiltered, `${name}: scopeFiltered`)
-    assert.equal(entry.subject, subject, `${name}: subject`)
+    assert.equal(entry.scopeKey, subject, `${name}: subject`)
     assert.equal(entry.freeze, freeze, `${name}: freeze`)
     assert.equal(entry.source, source, `${name}: source`)
     assert.equal(entry.type, 'A', `${name}: type`)
@@ -61,6 +61,6 @@ test('tools catalog and every entry are frozen', () => {
 test('toolsCatalogEntryOf returns the entry for known names and undefined otherwise', () => {
   assert.equal(toolsCatalogEntryOf('tools/execute')?.name, 'tools/execute')
   assert.equal(toolsCatalogEntryOf('tools/change')?.scopeFiltered, false)
-  assert.equal(toolsCatalogEntryOf('tools/pre-execute')?.subject, 'args[0].agent')
+  assert.equal(toolsCatalogEntryOf('tools/pre-execute')?.scopeKey, 'args[0].agent')
   assert.equal(toolsCatalogEntryOf('not-a-real-tool-event'), undefined)
 })

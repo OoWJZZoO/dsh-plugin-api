@@ -120,17 +120,19 @@
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| A1 Agent 生命周期事件 | `agent/created`、`agent/disposed`、`agent/status`、`agent/session-start` 类型化订阅 | A | `dsh-agent/lib/types/runtime-types.d.ts:134-220` | M1 | planned |
-| A2 Inbox 事件 | `agent/inbox/inserted|claimed|discarded` 类型化订阅 | A | 同上 `:180-208` | M1 | planned |
-| A3 步骤前置瀑布 | `events.waterfall('agent/pre-step', payload, next)`（可 reject / 替换进入步骤的 messages） | A | 同上 `:235-241`；`dsh-agent-loop/lib/index.js:501` | M1 | planned |
-| A4 模型路由决策 | `events.waterfall('agent/request', payload, next)`（替换 provider/model 配置） | A | 同上 `:254-259`；`dsh-agent-loop/lib/index.js:685` | M1 | planned |
-| A5 请求失败恢复 | `events.waterfall('agent/request-error', payload, next)` | A | 同上 `:275-283`；`dsh-agent-loop/lib/index.js:630` | M1 | planned |
-| A6 回合停止决策 | `events.serial('agent/turn-stopping', payload)` | A | 同上 `:301-305`；`dsh-agent-loop/lib/index.js:565` | M1 | planned |
-| A7 Agent 错误通知 | `events.on('agent/error', listener)` | A | 同上 `:316-321`；`dsh-agent-loop/lib/index.js:470` | M1 | planned |
-| A8 Agent 注册表读面 | `agent.get(id)`、`agent.list()`、`agent.roots()` 稳定直通 | A | `dsh-agent/lib/types/index.d.ts:349-370` | M1 | planned |
+| A1 Agent 生命周期事件 | `agent/created`、`agent/disposed`、`agent/status`、`agent/session-start` 类型化订阅 | A | `dsh-agent/lib/types/runtime-types.d.ts:134-220` | M1 | **delivered** |
+| A2 Inbox 事件 | `agent/inbox/inserted|claimed|discarded` 类型化订阅 | A | 同上 `:180-208` | M1 | **delivered** |
+| A3 步骤前置瀑布 | `events.waterfall('agent/pre-step', payload, next)`（可 reject / 替换进入步骤的 messages） | A | 同上 `:235-241`；`dsh-agent-loop/lib/index.js:501` | M1 | **delivered** |
+| A4 模型路由决策 | `events.waterfall('agent/request', payload, next)`（替换 provider/model 配置） | A | 同上 `:254-259`；`dsh-agent-loop/lib/index.js:685` | M1 | **delivered** |
+| A5 请求失败恢复 | `events.waterfall('agent/request-error', payload, next)` | A | 同上 `:275-283`；`dsh-agent-loop/lib/index.js:630` | M1 | **delivered** |
+| A6 回合停止决策 | `events.serial('agent/turn-stopping', payload)` | A | 同上 `:301-305`；`dsh-agent-loop/lib/index.js:565` | M1 | **delivered** |
+| A7 Agent 错误通知 | `events.on('agent/error', listener)` | A | 同上 `:316-321`；`dsh-agent-loop/lib/index.js:470` | M1 | **delivered** |
+| A8 Agent 注册表读面 | `agent.get(id)`、`agent.list()`、`agent.roots()` 稳定直通 | A | `dsh-agent/lib/types/index.d.ts:349-370` | M1 | **delivered** |
 | A9 当前路由查询 | `agent.routeOf(exec)` / `pluginApi.agent.execRoute(exec)`：从 `session.requestContext()` 或 `tools/pre-execute` 注入推断 `{provider, model}` | B | 官方无 `exec.route`；dsh-read-image A6（`routeOf` 深挖 agent 内部） | M2 | planned |
 | A10 官方路由 API | 官方 `exec.route` / `routeOf(exec)` 或等价字段 | C | AGENTS.md 第 2.5 条 C 类 | M4 | planned（proposal） |
 | A11 Agent 创建/注册高级面 | `agent.create/resume/register/enter/announce`、`agent.setFactory` 稳定直通（按能力分级暴露） | A | `dsh-agent/lib/index.js:519` 起；`dsh-agent-loop/lib/index.js:1000` | M2 | planned |
+
+> A1–A8 已由 `plugin-api-agent-m1` 交付（spec 目录 `docs/specs/plugin-api-agent-m1/`）。关键约束：12 个 `agent/*` 事件已纳入 `pluginApi.events.catalog`（共 31 条）；catalog 新增 `scopeKey/fault/freeze` 字段；`agent/created` 保留官方 sync-veto / async-report 语义；A3–A6 为 `fault:'propagate'`；`agent`/`signal` 永不 deepFreeze。
 
 ### 2.5 `pluginApi.session` —— 会话与上屏事件面（M1/M2）
 
