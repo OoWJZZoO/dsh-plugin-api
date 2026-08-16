@@ -81,6 +81,59 @@ test('active service with unmounted feature throws feature-disabled error', () =
   )
 })
 
+test('inert service exposes settings stub that throws inactive error without service calls', () => {
+  const registry = createFeatureRegistry()
+  const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: false })
+  const ctx = mockCtx()
+  const service = instantiate(ServiceClass, ctx)
+
+  for (const call of [
+    () => service.settings.register('ns', {}),
+    () => service.settings.scope('ns'),
+    () => service.settings.describe(),
+    () => service.settings.installSettingsSection({}, 'ns', {}, {}, {}),
+  ]) {
+    assert.throws(call, (error) => {
+      assert.ok(error instanceof PluginApiInactiveError)
+      assert.equal(error.code, 'PLUGIN_API_INACTIVE')
+      return true
+    })
+  }
+  assert.equal(service.settings.isActive, false)
+  assert.equal(ctx.getCalls.length, 0)
+})
+
+test('active service with unmounted settings feature throws feature-disabled error', () => {
+  const registry = createFeatureRegistry()
+  const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
+  const service = instantiate(ServiceClass, mockCtx())
+
+  for (const call of [
+    () => service.settings.register('ns', {}),
+    () => service.settings.scope('ns'),
+    () => service.settings.describe(),
+    () => service.settings.installSettingsSection({}, 'ns', {}, {}, {}),
+  ]) {
+    assert.throws(call, (error) => {
+      assert.ok(error instanceof PluginApiFeatureDisabledError)
+      assert.equal(error.code, 'PLUGIN_API_FEATURE_DISABLED')
+      assert.equal(error.feature, 'settings')
+      return true
+    })
+  }
+  assert.equal(service.settings.isActive, false)
+})
+
+test('mountFeature injects the settings API', () => {
+  const registry = createFeatureRegistry()
+  const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
+  const service = instantiate(ServiceClass, mockCtx())
+
+  const settingsApi = { isActive: true, register() {}, scope() {}, describe() {}, installSettingsSection() {} }
+  service.mountFeature('settings', settingsApi)
+  assert.equal(service.settings, settingsApi)
+})
+
 test('assertCompatible returns true when satisfied', () => {
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })

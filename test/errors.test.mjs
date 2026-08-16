@@ -5,6 +5,8 @@ import {
   PluginApiEventPriorityError,
   PluginApiFeatureDisabledError,
   PluginApiInactiveError,
+  PluginApiServiceUnavailableError,
+  PluginApiSettingsNamespaceError,
   PluginApiVersionError,
 } from '../lib/errors.js'
 
@@ -63,4 +65,24 @@ test('PluginApiEventPriorityError carries the invalid priority value', () => {
   assert.equal(error.priority, 'urgent')
   assert.match(error.message, /urgent/)
   assert.match(error.message, /priority/i)
+})
+
+test('PluginApiServiceUnavailableError carries the service name', () => {
+  const error = new PluginApiServiceUnavailableError('settings')
+  assert.ok(error instanceof PluginApiError)
+  assert.ok(error instanceof PluginApiServiceUnavailableError)
+  assert.equal(error.code, 'PLUGIN_API_SERVICE_UNAVAILABLE')
+  assert.equal(error.service, 'settings')
+  assert.match(error.message, /settings/)
+  assert.match(error.message, /unavailable/i)
+})
+
+test('PluginApiSettingsNamespaceError carries the namespace', () => {
+  const error = new PluginApiSettingsNamespaceError('my-plugin')
+  assert.ok(error instanceof PluginApiError)
+  assert.ok(error instanceof PluginApiSettingsNamespaceError)
+  assert.equal(error.code, 'PLUGIN_API_SETTINGS_NAMESPACE_NOT_FOUND')
+  assert.equal(error.ns, 'my-plugin')
+  assert.match(error.message, /my-plugin/)
+  assert.match(error.message, /register/i)
 })

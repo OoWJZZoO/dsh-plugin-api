@@ -177,14 +177,14 @@
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| ST1 命名空间注册 | `settings.register(ns, schema, {base, applies, validate})` 类型化 | A | `dsh-settings/lib/types/index.d.ts:216` | M1 | planned |
-| ST2 设置作用域 | `settings.scope<T>(ns): SettingsScope<T>`（`get/watch/update/replace/mutate`） | A | 同上 `:85-111` | M1 | planned |
-| ST3 设置事件 | `events.on('settings/updated'\|'settings/document-updated', listener)` | A | `dsh-settings/lib/index.js:525-568` | M1 | planned |
+| ST1 命名空间注册 | `settings.register(ns, schema, {base, applies, validate})` 类型化 | A | `dsh-settings/lib/types/index.d.ts:225` | M1 | delivered |
+| ST2 设置作用域 | `settings.scope<T>(ns): SettingsScope<T>`（`get/watch/update/replace/mutate`） | A | 同上 `:85-111` | M1 | delivered |
+| ST3 设置事件 | `events.on('settings/updated'\|'settings/document-updated', listener)` | A | `dsh-settings/lib/index.js:523,561` | M1 | delivered |
 | ST4 设置可视化桥（host 侧） | `settings.remote(namespace, serviceKey?)`：用 `TypertRemoteService` + `bindTypertRemote` 注册可远程调用的设置服务 | B | dsh-read-image A3（手搓 `@Remote`）；`dsh-typert-protocol` 导出 `TypertRemoteService/remoteMethods` | M3 | planned |
 | ST5 设置可视化桥（client 侧） | `client.mountRemoteContribution(contribution)`：封装 `ctx.remote.$mount` + face 校验 + 失败 UI 降级 | B | dsh-read-image A5（`ctx.remote.$mount` 自挂载）；`dsh-api-remotes/lib/client.js` | M3 | planned |
 | ST6 真 codec 生成 | client bundle 打包一份 zod，生成满足 `dsh-api-remotes` 校验的 descriptor（替代 looseSchema） | B | dsh-read-image A4（伪造 zod schema）；AGENTS.md 第 4.5 条 | M3 | planned |
 | ST7 插件设置命名空间动态化 | 官方 `WEB_SETTINGS_NAMESPACES` 支持第三方插件命名空间 | C | `dsh-host-apiproxy/lib/types/api-proxy.js:50-52` 当前硬编码 7 个命名空间 | M4 | planned（proposal） |
-| ST8 设置描述与安装 helper | `settings.describe({redactSecrets})` 稳定直通；`installSettingsSection(ctx, ns, schema, entry, hooks)` 作为注册便利封装 | A | `dsh-settings/lib/index.js`（`describe` L352；`installSettingsSection` L618） | M1 | planned |
+| ST8 设置描述与安装 helper | `settings.describe({redactSecrets})` 稳定直通；`installSettingsSection(ctx, ns, schema, entry, hooks)` 作为注册便利封装 | A | `dsh-settings/lib/index.js`（`describe` L352；`installSettingsSection` L618） | M1 | delivered |
 
 ### 2.9 `pluginApi.client` —— 客户端 bundle / slot / remote（M3/M4）
 

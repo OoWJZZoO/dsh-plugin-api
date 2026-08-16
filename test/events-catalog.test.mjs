@@ -22,9 +22,11 @@ const EXPECTED_NAMES = [
   'credentials/updated',
   'goal/changed',
   'session-telemetry/record',
+  'settings/updated',
+  'settings/document-updated',
 ]
 
-test('catalog contains exactly the 19 in-scope event names', () => {
+test('catalog contains exactly the 21 in-scope event names', () => {
   assert.deepEqual(Object.keys(eventsCatalog).sort(), [...EXPECTED_NAMES].sort())
 })
 
@@ -64,6 +66,8 @@ test('catalog entries match the confirmed mode/scope/subject matrix', () => {
     'credentials/updated': ['emit', false, undefined],
     'goal/changed': ['emit', true, 'args[0].agent'],
     'session-telemetry/record': ['waterfall', false, undefined],
+    'settings/updated': ['emit', false, undefined],
+    'settings/document-updated': ['emit', false, undefined],
   }
   for (const [name, [mode, scopeFiltered, subject]] of Object.entries(matrix)) {
     const entry = catalogEntryOf(name)
@@ -79,6 +83,22 @@ test('catalog and every entry are frozen', () => {
   for (const entry of Object.values(eventsCatalog)) {
     assert.ok(Object.isFrozen(entry), `${entry.name} entry is frozen`)
   }
+})
+
+test('settings event entries carry ST3 payload metadata and settings feature gate', () => {
+  const updated = catalogEntryOf('settings/updated')
+  assert.equal(updated.source, 'ST3')
+  assert.equal(updated.type, 'A')
+  assert.equal(updated.feature, 'settings')
+  assert.equal(updated.args, '(ns, next, prev, source)')
+  assert.match(updated.payload, /source/)
+
+  const documentUpdated = catalogEntryOf('settings/document-updated')
+  assert.equal(documentUpdated.source, 'ST3')
+  assert.equal(documentUpdated.type, 'A')
+  assert.equal(documentUpdated.feature, 'settings')
+  assert.equal(documentUpdated.args, '(ns, revision)')
+  assert.match(documentUpdated.payload, /revision/)
 })
 
 test('catalogEntryOf returns the entry for known names and undefined otherwise', () => {
