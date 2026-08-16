@@ -4,3 +4,4 @@ temp/
 coverage/
 *.log
 .DS_Store
+.dsh/
