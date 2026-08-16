@@ -1,7 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { apply } from '../lib/index.js'
-import { eventsCatalog } from '../lib/events-catalog.js'
 import { PluginApiFeatureDisabledError } from '../lib/errors.js'
 
 function createMockCtx(options = {}) {

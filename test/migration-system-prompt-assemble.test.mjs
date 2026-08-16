@@ -2,7 +2,9 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import * as dshSystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import { createEventsBus } from '../lib/events-bus.js'
-import { eventsCatalog } from '../lib/events-catalog.js'
+import { baseEventsCatalog } from '../lib/events-catalog.js'
+import { composeCatalogs } from '../lib/catalog-compose.js'
+import { systemPromptEventsCatalog } from '../lib/system-prompt-events-catalog.js'
 
 /**
  * Minimal Cordis-like context implementing waterfall dispatch exactly the way
@@ -97,7 +99,7 @@ test('dsh-pro-ex-ability-anchor assemble listener pattern is behavior-equivalent
 
   // Facade behavior through pluginApi.events must be equivalent.
   const facadeCtx = createWaterfallCtx()
-  const events = createEventsBus({ ctx: facadeCtx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx: facadeCtx, catalog: composeCatalogs(baseEventsCatalog, systemPromptEventsCatalog) })
   let facadeArgs
   events.on('system-prompt/assemble', (assembly, ctx, next) => {
     facadeArgs = [assembly, ctx, next]

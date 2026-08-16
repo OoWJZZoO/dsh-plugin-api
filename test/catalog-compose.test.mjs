@@ -1,16 +1,16 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { composeCatalogs } from '../lib/catalog-compose.js'
-import { eventsCatalog } from '../lib/events-catalog.js'
+import { baseEventsCatalog } from '../lib/events-catalog.js'
 import { sessionLifecycleEventsCatalog } from '../lib/session-events-catalog.js'
 
 test('composeCatalogs merges base events and session lifecycle catalogs', () => {
-  const composed = composeCatalogs(eventsCatalog, sessionLifecycleEventsCatalog)
+  const composed = composeCatalogs(baseEventsCatalog, sessionLifecycleEventsCatalog)
 
-  assert.equal(Object.keys(composed).length, 41)
-  for (const name of Object.keys(eventsCatalog)) {
+  assert.equal(Object.keys(composed).length, 23)
+  for (const name of Object.keys(baseEventsCatalog)) {
     assert.ok(name in composed, `${name} must be present`)
-    assert.equal(composed[name], eventsCatalog[name], `${name} entry must be preserved`)
+    assert.equal(composed[name], baseEventsCatalog[name], `${name} entry must be preserved`)
   }
   for (const name of Object.keys(sessionLifecycleEventsCatalog)) {
     assert.ok(name in composed, `${name} must be present`)
@@ -19,7 +19,7 @@ test('composeCatalogs merges base events and session lifecycle catalogs', () => 
 })
 
 test('composed catalog and every entry are deeply frozen', () => {
-  const composed = composeCatalogs(eventsCatalog, sessionLifecycleEventsCatalog)
+  const composed = composeCatalogs(baseEventsCatalog, sessionLifecycleEventsCatalog)
   assert.ok(Object.isFrozen(composed), 'composed catalog must be frozen')
   for (const entry of Object.values(composed)) {
     assert.ok(Object.isFrozen(entry), 'each entry must be frozen')

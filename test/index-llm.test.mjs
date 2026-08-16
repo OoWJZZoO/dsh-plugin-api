@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { apply } from '../lib/index.js'
-import { eventsCatalog } from '../lib/events-catalog.js'
+import { llmEventsCatalog } from '../lib/llm-events-catalog.js'
 import { PluginApiFeatureDisabledError } from '../lib/errors.js'
 
 function createMockCtx(options = {}) {
@@ -109,8 +109,8 @@ test('llm guard failure disables only llm and keeps facade active with LLM catal
   assert.equal(llmFeature.isActive, false)
   assert.match(llmFeature.reason, /llm\.prepareCall/)
 
-  assert.ok(eventsCatalog['llm/stream'])
-  assert.ok(eventsCatalog['llm/adapters-updated'])
+  assert.ok(llmEventsCatalog['llm/stream'])
+  assert.ok(llmEventsCatalog['llm/adapters-updated'])
   assert.ok(state.pluginApi.events.catalog['llm/stream'])
   assert.ok(state.pluginApi.events.catalog['llm/adapters-updated'])
 

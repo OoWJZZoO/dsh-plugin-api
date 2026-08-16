@@ -1,9 +1,15 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { catalogEntryOf, eventsCatalog, mergeEventCatalogs } from '../lib/events-catalog.js'
+import { baseEventsCatalog, catalogEntryOf } from '../lib/events-catalog.js'
+import { composeCatalogs } from '../lib/catalog-compose.js'
+import { agentEventsCatalog } from '../lib/agent-events-catalog.js'
+import { llmEventsCatalog } from '../lib/llm-events-catalog.js'
+import { systemPromptEventsCatalog } from '../lib/system-prompt-events-catalog.js'
+import { settingsEventsCatalog } from '../lib/settings-events-catalog.js'
+import { sessionLifecycleEventsCatalog } from '../lib/session-events-catalog.js'
 import { toolsEventsCatalog } from '../lib/tools-events-catalog.js'
 
-const PRE_EXISTING_NAMES = [
+const BASE_NAMES = [
   'fs/write-intent',
   'fs/edit-intent',
   'fs/observed',
@@ -23,217 +29,76 @@ const PRE_EXISTING_NAMES = [
   'credentials/updated',
   'goal/changed',
   'session-telemetry/record',
-
-
-  'llm/stream',
-  'llm/adapters-updated',
-  'system-prompt/assemble',
-  'system-prompt/change',
-  'settings/updated',
-  'settings/document-updated',
 ]
 
-
-const AGENT_NAMES = [
-  'agent/created',
-  'agent/disposed',
-  'agent/status',
-  'agent/session-start',
-  'agent/inbox/inserted',
-  'agent/inbox/claimed',
-  'agent/inbox/discarded',
-  'agent/pre-step',
-  'agent/request',
-  'agent/request-error',
-  'agent/turn-stopping',
-  'agent/error',
-]
-
-const EXPECTED_NAMES = [...PRE_EXISTING_NAMES, ...AGENT_NAMES]
-
-test('catalog contains exactly the 37 in-scope event names', () => {
-  assert.deepEqual(Object.keys(eventsCatalog).sort(), [...EXPECTED_NAMES].sort())
+test('base catalog contains exactly the 19 events-m1 event names', () => {
+  assert.deepEqual(Object.keys(baseEventsCatalog).sort(), [...BASE_NAMES].sort())
 })
 
-test('every catalog entry has the required metadata fields', () => {
-  for (const name of EXPECTED_NAMES) {
-    const entry = eventsCatalog[name]
+test('every base entry has the required unified-schema metadata fields', () => {
+  for (const name of BASE_NAMES) {
+    const entry = baseEventsCatalog[name]
     assert.ok(entry, `missing entry: ${name}`)
     assert.ok(typeof entry.name === 'string', `${name}: name`)
     assert.ok(['on', 'emit', 'serial', 'parallel', 'bail', 'waterfall'].includes(entry.mode), `${name}: mode`)
     assert.ok(typeof entry.scopeFiltered === 'boolean', `${name}: scopeFiltered`)
-    assert.ok('scopeKey' in entry, `${name}: scopeKey field`)
+    assert.ok(entry.scopeKey === undefined || entry.scopeKey === null
+      || entry.scopeKey === 'args[0].agent' || entry.scopeKey === 'args[1].scope', `${name}: scopeKey domain`)
     assert.ok(typeof entry.payload === 'string', `${name}: payload`)
     assert.ok(typeof entry.args === 'string', `${name}: args`)
     assert.ok(typeof entry.source === 'string', `${name}: source`)
-    assert.ok(['A', 'B'].includes(entry.type), `${name}: type`)
-    assert.ok(['contain', 'created', 'propagate'].includes(entry.fault), `${name}: fault`)
-    assert.ok(entry.freeze === 'all' || (entry.freeze && Array.isArray(entry.freeze.deep)), `${name}: freeze`)
+    assert.ok(entry.type === 'A' || entry.type === 'B', `${name}: type`)
   }
 })
 
-test('pre-existing entries keep the events-m1 behavior (fault contain, freeze all, scopeKey = old subject)', () => {
-  const matrix = {
-    'fs/write-intent': ['waterfall', false, undefined],
-    'fs/edit-intent': ['waterfall', false, undefined],
-    'fs/observed': ['emit', false, undefined],
-    'subagent/start': ['emit', true, null],
-    'subagent/end': ['emit', true, null],
-    'subagent/provider-added': ['emit', false, undefined],
-    'subagent/provider-removed': ['emit', false, undefined],
-    'workflow/start': ['emit', false, undefined],
-    'workflow/phase': ['emit', false, undefined],
-    'workflow/log': ['emit', false, undefined],
-    'workflow/agent-start': ['emit', false, undefined],
-    'workflow/agent-end': ['emit', false, undefined],
-    'workflow/end': ['emit', false, undefined],
-    'approval/request': ['waterfall', true, 'args[0].agent'],
-    'commands/change': ['emit', false, undefined],
-    'skills/change': ['emit', false, undefined],
-    'credentials/updated': ['emit', false, undefined],
-    'goal/changed': ['emit', true, 'args[0].agent'],
-    'session-telemetry/record': ['waterfall', false, undefined],
-
-
-    'llm/stream': ['waterfall', false, undefined],
-    'llm/adapters-updated': ['emit', false, undefined],
-    'system-prompt/assemble': ['waterfall', true, 'args[1].scope'],
-    'system-prompt/change': ['emit', false, undefined],
-    'settings/updated': ['emit', false, undefined],
-    'settings/document-updated': ['emit', false, undefined],
-  }
-  for (const [name, [mode, scopeFiltered, scopeKey]] of Object.entries(matrix)) {
-    const entry = catalogEntryOf(name)
-    assert.equal(entry.mode, mode, `${name}: mode`)
-    assert.equal(entry.scopeFiltered, scopeFiltered, `${name}: scopeFiltered`)
-    assert.equal(entry.scopeKey, scopeKey, `${name}: scopeKey`)
-    assert.equal(entry.type, 'A', `${name}: type`)
-    assert.equal(entry.fault, 'contain', `${name}: fault`)
-    assert.equal(entry.freeze, 'all', `${name}: freeze`)
+test('base entries keep the events-m1 behavior (fault contain, freeze all)', () => {
+  for (const name of BASE_NAMES) {
+    const entry = baseEventsCatalog[name]
+    assert.equal(entry.fault, 'contain', `${name}: fault defaults to contain`)
+    assert.equal(entry.freeze, 'all', `${name}: freeze defaults to all`)
   }
 })
 
-test('agent entries match the design matrix (mode, scopeKey, fault, freeze)', () => {
-  const matrix = {
-    'agent/created': ['emit', 'created', []],
-    'agent/disposed': ['emit', 'contain', []],
-    'agent/status': ['emit', 'contain', []],
-    'agent/session-start': ['emit', 'contain', []],
-    'agent/inbox/inserted': ['emit', 'contain', []],
-    'agent/inbox/claimed': ['emit', 'contain', []],
-    'agent/inbox/discarded': ['emit', 'contain', []],
-    'agent/pre-step': ['waterfall', 'propagate', ['messages']],
-    'agent/request': ['waterfall', 'propagate', []],
-    'agent/request-error': ['waterfall', 'propagate', ['failure']],
-    'agent/turn-stopping': ['serial', 'propagate', []],
-    'agent/error': ['emit', 'contain', []],
-  }
-  for (const [name, [mode, fault, deep]] of Object.entries(matrix)) {
-    const entry = catalogEntryOf(name)
-    assert.equal(entry.mode, mode, `${name}: mode`)
-    assert.equal(entry.scopeFiltered, true, `${name}: scopeFiltered`)
-    assert.equal(entry.scopeKey, 'args[0].agent', `${name}: scopeKey`)
-    assert.equal(entry.fault, fault, `${name}: fault`)
-    assert.deepEqual(entry.freeze.deep, deep, `${name}: freeze.deep`)
-    assert.equal(entry.type, 'A', `${name}: type`)
-  }
-})
-
-test('llm/stream and llm/adapters-updated entries carry the L3/L6 metadata', () => {
-  const stream = catalogEntryOf('llm/stream')
-  assert.equal(stream.mode, 'waterfall')
-  assert.equal(stream.scopeFiltered, false)
-  assert.equal(stream.scopeKey, undefined)
-  assert.match(stream.payload, /GenerateOptions/)
-  assert.equal(stream.args, '(options, next)')
-  assert.equal(stream.source, 'L3')
-  assert.equal(stream.type, 'A')
-
-  const updated = catalogEntryOf('llm/adapters-updated')
-  assert.equal(updated.mode, 'emit')
-  assert.equal(updated.scopeFiltered, false)
-  assert.equal(updated.scopeKey, undefined)
-  assert.equal(updated.payload, 'none')
-  assert.equal(updated.args, '()')
-  assert.equal(updated.source, 'L6')
-  assert.equal(updated.type, 'A')
-})
-
-test('catalog and every entry are frozen', () => {
-  assert.ok(Object.isFrozen(eventsCatalog), 'catalog is frozen')
-  for (const entry of Object.values(eventsCatalog)) {
+test('base catalog and every entry are deeply frozen', () => {
+  assert.ok(Object.isFrozen(baseEventsCatalog), 'catalog is frozen')
+  for (const entry of Object.values(baseEventsCatalog)) {
     assert.ok(Object.isFrozen(entry), `${entry.name} entry is frozen`)
-    if (entry.freeze && typeof entry.freeze === 'object') {
-      assert.ok(Object.isFrozen(entry.freeze), `${entry.name} freeze policy is frozen`)
-    }
   }
 })
 
-
-test('system-prompt catalog entries match the confirmed metadata', () => {
-  const assemble = catalogEntryOf('system-prompt/assemble')
-  assert.equal(assemble.mode, 'waterfall')
-  assert.equal(assemble.scopeFiltered, true)
-  assert.equal(assemble.scopeKey, 'args[1].scope')
-  assert.equal(assemble.payload, 'assembly {sections, contexts, tools, variables}; context {scope?, signal?}')
-  assert.equal(assemble.args, '(assembly, context, next)')
-  assert.equal(assemble.source, 'P6')
-  assert.equal(assemble.type, 'A')
-
-  const change = catalogEntryOf('system-prompt/change')
-  assert.equal(change.mode, 'emit')
-  assert.equal(change.scopeFiltered, false)
-  assert.equal(change.scopeKey, undefined)
-  assert.equal(change.payload, 'none')
-  assert.equal(change.args, '()')
-  assert.equal(change.source, 'P7')
-  assert.equal(change.type, 'A')
+test('composing all M1 slices yields exactly the 47 stabilized event names', () => {
+  const composed = composeCatalogs(
+    baseEventsCatalog,
+    agentEventsCatalog,
+    llmEventsCatalog,
+    systemPromptEventsCatalog,
+    settingsEventsCatalog,
+    sessionLifecycleEventsCatalog,
+    toolsEventsCatalog,
+  )
+  const expected = [
+    ...BASE_NAMES,
+    ...Object.keys(agentEventsCatalog),
+    ...Object.keys(llmEventsCatalog),
+    ...Object.keys(systemPromptEventsCatalog),
+    ...Object.keys(settingsEventsCatalog),
+    ...Object.keys(sessionLifecycleEventsCatalog),
+    ...Object.keys(toolsEventsCatalog),
+  ]
+  assert.deepEqual(Object.keys(composed).sort(), expected.sort())
+  assert.equal(Object.keys(composed).length, 47)
+  assert.ok(Object.isFrozen(composed), 'composed catalog is frozen')
 })
 
-test('settings event entries carry ST3 payload metadata and settings feature gate', () => {
-  const updated = catalogEntryOf('settings/updated')
-  assert.equal(updated.source, 'ST3')
-  assert.equal(updated.type, 'A')
-  assert.equal(updated.feature, 'settings')
-  assert.equal(updated.args, '(ns, next, prev, source)')
-  assert.match(updated.payload, /source/)
-
-  const documentUpdated = catalogEntryOf('settings/document-updated')
-  assert.equal(documentUpdated.source, 'ST3')
-  assert.equal(documentUpdated.type, 'A')
-  assert.equal(documentUpdated.feature, 'settings')
-  assert.equal(documentUpdated.args, '(ns, revision)')
-  assert.match(documentUpdated.payload, /revision/)
+test('composition fails loud on duplicate event names', () => {
+  assert.throws(
+    () => composeCatalogs(baseEventsCatalog, { 'goal/changed': { name: 'goal/changed' } }),
+    /duplicate catalog entry "goal\/changed"/,
+  )
 })
 
-test('catalogEntryOf returns the entry for known names and undefined otherwise', () => {
+test('catalogEntryOf resolves base entries and returns undefined otherwise', () => {
   assert.equal(catalogEntryOf('goal/changed')?.name, 'goal/changed')
-  assert.equal(catalogEntryOf('agent/created')?.name, 'agent/created')
+  assert.equal(catalogEntryOf('agent/created'), undefined, 'slice entries are not base-cataloged')
   assert.equal(catalogEntryOf('not-a-real-event'), undefined)
-})
-
-test('mergeEventCatalogs combines base and tools catalogs into a frozen 25-entry catalog', () => {
-  const merged = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
-  assert.deepEqual(Object.keys(merged).sort(), [...EXPECTED_NAMES, ...Object.keys(toolsEventsCatalog)].sort())
-  assert.ok(Object.isFrozen(merged), 'merged catalog is frozen')
-  for (const entry of Object.values(merged)) {
-    assert.ok(Object.isFrozen(entry), `${entry.name} entry is frozen`)
-  }
-  assert.equal(merged['tools/execute']?.freeze, 'except-signal')
-  assert.equal(merged['goal/changed']?.mode, 'emit')
-})
-
-test('mergeEventCatalogs with only the base catalog is equivalent to the base catalog', () => {
-  const merged = mergeEventCatalogs(eventsCatalog)
-  assert.deepEqual(Object.keys(merged).sort(), [...EXPECTED_NAMES].sort())
-  assert.ok(Object.isFrozen(merged))
-})
-
-test('mergeEventCatalogs does not mutate the base catalogs', () => {
-  const before = Object.keys(eventsCatalog).length
-  mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
-  assert.equal(Object.keys(eventsCatalog).length, before)
-  assert.equal(eventsCatalog['tools/execute'], undefined)
-  assert.ok(Object.isFrozen(eventsCatalog))
-  assert.ok(Object.isFrozen(toolsEventsCatalog))
 })

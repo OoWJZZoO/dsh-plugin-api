@@ -1,7 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createEventsBus } from '../lib/events-bus.js'
-import { eventsCatalog } from '../lib/events-catalog.js'
+import { baseEventsCatalog } from '../lib/events-catalog.js'
+import { composeCatalogs } from '../lib/catalog-compose.js'
+import { settingsEventsCatalog } from '../lib/settings-events-catalog.js'
+
+const settingsCatalog = composeCatalogs(baseEventsCatalog, settingsEventsCatalog)
 import { createFeatureRegistry } from '../lib/feature-registry.js'
 import { PluginApiFeatureDisabledError } from '../lib/errors.js'
 
@@ -40,7 +44,7 @@ function createMockCtx() {
 
 test('without featureRegistry settings events remain subscribable', () => {
   const ctx = createMockCtx()
-  const bus = createEventsBus({ ctx, catalog: eventsCatalog })
+  const bus = createEventsBus({ ctx, catalog: settingsCatalog })
   let received
   assert.doesNotThrow(() => {
     bus.on('settings/updated', (...args) => {
@@ -55,7 +59,7 @@ test('with featureRegistry and active settings feature subscriptions dispatch no
   const registry = createFeatureRegistry()
   registry.mount('settings')
   const ctx = createMockCtx()
-  const bus = createEventsBus({ ctx, catalog: eventsCatalog, featureRegistry: registry })
+  const bus = createEventsBus({ ctx, catalog: settingsCatalog, featureRegistry: registry })
 
   let updated
   let documentUpdated
@@ -77,7 +81,7 @@ test('with featureRegistry and disabled settings feature subscriptions throw fea
   const registry = createFeatureRegistry()
   registry.disable('settings', 'settings service malformed')
   const ctx = createMockCtx()
-  const bus = createEventsBus({ ctx, catalog: eventsCatalog, featureRegistry: registry })
+  const bus = createEventsBus({ ctx, catalog: settingsCatalog, featureRegistry: registry })
 
   for (const subscribe of [
     () => bus.on('settings/updated', () => {}),

@@ -1,7 +1,20 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createEventsBus } from '../lib/events-bus.js'
-import { eventsCatalog, mergeEventCatalogs } from '../lib/events-catalog.js'
+import { baseEventsCatalog } from '../lib/events-catalog.js'
+import { composeCatalogs } from '../lib/catalog-compose.js'
+import { agentEventsCatalog } from '../lib/agent-events-catalog.js'
+import { llmEventsCatalog } from '../lib/llm-events-catalog.js'
+import { systemPromptEventsCatalog } from '../lib/system-prompt-events-catalog.js'
+import { settingsEventsCatalog } from '../lib/settings-events-catalog.js'
+
+const coreCatalog = composeCatalogs(
+  baseEventsCatalog,
+  agentEventsCatalog,
+  llmEventsCatalog,
+  systemPromptEventsCatalog,
+  settingsEventsCatalog,
+)
 import { toolsEventsCatalog } from '../lib/tools-events-catalog.js'
 import { PluginApiEventPriorityError } from '../lib/errors.js'
 import { scopeTarget } from '@deepseek-ai/dsh-scope'
@@ -109,7 +122,7 @@ function isBailed(value) {
 
 test('events.on registers a cataloged listener and returns an idempotent disposer', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
   const dispose = events.on('goal/changed', (payload) => calls.push(payload))
 
@@ -126,7 +139,7 @@ test('events.on registers a cataloged listener and returns an idempotent dispose
 
 test('events.once invokes the listener at most once and removes it before invocation', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
   const dispose = events.once('goal/changed', (payload) => calls.push(payload))
 
@@ -144,7 +157,7 @@ test('events.once invokes the listener at most once and removes it before invoca
 
 test('non-cataloged names are passed through to ctx.on/ctx.once untouched', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
 
   const listener = () => {}
   events.on('custom/event', listener)
@@ -161,7 +174,7 @@ test('non-cataloged names are passed through to ctx.on/ctx.once untouched', () =
 
 test('priority tiers order listeners lowest → low → normal → high → highest → monitor', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
 
   events.on('goal/changed', () => calls.push('normal-1'), { priority: 'normal' })
@@ -177,7 +190,7 @@ test('priority tiers order listeners lowest → low → normal → high → high
 
 test('same priority tier preserves registration order', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
 
   events.on('goal/changed', () => calls.push('first'), { priority: 'high' })
@@ -190,7 +203,7 @@ test('same priority tier preserves registration order', () => {
 
 test('disposing a listener updates the priority order', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
 
   const disposeLow = events.on('goal/changed', () => calls.push('low'), { priority: 'low' })
@@ -203,7 +216,7 @@ test('disposing a listener updates the priority order', () => {
 
 test('invalid priority throws a typed error and registers nothing', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
 
   assert.throws(
     () => events.on('goal/changed', () => {}, { priority: 'urgent' }),
@@ -214,7 +227,7 @@ test('invalid priority throws a typed error and registers nothing', () => {
 
 test('facade listeners receive a deep-frozen payload', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
 
   events.on('goal/changed', (payload) => {
     assert.ok(Object.isFrozen(payload))
@@ -224,7 +237,7 @@ test('facade listeners receive a deep-frozen payload', () => {
 
 test('emit contains a throwing listener and continues dispatching', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
 
   events.on('goal/changed', () => {
@@ -238,7 +251,7 @@ test('emit contains a throwing listener and continues dispatching', () => {
 
 test('bail contains a throwing listener and returns the next bail value', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
 
   events.on('goal/changed', () => {
     throw new Error('boom')
@@ -250,7 +263,7 @@ test('bail contains a throwing listener and returns the next bail value', () => 
 
 test('serial contains a rejected listener and continues to the next bail value', async () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
 
   events.on('goal/changed', async () => {
     throw new Error('async boom')
@@ -262,7 +275,7 @@ test('serial contains a rejected listener and continues to the next bail value',
 
 test('parallel contains sync throws and rejections and resolves', async () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
 
   events.on('goal/changed', () => {
@@ -279,7 +292,7 @@ test('parallel contains sync throws and rejections and resolves', async () => {
 
 test('monitor listeners cannot bail (observe-only)', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   let called = false
 
   events.on('goal/changed', () => {
@@ -293,7 +306,7 @@ test('monitor listeners cannot bail (observe-only)', () => {
 
 test('monitor listeners cannot alter serial dispatch', async () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   let called = false
 
   events.on('goal/changed', async () => {
@@ -307,7 +320,7 @@ test('monitor listeners cannot alter serial dispatch', async () => {
 
 test('scope-filtered emit delivers only to a matching opts.scope', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const scopedCalls = []
   const globalCalls = []
 
@@ -323,7 +336,7 @@ test('scope-filtered emit delivers only to a matching opts.scope', () => {
 
 test('scope mismatch in a waterfall continues the chain via next()', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
 
   events.on('approval/request', () => {
@@ -350,7 +363,7 @@ test('scope mismatch in a waterfall continues the chain via next()', () => {
 
 test('presence-only scoped events match via the dispatch scope carrier', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const scopedCalls = []
 
   events.on('subagent/start', (info) => scopedCalls.push(info.runId), { scope: 'agent-1' })
@@ -363,7 +376,7 @@ test('presence-only scoped events match via the dispatch scope carrier', () => {
 
 test('opts.scope is ignored for non-scope-filtered events', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   let called = false
 
   events.on('fs/observed', () => {
@@ -376,7 +389,7 @@ test('opts.scope is ignored for non-scope-filtered events', () => {
 
 test('system-prompt/assemble scope filtering uses args[1].scope', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const scopedCalls = []
   const globalCalls = []
 
@@ -400,7 +413,7 @@ test('system-prompt/assemble scope filtering uses args[1].scope', () => {
 
 test('opts.scope is ignored for system-prompt/change', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   let called = false
 
   events.on('system-prompt/change', () => {
@@ -413,7 +426,7 @@ test('opts.scope is ignored for system-prompt/change', () => {
 
 test('waterfall contains a throwing listener and continues with next()', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
 
   events.on('session-telemetry/record', () => {
@@ -432,7 +445,7 @@ test('waterfall contains a throwing listener and continues with next()', () => {
 
 test('waterfall contains an async rejection and continues with next()', async () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
 
   events.on('session-telemetry/record', async () => {
@@ -451,7 +464,7 @@ test('waterfall contains an async rejection and continues with next()', async ()
 
 test('monitor waterfall listeners cannot veto or rewrite the chain result', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   let called = false
 
   events.on('session-telemetry/record', () => {
@@ -477,7 +490,7 @@ test('events.emit/serial/parallel/bail/waterfall delegate to ctx and return its 
     }
   }
 
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const received = []
   events.on('goal/changed', (payload) => received.push(payload))
 
@@ -506,7 +519,7 @@ test('events.emit/serial/parallel/bail/waterfall delegate to ctx and return its 
 
 test('tools/change is cataloged as a global emit and receives no payload', () => {
   const ctx = createMockCordisCtx()
-  const catalog = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  const catalog = composeCatalogs(coreCatalog, toolsEventsCatalog)
   const events = createEventsBus({ ctx, catalog })
   const calls = []
 
@@ -519,7 +532,7 @@ test('tools/change is cataloged as a global emit and receives no payload', () =>
 
 test('scope-filtered tools events deliver only to matching opts.scope', () => {
   const ctx = createMockCordisCtx()
-  const catalog = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  const catalog = composeCatalogs(coreCatalog, toolsEventsCatalog)
   const events = createEventsBus({ ctx, catalog })
   const scoped = []
   const global = []
@@ -536,7 +549,7 @@ test('scope-filtered tools events deliver only to matching opts.scope', () => {
 
 test('tools/execute applies except-signal freezing and observes in-place signal replacement', () => {
   const ctx = createMockCordisCtx()
-  const catalog = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  const catalog = composeCatalogs(coreCatalog, toolsEventsCatalog)
   const events = createEventsBus({ ctx, catalog })
   const replacement = new AbortController().signal
   let bodySignal
@@ -569,7 +582,7 @@ test('tools/execute applies except-signal freezing and observes in-place signal 
 
 test('tools/pre-execute waterfall receives a fully frozen exec payload', () => {
   const ctx = createMockCordisCtx()
-  const catalog = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  const catalog = composeCatalogs(coreCatalog, toolsEventsCatalog)
   const events = createEventsBus({ ctx, catalog })
   const exec = { agent: 'agent-1', signal: new AbortController().signal, name: 'tool' }
 
@@ -585,7 +598,7 @@ test('tools/pre-execute waterfall receives a fully frozen exec payload', () => {
 
 test('tools/post-execute waterfall receives frozen exec and frozen result', () => {
   const ctx = createMockCordisCtx()
-  const catalog = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  const catalog = composeCatalogs(coreCatalog, toolsEventsCatalog)
   const events = createEventsBus({ ctx, catalog })
   const exec = { agent: 'agent-1', signal: new AbortController().signal }
   const result = { isError: false, content: [], value: { ok: true } }
@@ -602,7 +615,7 @@ test('tools/post-execute waterfall receives frozen exec and frozen result', () =
 
 test('tools/code-dispatch-log waterfall receives frozen dispatch and can replace content', () => {
   const ctx = createMockCordisCtx()
-  const catalog = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  const catalog = composeCatalogs(coreCatalog, toolsEventsCatalog)
   const events = createEventsBus({ ctx, catalog })
   const dispatch = {
     agent: 'agent-1',
@@ -626,7 +639,7 @@ test('tools/code-dispatch-log waterfall receives frozen dispatch and can replace
 
 test('tools/result emit receives frozen exec and frozen result', () => {
   const ctx = createMockCordisCtx()
-  const catalog = mergeEventCatalogs(eventsCatalog, toolsEventsCatalog)
+  const catalog = composeCatalogs(coreCatalog, toolsEventsCatalog)
   const events = createEventsBus({ ctx, catalog })
   const exec = { agent: 'agent-1', signal: new AbortController().signal }
   const result = { isError: false, content: [], value: { ok: true } }
@@ -643,7 +656,7 @@ test('tools/result emit receives frozen exec and frozen result', () => {
 
 test('agent contain emit events contain sync throw while remaining listeners run', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
 
   for (const name of ['agent/disposed', 'agent/status', 'agent/session-start', 'agent/inbox/inserted', 'agent/inbox/claimed', 'agent/inbox/discarded', 'agent/error']) {
@@ -664,7 +677,7 @@ test('agent contain emit events contain sync throw while remaining listeners run
 
 test('agent contain emit events contain async rejection for all seven names', async () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
 
   for (const name of ['agent/disposed', 'agent/status', 'agent/session-start', 'agent/inbox/inserted', 'agent/inbox/claimed', 'agent/inbox/discarded', 'agent/error']) {
@@ -687,7 +700,7 @@ test('agent contain emit events contain async rejection for all seven names', as
 
 test('agent/created sync throw propagates and async rejection is contained', async () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
 
   events.on('agent/created', () => {
@@ -714,7 +727,7 @@ test('agent/created sync throw propagates and async rejection is contained', asy
 
 test('agent/pre-step waterfall propagates replacement, composition, scope, and listener failures', async () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
 
   // Replacement without next() becomes the chain result.
   events.on('agent/pre-step', (payload) => ({ kind: 'reject' }))
@@ -790,7 +803,7 @@ test('agent/pre-step waterfall propagates replacement, composition, scope, and l
 
 test('agent/request and agent/request-error waterfalls propagate listener failures', async () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
 
   events.on('agent/request', () => {
     throw new Error('request sync')
@@ -847,7 +860,7 @@ test('agent/request and agent/request-error waterfalls propagate listener failur
 
 test('agent/turn-stopping serial preserves order, bail, scope, and failure propagation', async () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
 
   events.on('agent/turn-stopping', async () => {
@@ -905,7 +918,7 @@ test('agent/turn-stopping serial preserves order, bail, scope, and failure propa
 
 test('agent/* scope filtering: matching scope only, omitted scope sees all events', async () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
 
   const modes = {
     'agent/created': 'emit',
@@ -993,7 +1006,7 @@ test('agent/* scope filtering: matching scope only, omitted scope sees all event
 
 test('agent event freeze policy keeps live objects unfrozen and freezes marked data fields', async () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   let observed
 
   events.on('agent/pre-step', (payload) => {
@@ -1037,7 +1050,7 @@ test('agent event freeze policy keeps live objects unfrozen and freezes marked d
 
 test('monitor listeners on propagate agent events stay observe-only', async () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   let monitorCalled = false
 
   events.on('agent/pre-step', () => {
@@ -1072,7 +1085,7 @@ test('monitor listeners on propagate agent events stay observe-only', async () =
 })
 test('llm/stream facade listener receives frozen (options, next)', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const seen = []
 
   events.on('llm/stream', function (options, next) {
@@ -1099,7 +1112,7 @@ test('events.waterfall("llm/stream") delegates to ctx.waterfall with the same ar
     return original(name, ...args)
   }
 
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const options = { provider: 'deepseek', model: 'chat', messages: [] }
   const next = () => 'delegated-result'
 
@@ -1114,7 +1127,7 @@ test('events.waterfall("llm/stream") delegates to ctx.waterfall with the same ar
 
 test('llm/adapters-updated facade listener is invoked with no payload arguments', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: eventsCatalog })
+  const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
 
   events.on('llm/adapters-updated', function (...args) {
