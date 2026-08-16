@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { apply, mountServicesFeature } from '../lib/index.js'
 import { SERVICE_DEFINITIONS, servicesNamespaceBrand } from '../lib/services.js'
 import { PluginApiFeatureDisabledError } from '../lib/errors.js'
+import { createFeatureRegistry } from '../lib/feature-registry.js'
 
 function serviceNameMap() {
   return new Map(SERVICE_DEFINITIONS.map((def) => [def.ctxService, def.key]))
@@ -207,7 +208,7 @@ test('mountServicesFeature injects uriHelpers into the sessionReferences forward
   assert.deepEqual(calls, [['encode', 's1'], ['decode', 'u1']])
 })
 
-test('mountServicesFeature is idempotent for an already branded namespace', () => {
+test('mountServicesFeature is idempotent when the services feature is already mounted', () => {
   const service = {
     isActive: true,
     services: { [servicesNamespaceBrand]: true, fs: { isActive: true } },
@@ -215,7 +216,9 @@ test('mountServicesFeature is idempotent for an already branded namespace', () =
       throw new Error('must not remount')
     },
   }
-  const disposer = mountServicesFeature({ ctx: {}, service, logger: { error() {}, warn() {} }, uriHelpers: {} })
+  const featureRegistry = createFeatureRegistry()
+  featureRegistry.mount('services')
+  const disposer = mountServicesFeature({ ctx: {}, service, logger: { error() {}, warn() {} }, uriHelpers: {}, featureRegistry })
   assert.equal(typeof disposer, 'function')
   assert.equal(service.services.fs.isActive, true)
 })
