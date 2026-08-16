@@ -155,7 +155,8 @@ test('events guard failure disables only events and keeps facade active', () => 
   const features = state.pluginApi.features
 
 
-  assert.equal(features.length, 9)
+
+  assert.equal(features.length, 10)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.equal(features[1].name, 'events')
   assert.equal(features[1].isActive, false)
@@ -168,6 +169,9 @@ test('events guard failure disables only events and keeps facade active', () => 
   assert.deepEqual(features[6], { name: 'systemPrompt', isActive: true })
   assert.deepEqual(features[7], { name: 'llm/admission', isActive: true })
   assert.deepEqual(features[8], { name: 'settings', isActive: true })
+  assert.equal(features[9].name, 'services')
+  assert.equal(features[9].isActive, false)
+  assert.match(features[9].reason, /capability services/)
 
   assert.throws(
     () => state.pluginApi.events.on('goal/changed', () => {}),
@@ -189,7 +193,8 @@ test('web guard failure disables only web and keeps facade active', () => {
   const features = state.pluginApi.features
 
 
-  assert.equal(features.length, 9)
+
+  assert.equal(features.length, 10)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -201,6 +206,9 @@ test('web guard failure disables only web and keeps facade active', () => {
   assert.deepEqual(features[6], { name: 'systemPrompt', isActive: true })
   assert.deepEqual(features[7], { name: 'llm/admission', isActive: true })
   assert.deepEqual(features[8], { name: 'settings', isActive: true })
+  assert.equal(features[9].name, 'services')
+  assert.equal(features[9].isActive, false)
+  assert.match(features[9].reason, /capability services/)
 
   assert.throws(
     () => state.pluginApi.web.registerSearchProvider({}),

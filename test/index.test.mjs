@@ -97,7 +97,9 @@ test('apply with healthy ctx registers active service and mounts llm/admission',
     { name: 'llm', isActive: true },
     { name: 'systemPrompt', isActive: true },
     { name: 'llm/admission', isActive: true },
+
     { name: 'settings', isActive: true },
+    { name: 'services', isActive: false, reason: 'capability services: none of the 17 official capability services is available' },
   ])
   assert.equal(state.pluginApi.llm.isActive, true)
   assert.equal(state.pluginApi.llm.admission.isActive, true)
@@ -155,7 +157,8 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   const features = state.pluginApi.features
 
 
-  assert.equal(features.length, 9)
+
+  assert.equal(features.length, 10)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -167,6 +170,9 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.equal(features[7].isActive, false)
   assert.match(features[7].reason, /apiProxy/)
   assert.deepEqual(features[8], { name: 'settings', isActive: true })
+  assert.equal(features[9].name, 'services')
+  assert.equal(features[9].isActive, false)
+  assert.match(features[9].reason, /capability services/)
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),

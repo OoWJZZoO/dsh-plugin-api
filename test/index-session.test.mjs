@@ -135,8 +135,8 @@ test('session guard failure disables only session and keeps the facade active', 
   assert.equal(state.pluginApi.isActive, true)
 
   const features = state.pluginApi.features
-  assert.equal(features.length, 9)
-  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'session', 'web', 'llm', 'systemPrompt', 'llm/admission', 'settings'])
+  assert.equal(features.length, 10)
+  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'session', 'web', 'llm', 'systemPrompt', 'llm/admission', 'settings', 'services'])
   assert.equal(features[0].isActive, true)
   assert.equal(features[1].isActive, true)
   assert.equal(features[2].isActive, true)
@@ -147,6 +147,8 @@ test('session guard failure disables only session and keeps the facade active', 
   assert.equal(features[6].isActive, true)
   assert.equal(features[7].isActive, true)
   assert.equal(features[8].isActive, true)
+  assert.equal(features[9].isActive, false)
+  assert.match(features[9].reason, /capability services/)
 
   assert.throws(
     () => state.pluginApi.session.get('s1'),
