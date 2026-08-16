@@ -7,7 +7,7 @@ import { sessionLifecycleEventsCatalog } from '../lib/session-events-catalog.js'
 test('composeCatalogs merges base events and session lifecycle catalogs', () => {
   const composed = composeCatalogs(eventsCatalog, sessionLifecycleEventsCatalog)
 
-  assert.equal(Object.keys(composed).length, 37)
+  assert.equal(Object.keys(composed).length, 39)
   for (const name of Object.keys(eventsCatalog)) {
     assert.ok(name in composed, `${name} must be present`)
     assert.equal(composed[name], eventsCatalog[name], `${name} entry must be preserved`)
