@@ -171,7 +171,7 @@ test('tools accessor fail-safe: throwing or vanished official service yields a t
     const service = new ServiceClass(ctx, undefined)
     service.mountFeature('tools', { scoped: true })
     assert.throws(
-      () => service.tools,
+      () => service.tools.register({ name: 'x' }),
       (error) => {
         assert.ok(error instanceof PluginApiFeatureDisabledError)
         assert.equal(error.feature, 'tools')
