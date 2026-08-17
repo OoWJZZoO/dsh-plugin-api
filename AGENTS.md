@@ -66,10 +66,11 @@ agent/dsh-plugin-api/
 ### 3.2 确认门（gate）
 
 - **Stage 0–3（Goal / Requirements / Design / Tasks）**：每个阶段完成后，把文档交给用户评审；**用户明确批准后才进入下一阶段**。未批准时，只能修订当前阶段文档，禁止提前写下一阶段文档，更禁止写实现代码。
-- **每个阶段（除 Stage 0）结束时**：Stage 1–3 在把该阶段文档交给用户评审前，必须先启动一个后台子 agent 做对抗性审查；**仅小修改（如一两处文字或单点修正）无需再对抗性审查**。审查只核对当前阶段制品与已确认上游文档的一致性，不向上溯源；审查返回“无偏差”，或代理已按审查意见修复并复跑通过后，才可提交用户评审。Stage 4 全部任务完成后直接交付结果报告，**无需总体对抗性审查**。
+- **阶段提交（强制）**：每个大于 `0` 的 Stage 确认门获批后，代理**必须**在承载该阶段成果的主/集成分支或工作分支创建提交，随后才能进入下一 Stage、派生或更新任何 worktree，或交付该阶段成果。提交只可包含已获批的本阶段制品及必要附带改动，且必须先通过 `git diff --check`；若提交失败或存在无法归属的变更，该阶段不得推进，必须先处理并向用户说明。
+- **Stage 4 完成提交（强制）**：Stage 4 的代码工作（或仅文档交付任务）及所需验证完成后，代理**必须**在最终交付、清理 worktree 或启动后续工作前，提交本 Stage 的实现、测试、规格与必要登记。不得把已完成成果只留在未提交的 worktree；任何新 worktree 必须从已提交的阶段边界派生。
+- **每个阶段（除 Stage 0）结束时**：Stage 1–3 在把该阶段文档交给用户评审前，必须先调用一个子 agent 做对抗性审查，并**阻塞性等待其完成**（在 DSH 工具中必须使用 `run_in_background: false`；禁止以后台/异步方式派审后继续主线）。**仅小修改（如一两处文字或单点修正）无需再对抗性审查**。审查只核对当前阶段制品与已确认上游文档的一致性，不向上溯源。**一旦对某制品调用该审查，代理必须暂停对同一制品的自行审查、编辑和重复派审；在收到该次审查的最终结论前，不得推进主线工作。** 收到结果后，代理才可集中处理意见：返回“无偏差”即可提交用户评审；有意见则先修订，实质修订后再调用下一轮、同样阻塞且串行的审查，直至通过。Stage 4 全部任务完成后直接交付结果报告，**无需总体对抗性审查**。
 - **Stage 4（Execute）**：Tasks 获批后由代理**自主完成全部任务**，不再逐任务等待人类确认。
-  - 代理按 `tasks.md` 顺序一次执行一个任务；每完成一个任务，立即发起一个后台子 agent 做**对抗性审查**（只核对实现/测试与当前任务文档的一致性，不向上溯源）；**若该任务只是小修改（如一两处文字或单点修正），无需对抗性审查**。
-  - 审查返回“无偏差”，或代理已按审查意见修复并复跑通过后，才继续下一个任务。
+  - 代理按 `tasks.md` 顺序一次执行一个任务；每完成一个任务，立即调用一个子 agent 做**对抗性审查**，并**阻塞性等待其完成**（在 DSH 工具中必须使用 `run_in_background: false`；禁止以后台/异步方式派审后开始下一任务或处理其他主线工作）。审查只核对实现/测试与当前任务文档的一致性，不向上溯源。**若该任务只是小修改（如一两处文字或单点修正），无需再对抗性审查**。调用审查后，代理必须暂停自行复查、编辑该任务成果、重复派审或开始下一任务；在收到该次审查的最终结论前，不得推进主线。返回“无偏差”后才继续；有意见则集中修订，实质修订后再调用下一轮、同样阻塞且串行的审查并等待通过。
   - 若执行中发现 spec 错误：实现细节/设计矛盾由代理先修订对应 spec 文档（requirements/design/tasks）保持一致，并在最终报告中列出修订；若错误动摇已确认的 Goal 或 Requirements 验收标准，则暂停并请求人类裁决。
   - 代理仍需遵守 fail-safe、测试、不夹带 spec 外功能等全部约束；全部任务完成后向用户交付完整结果报告。
 
@@ -169,3 +170,4 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 | `plugin-api-settings-m1` | M1 settings：ST1/ST2/ST3/ST8（`pluginApi.settings` 命名空间注册、scope、设置事件、describe/install helper） | delivered | `docs/specs/plugin-api-settings-m1/` | `lib/settings.js` A 类直通官方 `ctx.settings`；可选 settings 服务模式（服务缺失时 feature 仍 active，register/scope/describe 抛 service-unavailable，installSettingsSection 保持官方 no-op fallback）；`settings/updated`/`settings/document-updated` 进 events catalog 并带 feature gating；`@deepseek-ai/dsh-settings` peerDependency |
 | `plugin-api-capabilities-m1` | M1 SV1–SV16, SV18（17 个官方 capability seam 服务经 `pluginApi.services.<name>` 稳定直通） | delivered | `docs/specs/plugin-api-capabilities-m1/` | `lib/services.js` 静态定义表 + frozen namespace/facade；method/getter/forward 三类 1:1 直通；per-service degradation；SV15 URI helpers 走 `@deepseek-ai/dsh-session-reference` 公开导出转发（peerDependency） |
 | `plugin-api-m1-integration` | M1 整合：7 分支合并 + 总线/工程契约统一 + API 形状规范化（E1–E12 基线 + L3/L6–L9 + A1–A8 + S1/S3–S5 + T1–T9 + P1–P8 + ST1–ST3/ST8 + SV1–SV16/SV18 全量落地） | delivered | `docs/specs/plugin-api-m1-integration/` | catalog slice 制 + `composeCatalogs` fail-loud + guard 驱动取舍（47 条）；统一 schema `scopeKey/fault/freeze`（`'all'\|{deep}\|'except-signal'`）；gating 唯一机制 = 挂载期 slice 排除；幂等信号统一 `featureRegistry.isActive`；失败呈现四路径；FEATURE_MOUNTERS 终序 tools≺events≺…≺services；`web` 迁入 `pluginApi.services.web`；全量唯一版本号 `<runtime全量版本>-<API协议大版本.迭代小版本>`（`0.1.0-rc.6-0.2`）；并行开发工作流协议（§3.5） |
+| `plugin-api-semantic-hooks-m2` | M2 B 类语义转译共同契约（非运行时 foundation） | delivered | `docs/specs/plugin-api-semantic-hooks-m2/` | 不新增 hook、namespace、catalog slice 或 runtime engine；具体 owner 自有 re-entry/convergence/disposer/durable identity；首个 B catalog/facade 仍须先完成独立的 transaction/rollback integration design。 |

@@ -39,6 +39,12 @@
 | **M3** | settings 可视化配置桥 + client bundle（remote / codec / slot） |
 | **M4** | C 类上游提案、迁移验收（dsh-read-image / dsh-pro-ex-ability-anchor） |
 
+### 1.3.1 M2 共同契约状态（非公开 API）
+
+| Feature | 外部 API | 范围 | 状态 |
+|---|---|---|---|
+| `plugin-api-semantic-hooks-m2` | 无；不增加 namespace、catalog slice 或 concrete B hook | B 类语义转译的分类、lifecycle、P1–P4、owner-local re-entry/durable 边界，以及首个 B 集成门槛；具体 L4、A9/T10、S2 仍待独立 spec。 | **delivered** |
+
 ### 1.4 关键源码依据（缩写）
 
 本文引用以下官方包（位于 `/usr/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/`）：
