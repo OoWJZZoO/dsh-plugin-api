@@ -1,7 +1,7 @@
 # Tasks: plugin-api-exec-route-m2
 
 > feature_name: `plugin-api-exec-route-m2`
-> 状态：草案（Stage 3，待用户评审）
+> 状态：已完成（Stage 4）
 > 上游：`requirements.md`（Stage 1 已批准）、`design.md`（Stage 2 已批准）
 > 执行规则：Stage 4 在本清单获批后按顺序逐项实施；每项完成后须进行阻塞式对抗审查并通过，才可开始下一项。
 
@@ -129,7 +129,7 @@
 **Files**
 
 - Modify or extend `test/index-exec-route.test.mjs` and `test/exec-route.test.mjs` only as needed.
-- Do not modify frozen `test/index-events.test.mjs` or `test/index.test.mjs`.
+- Do not modify frozen `test/index-events.test.mjs`. Update `test/index-tools.test.mjs` and `test/index-session.test.mjs` only where their hard-coded feature registry count or ordered-name expectation must include `execRoute`; preserve all existing M1 lifecycle assertions.
 
 **Implementation and verification**
 

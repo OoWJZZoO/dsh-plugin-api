@@ -136,7 +136,7 @@
 | A6 回合停止决策 | `events.serial('agent/turn-stopping', payload)` | A | 同上 `:301-305`；`dsh-agent-loop/lib/index.js:565` | M1 | **delivered** |
 | A7 Agent 错误通知 | `events.on('agent/error', listener)` | A | 同上 `:316-321`；`dsh-agent-loop/lib/index.js:470` | M1 | **delivered** |
 | A8 Agent 注册表读面 | `agent.get(id)`、`agent.list()`、`agent.roots()` 稳定直通 | A | `dsh-agent/lib/types/index.d.ts:349-370` | M1 | **delivered** |
-| A9 当前路由查询 | `agent.routeOf(exec)` / `pluginApi.agent.execRoute(exec)`：从 `session.requestContext()` 或 `tools/pre-execute` 注入推断 `{provider, model}` | B | 官方无 `exec.route`；dsh-read-image A6（`routeOf` 深挖 agent 内部） | M2 | planned |
+| A9 当前执行路由查询 | `agent.routeOf(exec)`：在 execution 首次进入 `tools/pre-execute` 时从公开 `session.requestContext()` 捕获同一冻结 `{provider, model}` 快照；未观察、正常缺失或 P2-disabled 时为 `undefined` | B | 官方无 `exec.route`；dsh-read-image A6（旧 `routeOf` 深挖 agent 内部） | M2 | **delivered** |
 | A10 官方路由 API | 官方 `exec.route` / `routeOf(exec)` 或等价字段 | C | AGENTS.md 第 2.5 条 C 类 | M4 | planned（proposal） |
 | A11 Agent 创建/注册高级面 | `agent.create/resume/register/enter/announce`、`agent.setFactory` 稳定直通（按能力分级暴露） | A | `dsh-agent/lib/index.js:519` 起；`dsh-agent-loop/lib/index.js:1000` | M2 | planned |
 
@@ -166,7 +166,7 @@
 | T7 代码分发日志瀑布 | `events.waterfall('tools/code-dispatch-log', dispatch, next)`；返回替换后的 content | A | `dsh-tools/lib/index.js:2953` | M1 | **delivered** |
 | T8 工具限制与守卫 | `tools.restrict(filter)`、`tools.guard(guard)` 稳定直通 | A | `dsh-tools` `ToolRuntime.restrict/guard` | M1 | **delivered** |
 | T9 工具查询与执行 | `tools.get(name, scope?)`、`tools.schemas(scope?)`、`tools.execute(input)`、`tools.presentAs` 稳定直通 | A | `dsh-tools` `ToolRuntime` 公共方法 | M1 | **delivered** |
-| T10 执行路由注入 | 在 `tools/pre-execute` 稳定 payload 中暴露 `exec.agent.session.requestContext()` 的 route 快照 | B | 官方无 `exec.route`；`exec.agent` 在 `tools/pre-execute` 保证存在；与 A9 同源 | M2 | planned |
+| T10 执行路由查询 | `tools.routeOf(exec)`：与 `agent.routeOf(exec)` 返回同一按 execution 缓存的冻结 route 快照；捕获仅发生在 prepended `tools/pre-execute`，不创建 `exec.route` 或 route event/catalog slice | B | 官方无 `exec.route`；与 A9 同源 | M2 | **delivered** |
 
 > 管线顺序（官方已定，门面只稳定化不重排）：`tools/pre-execute` → 单调 `guard()` 检查 → `tools/execute` → `tools/post-execute` → 工具 `finalizeContent` → `tools/result`。定义里的 `timeoutMs` 由 `dsh-tool-call-timeout-policy`（`tools/execute` wrapper）执行，不在门面内复制。
 
