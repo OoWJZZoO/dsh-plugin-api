@@ -54,7 +54,7 @@ function createMockServiceAndHelpers(def) {
   return { service, calls, returns, getterValues, uriHelpers, uriCalls, uriReturns }
 }
 
-test('active facade delegates every declared method 1:1 for all 17 services', () => {
+test('active facade delegates every declared method 1:1 for all 19 services', () => {
   for (const def of SERVICE_DEFINITIONS) {
     const { service, calls, returns, getterValues, uriHelpers, uriCalls, uriReturns } = createMockServiceAndHelpers(def)
     const facade = buildActiveFacade(def, service, uriHelpers)
@@ -117,6 +117,97 @@ test('active facade propagates official method rejections unchanged', async () =
       },
     )
   }
+})
+
+test('compaction delegates exact optional argument lists and preserves value identities', () => {
+  const def = SERVICE_DEFINITIONS.find((entry) => entry.key === 'compaction')
+  const calls = []
+  const results = {
+    compactIfNeeded: { kind: 'if-needed' },
+    compactNow: { kind: 'now' },
+    compactRegion: { kind: 'region' },
+  }
+  const service = {
+    compactIfNeeded(...args) {
+      assert.equal(this, service)
+      calls.push({ name: 'compactIfNeeded', args })
+      return results.compactIfNeeded
+    },
+    compactNow(...args) {
+      assert.equal(this, service)
+      calls.push({ name: 'compactNow', args })
+      return results.compactNow
+    },
+    compactRegion(...args) {
+      assert.equal(this, service)
+      calls.push({ name: 'compactRegion', args })
+      return results.compactRegion
+    },
+  }
+  const facade = buildActiveFacade(def, service)
+  const agent = { id: 'agent' }
+  const trigger = { kind: 'automatic' }
+  const signal = { aborted: false }
+  const commandId = { id: 'command' }
+  const start = { event: 10 }
+  const end = { event: 20 }
+
+  assert.equal(facade.compactIfNeeded(agent, trigger, signal), results.compactIfNeeded)
+  assert.equal(facade.compactNow(agent, signal), results.compactNow)
+  assert.equal(facade.compactNow(agent, signal, commandId), results.compactNow)
+  assert.equal(facade.compactRegion(start, end, agent), results.compactRegion)
+  assert.equal(facade.compactRegion(start, end, agent, signal), results.compactRegion)
+
+  assert.deepEqual(calls.map((call) => call.name), [
+    'compactIfNeeded',
+    'compactNow',
+    'compactNow',
+    'compactRegion',
+    'compactRegion',
+  ])
+  assert.equal(calls[0].args.length, 3)
+  assert.equal(calls[0].args[0], agent)
+  assert.equal(calls[0].args[1], trigger)
+  assert.equal(calls[0].args[2], signal)
+  assert.equal(calls[1].args.length, 2)
+  assert.equal(calls[1].args[0], agent)
+  assert.equal(calls[1].args[1], signal)
+  assert.equal(calls[2].args.length, 3)
+  assert.equal(calls[2].args[0], agent)
+  assert.equal(calls[2].args[1], signal)
+  assert.equal(calls[2].args[2], commandId)
+  assert.equal(calls[3].args.length, 3)
+  assert.equal(calls[3].args[0], start)
+  assert.equal(calls[3].args[1], end)
+  assert.equal(calls[3].args[2], agent)
+  assert.equal(calls[4].args.length, 4)
+  assert.equal(calls[4].args[0], start)
+  assert.equal(calls[4].args[1], end)
+  assert.equal(calls[4].args[2], agent)
+  assert.equal(calls[4].args[3], signal)
+})
+
+test('compaction propagates official throws and rejections unchanged', async () => {
+  const def = SERVICE_DEFINITIONS.find((entry) => entry.key === 'compaction')
+  const thrown = new Error('compaction throw')
+  const rejected = new Error('compaction rejection')
+  const rejectedPromise = Promise.reject(rejected)
+  const service = {
+    compactIfNeeded() {
+      throw thrown
+    },
+    compactNow() {
+      return rejectedPromise
+    },
+    compactRegion() {
+      return null
+    },
+  }
+  const facade = buildActiveFacade(def, service)
+
+  assert.throws(() => facade.compactIfNeeded(), (error) => error === thrown)
+  assert.equal(facade.compactNow(), rejectedPromise)
+  await assert.rejects(rejectedPromise, (error) => error === rejected)
 })
 
 test('optional method is omitted when absent and present when the official service has it', () => {

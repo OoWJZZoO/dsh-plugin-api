@@ -34,6 +34,24 @@ test('optional method flush is present and delegates when the official service h
   assert.deepEqual(calls, ['turn'])
 })
 
+test('incomplete compaction service disables the whole three-method facade', () => {
+  const def = SERVICE_DEFINITIONS.find((d) => d.key === 'compaction')
+  const facade = buildActiveFacade(def, {
+    compactIfNeeded() {},
+    compactNow: 'not callable',
+    compactRegion() {},
+  }, {})
+
+  assert.equal(facade.isActive, false)
+  for (const name of ['compactIfNeeded', 'compactNow', 'compactRegion']) {
+    assert.equal(typeof facade[name], 'function')
+    assert.throws(
+      () => facade[name](),
+      (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.compaction',
+    )
+  }
+})
+
 test('non-optional missing member degrades the whole facade to disabled (never silently omitted)', () => {
   const def = SERVICE_DEFINITIONS.find((d) => d.key === 'codeRuntime')
   const facade = buildActiveFacade(def, {}, {})

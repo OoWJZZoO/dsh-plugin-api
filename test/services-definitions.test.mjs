@@ -21,15 +21,15 @@ const EXPECTED_KEYS = [
   'tokenMeter',
   'agentDefaultModel',
   'web',
+  'compaction',
 ]
 
-test('SERVICE_DEFINITIONS declares exactly the 18 capability namespace keys', () => {
+test('SERVICE_DEFINITIONS declares exactly the 19 capability namespace keys', () => {
   assert.deepEqual(SERVICES_NAMESPACE_KEYS, EXPECTED_KEYS)
-  assert.equal(SERVICE_DEFINITIONS.length, 18)
+  assert.equal(SERVICE_DEFINITIONS.length, 19)
 })
 
-test('capability namespace excludes compaction and any other unofficial service', () => {
-  assert.ok(!SERVICES_NAMESPACE_KEYS.includes('compaction'))
+test('capability namespace contains only its approved static service definitions', () => {
   for (const def of SERVICE_DEFINITIONS) {
     assert.ok(EXPECTED_KEYS.includes(def.key), `unexpected facade key ${def.key}`)
   }
@@ -77,6 +77,18 @@ test('SV15 sessionReferences exposes service methods and the two forwarded URI h
   assert.deepEqual(methodNames, ['listCandidates', 'prepare'])
   const forwardNames = def.members.filter((m) => m.kind === 'forward').map((m) => m.name)
   assert.deepEqual(forwardNames, ['encodeSessionReferenceUri', 'decodeSessionReferenceUri'])
+})
+
+test('SV17 compaction exposes exactly the public abstract operations', () => {
+  const def = SERVICE_DEFINITIONS.find((d) => d.key === 'compaction')
+  assert.ok(def)
+  assert.equal(def.ctxService, 'compaction')
+  assert.equal(def.pkg, 'dsh-compaction')
+  assert.deepEqual(def.members, [
+    { kind: 'method', name: 'compactIfNeeded' },
+    { kind: 'method', name: 'compactNow' },
+    { kind: 'method', name: 'compactRegion' },
+  ])
 })
 
 test('fs, workspaces, skills surfaces contain the corrected official method names', () => {

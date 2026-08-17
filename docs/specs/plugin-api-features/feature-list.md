@@ -253,7 +253,7 @@
 | SV14 会话遥测 seam | `pluginApi.services.sessionTelemetry`（backend seam 直通；`session-telemetry/record` 事件已由 O16 交付） | A | `dsh-session-telemetry/lib/index.js:174`（服务 `sessionTelemetry`） | M1 | **delivered** |
 | SV15 会话引用解析 | `pluginApi.services.sessionReferences.listCandidates/prepare` + `encodeSessionReferenceUri/decodeSessionReferenceUri` 转发 | A | `dsh-session-reference`（服务 `sessionReferenceResolver`） | M1 | **delivered** |
 | SV16 Token 计量 | `pluginApi.services.tokenMeter.measure(session, requestHeader)` / `estimateMessage` 直通 | A | `dsh-token-meter`（服务 `tokenMeter`） | M1 | **delivered** |
-| SV17 压缩服务 seam | `pluginApi.services.compaction`（`summarize()` 子类钩子；官方无 `compaction/*` 事件） | A | `dsh-compaction`（服务 `compaction`） | M2 | planned |
+| SV17 压缩服务 seam | `pluginApi.services.compaction.compactIfNeeded/compactNow/compactRegion` 直通；不暴露 Basic 专有成员，且 `compaction/*` 不作为 events API 暴露 | A | `dsh-compaction`（服务 `compaction`） | M2 | **delivered** |
 | SV18 默认模型选择 | `pluginApi.services.agentDefaultModel.currentSelection()` / `saveSelection(next)` 直通 | A | `dsh-agent-default-model`（服务 `agentDefaultModel`） | M1 | **delivered** |
 
 ---

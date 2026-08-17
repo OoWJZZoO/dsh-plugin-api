@@ -9,6 +9,17 @@ function serviceNameMap() {
   return new Map(SERVICE_DEFINITIONS.map((def) => [def.ctxService, def.key]))
 }
 
+function completeService(def) {
+  const service = {}
+  for (const member of def.members) {
+    if (member.kind === 'method') service[member.name] = () => {}
+    else if (member.kind === 'getter') {
+      Object.defineProperty(service, member.name, { enumerable: true, get() { return null } })
+    }
+  }
+  return service
+}
+
 function createMockCtx(options = {}) {
   const services = { ...(options.services ?? {}) }
   const state = {
@@ -53,7 +64,7 @@ function createMockCtx(options = {}) {
   return { ctx, state, services }
 }
 
-test('apply mounts an active frozen services namespace when all 18 official services are present', () => {
+test('apply mounts an active frozen services namespace when all 19 official services are present', () => {
   const allServices = {}
   for (const def of SERVICE_DEFINITIONS) {
     const svc = {}
@@ -85,9 +96,33 @@ test('apply mounts an active frozen services namespace when all 18 official serv
   assert.equal(state.pluginApi.isActive, true)
   assert.equal(state.pluginApi.services[servicesNamespaceBrand], true)
   assert.ok(Object.isFrozen(state.pluginApi.services))
-  assert.equal(Object.keys(state.pluginApi.services).length, 18)
+  assert.equal(Object.keys(state.pluginApi.services).length, 19)
   assert.equal(state.pluginApi.services.fs.isActive, true)
-  assert.equal(state.pluginApi.services.agentDefaultModel.isActive, true)
+  assert.equal(state.pluginApi.services.compaction.isActive, true)
+})
+
+test('apply mounts services when compaction is the only complete capability service', () => {
+  const compaction = completeService(SERVICE_DEFINITIONS.find((def) => def.key === 'compaction'))
+  const { ctx, state } = createMockCtx({ services: { compaction } })
+
+  assert.doesNotThrow(() => apply(ctx))
+
+  const feature = state.pluginApi.features.find((entry) => entry.name === 'services')
+  assert.equal(feature.isActive, true)
+  assert.equal(state.pluginApi.services.compaction.isActive, true)
+  assert.throws(
+    () => state.pluginApi.services.fs.readText({}),
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.fs',
+  )
+  assert.throws(
+    () => state.pluginApi.services.web.registerSearchProvider({}),
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.web',
+  )
+  for (const def of SERVICE_DEFINITIONS) {
+    if (def.key !== 'compaction') {
+      assert.equal(state.pluginApi.services[def.key].isActive, false, `${def.key} is locally disabled`)
+    }
+  }
 })
 
 test('apply degrades a missing capability service per-service while keeping the services feature active', () => {
@@ -128,7 +163,29 @@ test('apply degrades a missing capability service per-service while keeping the 
   assert.equal(state.pluginApi.features.find((f) => f.name === 'services').isActive, true)
 })
 
-test('apply keeps the facade active and disables services when none of the 18 services is present', () => {
+test('apply degrades hostile compaction construction while another capability remains active', () => {
+  const fs = completeService(SERVICE_DEFINITIONS.find((def) => def.key === 'fs'))
+  const compaction = completeService(SERVICE_DEFINITIONS.find((def) => def.key === 'compaction'))
+  Object.defineProperty(compaction, 'compactNow', {
+    get() {
+      throw new Error('hostile member getter')
+    },
+  })
+  const { ctx, state } = createMockCtx({ services: { fs, compaction } })
+
+  assert.doesNotThrow(() => apply(ctx))
+
+  const feature = state.pluginApi.features.find((entry) => entry.name === 'services')
+  assert.equal(feature.isActive, true)
+  assert.equal(state.pluginApi.services.fs.isActive, true)
+  assert.equal(state.pluginApi.services.compaction.isActive, false)
+  assert.throws(
+    () => state.pluginApi.services.compaction.compactNow(),
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.compaction',
+  )
+})
+
+test('apply keeps the facade active and disables services when none of the 19 services is present', () => {
   const { ctx, state } = createMockCtx({
     services: {
       llm: { resolveModelInfo() {} },
