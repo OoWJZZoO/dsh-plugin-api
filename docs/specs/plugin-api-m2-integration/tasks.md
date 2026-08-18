@@ -71,7 +71,7 @@
 
 ## 5. 统一 A11 与 A9/T10 route authority
 
-- [ ] 5.1 组合 agent/tools facade 并收窄 execRoute guard/mounter
+- [x] 5.1 组合 agent/tools facade 并收窄 execRoute guard/mounter
   - 先更新 guard/apply/facade tests，证明 healthy tools/session substrate 足以激活 execRoute，`events` 或 `agent` facade inactive 不会使其 fail-closed，并替换 worktree 的旧依赖断言。
   - 将 `agent.routeOf` 与 `tools.routeOf` 接到同一个 service-owned authority；保证同一 frozen snapshot identity、正常 missing route 为 `undefined`、unexpected capture failure 被包含且不改变 tool operation。
   - 组合 A11 时保持 consumer-fiber service resolution、official receiver/argument/return/Promise/handle/disposer/error identity，并使单个不可用成员只退化自身。
