@@ -41,6 +41,11 @@ test('package metadata preserves the official client export boundary', () => {
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
   assert.equal(pkg.exports['./client'], './lib/client.js')
   assert.equal(pkg.dsh.client.platform, 'web')
-  assert.deepEqual(pkg.dsh.client.inject, [])
+  assert.deepEqual(pkg.dsh.client.inject, [
+    '@deepseek-ai/dsh-client-connection',
+    '@deepseek-ai/dsh-client-runtime',
+    '@deepseek-ai/dsh-api-remotes',
+    '@deepseek-ai/dsh-client-ui-settings',
+  ])
   assert.equal(pkg.dsh.client.immediately, true)
 })

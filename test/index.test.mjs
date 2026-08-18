@@ -3,6 +3,17 @@ import assert from 'node:assert/strict'
 import { apply } from '../lib/index.js'
 import { PluginApiFeatureDisabledError, PluginApiInactiveError } from '../lib/errors.js'
 
+function createTypertRegistry() {
+  const noOp = () => {}
+  return {
+    register: noOp, get: noOp, resolve: noOp, list: noOp, getPackage: noOp, listPackages: noOp, toJSONSchema: noOp,
+    local: { get: noOp, hasSeen: noOp, list: noOp, subscribe: noOp },
+    remotes: { register: noOp, get: noOp, list: noOp, subscribe: noOp },
+    lookups: { register: noOp, configure: noOp, get: noOp, definitions: noOp, keys: noOp, subscribe: noOp },
+    contexts: { registerHost: noOp, configureHost: noOp, registerClient: noOp, getHost: noOp, getClient: noOp, subscribe: noOp },
+  }
+}
+
 function createMockCtx(options = {}) {
   const systemPrompt = options.systemPrompt === false
     ? undefined
@@ -34,6 +45,8 @@ function createMockCtx(options = {}) {
       presentAs() {},
     },
     sessions: { get() {}, list() {}, fork() {} },
+    settings: { register() {}, describe() { return [] }, get() {}, mutate() {} },
+    typert: createTypertRegistry(),
     web: { registerSearchProvider() {}, registerFetchProvider() {} },
     ...(systemPrompt ? { systemPrompt } : {}),
     ...(options.services ?? {}),
@@ -101,6 +114,8 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     { name: 'settings', isActive: true },
     { name: 'systemPrompt', isActive: true },
     { name: 'services', isActive: true },
+    { name: 'typert', isActive: true },
+    { name: 'settingsRemote', isActive: true },
   ])
   assert.equal(state.pluginApi.llm.isActive, true)
   assert.equal(typeof state.pluginApi.llm.request.transform, 'function')
@@ -111,6 +126,7 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
   assert.equal(typeof state.pluginApi.events.on, 'function')
   assert.equal(typeof state.pluginApi.session.get, 'function')
   assert.equal(typeof state.pluginApi.services.web.registerSearchProvider, 'function')
+  assert.equal(state.pluginApi.services.typert.isActive, true)
 
   assert.equal(typeof state.pluginApi.systemPrompt.section, 'function')
   assert.equal(state.pluginApi.settings.isActive, true)
@@ -161,7 +177,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-  assert.equal(features.length, 13)
+  assert.equal(features.length, 15)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -177,6 +193,8 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.deepEqual(features[10], { name: 'settings', isActive: true })
   assert.deepEqual(features[11], { name: 'systemPrompt', isActive: true })
   assert.deepEqual(features[12], { name: 'services', isActive: true })
+  assert.deepEqual(features[13], { name: 'typert', isActive: true })
+  assert.deepEqual(features[14], { name: 'settingsRemote', isActive: true })
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),

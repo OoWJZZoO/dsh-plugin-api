@@ -156,7 +156,7 @@ test('events guard failure disables only events and keeps facade active', () => 
 
 
 
-  assert.equal(features.length, 13)
+  assert.equal(features.length, 15)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.equal(features[1].name, 'events')
   assert.equal(features[1].isActive, false)
@@ -176,6 +176,10 @@ test('events guard failure disables only events and keeps facade active', () => 
   assert.deepEqual(features[10], { name: 'settings', isActive: true })
   assert.deepEqual(features[11], { name: 'systemPrompt', isActive: true })
   assert.deepEqual(features[12], { name: 'services', isActive: true })
+  assert.equal(features[13].name, 'typert')
+  assert.equal(features[13].isActive, false)
+  assert.equal(features[14].name, 'settingsRemote')
+  assert.equal(features[14].isActive, false)
 
   assert.throws(
     () => state.pluginApi.events.on('goal/changed', () => {}),
@@ -196,7 +200,7 @@ test('web service absence disables the services feature when no other capability
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
 
-  assert.equal(features.length, 13)
+  assert.equal(features.length, 15)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -212,6 +216,10 @@ test('web service absence disables the services feature when no other capability
   assert.equal(features[12].name, 'services')
   assert.equal(features[12].isActive, false)
   assert.match(features[12].reason, /capability services/)
+  assert.equal(features[13].name, 'typert')
+  assert.equal(features[13].isActive, false)
+  assert.equal(features[14].name, 'settingsRemote')
+  assert.equal(features[14].isActive, false)
 
   // the disabled services namespace throws typed errors for web too
   assert.throws(

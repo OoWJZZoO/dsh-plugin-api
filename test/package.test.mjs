@@ -61,6 +61,10 @@ test('peerDependencies are the exact union of facade host and durable-audit iden
     '@deepseek-ai/dsh-agent-loop',
     '@deepseek-ai/dsh-typert-registry',
     '@deepseek-ai/dsh-typert-protocol',
+    '@deepseek-ai/dsh-client-connection',
+    '@deepseek-ai/dsh-client-runtime',
+    '@deepseek-ai/dsh-api-remotes',
+    '@deepseek-ai/dsh-client-ui-settings',
   ]
   assert.deepEqual(Object.keys(pkg.peerDependencies), expected)
   assert.equal(pkg.peerDependencies['@deepseek-ai/cordis'], '^4.0.1')

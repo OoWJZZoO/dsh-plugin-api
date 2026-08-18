@@ -4,16 +4,28 @@ import { createClientSlots } from '../lib/client-slots.js'
 import { createClientSlotEvents } from '../lib/client-slot-events.js'
 
 test('slots preserve official ownership and emit changed after committed mutations', () => {
-  const events = createClientSlotEvents()
+  const listeners = new Set()
+  const emitChanged = (key) => {
+    for (const listener of [...listeners]) listener(key)
+  }
+  const events = createClientSlotEvents({
+    ctx: {
+      on(name, listener) {
+        assert.equal(name, 'slots/changed')
+        listeners.add(listener)
+        return () => listeners.delete(listener)
+      },
+    },
+  })
   const changed = []
   events.on('slots/changed', (key) => changed.push(key))
   const entries = [{ name: 'one', options: { nested: { stable: true } } }]
   let observer
   const slots = {
-    register(options) { observer?.(options.key); return () => { observer?.(options.key) } }, inject() {}, entries() { return entries }, subscribe() { return () => {} }, onMutate(listener) { observer = listener; return () => { observer = undefined } },
+    register(options) { emitChanged(options.name); return () => { emitChanged(options.name) } }, inject() {}, entries() { return entries }, subscribe() { return () => {} }, onMutate(listener) { observer = listener; return () => { observer = undefined } },
   }
-  const api = createClientSlots({ slots, notifyChanged: events.emitChanged })
-  const dispose = api.register({ key: 'settings.panel', kind: 'single', scope: 'root' }, {})
+  const api = createClientSlots({ slots, notifyChanged: emitChanged })
+  const dispose = api.register({ name: 'settings.panel' }, {})
   assert.deepEqual(changed, ['settings.panel'])
   const snapshot = api.entries('settings.panel')
   assert.ok(Object.isFrozen(snapshot)); assert.ok(Object.isFrozen(snapshot[0]))
@@ -27,8 +39,8 @@ test('slots preserve official ownership and emit changed after committed mutatio
 
 test('slots reject invalid keys and SlotEntryDef fields before official calls', () => {
   const api = createClientSlots({ slots: { register() {}, inject() {}, entries() { return [] }, subscribe() {} } })
-  assert.throws(() => api.register({ key: 'arbitrary', kind: 'single', scope: 'root' }, {}), /canonical/)
-  assert.throws(() => api.register({ key: 'details', kind: 'panel' }, {}), /kind/)
-  assert.throws(() => api.register({ key: 'details', kind: 'single', scope: 'global' }, {}), /scope/)
+  assert.throws(() => api.register({ name: 'arbitrary' }, {}), /canonical/)
+  assert.throws(() => api.register({ name: 'details', children: { 'settings.panel': { kind: 'panel', scope: 'root' } } }, {}), /kind/)
+  assert.throws(() => api.register({ name: 'details', children: { 'settings.panel': { kind: 'single', scope: 'global' } } }, {}), /scope/)
   assert.throws(() => api.entries('x'), /canonical/)
 })

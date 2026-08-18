@@ -195,9 +195,9 @@
 | ST1 命名空间注册 | `settings.register(ns, schema, {base, applies, validate})` 类型化 | A | `dsh-settings/lib/types/index.d.ts:225` | M1 | **delivered** |
 | ST2 设置作用域 | `settings.scope<T>(ns): SettingsScope<T>`（`get/watch/update/replace/mutate`） | A | 同上 `:85-111` | M1 | **delivered** |
 | ST3 设置事件 | `events.on('settings/updated'\|'settings/document-updated', listener)` | A | `dsh-settings/lib/index.js:523,561` | M1 | **delivered** |
-| ST4 设置可视化桥（host 侧） | `settings.remote(namespace, serviceKey?)`：用 `TypertRemoteService` + `bindTypertRemote` 注册可远程调用的设置服务 | B | dsh-read-image A3（手搓 `@Remote`）；`dsh-typert-protocol` 导出 `TypertRemoteService/remoteMethods` | M3 | planned |
-| ST5 设置可视化桥（client 侧） | `client.mountRemoteContribution(contribution)`：封装 `ctx.remote.$mount` + face 校验 + 失败 UI 降级 | B | dsh-read-image A5（`ctx.remote.$mount` 自挂载）；`dsh-api-remotes/lib/client.js` | M3 | planned |
-| ST6 真 codec 生成 | client bundle 打包一份 zod，生成满足 `dsh-api-remotes` 校验的 descriptor（替代 looseSchema） | B | dsh-read-image A4（伪造 zod schema）；AGENTS.md 第 4.5 条 | M3 | planned |
+| ST4 设置可视化桥（host 侧） | `settings.remote(namespace, serviceKey?)`：官方 `bindTypertRemote` 等价 service-object 注册可远程调用的设置服务 | B | dsh-read-image A3（手搓 `@Remote`）；`dsh-typert-protocol` | M3 | **delivered** |
+| ST5 设置可视化桥（client 侧） | `client.mountRemoteContribution(contribution)`：封装 `ctx.remote.$mount` + face 校验 + 失败 UI 降级 | B | dsh-read-image A5（`ctx.remote.$mount` 自挂载）；`dsh-api-remotes/lib/client.js` | M3 | **delivered** |
+| ST6 真 codec 生成 | client bundle 打包一份 zod，生成满足 `dsh-api-remotes` 校验的 descriptor（替代 looseSchema） | B | dsh-read-image A4（伪造 zod schema）；AGENTS.md 第 4.5 条 | M3 | **delivered** |
 | ST7 插件设置命名空间动态化 | 官方 `WEB_SETTINGS_NAMESPACES` 支持第三方插件命名空间 | C | `dsh-host-apiproxy/lib/types/api-proxy.js:50-52` 当前硬编码 7 个命名空间 | M4 | planned（proposal） |
 | ST8 设置描述与安装 helper | `settings.describe({redactSecrets})` 稳定直通；`installSettingsSection(ctx, ns, schema, entry, hooks)` 作为注册便利封装 | A | `dsh-settings/lib/index.js`（`describe` L352；`installSettingsSection` L618） | M1 | **delivered** |
 
@@ -205,15 +205,15 @@
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| C1 `dsh.client` manifest helper | `client.defineManifest({platform:'web', inject?, immediately?})` + `exports["./client"]` 约定（bundle 入口、`window.__ModuleLoader__.load`） | A | `dsh-client-modules/lib/index.js:60-99`；manifest 类型 `lib/types/client/manifest.d.ts:46-64` | M3 | planned |
-| C2 remote 贡献装配 | `client.mountRemote(contribution)`（含 `ctx.remote.$mount`、命名空间 face 校验） | B | dsh-read-image A5；`dsh-api-remotes/lib/client.js:5912-5921`；`TypertRemoteContribution = {package, descriptors}` | M3 | planned |
-| C3 客户端设置 scope | `client.settingsScope.bind(spec)` 类型化（getSnapshot/subscribe/load/set/unset） | A | `dsh-client-ui-settings/lib/client.js:207` | M3 | planned |
-| C4 Slot 注册 | `slots.register(options, component)` / `slots.inject(key, callback)` / `slots.entries(key)` / `slots.subscribe(key, fn)` 类型化；`SlotEntryDef` 契约（`kind/scope/owner/keyProps/store/inject` 等） | A | `dsh-client-runtime/lib/types/client/slots.d.ts:74-172`；`dsh-client-ui-slots` `SlotCore.register` | M3 | planned |
-| C5 Slot 变更事件 | `events.on('slots/changed', (key) => {})`；canonical slot id 目录（`settings.*`、`sidebar.*`、`shell.overlay`、`conversation`、`details` 等） | A | `dsh-client-runtime/lib/types/client/index.d.ts:99`；`dsh-client-ui-settings/lib/types/client/contract/slots.d.ts` | M3 | planned |
-| C6 客户端事件桥 | `client.remote.$on/$dispatch` 稳定直通（host→client 事件转发；官方 forwarded-event allowlist 约 11 个事件） | A | `dsh-api-gateway/lib/client.js:35-66`；`dsh-api-remotes/lib/index.js` `API_REMOTE_FORWARDED_EVENTS` | M3 | planned |
+| C1 `dsh.client` manifest helper | `client.defineManifest({platform, inject?, immediately?})` + `exports["./client"]` 约定（helper 遵循官方 generic platform shape；本包 metadata 固定 web） | A | `dsh-client-modules/lib/index.js:60-99`；manifest 类型 `lib/types/client/manifest.d.ts:46-64` | M3 | **delivered** |
+| C2 remote 贡献装配 | `client.mountRemote(contribution)`（含 `ctx.remote.$mount`、命名空间 face 校验） | B | dsh-read-image A5；`dsh-api-remotes/lib/client.js:5912-5921`；`TypertRemoteContribution = {package, descriptors}` | M3 | **delivered** |
+| C3 客户端设置 scope | `client.settingsScope.bind(spec)` 类型化（getSnapshot/subscribe/set/unset） | A | `dsh-client-ui-settings/lib/client.js:207` | M3 | **delivered** |
+| C4 Slot 注册 | `slots.register(options, component)` / `slots.inject(key, callback)` / `slots.entries(key)` / `slots.subscribe(key, fn)` 类型化；`SlotEntryDef` 契约（`kind/scope/owner/keyProps/store/inject` 等） | A | `dsh-client-runtime/lib/types/client/slots.d.ts:74-172`；`dsh-client-ui-slots` `SlotCore.register` | M3 | **delivered** |
+| C5 Slot 变更事件 | `client.slots.on('slots/changed', (key) => {})`；canonical slot id 目录（`settings.*`、`sidebar.*`、`shell.overlay`、`conversation`、`details` 等） | A | `dsh-client-runtime/lib/types/client/index.d.ts:99`；`dsh-client-ui-settings/lib/types/client/contract/slots.d.ts` | M3 | **delivered** |
+| C6 客户端事件桥 | `client.remote.$on/$dispatch` 稳定直通（host→client 事件转发；官方 forwarded-event allowlist） | A | `dsh-api-gateway/lib/client.js:35-66`；`dsh-api-remotes/lib/index.js` `API_REMOTE_FORWARDED_EVENTS` | M3 | **delivered** |
 | C7 `remote.<ns>` 原生动态发现 | 官方客户端运行时原生支持第三方 remote 命名空间发现（去掉硬编码 `TYPERT_REMOTE$*`） | C | `dsh-api-remotes/lib/client.js` 硬编码 5 个贡献（`commands/goals/dynamicCordisRunner/pluginInventory/messageFeedback`） | M4 | planned（proposal） |
-| C8 Typert schema/invocation 注册 | `exports["./typert"]` 工件自动装载到 `ctx.typert`（schema/invocation/lookup/context）；门面提供类型化封装 | A | `dsh-typert-loader/lib/index.js:218/282`；`dsh-typert-registry` `register` | M3 | planned |
-| C9 连接与 API 客户端 | `client.connection` 稳定直通：`rpc.call("/api", endpoint, {args}, signal)`、`api.settings.*` | A | `dsh-client-connection/lib/client.js`（`connection` 服务） | M3 | planned |
+| C8 Typert schema/invocation 注册 | `exports["./typert"]` 工件自动装载到 `ctx.typert`（schema/invocation/lookup/context）；门面提供类型化封装 | A | `dsh-typert-loader/lib/index.js:218/282`；`dsh-typert-registry` `register` | M3 | **delivered** |
+| C9 连接与 API 客户端 | `client.connection` 稳定直通：`rpc.call("/api", endpoint, {args}, signal)`、`api.settings.*` | A | `dsh-client-connection/lib/client.js`（`connection` 服务） | M3 | **delivered** |
 
 ### 2.10 其他宿主事件稳定化（统一走 `pluginApi.events`，M1/M2）
 
@@ -284,11 +284,11 @@
 |---|---|---|---|
 | `dsh-read-image` | A1 monkey-patch `resolveModelInfo` | L2 `pluginApi.llm.admission.register({id, match, input:'image', process, validate})`；wrapper 由 facade scoped gateway 唯一持有 | delivered（已迁移，旧 shape superseded） |
 | `dsh-read-image` | A2 `llm/stream` 重入投影 | L4 sole request owner + L2 policy pipeline；无独立 raw listener/projector | delivered（已迁移，旧 shape superseded） |
-| `dsh-read-image` | A3 手搓 `@Remote` / A4 伪造 zod schema / A5 `ctx.remote.$mount` | ST4/ST5/ST6 settings 可视化配置桥 | planned（M3） |
+| `dsh-read-image` | A3 手搓 `@Remote` / A4 伪造 zod schema / A5 `ctx.remote.$mount` | ST4/ST5/ST6 settings 可视化配置桥 | delivered（M3；已迁移） |
 | `dsh-read-image` | A6 `routeOf` 深挖 agent 内部 | `pluginApi.routing.ofExecution(exec)`（或 A9/T10 兼容委托）；session-created/prompt-time final route 仍不可用 | delivered（M2 migration） |
 | `dsh-pro-ex-ability-anchor` | 手写 `surfaceOp`/`sourceEventSeqs` 上屏事件 | `pluginApi.session.appendMessage(targetSession, kind, payload, {sourceEventSeqs?})` | delivered（M2 migration） |
 | `dsh-pro-ex-ability-anchor` | `system-prompt/assemble` 直接监听 | P6 类型化瀑布（行为等价） | planned（M1） |
-| `dsh-pro-ex-ability-anchor` | panel 手写 `__ModuleLoader__` bundle + `dsh.client` manifest | C1 client manifest helper + C4 slot | planned（M3） |
+| `dsh-pro-ex-ability-anchor` | panel 手写 client bundle/manifest + slot glue | C1 client manifest helper + C4 slot | delivered（M3；已迁移） |
 
 ---
 
