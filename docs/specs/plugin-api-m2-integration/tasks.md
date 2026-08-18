@@ -21,7 +21,7 @@
 
 ## 2. 执行 conflict-only principal merge wave
 
-- [ ] 2.1 合并 `feature/plugin-api-compaction-m2`
+- [x] 2.1 合并 `feature/plugin-api-compaction-m2`
   - 只解决取得 SV17 feature-local 实现、测试与 `services.js` static definition 所需的冲突，不在本步统一共享 coordinator 或更新最终版本。
   - 运行 compaction focused tests 及本步触及的 services/package shared tests，红测清零后才继续。
   - _Requirements: 2.1–2.7, 9.3–9.7, 11.1, 15.1, 15.6_
