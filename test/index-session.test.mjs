@@ -49,6 +49,7 @@ function createMockCtx(options = {}) {
     pluginApi: undefined,
     provideCount: 0,
     effects: [],
+    getCalls: [],
     listeners: [],
   }
 
@@ -63,6 +64,7 @@ function createMockCtx(options = {}) {
       },
     },
     get(name) {
+      state.getCalls.push(name)
       if (name === 'pluginApi') return state.pluginApi
       if (name in services) return services[name]
       return undefined
@@ -112,6 +114,12 @@ test('apply mounts session after events with a composed events catalog', () => {
   }
 
   assert.equal(state.pluginApi.session.isActive, true)
+  assert.deepEqual(
+    state.pluginApi.features.map((feature) => feature.name),
+    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'settings', 'systemPrompt', 'services'],
+  )
+  assert.ok(state.pluginApi.features.every((feature) => feature.isActive))
+  assert.equal(state.pluginApi.features.some((feature) => feature.name === 'compaction'), false)
   const listener = () => {}
   state.pluginApi.session.on('session/event', listener)
   assert.ok(state.listeners.some((l) => l.name === 'session/event'), 'session/event must register a native hook')
@@ -125,6 +133,39 @@ test('apply mounts session after events with a composed events catalog', () => {
   assert.equal(typeof state.pluginApi.session.header, 'function')
   assert.equal(typeof state.pluginApi.session.deriveMessages, 'function')
   assert.equal(typeof state.pluginApi.session.isSessionEventType, 'function')
+})
+
+test('apply completes every guard pass before pass-2 publication and an early P2 does not stop later mounters', () => {
+  const { ctx, state } = createMockCtx({ services: { tools: undefined } })
+  let firstPublicationGetCalls
+  const originalEffect = ctx.effect
+  ctx.effect = (fn, label) => {
+    if (!firstPublicationGetCalls) firstPublicationGetCalls = [...state.getCalls]
+    originalEffect(fn, label)
+  }
+
+  assert.doesNotThrow(() => apply(ctx))
+
+  // `fs` is only resolved by the final services guard. Its presence before
+  // the first cleanup registration proves all guard branches have run before
+  // the first pass-2 publication attempt.
+  assert.equal(state.effects[0]?.label, 'dsh-plugin-api: events cleanup')
+  assert.ok(firstPublicationGetCalls.includes('fs'))
+  assert.ok(firstPublicationGetCalls.includes('systemPrompt'))
+  assert.ok(firstPublicationGetCalls.includes('sessions'))
+
+  const features = state.pluginApi.features
+  assert.deepEqual(
+    features.map((feature) => feature.name),
+    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'settings', 'systemPrompt', 'services'],
+  )
+  assert.equal(features.find((feature) => feature.name === 'tools')?.isActive, false)
+  assert.equal(features.find((feature) => feature.name === 'execRoute')?.isActive, false)
+  for (const name of ['events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'settings', 'systemPrompt', 'services']) {
+    assert.equal(features.find((feature) => feature.name === name)?.isActive, true, `${name} remains independently mounted`)
+  }
+  assert.equal(state.pluginApi.events.catalog['tools/change'], undefined)
+  assert.equal(state.pluginApi.features.some((feature) => feature.name === 'compaction'), false)
 })
 
 test('session guard failure disables only session and keeps the facade active', () => {
