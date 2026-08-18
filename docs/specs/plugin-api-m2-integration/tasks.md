@@ -27,7 +27,7 @@
 
 ## 2. Complete dsh-read-image real facade migration
 
-- [ ] 2.1 在 consumer 真实执行路径迁移到批准的 0.3 composed facade。
+- [x] 2.1 在 consumer 真实执行路径迁移到批准的 0.3 composed facade。
   - 仅使用 input:image L2 policy 和必要 L4 transform；concrete execution 用 routing.ofExecution/A9/T10，later committed decisions 才用 current/on/once/wait；reapply 后重读 facade，不把 retained P2 ref 当成复活。
   - 删除 A1 resolver monkey patch、A2 raw stream/recursive re-entry/legacy project、A6 private traversal、dormant fallback/direct-package escape hatch；保持 message order、nested tool-result、image-free terminal、safe missing-route relay 和 disabled behavior。
   - 不实现 session-created/prompt-time native route，也不宣称 final route 前可保留 built-in read_image identity；记录 runtime timing limit。
