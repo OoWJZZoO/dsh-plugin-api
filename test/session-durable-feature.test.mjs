@@ -374,6 +374,15 @@ test('stable hub separates infallible state close, epoch disposal, and final nat
   assert.equal(hub.closeState(), null)
 })
 
+test('stable hub releases a throwing native disposer at most once', () => {
+  let calls = 0
+  const hub = createDurableObservationHub({ eventsApi: { on() { return () => { calls += 1; throw new Error('native') } } } })
+  assert.equal(hub.releaseNative(), true)
+  assert.equal(hub.releaseNative(), false)
+  assert.equal(hub.close(), true)
+  assert.equal(calls, 1)
+})
+
 test('direct official malformed durable append publishes raw but resets durable without payload diagnostics', () => {
   const ctx = new Context()
   new SessionStore(ctx)
