@@ -143,7 +143,8 @@ test('llm feature mount is idempotent on re-apply', () => {
 
   assert.doesNotThrow(() => apply(ctx))
 
-  assert.equal(state.pluginApi.llm, firstLlm)
+  assert.deepEqual(Object.keys(state.pluginApi.llm), Object.keys(firstLlm))
+  assert.ok(Object.isFrozen(state.pluginApi.llm))
   assert.equal(state.provideCount, provideCount)
   assert.equal(state.pluginApi.llm.isActive, true)
 })

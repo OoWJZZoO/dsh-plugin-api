@@ -59,7 +59,9 @@ test('mountFeature injects the systemPrompt API', () => {
   const systemPromptApi = { isActive: true, section() {}, render() {} }
   service.mountFeature('systemPrompt', systemPromptApi)
 
-  assert.equal(service.systemPrompt, systemPromptApi)
+  assert.equal(service.systemPrompt.section, systemPromptApi.section)
+  assert.equal(service.systemPrompt.render, systemPromptApi.render)
+  assert.ok(Object.isFrozen(service.systemPrompt))
 })
 
 test('mountFeature still rejects unknown feature names', () => {

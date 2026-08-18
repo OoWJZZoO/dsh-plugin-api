@@ -86,13 +86,12 @@ test('repeated apply retains the active execRoute hook and captured authority ou
   const captured = state.pluginApi.agent.routeOf(exec)
   const before = state.listeners.filter((entry) => entry.name === 'tools/pre-execute')
   const effectsBefore = state.effects.filter((effect) => effect.label === 'dsh-plugin-api: execRoute cleanup').length
-  const routeOf = state.pluginApi.agent.routeOf
 
   apply(ctx)
 
   assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 1)
   assert.equal(state.effects.filter((effect) => effect.label === 'dsh-plugin-api: execRoute cleanup').length, effectsBefore)
-  assert.equal(state.pluginApi.agent.routeOf, routeOf)
+  assert.ok(Object.isFrozen(state.pluginApi.agent))
   assert.equal(state.pluginApi.agent.routeOf(exec), captured)
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
   assert.equal(before.length, 1)

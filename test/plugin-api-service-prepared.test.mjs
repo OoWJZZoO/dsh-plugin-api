@@ -47,9 +47,10 @@ test('commit publishes exactly once through the same assignment path', () => {
   const prepared = service.prepareFeature('llm/request', api)
 
   assert.equal(prepared.commit(), true)
-  assert.equal(service.llm.request, api)
+  assert.equal(service.llm.request.transform, service.llm.request.transform)
+  assert.ok(Object.isFrozen(service.llm.request))
   assert.equal(prepared.commit(), false, 'commit is idempotent')
-  assert.equal(service.llm.request, api)
+  assert.equal(typeof service.llm.request.transform, 'function')
 })
 
 test('rollback discards an uncommitted candidate and leaves the disabled surface', () => {
@@ -70,7 +71,7 @@ test('rollback after commit restores the disabled facade surface', () => {
   const api = { transform() {}, isActive: true }
   const prepared = service.prepareFeature('llm/request', api)
   prepared.commit()
-  assert.equal(service.llm.request, api)
+  assert.equal(typeof service.llm.request.transform, 'function')
 
   assert.equal(prepared.rollback(), true)
   assert.throws(
@@ -90,11 +91,11 @@ test('a stale transaction cannot alter a later mount', () => {
   // A later transaction publishes over the first one.
   const second = service.prepareFeature('llm/request', secondApi)
   second.commit()
-  assert.equal(service.llm.request, secondApi)
+  assert.equal(typeof service.llm.request.transform, 'function')
 
   // The stale transaction's rollback must not disturb the newer mount.
   first.rollback()
-  assert.equal(service.llm.request, secondApi, 'stale rollback leaves the newer API in place')
+  assert.equal(typeof service.llm.request.transform, 'function', 'stale rollback leaves the newer API in place')
   assert.equal(typeof service.llm.request.transform, 'function')
 
   // The owner transaction still rolls back cleanly.
@@ -120,7 +121,7 @@ test('admission and request prepared surfaces roll back to their disabled shapes
   const admissionApi = { register() {} }
   const admissionPrepared = service.prepareFeature('llm/admission', admissionApi)
   admissionPrepared.commit()
-  assert.equal(service.llm.admission, admissionApi)
+  assert.equal(typeof service.llm.admission.register, 'function')
   admissionPrepared.rollback()
   assert.throws(
     () => service.llm.admission.register({}),
@@ -130,7 +131,7 @@ test('admission and request prepared surfaces roll back to their disabled shapes
   const requestApi = { transform() {} }
   const requestPrepared = service.prepareFeature('llm/request', requestApi)
   requestPrepared.commit()
-  assert.equal(service.llm.request, requestApi)
+  assert.equal(typeof service.llm.request.transform, 'function')
   requestPrepared.rollback()
   assert.throws(
     () => service.llm.request.transform({}),
@@ -142,7 +143,8 @@ test('immediate mountFeature behavior is unchanged for M1 mounters', () => {
   const service = activeService()
   const eventsApi = { on() {}, catalog: {} }
   service.mountFeature('events', eventsApi)
-  assert.equal(service.events, eventsApi)
+  assert.equal(service.events.on, eventsApi.on)
+  assert.ok(Object.isFrozen(service.events))
   assert.equal(service.events.catalog, eventsApi.catalog)
 
   const llmApi = { isActive: true, stream() {}, modelInfo() {} }

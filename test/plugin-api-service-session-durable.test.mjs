@@ -85,8 +85,9 @@ test('session composition preserves M1 descriptors without eager getter access',
   assert.equal(getterReads, 1)
   assert.deepEqual(Object.getOwnPropertyDescriptor(service.session, 'catalog'), Object.getOwnPropertyDescriptor(sessionApi, 'catalog'))
   assert.equal(Object.getOwnPropertyDescriptor(service.session, 'get').value, sessionApi.get)
-  assert.deepEqual(Object.getOwnPropertyDescriptor(service.session, 'hidden'), Object.getOwnPropertyDescriptor(sessionApi, 'hidden'))
-  assert.deepEqual(Object.getOwnPropertyDescriptor(service.session, symbolKey), Object.getOwnPropertyDescriptor(sessionApi, symbolKey))
+  assert.equal(Object.getOwnPropertyDescriptor(service.session, 'hidden').value, 'hidden value')
+  assert.equal(Object.getOwnPropertyDescriptor(service.session, symbolKey).value, 'symbol value')
+  assert.ok(Object.isFrozen(service.session))
   assertP2(() => service.session.appendMessage())
   const durableKeys = [
     'durableEventTypes',

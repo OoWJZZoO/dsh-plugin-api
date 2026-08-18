@@ -62,7 +62,9 @@ test('mountFeature injects the events API', () => {
 
   service.mountFeature('events', eventsApi)
 
-  assert.equal(service.events, eventsApi)
+  assert.equal(service.events.on, eventsApi.on)
+  assert.equal(service.events.catalog, eventsApi.catalog)
+  assert.ok(Object.isFrozen(service.events))
 })
 
 test('mountFeature still rejects unknown feature names', () => {

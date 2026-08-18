@@ -101,7 +101,9 @@ test('mountFeature installs an agent facade factory', () => {
 
   service.mountFeature('agent', () => agentApi)
 
-  assert.equal(service.agent, agentApi)
+  assert.equal(service.agent.get, agentApi.get)
+  assert.equal(service.agent.list, agentApi.list)
+  assert.ok(Object.isFrozen(service.agent))
 })
 
 test('agent mount tokens restore exact prior factory and stale cleanup is isolated', () => {
@@ -113,11 +115,11 @@ test('agent mount tokens restore exact prior factory and stale cleanup is isolat
   const firstToken = service.mountFeature('agent', () => first)
   const secondToken = service.mountFeature('agent', () => second)
 
-  assert.equal(service.agent, second)
+  assert.equal(service.agent.name, second.name)
   assert.equal(service.unmountFeature('agent', firstToken), false)
-  assert.equal(service.agent, second)
+  assert.equal(service.agent.name, second.name)
   assert.equal(service.unmountFeature('agent', secondToken), true)
-  assert.equal(service.agent, first)
+  assert.equal(service.agent.name, first.name)
   assert.equal(service.unmountFeature('agent', secondToken), false)
 })
 

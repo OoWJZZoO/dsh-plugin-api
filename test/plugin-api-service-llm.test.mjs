@@ -122,7 +122,8 @@ test('mountFeature("llm/request", api) installs only the request surface', () =>
 
   service.mountFeature('llm/request', requestApi)
 
-  assert.equal(service.llm.request, requestApi)
+  assert.equal(service.llm.request.transform(), undefined)
+  assert.ok(Object.isFrozen(service.llm.request))
   assert.equal(service.llm.isActive, false)
   // admission.isActive is retired; the disabled surface exposes only register.
   assert.equal('isActive' in service.llm.admission, false)
@@ -143,7 +144,7 @@ test('mountFeature("llm") does not overwrite an already-mounted admission surfac
     registerModelDiscovery() {},
   })
 
-  assert.equal(service.llm.admission, admissionApi)
+  assert.equal(service.llm.admission.register(), undefined)
   assert.equal(service.llm.isActive, true)
 })
 
@@ -162,6 +163,6 @@ test('llm/admission can still be mounted after llm is mounted', () => {
   })
   service.mountFeature('llm/admission', admissionApi)
 
-  assert.equal(service.llm.admission, admissionApi)
+  assert.equal(service.llm.admission.register(), undefined)
   assert.equal(service.llm.isActive, true)
 })

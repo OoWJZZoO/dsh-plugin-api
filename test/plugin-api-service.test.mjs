@@ -151,7 +151,8 @@ test('mountFeature injects the settings API', () => {
 
   const settingsApi = { isActive: true, register() {}, scope() {}, describe() {}, installSettingsSection() {} }
   service.mountFeature('settings', settingsApi)
-  assert.equal(service.settings, settingsApi)
+  assert.equal(service.settings.register, settingsApi.register)
+  assert.ok(Object.isFrozen(service.settings))
 })
 
 test('assertCompatible returns true when satisfied', () => {
@@ -190,7 +191,7 @@ test('mountFeature injects a feature API and unknown feature throws', () => {
 
   const admissionApi = { register() {}, isActive: true }
   service.mountFeature('llm/admission', admissionApi)
-  assert.equal(service.llm.admission, admissionApi)
+  assert.equal(typeof service.llm.admission.register, 'function')
 
   assert.throws(
     () => service.mountFeature('unknown/feature', {}),
@@ -317,5 +318,6 @@ test('mountFeature injects the services namespace', () => {
 
   const servicesApi = { fs: { isActive: true, readText() {} } }
   service.mountFeature('services', servicesApi)
-  assert.equal(service.services, servicesApi)
+  assert.equal(service.services.fs, servicesApi.fs)
+  assert.ok(Object.isFrozen(service.services))
 })
