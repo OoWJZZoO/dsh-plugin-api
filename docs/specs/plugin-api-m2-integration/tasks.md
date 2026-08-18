@@ -36,7 +36,7 @@
 
 ## 3. Complete dsh-pro-ex-ability-anchor finite S2 migration
 
-- [ ] 3.1 在 consumer 实际 supported message paths 使用 finite appendMessage。
+- [x] 3.1 在 consumer 实际 supported message paths 使用 finite appendMessage。
   - 映射 approved user/assistant/tool-result，向 facade 提供 explicit 或 uniquely derivable `sourceEventSeqs`，由 facade 计算 approved `surfaceOp`/metadata 并 append；保留 raw official `tool/call` 与非有限语义。
   - 删除 migrated kinds 的 hand-authored metadata fallback；证明 ambiguous/unsupported provenance fail-before-persistence，durable recovery 后重读 facade。
   - 完成证据：consumer-path tests、full relevant suite、documented headless smoke/dev boot、dependency 与 hack inventory 更新。
