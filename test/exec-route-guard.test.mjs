@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { runFeatureGuard } from '../lib/guards.js'
 
 function healthyCtx() {
-  const services = { tools: {}, sessions: {}, agents: {} }
+  const services = { tools: {}, sessions: {} }
   return {
     on() {},
     get(name) {
@@ -25,7 +25,6 @@ test('execRoute guard fails closed for every mandatory missing substrate member'
     ['ctx.on', { get: healthyCtx().get }],
     ['tools service', { ...healthyCtx(), get(name) { return name === 'tools' ? undefined : {} } }],
     ['sessions service', { ...healthyCtx(), get(name) { return name === 'sessions' ? undefined : {} } }],
-    ['agents service', { ...healthyCtx(), get(name) { return name === 'agents' ? undefined : {} } }],
   ]
 
   for (const [expected, ctx] of cases) {
@@ -58,7 +57,7 @@ test('execRoute guard contains throwing public substrate probes', () => {
   })
 
   assert.equal(result.ok, false)
-  assert.deepEqual(result.problems.map((problem) => problem.name), ['ctx.on', 'tools service', 'sessions service', 'agents service'])
+  assert.deepEqual(result.problems.map((problem) => problem.name), ['ctx.on', 'tools service', 'sessions service'])
   assert.equal(serviceResult.ok, true)
   assert.deepEqual(serviceResult.problems, [])
 })

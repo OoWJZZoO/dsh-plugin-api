@@ -973,8 +973,7 @@ test('agent guard failure disables only agent and keeps facade active', () => {
   assert.match(features[5].reason, /agents\.get/)
   assert.deepEqual(features[6], { name: 'session', isActive: true })
   assert.deepEqual(features[7], { name: 'sessionDurable', isActive: true })
-  assert.equal(features[8].name, 'execRoute')
-  assert.equal(features[8].isActive, false)
+  assert.deepEqual(features[8], { name: 'execRoute', isActive: true })
   assert.deepEqual(features[9], { name: 'settings', isActive: true })
   assert.deepEqual(features[10], { name: 'systemPrompt', isActive: true })
   assert.deepEqual(features[11], { name: 'services', isActive: true })
@@ -991,6 +990,11 @@ test('agent guard failure disables only agent and keeps facade active', () => {
   }
   assert.equal(typeof state.pluginApi.events.on, 'function')
   assert.equal(typeof state.pluginApi.services.web.registerSearchProvider, 'function')
+  const exec = { agent: { session: { requestContext: () => ({ provider: 'provider-a', model: 'model-a' }) } } }
+  ctx.dispatchPreExecute(exec)
+  const route = state.pluginApi.tools.routeOf(exec)
+  assert.deepEqual(route, { provider: 'provider-a', model: 'model-a' })
+  assert.equal(state.pluginApi.agent.routeOf(exec), route)
 })
 
 test('events guard failure does not block the agent registry read API', () => {

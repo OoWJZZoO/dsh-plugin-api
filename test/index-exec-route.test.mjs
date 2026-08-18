@@ -200,21 +200,35 @@ test('P2 diagnostics deduplicate repeated apply failures by lifecycle key', () =
   assert.deepEqual(keys, ['guard:mandatory-substrate', 'activation:cleanup-registration'])
 })
 
-test('every missing declared dependency leaves execRoute disabled without native hook', () => {
-  for (const dependency of ['tools', 'events', 'agents', 'sessions']) {
-    const services = dependency === 'events'
-      ? {}
-      : { [dependency]: undefined }
+test('every missing tools or session substrate leaves execRoute disabled without native hook', () => {
+  for (const dependency of ['tools', 'sessions']) {
+    const services = { [dependency]: undefined }
     const { ctx, state } = createCtx({ services })
-    if (dependency === 'events') {
-      ctx.emit = undefined
-    }
 
     apply(ctx)
 
     assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, false)
     assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 0)
   }
+})
+
+test('execRoute mounter needs only active tools and session when events and agent are inactive', () => {
+  const { ctx, state } = createCtx()
+  const registry = createFeatureRegistry()
+  registry.mount('tools')
+  registry.mount('session')
+  registry.disable('events', 'independently inactive')
+  registry.disable('agent', 'independently inactive')
+  const owner = mountExecRouteFeature({
+    ctx,
+    service: { mountFeature() {}, unmountFeature() {} },
+    featureRegistry: registry,
+  })
+
+  assert.ok(owner)
+  assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 1)
+  owner.disposer()
+  assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 0)
 })
 
 test('malformed execRoute owner result is rejected before publication', () => {
