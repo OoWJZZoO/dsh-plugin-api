@@ -96,7 +96,7 @@
 
 ## 7. 统一 guards、mounter registry 与静态 services
 
-- [ ] 7.1 重建最终 guard branches、feature order 和 active gating
+- [x] 7.1 重建最终 guard branches、feature order 和 active gating
   - 先写 combined host tests，断言最终顺序 `tools -> events -> agent -> llm -> llm/request -> llm/admission -> session -> sessionDurable -> execRoute -> settings -> systemPrompt -> services` 及 pass-1/pass-2 行为。
   - 合并所有 mandatory probes、runtime audits 与 P2 failure；以 `featureRegistry.isActive` 为唯一活动信号，验证每个 dependency failure 不影响无关 later mounter。
   - 保持 SV17 为 `services` 静态成员而非独立 feature/mounter/guard。
