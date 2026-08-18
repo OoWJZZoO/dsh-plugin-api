@@ -44,7 +44,7 @@
 
 ## 4. Synchronize governance and C boundary
 
-- [ ] 4.1 同步 final authority、proposal-only boundary 和交付登记，不扩大 runtime scope。
+- [x] 4.1 同步 final authority、proposal-only boundary 和交付登记，不扩大 runtime scope。
   - 更新 supersession/spec/test wording，使 H1 narrowed execRoute、H2 hub、L2 sole resolveModelInfo wrapper、routing shape 和 S2 signature 有唯一 authority。
   - 更新 AGENTS registration、feature list、package/API guidance、consumer hack inventories；保留已交付 dsh.api 0.3、0.1.0-rc.6-0.3 exact-runtime/peer contract，不重新 version。
   - 仅发布 Design 的 C-class agent/prepared-route proposal（timing、causal identity、scheduler/order/cancel/teardown questions 和 M2 不交付 contribution API）；不得实现 proposal。
