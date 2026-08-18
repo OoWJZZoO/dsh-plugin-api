@@ -31,7 +31,7 @@
   - 运行 L2/L4 focused tests 及本步触及的 LLM/shared host tests，红测清零后才继续。
   - _Requirements: 2.1–2.7, 6.7, 7.1–7.7, 8.2–8.3, 11.1, 15.3_
 
-- [ ] 2.3 合并 `feature/plugin-api-agent-create-m2`
+- [x] 2.3 合并 `feature/plugin-api-agent-create-m2`
   - 保留 A11 context-bound adapter、availability matrix、provider lifecycle 与 feature-local tests；不得使 A11 依赖 execRoute 或 B 类基础设施。
   - 运行 A11 focused tests 及本步触及的 agent facade/shared host tests，红测清零后才继续。
   - _Requirements: 2.1–2.7, 3.1, 3.4, 4.5, 9.1–9.2, 9.6–9.7, 11.1_
