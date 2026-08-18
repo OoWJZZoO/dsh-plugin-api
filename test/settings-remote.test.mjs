@@ -27,7 +27,7 @@ function makeHost(settings = {}) {
 }
 
 function makeSettings() {
-  const state = { readImage: { enabled: true, count: 1 } }
+  const state = { readImage: { enabled: true, count: 1, token: 'host-only' } }
   const mutations = []
   return {
     state,
@@ -38,6 +38,14 @@ function makeSettings() {
     },
     get(ns) {
       return state[ns]
+    },
+    describe({ redactSecrets } = {}) {
+      return Object.keys(state).map((ns) => ({
+        ns,
+        value: redactSecrets
+          ? Object.fromEntries(Object.entries(state[ns]).filter(([key]) => key !== 'token'))
+          : { ...state[ns] },
+      }))
     },
     async mutate(ns, ops) {
       mutations.push({ ns, ops })
@@ -59,7 +67,11 @@ test('settings remote publishes official binding and stable descriptors', async 
   const service = host.calls[0].value
   assert.deepEqual(service.typertRemote, { service, serviceKey: 'readImage', namespace: 'readImage' })
   assert.deepEqual(protocol.remoteMethods(service).map((entry) => entry.method), ['get', 'set'])
-  assert.deepEqual(service.get(), { enabled: true, count: 1 })
+  assert.deepEqual(protocol.remoteMethods({}), [], 'ST4 markers must not leak onto Object.prototype')
+  assert.deepEqual(service.get(), { value: { enabled: true, count: 1 } })
+  const snapshot = service.get()
+  snapshot.value.enabled = false
+  assert.equal(settings.state.readImage.enabled, true, 'get() must return a detached snapshot')
   assert.deepEqual(await service.set({ patch: { enabled: false }, unset: ['count'] }), { ok: true })
   assert.deepEqual(settings.mutations, [{ ns: 'readImage', ops: [
     { op: 'unset', path: ['count'] },
@@ -76,6 +88,7 @@ test('explicit service keys are validated and duplicate owners are idempotent', 
   const first = api.remote('readImage', 'image-config')
   assert.equal(api.remote('readImage', 'image-config'), first)
   assert.equal(host.calls.length, 1)
+  assert.equal(host.calls[0].value.typertRemote.namespace, 'image-config')
   assert.throws(() => api.remote('readImage', 'other.key!'), /remote-segment grammar/)
   await first()
   const second = api.remote('readImage', 'image-config')
@@ -129,16 +142,15 @@ test('failed publication rolls back provider and later replacement is stale-safe
   const host = makeHost(settings)
   host.ctx.reflect.provide = (name, value) => {
     registerCalls += 1
-    host.provided.set(name, value)
     if (registerCalls === 1) throw new Error('registration failed')
+    host.provided.set(name, value)
     return () => host.provided.delete(name)
   }
   const logs = []
   const api = createSettingsRemoteApi({ ctx: host.ctx, settings, protocol, logger: { error: (line) => logs.push(line) } })
   assert.throws(() => api.remote('readImage'), /registration failed/)
-  assert.equal(host.provided.size, 1, 'a throwing provider is not removable by an unavailable disposer')
-  // The host primitive is responsible for atomic registration; an owner is
-  // not committed when provide throws, so the next call is still attempted.
+  assert.equal(host.provided.size, 0)
+  // A failed host publication never commits an owner, so replacement is safe.
   const replacement = api.remote('readImage')
   assert.equal(typeof replacement, 'function')
   replacement()
@@ -163,4 +175,12 @@ test('missing primitives produce a disabled face without throwing during constru
   const disabled = createSettingsRemoteApi({ ctx: {}, settings: {}, protocol: {} })
   assert.equal(disabled.isActive, false)
   assert.throws(() => disabled.remote('readImage'), /feature "settingsRemote" is disabled/)
+
+  const settingsWithoutDescribe = { get() {}, mutate() {} }
+  const missingDescribe = createSettingsRemoteApi({
+    ctx: { reflect: { provide() {} } },
+    settings: settingsWithoutDescribe,
+    protocol,
+  })
+  assert.equal(missingDescribe.isActive, false)
 })
