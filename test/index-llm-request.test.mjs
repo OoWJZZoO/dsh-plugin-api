@@ -55,6 +55,13 @@ function createMockCtx(options = {}) {
     },
     plugin(Class) {
       new Class(ctx)
+      if (options.prepareThrowsFor) {
+        const prepareFeature = state.pluginApi.prepareFeature.bind(state.pluginApi)
+        state.pluginApi.prepareFeature = (name, api) => {
+          if (name === options.prepareThrowsFor) throw new Error(`prepared ${name} failure`)
+          return prepareFeature(name, api)
+        }
+      }
     },
     effect(fn, label) {
       state.effects.push({ fn, label })
@@ -63,8 +70,17 @@ function createMockCtx(options = {}) {
       }
     },
     on(name, listener) {
-      state.listeners.push({ name, listener })
-      return () => {}
+      const entry = { name, listener }
+      state.listeners.push(entry)
+      let disposed = false
+      return () => {
+        if (disposed) return false
+        disposed = true
+        const index = state.listeners.indexOf(entry)
+        if (index < 0) return false
+        state.listeners.splice(index, 1)
+        return true
+      }
     },
     once() {},
     emit() {},
@@ -136,6 +152,25 @@ test('staged publication: effect failure rolls back the disabled facade, dispose
   // Unrelated features still mounted.
   assert.equal(features.find((f) => f.name === 'tools').isActive, true)
   assert.equal(features.find((f) => f.name === 'events').isActive, true)
+})
+
+test('private L4/L2 prepare failure leaves no owner residue while preserving independent L4 activation', () => {
+  for (const featureName of ['llm/request', 'llm/admission']) {
+    const { ctx, state, services } = createMockCtx({ prepareThrowsFor: featureName })
+    const originalResolve = services.llm.resolveModelInfo
+    assert.doesNotThrow(() => apply(ctx))
+
+    const request = state.pluginApi.features.find((feature) => feature.name === 'llm/request')
+    const admission = state.pluginApi.features.find((feature) => feature.name === 'llm/admission')
+    assert.equal(request.isActive, featureName !== 'llm/request')
+    assert.equal(admission.isActive, false)
+    assert.equal(services.llm.resolveModelInfo, originalResolve, 'an unpublished L2 gateway must not retain its resolver wrapper')
+    assert.equal(
+      state.listeners.filter((entry) => entry.name === 'llm/stream').length,
+      featureName === 'llm/request' ? 0 : 1,
+      'only a committed L4 owner may retain the raw listener',
+    )
+  }
 })
 
 test('request guard failure disables both llm/request and llm/admission without wrapping anything', () => {
