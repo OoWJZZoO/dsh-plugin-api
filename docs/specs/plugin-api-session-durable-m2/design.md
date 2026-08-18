@@ -1,7 +1,7 @@
 # Design: plugin-api-session-durable-m2
 
 > feature_name: `plugin-api-session-durable-m2`
-> 状态：草案（Stage 2，待批准）
+> 状态：已完成（Stage 4）
 > 范围：S2 + O8 + O13 + O14
 > 面：仅 host
 > 依赖的已批准需求：[requirements.md](./requirements.md)

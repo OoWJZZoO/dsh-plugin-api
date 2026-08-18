@@ -1,7 +1,7 @@
 # Requirements: plugin-api-session-durable-m2
 
 > feature_name: `plugin-api-session-durable-m2`
-> 状态：草案（Stage 1，待批准）
+> 状态：已完成（Stage 4）
 > 范围：S2 + O8 + O13 + O14
 > 上游：`plugin-api-session-m1`、`plugin-api-semantic-hooks-m2`
 > 面：仅 host
