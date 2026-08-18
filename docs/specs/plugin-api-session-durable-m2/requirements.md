@@ -181,7 +181,7 @@
 
 ## Parallel-worktree Contract Note
 
-This feature deliberately extends the already approved public `pluginApi.session` namespace rather than creating a parallel `pluginApi.sessionDurable` namespace. Its runtime feature key is `sessionDurable`; this is a necessary, recorded deviation from the generic parallel-workflow naming guideline because a second public session namespace would make the target-session API less coherent. The Stage 2 design must identify the additive ownership boundary, mount dependency, allowed shared-file edits, and P1/P2 failure presentation before any implementation task is planned. No implementation work is authorized by this note.
+This feature deliberately extends the already approved public `pluginApi.session` namespace rather than creating a parallel `pluginApi.sessionDurable` namespace. Its runtime feature key is `sessionDurable`; this is a necessary, recorded deviation from the generic parallel-workflow naming guideline because a second public session namespace would make the target-session API less coherent. The approved Stage 2 design identifies the additive ownership boundary, mount dependency, allowed shared-file edits, and P1/P2 failure presentation. This note did not independently authorize implementation.
 
 ---
 
