@@ -1,8 +1,8 @@
 # Requirements: plugin-api-m2-integration
 
 > feature_name: `plugin-api-m2-integration`
-> 状态：草案（Stage 1，待用户评审）
-> 类型标注：本 feature 为整合基础；不新增 A/B/C 能力，保持并统一已批准的 A 类直通、B 类转译与 C 类边界
+> 状态：已批准（Stage 1）
+> 类型标注：本 feature 为整合基础，并新增经人类批准返工的 B 类通用 routing capability plane；pre-assembly prepared route 与 route-conditioned contribution 为 C 类上游边界
 > 面：host 整合 + 两个目标插件迁移验收；不新增 client 面
 > 上游：已完成 Stage 4 的 `plugin-api-llm-request-m2`、`plugin-api-exec-route-m2`、`plugin-api-agent-create-m2`、`plugin-api-session-durable-m2`、`plugin-api-compaction-m2`，以及已交付的 `plugin-api-semantic-hooks-m2`
 
@@ -10,11 +10,11 @@
 
 ## Introduction
 
-`plugin-api-m2-integration` 是 M2 的串行收敛点。它整合 L2、L4、A9、A11、S2、T10、O8、O13、O14、SV17 以及 semantic-hooks 共同契约，集中仲裁共享 facade、挂载依赖、guard、active signal、失败呈现、事务回滚、catalog 边界、版本和交付文档。
+`plugin-api-m2-integration` 是 M2 的串行收敛点。它整合 L2、L4、A9、A11、S2、T10、O8、O13、O14、SV17 以及 semantic-hooks 共同契约，并新增一个通用、host-only 的 `pluginApi.routing` capability plane，用于统一 execution route 查询与最近已提交 session route 的查询、订阅和等待，集中仲裁共享 facade、挂载依赖、guard、active signal、失败呈现、事务回滚、catalog 边界、版本和交付文档。
 
-本 feature 不重新设计各上游 Spec 已批准的公开语义，也不把分支局部实现原样叠加视为完成。整合必须先证明每个输入分支可接纳，再分为“冲突合并波”和“统一波”，最后以全量回归、真实消费者迁移、headless 冒烟和 dev boot 证明 M2 可替代目标 hack，同时保持未被明确取代的 M0/M1 行为。
+除经人类明确批准返工的 routing 能力面外，本 feature 不重新设计各上游 Spec 已批准的公开语义，也不把分支局部实现原样叠加视为完成。整合必须先证明每个输入分支可接纳，再分为“冲突合并波”和“统一波”，最后以全量回归、真实消费者迁移、headless 冒烟和 dev boot 证明 M2 可替代目标 hack，同时保持未被明确取代的 M0/M1 行为。
 
-分类边界如下：A11 与 SV17 为 A 类稳定直通；A9/T10、L2/L4 和 S2 为 B 类转译或受限 helper；O8/O13/O14 为 A 类 durable-record 观察；完整异步请求改写、精确 route 因果、任意 durable 写入、compaction 后端扩展、M3 client/settings bridge 与 M4 proposal 仍在范围外。本整合 feature 自身不新增任何 A/B/C 能力。
+分类边界如下：A11 与 SV17 为 A 类稳定直通；A9/T10、L2/L4、S2 与 session-route observation 为 B 类转译或受限 helper；O8/O13/O14 为 A 类 durable-record 观察。`pluginApi.routing.current(session)` 只表示最近已提交 route，`ofExecution(exec)` 只表示已观察 execution 的冻结 route；二者都不声称 session-created 或 prompt-assembly 时已经存在最终 route。完整异步请求改写、在 prompt/tool assembly 前取得最终 route、route-conditioned tool/prompt contribution、route rewrite、任意 durable 写入、compaction 后端扩展、M3 client/settings bridge 与其他 M4 proposal 仍在范围外。
 
 ---
 
@@ -61,6 +61,8 @@
 7. WHEN M2 integration completes, THEN `pluginApi.services` SHALL contain exactly the approved 19 static service keys, including `compaction`, and SHALL expose no additional top-level namespace or runtime-discovered service member.
 8. WHEN any composed facade is mutated, THEN the mutation SHALL NOT alter its observable member set or approved immutable data.
 9. WHEN a feature is unavailable, THEN every declared public member owned by that feature SHALL remain observable through its approved disabled presentation; another feature SHALL NOT erase, replace, or partially publish it.
+10. WHEN M2 integration completes, THEN `pluginApi.routing` SHALL expose the approved execution-route query and committed session-route query/observation/wait surfaces through one composed namespace without removing the A9/T10 compatibility delegates.
+11. WHEN `pluginApi.routing` is inspected, THEN its execution and session capability leaves SHALL retain a frozen availability presentation so that one unavailable substrate does not erase or falsely disable the other routing leaf.
 
 ## 4. 挂载顺序与依赖（整合基础）
 
@@ -77,6 +79,7 @@
 7. IF a mandatory dependency is inactive or malformed, THEN the dependent feature SHALL remain P2-disabled without changing the dependency's own state or preventing unrelated later mounters from running.
 8. WHEN `apply()` re-runs against a reused service, THEN every M2 owner SHALL avoid duplicate hooks, wrappers, facade publication, registry state, and cleanup ownership.
 9. WHEN integration completes, THEN the complete M2 partial order and each dependency failure SHALL be covered by combined host-apply tests.
+10. WHEN the committed session-route observer mounts under feature-registry key `sessionRoute`, THEN the `session` and `events` features SHALL already be active; its failure SHALL NOT disable the independently owned `execRoute` feature.
 
 ## 5. Guard、gating 与失败呈现（整合基础）
 
@@ -134,7 +137,7 @@
 **Acceptance Criteria**:
 
 1. WHEN M2 branches are integrated, THEN `pluginApi.events.catalog` SHALL retain the M1 schema, composition, freeze, scope, fault, and duplicate-name contracts for all existing entries.
-2. WHEN M2 integration completes, THEN none of L2, L4, A9, A11, S2, T10, O8, O13, O14, or SV17 SHALL add an event catalog slice or synthetic Cordis event name.
+2. WHEN M2 integration completes, THEN none of L2, L4, A9, A11, S2, T10, O8, O13, O14, SV17, or session-route observation SHALL add an event catalog slice or synthetic Cordis event name.
 3. WHEN L4 executes, THEN `llm/request` SHALL remain a facade operation/translation and SHALL NOT be exposed as a subscription event.
 4. WHEN route data is captured, THEN it SHALL remain query-only through `routeOf(exec)` and SHALL NOT appear as `exec.route`, an execution mutation, or a synthetic route event.
 5. WHEN an O8/O13/O14 record commits, THEN it SHALL remain a durable official session record observed through the approved `session.onDurable` or `session.onceDurable` API over the existing A-class `session/event` substrate.
@@ -195,11 +198,13 @@
 
 1. WHEN `dsh-read-image` is migrated, THEN it SHALL register only the approved constrained L2 image policy and any approved L4 transform required by its message projection behavior.
 2. WHEN migration completes, THEN the plugin SHALL contain no A1 `resolveModelInfo` monkey-patch, A2 raw `llm/stream` projection owner, recursive `this.stream(projected)` path, legacy `project` registration field, or dependency on the superseded admission active signal.
-3. WHEN route access is migrated, THEN the plugin SHALL use the supported A9/T10 `routeOf(exec)` facade and SHALL remove its A6 private traversal of agent/session request state.
-4. WHEN no route snapshot is available, THEN the migrated plugin SHALL preserve its approved safe missing-route behavior without recreating an unsupported fallback inference path.
-5. WHEN migration tests run, THEN they SHALL preserve message-only ordering, nested tool-result projection, image-free terminal validation, route-based behavior, and exact disabled/failure behavior required by the consumer Spec.
-6. WHEN migration acceptance runs, THEN the plugin's full relevant test suite, documented headless smoke, and documented dev boot SHALL pass against the integrated facade with no activation error.
-7. WHEN migration completes, THEN removed hacks SHALL NOT remain as dormant fallback code or an unsupported direct-package escape hatch.
+3. WHEN route access is migrated, THEN the plugin SHALL use `pluginApi.routing.ofExecution(exec)` or its A9/T10 compatibility delegates and SHALL remove its A6 private traversal of agent/session request state.
+4. WHEN the plugin needs the latest committed session route for later lifecycle decisions, THEN it MAY use `routing.current`, `routing.on`, `routing.once`, or `routing.wait`; it SHALL treat a fresh session's missing route as normal `undefined` and SHALL NOT present it as the final first-request route.
+5. WHEN no execution route snapshot is available, THEN the migrated plugin SHALL preserve its approved safe missing-route behavior without recreating an unsupported fallback inference path.
+6. WHEN migration tests run, THEN they SHALL preserve message-only ordering, nested tool-result projection, image-free terminal validation, execution-route behavior, committed-route change behavior where consumed, and exact disabled/failure behavior required by the revised consumer Spec.
+7. WHEN migration acceptance documents native-model behavior, THEN it SHALL state that the installed runtime cannot guarantee final route selection before first-request tool/prompt assembly and SHALL NOT claim that the facade can conditionally preserve the built-in `read_image` identity at that unavailable boundary.
+8. WHEN migration acceptance runs, THEN the plugin's full relevant test suite, documented headless smoke, and documented dev boot SHALL pass against the integrated facade with no activation error.
+9. WHEN migration completes, THEN removed hacks SHALL NOT remain as dormant fallback code or an unsupported direct-package escape hatch.
 
 ## 13. `dsh-pro-ex-ability-anchor` 迁移验收（整合基础）
 
@@ -222,7 +227,7 @@
 **Acceptance Criteria**:
 
 1. WHEN M2 integration completes, THEN root `AGENTS.md` §8 SHALL register `plugin-api-m2-integration` and every integrated concrete M2 feature with their final scopes, classifications, feature keys, failure boundaries, and critical constraints.
-2. WHEN M2 integration completes, THEN `docs/specs/plugin-api-features/feature-list.md` SHALL mark L2, L4, A9, A11, S2, T10, O8, O13, O14, and SV17 delivered with final public shapes and SHALL retain C/M3/M4 items as planned or proposal-only.
+2. WHEN M2 integration completes, THEN `docs/specs/plugin-api-features/feature-list.md` SHALL mark L2, L4, A9, A11, S2, T10, O8, O13, O14, SV17, and the approved routing capability plane delivered with final public shapes and SHALL retain the pre-assembly prepared-route/route-conditioned-contribution seam and other C/M3/M4 items as planned or proposal-only.
 3. WHEN integration changes a public contract or intentionally supersedes an earlier requirement, THEN every affected upstream Spec, supersession record, test assertion, and migration note SHALL identify the final authority without contradictory active wording; specifically, M1 integration Requirement 7.2's `resolveModelInfo` wrapper ownership SHALL move from the retired `admission-bridge.js` to the approved L2 scoped gateway while retaining the exactly-one-wrapper invariant.
 4. WHEN documentation states catalog or namespace counts, THEN it SHALL distinguish the composed Cordis event catalog, five-kind durable catalog, and 19-key services namespace and SHALL derive changing totals from delivered slices where applicable.
 5. WHEN package or peer-dependency facts change, THEN package tests, public API documentation, examples, and compatibility guidance SHALL be synchronized.
@@ -238,21 +243,60 @@
 1. WHEN integration work is performed, THEN it SHALL NOT add a feature, public member, alias, event, catalog slice, remote, codec, client bundle, setting bridge, or service operation absent from the approved upstream feature Specs and this integration Spec.
 2. WHEN an official extension point is insufficient for full fidelity, THEN the integration SHALL preserve the approved constrained behavior or C-class boundary and SHALL NOT import module-private state, patch official DSH files, or silently emulate unsupported semantics.
 3. WHEN LLM behavior is unified, THEN full or asynchronous request replacement, response rewriting, same prepared-call identity, arbitrary modality admission, and adapter-private interception SHALL remain outside M2.
-4. WHEN route behavior is unified, THEN exact per-request causality, route rewriting, fallback inference from headers/options/defaults, execution mutation, and route events SHALL remain outside M2.
+4. WHEN route behavior is unified, THEN session-route state SHALL NOT claim exact per-request causality, and pre-assembly prepared-route access, route-conditioned tool/prompt contribution, route rewriting, fallback inference from headers/options/defaults, execution mutation, and route events SHALL remain outside M2.
 5. WHEN session behavior is unified, THEN generic append, arbitrary durable types, history mutation, persistence implementation, polling/replay, synthetic redispatch, and client durable APIs SHALL remain outside M2.
 6. WHEN compaction behavior is unified, THEN backend creation, registration, replacement, configuration, policy changes, backend-specific summarization, and compaction events SHALL remain outside M2.
 7. WHEN M2 integration completes, THEN it SHALL NOT implement M3 client/settings bridge work or M4 upstream proposals.
 8. IF quality-preserving integration requires a new shared runtime abstraction, THEN it SHALL be introduced only when at least two approved consumers require the same semantics and SHALL remain private unless a separately approved public contract exists.
 9. WHEN an out-of-scope requirement is discovered during migration or verification, THEN the integration SHALL report it as a separate Spec input and SHALL NOT hide it in conflict resolution or unrelated cleanup.
 
+## 16. 通用 routing capability plane（B 类新增能力 / C 类时序边界）
+
+**User Story**: As a third-party plugin author, I want one stable route capability plane for concrete executions and committed session state, so that plugins can react to known routes without reading private agent/session state or pretending that a future request route is already known.
+
+**Public shape**:
+
+```text
+pluginApi.routing.ofExecution(exec)
+pluginApi.routing.current(session)
+pluginApi.routing.on(session, listener)
+pluginApi.routing.once(session, listener)
+pluginApi.routing.wait(session, options?)
+pluginApi.routing.availability
+```
+
+`RouteSnapshot` 的精确公开形状为冻结的 `Readonly<{ provider: string, model: string }>`，其中两个字段都必须是非空字符串；`RoutingAvailability` 的精确公开形状为冻结的 `Readonly<{ execution: boolean, session: boolean }>`。`on` / `once` 接收 `(route: RouteSnapshot) => void | Promise<void>` 并返回幂等 `() => boolean` disposer；`wait` 接收可选的 `Readonly<{ signal?: AbortSignal }>` 并返回 `Promise<RouteSnapshot>`。
+
+**Acceptance Criteria**:
+
+1. WHEN `routing.ofExecution(exec)` is called for an execution captured by the approved pre-execute authority, THEN it SHALL return the exact frozen route snapshot identity shared by `agent.routeOf(exec)` and `tools.routeOf(exec)`; WHEN the execution is malformed, unobserved, or normally lacks route data, THEN it SHALL return `undefined` without inference.
+2. WHEN `routing.current(session)` is called for a valid live session with a committed `request/context`, THEN it SHALL return a frozen `{ provider, model }` snapshot representing the latest committed route; WHEN no route has committed, including a fresh `session/created` session, THEN it SHALL return `undefined`.
+3. WHEN the session leaf observes official `session/event`, THEN it SHALL accept route state only from an exact `request/context` record whose provider and model are non-empty strings, associated with the exact live public `Session` identity, and corroborated by that session's public `requestContext()` result; malformed, cross-session, stale, or throwing observations SHALL NOT publish route state.
+4. WHEN repeated reads or observers refer to the same committed provider/model pair for one session, THEN the routing plane SHALL return or deliver the same frozen snapshot identity; WHEN a different provider or model commits, THEN it SHALL create a new frozen identity for that session.
+5. WHEN `routing.on` or `routing.once` subscribes to a valid session, THEN it SHALL observe only future valid committed route changes for that exact session, in listener registration order, without replay, polling, history scanning, synthetic redispatch, or a new `pluginApi.events` catalog entry; the first valid commit after an absent route SHALL count as a change, while a later commit with the same provider/model pair SHALL reuse the snapshot identity and SHALL NOT notify observers or settle waiters.
+6. WHEN a route observer is invoked, THEN `once` SHALL detach before user code, listeners SHALL be invoked synchronously in registration order without awaiting one listener's promise before invoking the next, and async completion order SHALL carry no ordering guarantee. IF a listener throws or rejects, THEN the routing plane SHALL contain it under diagnostic category `routing-listener-failed`, continue every remaining listener and the official dispatch, create no unhandled rejection, and preserve control flow even when logging is absent or throws.
+7. WHEN `routing.wait(session, options?)` is called without a signal or with a non-aborted signal, THEN it SHALL resolve with the current committed snapshot if one exists or otherwise with the next valid committed route change for that exact session, and it SHALL unregister its pending observation before settling.
+8. IF the signal supplied to `routing.wait` is already aborted at call entry, THEN the operation SHALL reject with the exact `signal.reason` before reading current route state. OTHERWISE, a current snapshot observed during that call SHALL win over later abort; if no current snapshot exists, the first observed next-route or abort transition SHALL settle exactly once, the loser SHALL have no effect, and an abort winner SHALL unregister observation and reject with the exact `signal.reason` while preserving the live signal identity.
+9. WHEN core is inactive, THEN every routing method and `availability` SHALL raise P1 `PluginApiInactiveError` before inspecting session, execution, listener, options, signal, or official substrate. WHEN core is active but `execRoute` or `sessionRoute` is inactive, THEN methods of only that leaf SHALL raise P2 `PluginApiFeatureDisabledError` naming that exact feature key before input inspection; normal absence of a committed or captured route SHALL remain `undefined` or a pending non-aborted wait rather than P2.
+10. WHEN the `sessionRoute` leaf is active, THEN `current`, `on`, `once`, and `wait` SHALL synchronously validate the exact current official live target session before any observation; invalid, foreign, replaced, or already-disposed targets SHALL throw `TypeError { code: 'invalid-target-session' }`, non-callable listeners SHALL throw `TypeError { code: 'invalid-listener' }`, and malformed options or non-`AbortSignal` signals SHALL throw `TypeError { code: 'invalid-options' }` without registering or reading route state.
+11. WHEN a target session is disposed after `on` or `once` registration, THEN all observers for that exact session SHALL detach before later user code can run; their disposers SHALL report `false` thereafter and SHALL NOT touch any replacement session or later routing epoch. WHEN a target session is disposed while `wait` is pending, THEN that wait SHALL detach and reject exactly once with `TypeError { code: 'target-session-disposed' }`.
+12. WHEN a disposer is called, THEN its first successful removal SHALL return `true`, every later or already-auto-detached call SHALL return `false`, and a stale disposer SHALL NOT remove a later listener, replacement session, or routing epoch.
+13. WHEN `routing.availability` is read with active core, THEN it SHALL be the frozen exact-shape `{ execution, session }` matrix where `execution` equals `featureRegistry.isActive('execRoute')` and `session` equals `featureRegistry.isActive('sessionRoute')`; neither boolean SHALL be inferred by probing public facade shapes.
+14. WHEN nested or concurrent sessions, requests, waits, observations, and tool executions occur, THEN their route snapshots, listener sets, abort paths, diagnostics, and cleanup ownership SHALL remain isolated by session or execution identity.
+15. WHEN routing functionality is mounted, re-applied, rolled back, or torn down, THEN it SHALL use prepared publication, install no duplicate native hook or LLM owner, and ensure old callbacks, facade references, observers, and disposers cannot alter a later routing epoch; pending waits SHALL unregister and reject with P1 if core is then inactive or P2 naming `sessionRoute` otherwise.
+16. WHEN the routing plane is active, THEN the combined facade SHALL have at most one raw `llm/stream` owner, one A9/T10 pre-execute capture owner, and one committed session-route observation owner; it SHALL NOT mutate executions, inspect private fields, infer route from headers/options/defaults, or patch official packages.
+17. IF a consumer asks for the final route before tool schema collection or prompt assembly, THEN the facade SHALL report that timing as unavailable under the installed runtime and SHALL NOT present committed session state or assembly variables as the final request route.
+18. WHEN M2 integration documents the unavailable pre-assembly timing, THEN it SHALL create or synchronize a C-class upstream proposal for an official prepared-route seam that can support future route-conditioned tool/prompt contribution; it SHALL NOT expose a runtime member or claim that contribution capability is delivered before that seam exists.
+19. WHEN public documentation describes routing, THEN it SHALL distinguish latest committed session route, exact captured execution route, and unavailable pre-assembly final request route without calling any one of them an alias for another.
+
 ---
 
 ## Host / Client Coverage
 
-- **Host:** All integrated runtime APIs and semantic translations remain in the host Cordis tree.
+- **Host:** All integrated runtime APIs and semantic translations, including `pluginApi.routing`, remain in the host Cordis tree.
 - **Client:** No browser-facing namespace, remote contribution, codec, slot, bundle, or settings bridge is introduced.
 - **Consumers:** `dsh-read-image` and `dsh-pro-ex-ability-anchor` are changed only where Requirements 12 and 13 require migration and acceptance.
 
 ## Success Condition
 
-Stage 4 is complete only when every admitted M2 branch is integrated through both waves, the combined facade and lifecycle contracts satisfy Requirements 1-11, both consumer migrations satisfy Requirements 12-13, governance satisfies Requirement 14, scope boundaries satisfy Requirement 15, all required tests and boot checks pass, and the final Stage 4 delivery is committed.
+Stage 4 is complete only when every admitted M2 branch is integrated through both waves, the combined facade and lifecycle contracts satisfy Requirements 1-11, both consumer migrations satisfy Requirements 12-13, governance satisfies Requirement 14, scope boundaries satisfy Requirement 15, the routing plane satisfies Requirement 16, all required tests and boot checks pass, and the final Stage 4 delivery is committed.
