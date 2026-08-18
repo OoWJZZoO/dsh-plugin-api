@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-plugin-api",
   "description": "DeepSeek Harness community plugin API facade: stabilized semantic hooks over official extension points. First feature: llm-image-admission (scoped image input admission with enforced projection).",
-  "version": "0.1.0-rc.6-0.2",
+  "version": "0.1.0-rc.6-0.3",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -9,7 +9,7 @@
     "./package.json": "./package.json"
   },
   "dsh": {
-    "api": "0.2",
+    "api": "0.3",
     "bundle": {
       "patch": "./cordis.patch.yml"
     }

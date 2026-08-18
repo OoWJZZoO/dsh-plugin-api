@@ -48,8 +48,8 @@ test('satisfiesContract is false for missing or unparseable inputs', () => {
 })
 
 test('parseFacadeVersion splits the full unique version into runtime and api parts', () => {
-  assert.deepEqual(parseFacadeVersion('0.1.0-rc.6-0.2'), { runtime: '0.1.0-rc.6', api: '0.2' })
-  assert.deepEqual(parseFacadeVersion('0.1.0-0.2'), { runtime: '0.1.0', api: '0.2' })
+  assert.deepEqual(parseFacadeVersion('0.1.0-rc.6-0.3'), { runtime: '0.1.0-rc.6', api: '0.3' })
+  assert.deepEqual(parseFacadeVersion('0.1.0-0.3'), { runtime: '0.1.0', api: '0.3' })
   assert.deepEqual(parseFacadeVersion('1.2.3-rc.1-0.10'), { runtime: '1.2.3-rc.1', api: '0.10' })
 })
 
