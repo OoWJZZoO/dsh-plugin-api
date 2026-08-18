@@ -54,7 +54,7 @@
   - 运行 agent-create、exec-route、LLM、session-durable、compaction 的 facade-focused tests 及所有触及的 frozen facade tests；全部通过后才进入 3.2。
   - _Requirements: 3.1–3.9, 5.2, 6.3–6.6, 11.5–11.6_
 
-- [ ] 3.2 以测试先行方式实现 host prepared-mount transaction
+- [x] 3.2 以测试先行方式实现 host prepared-mount transaction
   - 在 `lib/index.js` 建立 guard → private prepare → `ctx.effect()` cleanup registration → facade commit → registry activation 的唯一事务顺序，并覆盖 registration/commit/activation 每个边界的 rollback。
   - 确保 rollback、重复 disposer、stale disposer、logger failure 和 feature-local failure 均 fail-safe，只影响 owner capability，并继续后续 mounter。
   - 运行 L2/L4、exec-route、session-durable 的 lifecycle-focused tests 及所有触及的 frozen host/apply tests；全部通过后才进入 4.1。
