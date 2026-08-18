@@ -13,7 +13,7 @@
 
 ## 1. 冻结整合输入与预检证据
 
-- [ ] 1.1 创建只读 pre-merge audit 制品并冻结五个输入分支
+- [x] 1.1 创建只读 pre-merge audit 制品并冻结五个输入分支
   - 核对五个 `feature/plugin-api-*-m2` 分支的 Stage 4 提交、Tasks 完成状态、交付登记、clean worktree、公开形状、feature key、guard、mounter、共享文件所有权及官方包未修改证明。
   - 生成两两 conflict matrix，覆盖生产文件、共享测试、package metadata、registry、迁移仓库和 semantic owner；记录每个分支的准入决定与所有已知 supersession，不在该任务中合并或重写实现。
   - 运行并记录整合前 repository baseline 与各分支 focused-test 命令；若发现 Goal/Requirement 级偏差，停止而不准入该分支。
