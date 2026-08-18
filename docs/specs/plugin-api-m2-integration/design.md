@@ -1,7 +1,7 @@
 # Design: plugin-api-m2-integration
 
 > feature_name: `plugin-api-m2-integration`
-> 状态：已批准（Stage 2）
+> 状态：已交付（Stage 4）
 > 面：host-only 整合；不新增 client、remote、codec、catalog slice 或官方补丁
 
 ## Overview
@@ -21,7 +21,7 @@ L4 继续是唯一 raw `llm/stream` owner，L2 是其 scoped gateway；A11/SV17 
 
 先对每个输入分支作只读准入：确认 committed Stage 4/tasks/registration、clean worktree、Spec-to-code、未改官方包、shared ownership、tests/package/consumer conflict 与未报告偏离。产物记录 branch、commit、偏离、冲突边、admission decision。若冲突改变批准的 Goal、classification、acceptance 或 migration boundary，停止并请求人工裁决。
 
-principal merge wave 已按冻结 preflight 和提交历史完成，唯一事实顺序是 `compaction → llm-request/L2-L4 → agent-create/A11 → session-durable → exec-route`。每步只作维持已批准语义的冲突解决，并在跨过边界前运行当时的 focused 与直接受影响 shared tests；随后已完成的 unification wave 才处理 shared facade、publication、order/guards、version 与共同测试。该历史不因本次 Stage 1/2 返工而重写，也不在 remaining-only Stage 3 Tasks 中重新执行。返工后的 reconciliation 只补当前代码到本 Design 的差异；重叠语义仍只保留一个 authority，公共契约不由历史 merge order 决定。
+principal merge wave 已按冻结 preflight 和提交历史完成，唯一事实顺序是 `compaction → llm-request/L2-L4 → agent-create/A11 → session-durable → exec-route`。每步只作维持已批准语义的冲突解决，并在跨过边界前运行当时的 focused 与直接受影响 shared tests；随后已完成的 unification wave 才处理 shared facade、publication、order/guards、version 与共同测试。该历史不因本次 Stage 1/2 返工而重写，也不在已完成的 Stage 4 Tasks 中重新执行。返工后的 reconciliation 只补当前代码到本 Design 的差异；重叠语义仍只保留一个 authority，公共契约不由历史 merge order 决定。
 
 ### 2. Topology and ownership
 

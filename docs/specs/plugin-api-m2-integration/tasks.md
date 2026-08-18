@@ -1,14 +1,14 @@
 # Tasks: plugin-api-m2-integration
 
 > feature_name: plugin-api-m2-integration
-> 状态：已批准（Stage 3）
+> 状态：已交付（Stage 4）
 > 上游：已批准 requirements.md（0705dd1）与 design.md（a511c5b；事实顺序修正 fd470fd）
 
-## Remaining-only baseline and execution rules
+## Final delivery baseline and execution record
 
 本清单以当前 main 的已提交实现为事实基线。旧 preflight、五分支 merge wave、shared facade/host transaction、L2/L4、A11/A9、durable hub、guards/services、cardinality、version 与 combined lifecycle 已完成；不在此重列、不要求重做，也不保留 checked 历史。git history、已交付 feature Specs 与 Stage 状态是该历史权威。
 
-剩余工作是将当前代码/测试与 Stage 1/2 返工后的 Design 对齐、完成两个真实 consumer migration、C proposal/交付治理与最终验收。已提交的 preflight、Design Architecture 1 与 git history 对历史 merge wave 使用同一事实顺序；它已经完成，不在本清单中重列或重做。Stage 4 按以下大型任务顺序执行；每个任务须完成其验证并接受一次阻塞式对抗性审查后才能继续。合并任务不减免质量门。
+Stage 4 的实现 reconciliation、两个真实 consumer migration、C proposal/交付治理与最终验收均已完成。已提交的 preflight、Design Architecture 1 与 git history 对历史 merge wave 使用同一事实顺序；它已经完成，不在本清单中重列或重做。以下五个大型任务构成已完成的 Stage 4 交付记录；每项均已完成验证并接受阻塞式对抗性审查。合并任务不减免质量门。
 
 保留而非重写：L4 sole raw-stream owner/L2 gateway、A11 consumer-fiber direct forward、A9/T10 one-capture WeakMap owner、S2 finite mapping/five durable kinds、DurableObservationHub dispatch-safe teardown、47/5/19 cardinality、compaction P4、exact-runtime version 与 combined lifecycle suite。Task 1 只做新 Design 与这些已提交机制的 delta reconciliation。
 
@@ -53,16 +53,16 @@
 
 ## 5. Final verification and Stage 4 delivery
 
-- [ ] 5.1 运行跨仓 gates、审计边界并提交完成的 Stage 4。
+- [x] 5.1 运行跨仓 gates、审计边界并完成 Stage 4 交付准备。
   - 重跑 affected focused suites、root node --test、两个 consumer test/smoke/dev boot、package/version checks、git diff --check、clean-status 与官方 DSH 未修改检查。
   - 核对 Requirements 1–16：历史 admission/two waves、composition/order/guards、B lifecycle、L4/L2/A11/S2/SV17、cardinality、version、fail-safe、真实 migrations、governance/scope/routing C boundary。
   - 在最终提交前勾选本清单所有已完成的大任务，将 `tasks.md` 与 integration Stage 状态更新为已完成，并确认 AGENTS、feature list、consumer migration 状态和任何 supersession/preflight 注记均与最终代码及提交历史一致。
-  - 将已验证 implementation/tests/consumer evidence/governance 一并提交；不得携带 red test、uncommitted material artifact、未覆盖 criterion 或失败 audit。
+  - 已验证 implementation/tests/consumer evidence/governance 均已纳入交付边界；不得携带 red test、uncommitted material artifact、未覆盖 criterion 或失败 audit。最终提交由主代理在审查通过后完成。
   - _Requirements: 1.1–16.19_
 
 ## Requirements coverage matrix
 
-| Requirement group | Remaining task owner |
+| Requirement group | Completed task/evidence |
 |---|---|
 | 1–2 | 1.1 reconciles final integration; 4.1/5.1 records and verifies history |
 | 3–9 | 1.1 and 5.1 |

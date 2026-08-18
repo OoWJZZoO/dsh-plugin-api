@@ -45,7 +45,7 @@
 |---|---|---|---|
 | `plugin-api-semantic-hooks-m2` | 无；不增加 namespace、catalog slice 或 concrete B hook | B 类语义转译的分类、lifecycle、P1–P4、owner-local re-entry/durable 边界，以及首个 B 集成门槛；具体 L4、A9/T10、S2 仍待独立 spec。 | **delivered** |
 | `plugin-api-session-durable-m2` | `pluginApi.session` durable observation 与受限 `appendMessage(targetSession, kind, payload, {sourceEventSeqs?})` host overlay；不增加 client、remote 或 catalog surface | S2/O8/O13/O14 的 host-only durable observation/append 能力；`sessionDurable` P2 epoch rollback 与 stale-cleanup protection；运行时及七个 audited package identity 固定为 `0.1.0-rc.6`；原始 standalone consumer deferral 已由 M2 integration Task 3.1 独立迁移完成。 | **delivered** |
-| `plugin-api-m2-integration` | `pluginApi.routing` execution/session capability plane + M2 final reconciliation | `ofExecution/current/on/once/wait/availability` 的冻结 composite；A9/T10 compatibility delegates；H1 narrowed execRoute、H2 DurableObservationHub、L2 sole resolver wrapper、S2 finite append contract；47/5/19 cardinality 与 C-class prepared-route boundary。Task4 governance/registration is in progress; Task5 final verification will mark it delivered. | **Stage4-in-progress** |
+| `plugin-api-m2-integration` | `pluginApi.routing` execution/session capability plane + M2 final reconciliation | `ofExecution/current/on/once/wait/availability` 的冻结 composite；A9/T10 compatibility delegates；H1 narrowed execRoute、H2 DurableObservationHub、L2 sole resolver wrapper、S2 finite append contract；47/5/19 cardinality 与 C-class prepared-route boundary。Task1–5 final reconciliation, governance, consumer evidence and verification complete. | **delivered** |
 
 ### 1.4 关键源码依据（缩写）
 
