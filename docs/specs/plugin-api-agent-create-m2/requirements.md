@@ -1,7 +1,7 @@
 # Requirements: plugin-api-agent-create-m2
 
 > feature_name: `plugin-api-agent-create-m2`
-> 状态：草案（Stage 1，待用户评审）
+> 状态：已完成（Stage 4）
 > 上游：`plugin-api-foundation`、`plugin-api-facade-integrity`、`plugin-api-agent-m1`、`plugin-api-m1-integration`
 > 面：仅 host；不新增 client bundle、remote、codec、slot 或 settings bridge
 > 分类：A11 的所有公开成员均为 A 类同参直通；不新增 B 类转译、事件 catalog slice 或 C 类 upstream proposal
