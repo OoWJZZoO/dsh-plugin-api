@@ -26,7 +26,7 @@
   - 运行 compaction focused tests 及本步触及的 services/package shared tests，红测清零后才继续。
   - _Requirements: 2.1–2.7, 9.3–9.7, 11.1, 15.1, 15.6_
 
-- [ ] 2.2 合并 `feature/plugin-api-llm-request-m2`
+- [x] 2.2 合并 `feature/plugin-api-llm-request-m2`
   - 保留 L4 owner、L2 gateway/policy、typed errors 与 feature-local tests；冲突处理不得提前建立最终 shared transaction，也不得保留第二个 raw `llm/stream` owner。
   - 运行 L2/L4 focused tests 及本步触及的 LLM/shared host tests，红测清零后才继续。
   - _Requirements: 2.1–2.7, 6.7, 7.1–7.7, 8.2–8.3, 11.1, 15.3_
