@@ -24,6 +24,26 @@ function mockCtx() {
   }
 }
 
+function createInspectionTrap() {
+  let inspections = 0
+  const fail = () => {
+    inspections += 1
+    throw new Error('disabled registration must not inspect its argument')
+  }
+  return {
+    value: new Proxy({}, {
+      get: fail,
+      has: fail,
+      ownKeys: fail,
+      getOwnPropertyDescriptor: fail,
+      getPrototypeOf: fail,
+    }),
+    get inspections() {
+      return inspections
+    },
+  }
+}
+
 test('active service exposes brand, apiVersion, features snapshot', () => {
   const registry = createFeatureRegistry()
   registry.mount('llm/admission')
@@ -196,6 +216,34 @@ test('no official service calls happen before inactive or feature-disabled throw
     mockCtx(),
   )
   assert.throws(() => activeService.llm.admission.register({}), PluginApiFeatureDisabledError)
+})
+
+test('disabled L4 and L2 registration reject before inspecting supplied values', () => {
+  const registry = createFeatureRegistry()
+  const inert = instantiate(
+    createPluginApiService({ apiVersion: '0.1', registry, coreActive: false }),
+    mockCtx(),
+  )
+  const active = instantiate(
+    createPluginApiService({ apiVersion: '0.1', registry, coreActive: true }),
+    mockCtx(),
+  )
+
+  for (const [surface, method] of [
+    ['request', 'transform'],
+    ['admission', 'register'],
+  ]) {
+    const inactiveValue = createInspectionTrap()
+    assert.throws(() => inert.llm[surface][method](inactiveValue.value), PluginApiInactiveError)
+    assert.equal(inactiveValue.inspections, 0, `${surface}.${method} must not inspect P1 input`)
+
+    const disabledValue = createInspectionTrap()
+    assert.throws(
+      () => active.llm[surface][method](disabledValue.value),
+      (error) => error instanceof PluginApiFeatureDisabledError && error.feature === `llm/${surface}`,
+    )
+    assert.equal(disabledValue.inspections, 0, `${surface}.${method} must not inspect P2 input`)
+  }
 })
 
 test('default services namespace exposes the 19 disabled facades before mount', () => {

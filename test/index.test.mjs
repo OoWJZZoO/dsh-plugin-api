@@ -79,7 +79,7 @@ function createMockCtx(options = {}) {
   return { ctx, state, services }
 }
 
-test('apply with healthy ctx registers active service and mounts llm/admission', () => {
+test('apply with healthy ctx registers active service and mounts llm/request + llm/admission', () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
 
@@ -92,6 +92,7 @@ test('apply with healthy ctx registers active service and mounts llm/admission',
     { name: 'events', isActive: true },
     { name: 'agent', isActive: true },
     { name: 'llm', isActive: true },
+    { name: 'llm/request', isActive: true },
     { name: 'llm/admission', isActive: true },
     { name: 'session', isActive: true },
     { name: 'settings', isActive: true },
@@ -99,7 +100,9 @@ test('apply with healthy ctx registers active service and mounts llm/admission',
     { name: 'services', isActive: true },
   ])
   assert.equal(state.pluginApi.llm.isActive, true)
-  assert.equal(state.pluginApi.llm.admission.isActive, true)
+  assert.equal(typeof state.pluginApi.llm.request.transform, 'function')
+  // admission.isActive is retired: the feature registry is the sole signal.
+  assert.equal('isActive' in state.pluginApi.llm.admission, false)
   assert.equal(typeof state.pluginApi.llm.admission.register, 'function')
   assert.equal(typeof state.pluginApi.llm.modelInfo, 'function')
   assert.equal(typeof state.pluginApi.events.on, 'function')
@@ -155,18 +158,19 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-  assert.equal(features.length, 9)
+  assert.equal(features.length, 10)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
   assert.deepEqual(features[3], { name: 'llm', isActive: true })
-  assert.equal(features[4].name, 'llm/admission')
-  assert.equal(features[4].isActive, false)
-  assert.match(features[4].reason, /apiProxy/)
-  assert.deepEqual(features[5], { name: 'session', isActive: true })
-  assert.deepEqual(features[6], { name: 'settings', isActive: true })
-  assert.deepEqual(features[7], { name: 'systemPrompt', isActive: true })
-  assert.deepEqual(features[8], { name: 'services', isActive: true })
+  assert.deepEqual(features[4], { name: 'llm/request', isActive: true })
+  assert.equal(features[5].name, 'llm/admission')
+  assert.equal(features[5].isActive, false)
+  assert.match(features[5].reason, /apiProxy/)
+  assert.deepEqual(features[6], { name: 'session', isActive: true })
+  assert.deepEqual(features[7], { name: 'settings', isActive: true })
+  assert.deepEqual(features[8], { name: 'systemPrompt', isActive: true })
+  assert.deepEqual(features[9], { name: 'services', isActive: true })
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),
@@ -177,7 +181,8 @@ test('feature guard failure disables only llm/admission and keeps the facade act
     },
   )
   assert.equal(typeof services.llm.resolveModelInfo, 'function')
-  assert.equal(state.listeners.length, 0)
+  // The request owner stays available; admission disabled without a gateway.
+  assert.equal(state.listeners.filter((l) => l.name === 'llm/stream').length, 1)
 })
 
 test('repeated apply reuses the existing branded service and does not provide twice', () => {

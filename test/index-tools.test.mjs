@@ -138,13 +138,14 @@ test('tools active: apply mounts pluginApi.tools and extends the events catalog 
   assert.equal(state.pluginApi.tools.isActive, true)
 
   const features = state.pluginApi.features
-  assert.equal(features.length, 9)
+  assert.equal(features.length, 10)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
   assert.deepEqual(features[3], { name: 'llm', isActive: true })
-  assert.deepEqual(features[4], { name: 'llm/admission', isActive: true })
-  assert.deepEqual(features[5], { name: 'session', isActive: true })
+  assert.deepEqual(features[4], { name: 'llm/request', isActive: true })
+  assert.deepEqual(features[5], { name: 'llm/admission', isActive: true })
+  assert.deepEqual(features[6], { name: 'session', isActive: true })
 
   const catalog = state.pluginApi.events.catalog
   assert.equal(catalog['tools/change']?.mode, 'emit')
@@ -170,15 +171,16 @@ test('tools guard failure disables only tools and keeps the events catalog at ba
   assert.equal(state.pluginApi.isActive, true)
 
   const features = state.pluginApi.features
-  assert.equal(features.length, 9)
+  assert.equal(features.length, 10)
   assert.equal(features[0].name, 'tools')
   assert.equal(features[0].isActive, false)
   assert.match(features[0].reason, /tools service/)
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
   assert.deepEqual(features[3], { name: 'llm', isActive: true })
-  assert.deepEqual(features[4], { name: 'llm/admission', isActive: true })
-  assert.deepEqual(features[5], { name: 'session', isActive: true })
+  assert.deepEqual(features[4], { name: 'llm/request', isActive: true })
+  assert.deepEqual(features[5], { name: 'llm/admission', isActive: true })
+  assert.deepEqual(features[6], { name: 'session', isActive: true })
 
   assert.equal(state.pluginApi.events.catalog['session/created']?.mode, 'emit')
   assert.equal(state.pluginApi.events.catalog['tools/change'], undefined)

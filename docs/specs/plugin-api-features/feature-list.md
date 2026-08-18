@@ -113,10 +113,11 @@
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| L1 图片准入注册 | `llm.admission.register(intent: ImageAdmissionIntent): () => boolean`；`llm.admission.isActive` | B | 本仓库 `docs/specs/llm-image-admission/*`；官方缺 `llm/admission` 事件 | M0 | **delivered** |
-| L2 准入泛化（image 之外） | `llm.admission.register` 扩展为可声明其他 inputModalities/策略，或新增 `llm/input-policy` 语义 | B/C | 官方 `LlmResolvedModelInfo.inputModalities`；首 feature 只做 image | M2/M4 | planned |
+| L1 图片准入注册 | `llm.admission.register(intent: ImageAdmissionIntent): () => boolean`；`llm.admission.isActive` | B | 本仓库 `docs/specs/llm-image-admission/*`；官方缺 `llm/admission` 事件 | M0 | **delivered**（R2/R4/R7 已被 L2/L4 supersede，见 `docs/specs/plugin-api-llm-request-m2/supersession.md`；`isActive` 已退役） |
+| L2 受限图片准入政策 | `llm.admission.register({ id, match, input: 'image', process, validate })`（统一 L2/L4 管线 + scoped gateway；`admission.isActive` 退役，`featureRegistry.isActive` 唯一信号） | B | `docs/specs/plugin-api-llm-request-m2/`；官方缺 `llm/admission` 事件 | M2 | **delivered** |
+| L2 准入泛化（image 之外） | `llm.admission.register` 扩展为可声明其他 inputModalities/策略，或新增 `llm/input-policy` 语义 | B/C | 官方 `LlmResolvedModelInfo.inputModalities`；首 feature 只做 image | M4 | planned（C/M4，需独立双边界证明） |
 | L3 模型请求瀑布 | `events.waterfall('llm/stream', options, next)` 的类型化稳定版 | A | `dsh-llm/lib/index.js:1389`；`dsh-llm/lib/types/index.d.ts` `Events['llm/stream']` | M1 | **delivered** |
-| L4 同步请求改写 | `llm.request.transform(fn)` 或 `events.waterfall('llm/request', options, next)`（同步、幂等收敛） | B | 官方无 `llm/request`；用 `llm/stream` 重入模拟（AGENTS.md 第 4.4 条） | M2 | planned |
+| L4 同步请求改写 | `llm.request.transform({ id, mode: 'compat', priority?, apply, isConverged })`（同步、幂等收敛、at-most-once 兼容重入） | B | 官方无 `llm/request`；用 `llm/stream` 重入模拟（AGENTS.md 第 4.4 条） | M2 | **delivered**（`docs/specs/plugin-api-llm-request-m2/`；无合成 `llm/request` 事件目录） |
 | L5 异步完整请求改写 | `llm/request` 的异步全量改写版 | C | 官方无 dispatch 点；AGENTS.md 第 2.5 条 C 类 | M4 | planned（proposal） |
 | L6 adapter 拓扑通知 | `events.on('llm/adapters-updated', listener)` 类型化（注意官方无 payload） | A | `dsh-llm/lib/index.js:929` | M1 | **delivered** |
 | L7 模型信息只读查询 | `llm.modelInfo(provider, model, signal?): Promise<LlmResolvedModelInfo>`（只读，不提供修改） | A | `dsh-llm` `resolveModelInfo`；本仓库 design 已声明“不公开 ModelInfo 变更” | M1 | **delivered** |
