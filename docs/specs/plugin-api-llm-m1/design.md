@@ -1,5 +1,11 @@
 # Design: plugin-api-llm-m1
 
+> **M2 amendment:** The L7/L8/L9 direct seams remain authoritative except for the narrow
+> L8 compat-observation amendment recorded in
+> `docs/specs/plugin-api-llm-request-m2/supersession.md`. Historical statements that
+> `llm/admission` is unchanged or that `llm/stream` cannot be observed by compat transforms
+> are not current guidance; L2/L4 owns the single scoped `resolveModelInfo` wrapper.
+
 ## Overview
 
 `plugin-api-llm-m1` 把 feature-list 中的 **L3、L6、L7、L8、L9** 落地为两个 host 侧门面能力：

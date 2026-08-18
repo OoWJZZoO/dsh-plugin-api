@@ -102,20 +102,26 @@
 
 ---
 
-## 6. Regression, deferred consumer migration, and final delivery verification
+## 6. Regression, original standalone deferral, and later migration closure
+
+> The deferred-consumer wording below records the scope of the original standalone
+> `plugin-api-session-durable-m2` delivery. It is now fulfilled by the independently
+> approved `plugin-api-m2-integration` Task 3.1 migrations: `dsh-pro-ex-ability-anchor`
+> uses the finite S2 facade and `dsh-read-image` uses the final L2/L4/routing facade. The
+> current delivery registry and consumer migration notes are authoritative for that status.
 
 - [x] **6.1 Add and run the consumer mapping regression fixture.**
   - Add an in-repository fixture/test that executes the exact `dsh-pro-ex-ability-anchor` mapping in design §5: `user/message`, a no-chunk `assistant/message`, raw official `tool/call`, and `tool/result` with the raw call sequence. Assert the facade produces required append metadata without caller-authored `surfaceOp`, retains the raw `tool/call` boundary, and rejects unsupported title/replacement/atomic-turn attempts.
   - Do not modify `../dsh-pro-ex-ability-anchor` in this feature. Its virtual-turn atomicity, title correction, partial-turn recovery, and persistence ordering remain the consumer's separately specified migration responsibilities.
   - References: R8.1–R8.5; design §5, §6 item 7.
 
-- [x] **6.2 Run feature and sibling baseline regression; explicitly record deferred migration acceptance.**
+- [x] **6.2 Run feature and sibling baseline regression; record the original standalone migration deferral.**
   - Run `node --test` in this worktree after all implementation tasks, resolve failures caused by this feature, and rerun until green. Run `node --test` in `../dsh-pro-ex-ability-anchor` and the established `node --test ../dsh-read-image/test/*.test.mjs` baseline; report their exact outcomes and do not modify either sibling repository as part of this feature.
-  - This task is deliberately a baseline regression, not completion of the full `AGENTS.md` §5 consumer migration acceptance: approved design §5 explicitly excludes consumer-repository changes from this feature. The Stage 4 report must label migration acceptance as deferred and identify its independent owner: an approved consumer worktree/spec that deletes or reduces the ability-anchor hand-authored surface metadata, proves the documented mapping in that repository, and runs the required headless smoke and dev-boot acceptance. This task must not claim fixture or sibling-unit-test success as that migration proof.
+  - At the original standalone feature boundary this task was deliberately a baseline regression, not completion of the full `AGENTS.md` §5 consumer migration acceptance. That historical deferral is now closed by the independent approved M2 integration consumer tasks; this fixture and sibling-unit-test result must not be read as the migration proof by itself.
   - References: R8.1–R8.5; design §5–§6; `AGENTS.md` §5.
 
 - [x] **6.3 Synchronize delivery records, validate the final tree, and commit Stage 4.**
-  - Update the Stage 4-required delivery registration: root `AGENTS.md` §8 and `docs/specs/plugin-api-features/feature-list.md` must identify the delivered S2/O8/O13/O14 host capability, its no-client/no-catalog boundary, `sessionDurable` P2 epoch rollback, exact audit identity policy, and the explicitly deferred consumer migration acceptance from task 6.2.
+  - Update the Stage 4-required delivery registration: root `AGENTS.md` §8 and `docs/specs/plugin-api-features/feature-list.md` must identify the delivered S2/O8/O13/O14 host capability, its no-client/no-catalog boundary, `sessionDurable` P2 epoch rollback, exact audit identity policy, and the later independent consumer migration closure.
   - After every delivery document is updated, rerun `node --test`, run `git diff --check`, and perform the final scope check: no changes to official DSH packages, event catalog slices, client entry/bundle, remote namespaces, synthetic Cordis-event APIs, or consumer repositories. Resolve feature-caused failures before continuing.
   - Commit the completed Stage 4 implementation, tests, specs, and required registrations only after all final checks pass, as required by `AGENTS.md` §3.2. The commit must not include unrelated worktree changes.
   - References: R1–R8; design §1.1, §3.1–§3.3, §5–§6; `AGENTS.md` §3.2, §5, §6, §8.

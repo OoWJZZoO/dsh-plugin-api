@@ -1,5 +1,7 @@
 # Design: plugin-api-foundation
 
+> **M2 supersession note:** F0.3 version policy and the foundation guard remain policy foundations, but any admission-bridge or projection-guard implementation reference in this historical M0 design is obsolete. The current L2 owner is solely `lib/llm-admission-gateway.js`; do not reintroduce a foundation-level wrapper or the historical bridge.
+
 ## Overview
 
 `plugin-api-foundation` 是 `dsh-plugin-api` 的 M0 基础三件套，设计目标是把“门面如何安全存在”这件事一次做对：

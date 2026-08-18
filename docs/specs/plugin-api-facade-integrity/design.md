@@ -1,17 +1,19 @@
 # Design: plugin-api-facade-integrity
 
+> **Historical/superseded design:** This M0 design is retained as an audit baseline only. `admission-bridge.js` and `projection-guard.js` describe the old implementation baseline; the current L2 owner is solely `lib/llm-admission-gateway.js`. No section below authorizes executing the old refactor or reintroducing either old module. The current contract retains the chain-safety policy, not the historical bridge ownership.
+
 ## Overview
 
 `plugin-api-facade-integrity` 把门面的两项完整性契约显式化并落地为可复用实现：
 
 1. **F0.4 符号解析门面**：`ctx.pluginApi` 是推荐、受支持的符号解析面；直连 `@deepseek-ai/dsh-*` 内部包是 unsupported escape hatch。本设计不新增命名空间，只确立权威定义、用户文档落点与测试约束。
-2. **F0.5 包装链安全**：把 `lib/admission-bridge.js` 中已交付的 identity-guard 语义抽成共享 helper（新模块 `lib/wrap-safety.js`），`admission-bridge` 重构为它的客户端；行为与 `llm-image-admission` 基线完全一致。
+2. **F0.5 包装链安全（历史迁移设计）**：历史上曾把 `lib/admission-bridge.js` 中的 identity-guard 语义抽成共享 helper（新模块 `lib/wrap-safety.js`），并将 `admission-bridge` 重构为它的客户端；该 bridge/projection-guard 迁移路径已被 M2 supersede，不得重新执行。
 
 依赖关系（requirements 已确认）：
 
 - 前置：`plugin-api-foundation`（F0.1–F0.3）的 `ctx.pluginApi` 服务、分层 guard、版本协商。
 - 迁移基线：`llm-image-admission` 的 `admission-bridge` 及其回归测试。
-- 权威定义：本 design 是 F0.4/F0.5 的权威实现设计；`plugin-api-foundation/requirements.md` §2 在 Stage 4 增加指向本 spec 的引用指针。
+- 历史记录：本 design 保存 F0.4/F0.5 的原始实现设计；`plugin-api-foundation/requirements.md` §2 的引用仅用于追溯，不构成当前 L2 实现授权。
 
 ---
 
@@ -23,7 +25,7 @@
 | F0.4 escape hatch | 门面基础 / policy | 门面不拦截、不 patch、不 block 直连内部包 | 无运行时失败路径；策略由 README + package/manifest 测试验收 |
 | F0.5 包装链安全 helper | 门面基础 / reusable module | 新模块 `lib/wrap-safety.js`：`installWrappers(specs)` 记录原始引用、品牌标记、identity-guard dispose | 目标缺失/畸形 → 返回 `{installed:false, invalid:true}`，不装半截，由 feature 层禁用该 feature；helper 不抛穿 apply |
 | F0.5 degrade（透明降级） | 门面基础 / chain-safety | dispose 时若 `target[property] !== wrapper` 且 `!== original`，只把 handle 的 `active` 置 false 并 warn，不还原任何引用 | wrapper 内 `isActive()` 为 false 时直接原样调用 `original`，无可观察变更 |
-| `llm/admission` bridge 重构 | B 类（门面内部包装） | `admission-bridge.js` 改为 `installWrappers` 的客户端，包装 `llm.resolveModelInfo` / `sessions.prompt` / `sessions.selectModel` | 行为与 `llm-image-admission` §5 基线一致；feature guard 失败时不安装任何 admission hook |
+| 历史 `llm/admission` bridge 重构 | B 类（历史门面内部包装） | 历史上将 `admission-bridge.js` 改为 `installWrappers` 的客户端，包装 `llm.resolveModelInfo` / `sessions.prompt` / `sessions.selectModel`；当前 L2 不由此路径拥有 | 仅作为 `llm-image-admission` §5 审计基线；不得重新安装旧 admission hook |
 
 ---
 
@@ -67,7 +69,7 @@ installWrappers(specs, { logger } = {}) // -> WrapHandle
 
 `specs`：数组，每项 `{ target, property, wrapperFactory }`。
 
-- `mark(wrapper)` 使用 `Object.defineProperty(marker, { value: true, configurable: false, enumerable: false, writable: false })`，与现状 `admission-bridge.js` 第 17–25 行一致；marker 打在 wrapper 函数上。`admission-bridge` 重构时可保留 `ADMISSION_WRAPPER_MARKER`（`Symbol.for('dsh-plugin-api.llm-image-admission')`）传入 `createWrapSafety`，或接受缺省 marker 并断言既有回归测试仍识别为 own-wrapper。
+- `mark(wrapper)` 使用 `Object.defineProperty(marker, { value: true, configurable: false, enumerable: false, writable: false })`，与历史 `admission-bridge.js` 第 17–25 行一致；marker 打在 wrapper 函数上。历史迁移曾保留 `ADMISSION_WRAPPER_MARKER`（`Symbol.for('dsh-plugin-api.llm-image-admission')`）传入 `createWrapSafety`，或接受缺省 marker 并断言既有回归测试仍识别为 own-wrapper。
 - `wrapperFactory({ original, isActive })` 返回 wrapper 函数；wrapper 内通过 `isActive()` 判断是否降级透传。
 - `installWrappers` 行为：
   1. **先全部校验**：所有 `target` 是对象、`target[property]` 是函数；任一不合法 → 返回 `{ installed:false, invalid:true, reason, isActive:()=>false, dispose:noop }`，**不装半截**。
@@ -79,7 +81,7 @@ installWrappers(specs, { logger } = {}) // -> WrapHandle
   - 对每个 spec：若 `target[property] === wrapper` → 还原 `original`；否则若 `target[property] !== original` → 记入 `degraded` 并 warn。
   - 不删除、不替换任何“非自己”的引用。
 
-### 2. `lib/admission-bridge.js` — 重构为 helper 客户端
+### 2. 历史 `lib/admission-bridge.js` — 曾重构为 helper 客户端（不可重做）
 
 > 接口名以已交付代码为准：服务挂载用 `lib/plugin-api-service.js` 的 `mountFeature(name, api)`；feature 状态表用 `lib/feature-registry.js` 的 `mount(name)` / `disable(name, reason)`。
 
@@ -128,7 +130,7 @@ type WrapHandle = {
 1. **helper 永不 throw**：`installWrappers` 任何输入都通过返回值表达失败；`dispose` 永不 throw。
 2. **不装半截**：任一 spec 非法或已标记，整体不安装；已标记场景返回 no-op handle（保留“先装者拥有链”的基线语义）。
 3. **透明降级**：`dispose` 发现目标已被其他插件包装时，只把 `active` 置 false 并 warn；wrapper 仍在链上但原样透传，**不删除、不还原任何目标引用**。
-4. **feature 集成**：`admission-bridge` 拿到 `invalid` handle 时返回 `isActive:false`，由 foundation 的 feature 循环禁用 `llm/admission` 并显式报错（不抛穿 apply）。
+4. **历史 feature 集成**：历史 `admission-bridge` 拿到 `invalid` handle 时返回 `isActive:false`，由 foundation 的 feature 循环禁用 `llm/admission` 并显式报错（不抛穿 apply）；该集成路径不得重新引入。
 5. **日志**：helper 通过注入的 `logger`（缺省 no-op）输出 warn，不依赖 `ctx.logger` 存在。
 
 ---
@@ -144,7 +146,7 @@ type WrapHandle = {
   - malformed target / 非函数 property → invalid，无半截安装；
   - 多个 property 中一个非法 → 所有 property 均未被改写。
 - `readme-policy.test.mjs`：断言 `README.md` 含推荐入口与 escape hatch 措辞。
-- 回归基线：`admission-bridge.test.mjs` 等既有测试不改断言、必须通过。
+- 历史回归基线：`admission-bridge.test.mjs` 等既有测试不改断言、曾用于验证该旧路径。
 - 全量 `node --test`。
 
 ---

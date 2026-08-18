@@ -1,7 +1,9 @@
 # Tasks: plugin-api-m1-integration
 
+> **Historical M1 execution record / M2 supersession:** These tasks describe the original `0.2` integration work and are retained as a historical record, not as an executable current plan. The old admission-bridge/resolver ownership and active/no-op wording are superseded; current authority is the M2 L2 gateway in `lib/llm-admission-gateway.js` under `0.1.0-rc.6-0.3` / `dsh.api` `0.3`. Do not rerun this list or reintroduce the old projection-guard path.
+
 > feature_name: `plugin-api-m1-integration`
-> 状态：草案（Stage 3，待用户评审）
+> 状态：历史执行记录（M1 `0.2`，已被 M2 superseded）
 > 上游：`requirements.md` / `design.md`（同目录，均已获批）
 > 执行约定：在 `m1/integration` 分支上按序执行；每个任务以全量 `node --test` 绿收尾；任务引用 design.md 的 C/KD 编号与 requirements.md 的 § 编号。
 

@@ -1,7 +1,9 @@
 # Requirements: plugin-api-m1-integration
 
+> **Historical M1 record / M2 supersession:** This document records the original M1 `0.2` integration boundary; its old admission-bridge resolver ownership and old active/no-op wording are not current contracts. The current authority is the M2 L2 scoped gateway in `lib/llm-admission-gateway.js`, with package/API contract `0.1.0-rc.6-0.3` / `dsh.api` `0.3`. Preserve this historical record for traceability; do not reintroduce the old admission-bridge or projection-guard implementation.
+
 > feature_name: `plugin-api-m1-integration`
-> 状态：草案（Stage 1，待用户评审）
+> 状态：历史记录（M1 `0.2`，已被 M2 superseded）
 > 类型标注：本 feature 全部为**门面基础**（不引出任何新钩子；A/B/C 分类不适用，行为目标是保持既有 A/B 类 feature 的语义不变）
 > 面：仅 host 面（无 client 面变更）
 

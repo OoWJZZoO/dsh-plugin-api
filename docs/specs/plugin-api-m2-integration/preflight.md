@@ -6,6 +6,11 @@
 
 ## 1. Admission summary
 
+> **Historical preflight note:** The tables below preserve the read-only merge-wave audit
+> as it existed before the final reconciliation. The active authority after Tasks 1.1–4.1
+> is the closure record in §6; historical branch versions, 0.2 metadata, and deferred
+> migration wording must not be read as current contracts.
+
 | Input branch | Stage 4 HEAD | Worktree | Tasks | Delivery registration | Baseline | Decision |
 |---|---|---|---|---|---|---|
 | `feature/plugin-api-compaction-m2` | `58361a9076d9694a29fbea783a645b27d36d8d6f` | clean | complete | AGENTS + feature list | 400/400 pass | admitted |
@@ -55,7 +60,7 @@ The matrix was generated with `git merge-tree --write-tree --name-only` for ever
 |---|---|---|
 | compaction × L2/L4 | `AGENTS.md`, `test/plugin-api-service.test.mjs` | services facade baseline vs staged LLM facade expectations |
 | compaction × A11 | `AGENTS.md` | feature-list/guards auto-merge; services and agent composition remain separate |
-| compaction × session durable | `AGENTS.md` | feature-list/guards auto-merge; package peer union deferred |
+| compaction × session durable | `AGENTS.md` | feature-list/guards auto-merge; package peer union was deferred to coordinator convergence and is now closed |
 | compaction × exec-route | `AGENTS.md` | feature-list/guards auto-merge |
 | L2/L4 × A11 | `AGENTS.md`, `lib/guards.js`, `lib/index.js`, `lib/plugin-api-service.js`, six shared `test/index*.mjs` files | competing coordinator registries/transactions and facade composers |
 | L2/L4 × session durable | `AGENTS.md`, `lib/guards.js`, `lib/index.js`, six shared `test/index*.mjs` files | staged LLM vs immediate durable publication; service file auto-merges but is not authoritative |
@@ -64,7 +69,7 @@ The matrix was generated with `git merge-tree --write-tree --name-only` for ever
 | A11 × exec-route | `AGENTS.md`, `lib/index.js`, `lib/plugin-api-service.js`, `test/plugin-api-service-exec-route.test.mjs` (add/add) | D1 duplicate route authority; independent exec-route owner is feature-local authority |
 | session durable × exec-route | `AGENTS.md`, `lib/guards.js`, `lib/index.js`, `lib/plugin-api-service.js`, `test/index-session.test.mjs`, `test/index-tools.test.mjs` | session overlay/epoch vs route delegate and final order |
 
-Shared production ownership is therefore frozen as follows: the coordinator owns final `lib/index.js`, `lib/plugin-api-service.js`, `lib/guards.js`, `lib/services.js`, `package.json` and frozen shared tests; feature branches own their narrow feature-local modules and focused tests. Consumer repositories have no pairwise file conflict in these inputs because none is modified by an admitted branch; their semantic migration edges are deferred to Tasks 10.1 and 11.1.
+Shared production ownership is therefore frozen as follows: the coordinator owns final `lib/index.js`, `lib/plugin-api-service.js`, `lib/guards.js`, `lib/services.js`, `package.json` and frozen shared tests; feature branches own their narrow feature-local modules and focused tests. Consumer repositories had no pairwise file conflict in the original inputs; their semantic migration edges were deferred to Tasks 10.1 and 11.1 at preflight and are now closed by the committed consumer migrations documented in the final authority section.
 
 ## 5. Test evidence and next-step gate
 
@@ -79,3 +84,19 @@ Shared production ownership is therefore frozen as follows: the coordinator owns
 | exec-route | `node --test` | 417 pass, 8 fail; all failures are frozen shared mounter-count/order expectations recorded as D2 |
 
 The principal merge order is frozen as compaction → L2/L4 → A11 → session durable → exec-route. At every Task 2.x step, the current branch focused tests plus directly touched frozen shared host/apply, facade, guard, catalog, services/package/version tests must pass. An incompatible contract conflict pauses the step under Requirements 1.5/1.6; no red test may cross a merge boundary.
+
+## 6. Post-reconciliation authority closure
+
+The historical deviations are now resolved as follows:
+
+| Historical item | Current authority |
+|---|---|
+| D1/D2 duplicate or broad exec-route ownership | `lib/exec-route.js` is the sole execution snapshot owner. H1 narrows the feature to `tools` + `session`; there is no `agents` probe and no `events`/`agent` mounter dependency. `pluginApi.routing.ofExecution()` is canonical; `agent/tools.routeOf()` are compatibility delegates. |
+| D3 per-epoch durable native registration wording | `DurableObservationHub` owns one service-lifetime native registration and epoch-local observer maps. Dispatch never disposes the hook or calls reconcile; malformed records CAS-detach the current epoch and restore P2. |
+| D4 resolver wrapper ownership | The L2 scoped admission gateway is the sole identity-safe `llm.resolveModelInfo` wrapper owner. `admission-bridge.js` and consumer monkey-patches are historical only; `pluginApi.llm.modelInfo()` uses the authoritative bypass. |
+| D5 version convergence | The repository and both consumer peer declarations use `dsh.api: 0.3` and full `0.1.0-rc.6-0.3`; runtime identity remains exact and is not re-versioned here. |
+| D6 migration evidence | `dsh-read-image` and `dsh-pro-ex-ability-anchor` migrations are independently committed and documented. Their remaining runtime limits are explicit: no session-created/prompt-time final route, no built-in `read_image` identity claim, and finite S2 only. |
+
+The independent cardinalities remain 47 facade events, 5 durable kinds, and 19 static
+services. The C-class prepared-route proposal is documentation-only and does not publish a
+route-conditioned contribution API.

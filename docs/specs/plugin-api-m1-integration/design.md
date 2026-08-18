@@ -1,7 +1,9 @@
 # Design: plugin-api-m1-integration
 
+> **Historical M1 record / M2 supersession:** This design describes the pre-M2 `0.2` integration boundary. References to an admission-bridge/resolver wrapper or to the old active wording are historical and are not current runtime authority. M2 L2 is owned solely by `lib/llm-admission-gateway.js`; do not resurrect the old admission-bridge or projection-guard implementation.
+
 > feature_name: `plugin-api-m1-integration`
-> 状态：草案（Stage 2，待用户评审）
+> 状态：历史记录（M1 `0.2`，已被 M2 superseded）
 > 上游：`requirements.md`（同目录，已获批）；AGENTS.md §3.0.1（零发布负债窗口）、§4.2（版本政策）
 
 ---

@@ -11,7 +11,7 @@
 
 - 实现范围仅为 host-side A9 + T10，以及 `dsh-read-image` 的 A6 route-query migration。
 - Feature key、guard branch、mounter key 与 feature registry key 均为 `execRoute`。
-- 新增 route API 只有 `pluginApi.agent.routeOf(exec)` 与 `pluginApi.tools.routeOf(exec)`；不得增加 alias、setter、`exec.route`、client/wire surface 或 B route event。
+- canonical route API 为 `pluginApi.routing.ofExecution(exec)`；`pluginApi.agent.routeOf(exec)` 与 `pluginApi.tools.routeOf(exec)` 作为兼容委托保留。不得增加 setter、`exec.route`、client/wire surface 或 B route event。
 - 现有 `tools/*` catalog、`lib/events-bus.js` 和 `lib/deep-freeze.js` 是冻结边界：本 feature 不编辑它们，也不增加 event slice。
 - 不修改 `/usr/lib/node_modules/@deepseek-ai/dsh/**`，不 import 官方私有模块或私有状态。
 - 每项测试均使用 `node --test`；完整 suite 在所有任务结束后运行。
@@ -57,7 +57,7 @@
 **Implementation**
 
 1. Add `runFeatureGuard('execRoute', ctx)` immediately before the existing unknown-feature fallback.
-2. Fail closed for mandatory public substrate: `ctx.on`, official `tools`, official `sessions`, and official `agents` resolution. Every probe must contain thrown getters/services and report a readable P2 problem.
+2. Fail closed for mandatory public substrate: `ctx.on`, official `tools`, and official `sessions` resolution. H1 narrows execRoute to tools/session; there is no `agents` probe or events/agent mounter dependency. Every probe must contain thrown getters/services and report a readable P2 problem.
 3. Do not inspect a particular execution, `requestContext`, private agent/session fields, or any synthetic route event during the guard.
 4. Preserve all guards for existing features and all `DSH_PLUGIN_API_GUARD_DISABLE` behavior unchanged.
 
@@ -87,7 +87,7 @@
 
 **Focused verification**
 
-1. Prove P1 and P2 `routeOf` calls throw before inspecting input or calling official services.
+1. Prove P1 and P2 `routing.ofExecution` and compatibility `routeOf` calls throw before inspecting input or calling official services.
 2. Prove mounted agent and tools entries call the same owner authority and return the exact owner outcome identity.
 3. Prove unmount restores P2, is idempotent, and a stale token cannot unmount a later owner.
 4. Prove same P2 lifecycle key logs/writes once; a different key remains independently observable; logger and log-writer failure remain inert.
@@ -107,7 +107,7 @@
 1. Import the exec-route owner/mounter and insert `['execRoute', mountExecRouteFeature]` after `session` in `FEATURE_MOUNTERS`, without reordering existing M1 keys.
 2. Extend the host feature lifecycle with an opt-in prepared return shape `{ disposer, publish, rollback }`. Existing disposer-only mounters must retain their current lifecycle exactly.
 3. For prepared `execRoute`, register `ctx.effect(() => disposer)` before calling `publish()` or `featureRegistry.mount('execRoute')`.
-4. Require `featureRegistry.isActive('tools')`, `isActive('events')`, `isActive('agent')`, and `isActive('session')` before prepared mount registers its native hook.
+4. Require `featureRegistry.isActive('tools')` and `isActive('session')` before prepared mount registers its native hook; do not require `events` or `agent` for H1.
 5. On execRoute guard failure, missing `ctx.effect`, dependency failure, registration failure, cleanup-registration failure, publication failure, or registry activation failure: contain the failure; best-effort rollback partial owner/hook; invoke token-bound service unmount; disable only `execRoute`; report its deduplicated P2 diagnostic; return normally from `apply()`.
 6. Repeated `apply()` when `featureRegistry.isActive('execRoute')` is true must leave the original delegate, owner state, and one native capture hook intact.
 7. Do not modify catalog composition, `events-bus`, or existing M1 lifecycle behavior.

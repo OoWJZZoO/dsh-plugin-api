@@ -1,5 +1,7 @@
 # Tasks: plugin-api-facade-integrity
 
+> **Historical/superseded task record:** These M0 tasks are retained as an audit record of the old `admission-bridge.js` / `projection-guard.js` baseline. They are not an executable current plan. The current L2 owner is solely `lib/llm-admission-gateway.js`; do not execute the old bridge refactor or reintroduce either historical module.
+
 > TDD：先补测试、再改实现、最后 `node --test`。任务只覆盖 `plugin-api-facade-integrity` spec（requirements 第 1–5 节）范围内的代码、测试与文档修订；不夹带 spec 外功能。实现一律在 worktree `.worktrees/m0`（分支 `m0`）的 `lib/`、`test/`、`README.md`、`docs/specs/**` 中进行。
 
 ---
@@ -20,13 +22,13 @@
 
 ---
 
-## 2. Refactor admission-bridge onto the helper
+## 2. Historical refactor: admission-bridge onto the helper (completed record; do not execute)
 
-- [x] 2.1 **目标：重构 `lib/admission-bridge.js`，让 `llm/admission` 成为 `wrap-safety` 的客户端。**
+- [x] 2.1 **历史目标（已完成记录）：曾重构 `lib/admission-bridge.js`，让 `llm/admission` 成为 `wrap-safety` 的客户端；当前不得重做或重新引入该 bridge。**
   - 删除本地 `mark` / `isMarked` 实现，改用 `createWrapSafety`；决定 `ADMISSION_WRAPPER_MARKER` 的迁移方式（保留 `Symbol.for('dsh-plugin-api.llm-image-admission')` 传入 helper，或改用 helper 默认 marker 并确认回归测试仍识别为 own-wrapper）。
   - 三个 wrapper 均通过 `wrapperFactory({ original, isActive })` 创建；`isActive()===false` 时直接 `original.call(...)` 原样透传（含 prompt/selectModel 不再创建 `AsyncLocalStorage` 作用域）。
   - `installAdmissionBridge` 的返回值语义保持不变：boundaries invalid → `isActive:false`；already wrapped → `isActive:true` + no-op dispose；installed → `isActive` 由 `WrapHandle` 派生，`dispose` 委托 `WrapHandle.dispose`。
-  - 跑 `test/admission-bridge.test.mjs`，**不改任何断言**，必须全部通过；其中「dispose does not tear down another plugin wrapper and degrades to transparent」用例即 requirement §4.4 的验收载体，重构后必须仍断言外部 wrapper 保持、`isActive()===false` 且原始信息未被追加 `image`。
+  - 历史回归记录：`test/admission-bridge.test.mjs` **不改任何断言**并全部通过；其中「dispose does not tear down another plugin wrapper and degrades to transparent」用例曾作为 requirement §4.4 的验收载体，历史实现应断言外部 wrapper 保持、`isActive()===false` 且原始信息未被追加 `image`。
   - 引用：requirements 2.1–2.6 / 4.1–4.4 / 5.3；等价基线 `llm-image-admission/requirements.md` §5。
 
 ---

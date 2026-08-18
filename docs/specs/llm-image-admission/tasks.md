@@ -1,5 +1,9 @@
 # Task Planning: llm-image-admission
 
+> **Historical record only.** These tasks describe the superseded L1 shape. They are not
+> executable follow-up work; current L2/L4 ownership and migration authority is recorded in
+> `docs/specs/plugin-api-llm-request-m2/supersession.md`.
+
 > 需求引用记号：`R<section>.<criterion>`，例如 `R2.1` 表示 requirements.md 第 2 节第 1 条验收标准。
 > 执行顺序：从上到下；每个任务完成后停下等待用户复核，不得自动连续执行。
 

@@ -1,5 +1,11 @@
 # Requirements: plugin-api-exec-route-m2
 
+> **M2 integration amendment:** A9/T10 remain the approved compatibility delegates, but the
+> canonical public execution-route query is now `pluginApi.routing.ofExecution(exec)` under
+> the delivered `plugin-api-m2-integration` composite. H1 narrows the owner guard/mounter to
+> tools + session substrates; no agents probe or events/agent dependency is part of the
+> current contract. The C-class prepared-route boundary remains outside runtime scope.
+
 > feature_name: `plugin-api-exec-route-m2`
 > 状态：已完成（Stage 4）
 > 上游：`plugin-api-semantic-hooks-m2`（共同 B 类契约）、`plugin-api-agent-m1`、`plugin-api-tools-m1`、`plugin-api-session-m1`

@@ -72,6 +72,14 @@
 
 ### 2.2 Durable producer audit
 
+**H2 final authority.** Runtime durable observation is owned by the service-lifetime
+`DurableObservationHub`, with epoch-local observer maps and one native `session/event`
+registration. During dispatch it never disposes the native hook, removes a bus hook, or
+calls `reconcile('session/event')`; a malformed audited record only CAS-detaches the current
+epoch, drains private observers, restores the durable P2 overlay, and disables that epoch.
+This wording supersedes older per-epoch-native-registration descriptions while preserving
+the public `onDurable`/`onceDurable` and stale-cleanup contracts.
+
 所有五类 audited record 都是 log-only、non-surface append，所有实际生产点都调用
 `session.append(type, data)`，没有 `surfaceOp` 或 `sourceEventSeqs`。`KNOWN_SESSION_EVENT_TYPES`
 包含这些 type，并由安装版 session event map 生成：

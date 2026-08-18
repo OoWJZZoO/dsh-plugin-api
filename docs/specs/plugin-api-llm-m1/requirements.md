@@ -1,5 +1,11 @@
 # Feature Requirements: plugin-api-llm-m1
 
+> **M2 amendment:** This M1 requirement set remains authoritative for L3/L6/L7/L9 and the
+> unaffected L8 public interface. The narrow L8 compat-observation rule and all L1 admission
+> wording are amended by `plugin-api-llm-request-m2/supersession.md`; do not use this
+> historical document to reintroduce the retired inactive admission signal or a second
+> resolver/projection owner.
+
 ## Introduction
 
 `plugin-api-llm-m1` 是 `dsh-plugin-api` 的 **M1 LLM 命名空间 feature**，合并 feature-list 中的：

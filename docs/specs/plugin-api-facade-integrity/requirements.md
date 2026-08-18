@@ -1,5 +1,7 @@
 # Feature Requirements: plugin-api-facade-integrity
 
+> **M2 supersession note:** The F0.5 identity-guard policy remains valid, but historical references below to `admission-bridge.js` / `projection-guard` are not current ownership. The sole current L2 resolver-wrapper owner is `lib/llm-admission-gateway.js`; do not add a second facade wrapper or revive the historical bridge.
+
 ## Introduction
 
 `plugin-api-facade-integrity` 合并 feature-list 中的 **F0.4 符号解析门面** 与 **F0.5 包装链安全**，把门面的完整性契约显式化：

@@ -2,7 +2,7 @@
 
 DeepSeek Harness 社区插件 API 门面：把官方 Cordis 扩展点稳定化，给第三方插件一个统一、受支持的 import/inject 入口。
 
-> 当前状态：M0 基础（`plugin-api-foundation`）已实现——`ctx.pluginApi` 服务、分层 fail-safe guard、双向版本协商，以及首个 feature `llm/admission`。
+> 当前状态：M2 host 能力已交付。唯一 full version 为 `0.1.0-rc.6-0.3`，协议为 `dsh.api: 0.3`；consumer 仍须按 feature availability 做 fail-safe 降级。
 
 ## 推荐用法（supported）
 
@@ -36,6 +36,25 @@ export function apply(ctx) {
 - `agent.availability`：只读、冻结的 `{ create, resume, register, provider: { enter, announce, setFactory } }` 六叶能力矩阵；`agent.provider.isActive` 仅在三个 provider 成员都可用时为 `true`。
 
 A11 成员是官方 AgentRegistry 的 A 类同参直通。调用从消费者的 Cordis context 解析 `agents`，保留精确参数、官方 receiver、同步返回值、registry Promise、`AgentHandle`、Agent、disposer、官方错误、生命周期发布和 teardown 行为；门面不包装或拦截返回的 handle/disposer。成员级探测或调用前解析失败只将对应成员降级为 `PluginApiFeatureDisabledError('agent', ...)`，并保留其他已验证成员。core inactive 仍优先抛出 P1，M1 whole-agent guard 失败时为 P2；factory 缺失或 provider slot 被占用属于官方调用时结果，不改变 availability。
+
+### Routing 与有限 durable surface
+
+M2 提供一个 service-lifetime stable、冻结的 `pluginApi.routing` composite：
+
+```js
+pluginApi.routing.ofExecution(exec)
+pluginApi.routing.current(session)
+pluginApi.routing.on(session, listener)
+pluginApi.routing.once(session, listener)
+pluginApi.routing.wait(session, options?)
+pluginApi.routing.availability // { execution: boolean, session: boolean }
+```
+
+`ofExecution()` 只返回已在 `tools/pre-execute` 捕获的 execution-time snapshot；`current/on/once/wait` 只表示已提交的 session route。两者都不是 session-created 或 prompt-assembly 时的 final route。`agent.routeOf(exec)` 与 `tools.routeOf(exec)` 是兼容委托，和 `routing.ofExecution()` 共用同一 authority。pre-assembly prepared-route 与 route-conditioned contribution 仍是 C-class upstream proposal，不提供 runtime contribution API。
+
+有限 surface message 写入必须使用 `pluginApi.session.appendMessage(targetSession, kind, payload, { sourceEventSeqs? })`，仅支持 `user/message`、`assistant/message`、`tool/result`；facade 负责 `surfaceOp` 与 provenance 校验/派生，并执行一次官方 append。任意 durable event、title、replacement 或 atomic-turn 语义不属于该 helper；官方 `tool/call` 等非有限记录继续沿用官方 Session.append 路径，不属于有限 append helper。
+
+L2 图片准入政策的 scoped gateway 是唯一 `resolveModelInfo` wrapper owner；`pluginApi.llm.modelInfo()` 仍读取 authoritative pre-overlay 信息。L4 兼容 re-entry 的 prepared-call、adapter-registration、routing、loop reconstruction 与 caller-provenance 等等价性不作保证。
 
 ## 逃生舱（unsupported escape hatch）
 

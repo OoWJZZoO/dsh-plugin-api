@@ -1,6 +1,6 @@
 # Feature List: plugin-api-features
 
-> 状态：草案（draft for review）。本文是 `dsh-plugin-api` 门面**预备实现的主要外部 API feature 清单**，不是定稿 API 契约；每个 feature 后续按 Kiro spec-coding 流程展开为独立的 `requirements.md` / `design.md` / `tasks.md`。
+> 状态：delivery registry（历史条目保留其原始 spec 链接；已交付项的最终形状以对应 approved spec 与 M2 integration reconciliation 为准）。本文不是脱离 spec 的独立 API 契约。
 >
 > feature_name: `plugin-api-features`
 > 范围：全量（host 面 + client 面 + C 类上游提案）
@@ -44,7 +44,8 @@
 | Feature | 外部 API | 范围 | 状态 |
 |---|---|---|---|
 | `plugin-api-semantic-hooks-m2` | 无；不增加 namespace、catalog slice 或 concrete B hook | B 类语义转译的分类、lifecycle、P1–P4、owner-local re-entry/durable 边界，以及首个 B 集成门槛；具体 L4、A9/T10、S2 仍待独立 spec。 | **delivered** |
-| `plugin-api-session-durable-m2` | `pluginApi.session` durable observation 与受限 `appendMessage` host overlay；不增加 client、remote 或 catalog surface | S2/O8/O13/O14 的 host-only durable observation/append 能力；`sessionDurable` P2 epoch rollback 与 stale-cleanup protection；运行时及七个 audited package identity 固定为 `0.1.0-rc.6`；consumer migration acceptance 明确 deferred 至独立获批的 consumer worktree/spec。 | **delivered** |
+| `plugin-api-session-durable-m2` | `pluginApi.session` durable observation 与受限 `appendMessage(targetSession, kind, payload, {sourceEventSeqs?})` host overlay；不增加 client、remote 或 catalog surface | S2/O8/O13/O14 的 host-only durable observation/append 能力；`sessionDurable` P2 epoch rollback 与 stale-cleanup protection；运行时及七个 audited package identity 固定为 `0.1.0-rc.6`；原始 standalone consumer deferral 已由 M2 integration Task 3.1 独立迁移完成。 | **delivered** |
+| `plugin-api-m2-integration` | `pluginApi.routing` execution/session capability plane + M2 final reconciliation | `ofExecution/current/on/once/wait/availability` 的冻结 composite；A9/T10 compatibility delegates；H1 narrowed execRoute、H2 DurableObservationHub、L2 sole resolver wrapper、S2 finite append contract；47/5/19 cardinality 与 C-class prepared-route boundary。Task4 governance/registration is in progress; Task5 final verification will mark it delivered. | **Stage4-in-progress** |
 
 ### 1.4 关键源码依据（缩写）
 
@@ -89,7 +90,7 @@
 |---|---|---|---|---|---|
 | F0.1 门面服务 | `ctx.pluginApi`（Cordis Service，`inject: ['pluginApi']`）；**推荐、受支持**的门面入口；直连 `@deepseek-ai/dsh-*` 内部包为 unsupported escape hatch | 门面基础 | 本仓库 `lib/index.js` / `lib/plugin-api-service.js`；spec `plugin-api-foundation` | M0 | **delivered** |
 | F0.2 fail-safe guard | `pluginApi.isActive: boolean`；核心 guard 失败时服务仍注册为 inert；非核心 feature 失败时只禁用该 feature 并显式报错 | 门面基础 | 本仓库 `lib/guards.js`；对齐 dsh-read-image G1；spec `plugin-api-foundation` | M0 | **delivered** |
-| F0.3 版本协商 | 门面全量唯一版本号 = `<runtime全量版本>-<API协议大版本.迭代小版本>`（如 `0.1.0-rc.6-0.2`，写入 `package.json.version`）；`dsh.api` 仅承载 API 协议版本。双向协商——方向① runtime 部分与安装的官方 runtime 不匹配时门面 inert；方向② 插件要求不满足时插件收到 typed 错误 | 门面基础 | 本仓库 `lib/version.js` / `lib/guards.js` / `package.json`；spec `plugin-api-foundation`（修订注记见 `plugin-api-m1-integration` 任务 2.10） | M0 | **delivered** |
+| F0.3 版本协商 | 门面全量唯一版本号 = `<runtime全量版本>-<API协议大版本.迭代小版本>`（当前 `0.1.0-rc.6-0.3`，写入 `package.json.version`）；`dsh.api` 仅承载 API 协议版本。双向协商——方向① runtime 部分与安装的官方 runtime 不匹配时门面 inert；方向② 插件要求不满足时插件收到 typed 错误 | 门面基础 | 本仓库 `lib/version.js` / `lib/guards.js` / `package.json`；spec `plugin-api-foundation` 与 M2 integration reconciliation | M0 | **delivered** |
 | F0.4 符号解析门面 | `pluginApi` 作为**推荐** import/inject 面；第三方插件默认经门面解析符号；直连 `dsh-tools`/`dsh-llm` 等内部包属于 unsupported escape hatch（门面不拦截、不保障） | 门面基础 | `docs/specs/plugin-api-facade-integrity/requirements.md` §1（权威定义）；`README.md` | M0–M3 | delivered（F0.4 策略；符号覆盖随命名空间逐步扩展） |
 | F0.5 包装链安全 | dispose 用 identity-guard；目标被其他插件包装时降级透传，不拆别人的链 | 门面基础 | 本仓库 `lib/wrap-safety.js` / `lib/admission-bridge.js`；dsh-read-image A1 加固；spec `plugin-api-facade-integrity` | M0 | **delivered** |
 
@@ -114,8 +115,8 @@
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
-| L1 图片准入注册 | `llm.admission.register(intent: ImageAdmissionIntent): () => boolean`；`llm.admission.isActive` | B | 本仓库 `docs/specs/llm-image-admission/*`；官方缺 `llm/admission` 事件 | M0 | **delivered**（R2/R4/R7 已被 L2/L4 supersede，见 `docs/specs/plugin-api-llm-request-m2/supersession.md`；`isActive` 已退役） |
-| L2 受限图片准入政策 | `llm.admission.register({ id, match, input: 'image', process, validate })`（统一 L2/L4 管线 + scoped gateway；`admission.isActive` 退役，`featureRegistry.isActive` 唯一信号） | B | `docs/specs/plugin-api-llm-request-m2/`；官方缺 `llm/admission` 事件 | M2 | **delivered** |
+| L1 图片准入注册（历史 superseded） | 旧 `llm.admission.register(intent)` / `admission.isActive`（不再是现行 API） | B | 历史 `docs/specs/llm-image-admission/*`；正式替代见 `plugin-api-llm-request-m2/supersession.md` | M0 | **delivered / superseded** |
+| L2 受限图片准入政策 | `llm.admission.register({ id, match, input: 'image', process, validate })`（统一 L2/L4 管线；scoped gateway 是唯一 `resolveModelInfo` wrapper owner；`featureRegistry.isActive` 唯一信号） | B | `docs/specs/plugin-api-llm-request-m2/`；官方缺 `llm/admission` 事件 | M2 | **delivered** |
 | L2 准入泛化（image 之外） | `llm.admission.register` 扩展为可声明其他 inputModalities/策略，或新增 `llm/input-policy` 语义 | B/C | 官方 `LlmResolvedModelInfo.inputModalities`；首 feature 只做 image | M4 | planned（C/M4，需独立双边界证明） |
 | L3 模型请求瀑布 | `events.waterfall('llm/stream', options, next)` 的类型化稳定版 | A | `dsh-llm/lib/index.js:1389`；`dsh-llm/lib/types/index.d.ts` `Events['llm/stream']` | M1 | **delivered** |
 | L4 同步请求改写 | `llm.request.transform({ id, mode: 'compat', priority?, apply, isConverged })`（同步、幂等收敛、at-most-once 兼容重入） | B | 官方无 `llm/request`；用 `llm/stream` 重入模拟（AGENTS.md 第 4.4 条） | M2 | **delivered**（`docs/specs/plugin-api-llm-request-m2/`；无合成 `llm/request` 事件目录） |
@@ -138,7 +139,7 @@
 | A6 回合停止决策 | `events.serial('agent/turn-stopping', payload)` | A | 同上 `:301-305`；`dsh-agent-loop/lib/index.js:565` | M1 | **delivered** |
 | A7 Agent 错误通知 | `events.on('agent/error', listener)` | A | 同上 `:316-321`；`dsh-agent-loop/lib/index.js:470` | M1 | **delivered** |
 | A8 Agent 注册表读面 | `agent.get(id)`、`agent.list()`、`agent.roots()` 稳定直通 | A | `dsh-agent/lib/types/index.d.ts:349-370` | M1 | **delivered** |
-| A9 当前执行路由查询 | `agent.routeOf(exec)`：在 execution 首次进入 `tools/pre-execute` 时从公开 `session.requestContext()` 捕获同一冻结 `{provider, model}` 快照；未观察、正常缺失或 P2-disabled 时为 `undefined` | B | 官方无 `exec.route`；dsh-read-image A6（旧 `routeOf` 深挖 agent 内部） | M2 | **delivered** |
+| A9 当前执行路由查询 | `pluginApi.routing.ofExecution(exec)`；兼容委托 `agent.routeOf(exec)`：在 execution 首次进入 `tools/pre-execute` 时从公开 `session.requestContext()` 捕获同一冻结 `{provider, model}` 快照；未观察、正常缺失或 P2-disabled 时为 `undefined` | B | 官方无 `exec.route`；dsh-read-image A6（旧 `routeOf` 深挖 agent 内部） | M2 | **delivered** |
 | A10 官方路由 API | 官方 `exec.route` / `routeOf(exec)` 或等价字段 | C | AGENTS.md 第 2.5 条 C 类 | M4 | planned（proposal） |
 | A11 Agent 创建/注册高级面 | Consumer：`agent.create(options)`、`agent.resume(options)`、`agent.register(agent)`；advanced provider-only：`agent.provider.enter(agent, owner)`、`agent.provider.announce(agent)`、`agent.provider.setFactory(factory)`；只读 `agent.availability`：`{ create, resume, register, provider: { enter, announce, setFactory } }`，以及仅当全部 provider leaves 可用时为真的 `agent.provider.isActive` | A | `dsh-agent/lib/index.js:519` 起；`dsh-agent-loop/lib/index.js:1000` | M2 | **delivered** |
 
@@ -151,7 +152,7 @@
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
 | S1 会话生命周期事件 | `session/created`、`session/disposed`、`session/event`、`session/flush` 类型化订阅 | A | `dsh-session/lib/types/index.d.ts:44-75` | M1 | **delivered** |
-| S2 上屏事件构造 helper | `session.appendMessage(kind, payload)`：自动补齐 `surfaceOp: 'append'` 与 `sourceEventSeqs`，拒绝非法 surface 事件形状；仅允许 `user/message`、`assistant/message`、`tool/result` | B | `dsh-session` `append` 上屏契约；dsh-pro-ex-ability-anchor 第 4 条不变量；spec `plugin-api-session-durable-m2` | M2 | **delivered** |
+| S2 上屏事件构造 helper | `session.appendMessage(targetSession, kind, payload, { sourceEventSeqs?: readonly number[] }?)`：facade 自动构造 `surfaceOp: 'append'` 并验证/派生 provenance；仅允许 `user/message`、`assistant/message`、`tool/result` | B | `dsh-session` `append` 上屏契约；dsh-pro-ex-ability-anchor 第 4 条不变量；spec `plugin-api-session-durable-m2` | M2 | **delivered** |
 | S3 会话读面 | `session.get(id)`、`session.list()`、`session.fork(source, boundary?, childId?)` 稳定直通 | A | `dsh-session/lib/types/index.d.ts:315-413` | M1 | **delivered** |
 | S4 会话状态访问器 | `session.header/events/seq/surface`、`requestHeader()`、`requestContext()`、`deriveMessages()` 的稳定只读访问 | A | `dsh-session/lib/types/index.d.ts:106-267` | M1 | **delivered** |
 | S5 会话事件目录 | `sessionEventTypes` / `surfaceEventTypes` 常量与类型守卫 | A | `dsh-session` `known-event-types`（`session/end-seed`、`session/title` 等） | M1 | **delivered** |
@@ -170,7 +171,7 @@
 | T7 代码分发日志瀑布 | `events.waterfall('tools/code-dispatch-log', dispatch, next)`；返回替换后的 content | A | `dsh-tools/lib/index.js:2953` | M1 | **delivered** |
 | T8 工具限制与守卫 | `tools.restrict(filter)`、`tools.guard(guard)` 稳定直通 | A | `dsh-tools` `ToolRuntime.restrict/guard` | M1 | **delivered** |
 | T9 工具查询与执行 | `tools.get(name, scope?)`、`tools.schemas(scope?)`、`tools.execute(input)`、`tools.presentAs` 稳定直通 | A | `dsh-tools` `ToolRuntime` 公共方法 | M1 | **delivered** |
-| T10 执行路由查询 | `tools.routeOf(exec)`：与 `agent.routeOf(exec)` 返回同一按 execution 缓存的冻结 route 快照；捕获仅发生在 prepended `tools/pre-execute`，不创建 `exec.route` 或 route event/catalog slice | B | 官方无 `exec.route`；与 A9 同源 | M2 | **delivered** |
+| T10 执行路由查询 | `tools.routeOf(exec)`：与 `agent.routeOf(exec)`、`routing.ofExecution(exec)` 返回同一按 execution 缓存的冻结 route 快照；捕获仅发生在 prepended `tools/pre-execute`，不创建 `exec.route` 或 route event/catalog slice | B | 官方无 `exec.route`；与 A9 同源 | M2 | **delivered** |
 
 > 管线顺序（官方已定，门面只稳定化不重排）：`tools/pre-execute` → 单调 `guard()` 检查 → `tools/execute` → `tools/post-execute` → 工具 `finalizeContent` → `tools/result`。定义里的 `timeoutMs` 由 `dsh-tool-call-timeout-policy`（`tools/execute` wrapper）执行，不在门面内复制。
 
@@ -268,7 +269,7 @@
 |---|---|---|---|
 | U1 | 官方 `llm/admission` 事件 | 让第三方声明会话/请求级输入策略，替代 `apiProxy.sessions.*` + `resolveModelInfo` 包装 | L1/L2（`llm-image-admission` delivered） |
 | U2 | 官方 `llm/request`（异步完整请求改写） | 在模型请求最后边界做真正的请求改写，替代 `llm/stream` 重入 | L4/L5 |
-| U3 | 官方 `exec.route` / `routeOf(exec)` | 工具执行上下文直接携带 `{provider, model}` 路由快照 | A9/T10 |
+| U3 | 官方 prepared-route / `exec.route` seam | 在 prompt/tool assembly 前提供最终 route 与稳定 causal identity，供未来 route-conditioned contribution；当前 `exec.route` 与 pre-assembly route 均不存在 | A9/T10 / M2 C proposal |
 | U4 | 插件 boot 故障隔离 | 单个插件 apply 抛错不再杀死整个 harness boot | 本仓库所有入口 fail-safe（G1 模式） |
 | U5 | `WEB_SETTINGS_NAMESPACES` 动态化 | 第三方插件设置命名空间无需修改官方即可出现在设置 UI | ST7 |
 | U6 | 客户端 `remote.<ns>` 原生动态发现 | 第三方 client 插件无需 `ctx.remote.$mount` 自挂载 | C2/C7 |
@@ -281,11 +282,11 @@
 
 | 插件 | 现有 hack | 门面 API 替代 | 状态 |
 |---|---|---|---|
-| `dsh-read-image` | A1 monkey-patch `resolveModelInfo` | `pluginApi.llm.admission.register({match, project})` | delivered（首 feature 已迁移） |
-| `dsh-read-image` | A2 `llm/stream` 重入投影 | `llm.admission` 的投影守卫（`ProjectionGuard`） | delivered（首 feature 已迁移） |
+| `dsh-read-image` | A1 monkey-patch `resolveModelInfo` | L2 `pluginApi.llm.admission.register({id, match, input:'image', process, validate})`；wrapper 由 facade scoped gateway 唯一持有 | delivered（已迁移，旧 shape superseded） |
+| `dsh-read-image` | A2 `llm/stream` 重入投影 | L4 sole request owner + L2 policy pipeline；无独立 raw listener/projector | delivered（已迁移，旧 shape superseded） |
 | `dsh-read-image` | A3 手搓 `@Remote` / A4 伪造 zod schema / A5 `ctx.remote.$mount` | ST4/ST5/ST6 settings 可视化配置桥 | planned（M3） |
-| `dsh-read-image` | A6 `routeOf` 深挖 agent 内部 | A9/T10 `agent.routeOf` / `exec.route` | planned（M2） |
-| `dsh-pro-ex-ability-anchor` | 手写 `surfaceOp`/`sourceEventSeqs` 上屏事件 | S2 session 上屏事件构造 helper | planned（M2） |
+| `dsh-read-image` | A6 `routeOf` 深挖 agent 内部 | `pluginApi.routing.ofExecution(exec)`（或 A9/T10 兼容委托）；session-created/prompt-time final route 仍不可用 | delivered（M2 migration） |
+| `dsh-pro-ex-ability-anchor` | 手写 `surfaceOp`/`sourceEventSeqs` 上屏事件 | `pluginApi.session.appendMessage(targetSession, kind, payload, {sourceEventSeqs?})` | delivered（M2 migration） |
 | `dsh-pro-ex-ability-anchor` | `system-prompt/assemble` 直接监听 | P6 类型化瀑布（行为等价） | planned（M1） |
 | `dsh-pro-ex-ability-anchor` | panel 手写 `__ModuleLoader__` bundle + `dsh.client` manifest | C1 client manifest helper + C4 slot | planned（M3） |
 
@@ -296,7 +297,7 @@
 - 本文不是 API 契约定稿，不承诺签名稳定；每个 feature 的 EARS 需求、设计、任务在其独立 spec 目录中另行确认。
 - 本文不包含实现代码；在对应 feature 的 Stage 4 之前不创建新的 `lib/` 模块。
 - 不修改官方 DSH 包文件；C 类只写 proposal。
-- 不公开 `resolveModelInfo` 的变更能力（只读查询 L7 可以，准入作用域 L1 是隐藏实现）。
+- 不公开 `resolveModelInfo` 的变更能力（只读查询 L7 可以；L2 scoped gateway 的唯一 wrapper 仅为 facade 内部实现）。
 - 门面不替插件决定投影/改写内容，只负责调用并校验结果（fail-closed）。
 
 ---

@@ -1,5 +1,7 @@
 # Tasks: plugin-api-foundation
 
+> **M2 supersession note:** This M0 task record remains useful for historical foundation traceability. Its old admission-bridge/projection-guard ownership is not an executable current task or contract: M2 L2 is owned solely by `lib/llm-admission-gateway.js`. Do not reintroduce that historical implementation while maintaining the F0.3 version and guard policy.
+
 > 说明：每个任务按 TDD 执行——先补测试、再改实现、最后跑 `node --test`。任务只覆盖 `plugin-api-foundation` spec（requirements 第 1–5 节）范围内的代码、测试与包入口；不夹带 spec 外功能。实现一律在 worktree 分支 `feature/m0-f0.1` 的 `lib/`、`test/`、`package.json`、`README.md` 中进行。
 
 ---

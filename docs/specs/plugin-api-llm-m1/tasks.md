@@ -1,5 +1,9 @@
 # Tasks: plugin-api-llm-m1
 
+> **Historical amendment:** L1 admission and the narrow L8 no-listener/no-re-dispatch
+> wording were superseded by `plugin-api-llm-request-m2`; do not use this task file to
+> reintroduce `admission.isActive`, a legacy projector, or a second resolver wrapper.
+
 > 依据：`requirements.md`（Stage 1，已批准）与 `design.md`（Stage 2，已批准）。
 > 执行顺序：Stage 4 按编号顺序一次一个任务；每个任务完成后跑相关测试，全部通过再进入下一个任务。
 > 测试运行器：`node --test`。纯函数模块零 harness 依赖；涉及 Cordis/官方 `llm` 服务的测试使用 mock。

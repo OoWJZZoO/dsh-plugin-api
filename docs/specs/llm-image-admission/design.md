@@ -1,5 +1,11 @@
 # Design: llm-image-admission
 
+> **Historical supersession:** This design documents the pre-M2 L1 implementation and is
+> not the current runtime authority. The delivered `plugin-api-llm-request-m2` supersession
+> record replaces the old `project`/ProjectionGuard/admission-bridge wording with the
+> constrained L2 policy and sole scoped `resolveModelInfo` wrapper. Keep this document for
+> provenance; use the M2 design for implementation and API guidance.
+
 ## Overview
 
 `llm-image-admission` 在 `dsh-plugin-api` 门面内提供第一个语义化钩子：**图片输入准入 + 投影强制执行**。第三方插件通过 `ctx.pluginApi.llm.admission.register(intent)` 注册一个 intent，其中包含：

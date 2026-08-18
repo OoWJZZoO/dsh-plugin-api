@@ -43,6 +43,12 @@
 
 ## 3. Replacement contracts (L2/L4)
 
+The final ownership rule is singular: the L2 scoped admission gateway owns the one
+identity-safe `llm.resolveModelInfo` wrapper. No legacy `admission-bridge.js`, consumer
+monkey-patch, or second resolver wrapper remains. `pluginApi.llm.modelInfo()` enters the
+owner's authoritative bypass and therefore observes pre-overlay metadata; this does not
+promise to alter raw third-party resolver calls.
+
 | 面 | 契约 | 位置 |
 |---|---|---|
 | L4 transform | `pluginApi.llm.request.transform({ id, mode: 'compat', priority?, apply, isConverged })` → identity-bound disposer | `lib/llm-request.js` |
@@ -68,3 +74,7 @@
 
 - `dsh-read-image` 迁移提交：`6902386`（L2 注册形状）+ `a0ab551`（process/validate 行为断言）。
 - 迁移验收：`scripts/verify-guards.sh` 全流程通过（正常/强制失败 headless 冒烟 + dev web 3082）；sibling 单测 30/30；L2 注册形状对真实 profile 门面端到端验证通过。
+- `dsh-read-image` 当前 execution route 通过 `pluginApi.routing.ofExecution(exec)`；自定义
+  `read_image` 始终在 `session/created` 注册。Observed native image route 只允许该自定义
+  工具返回 native payload，不承诺 harness 内置工具 identity，也不承诺
+  session-created/prompt-time final route；无 route 时保留视觉 relay fallback。

@@ -1,5 +1,12 @@
 # Feature Requirements: llm-image-admission
 
+> **Historical supersession:** This Stage 1 contract is retained as an audit record only.
+> Its old `{ id, match, project }` registration, independent projection listener, and
+> consumer-owned `resolveModelInfo` wrapper are superseded by the delivered
+> `plugin-api-llm-request-m2` L2/L4 contract. The current authority is
+> `llm.admission.register({ id, match, input: 'image', process, validate })`; the scoped
+> gateway owns the single hidden resolver wrapper. Do not implement the historical shape.
+
 ## Introduction
 
 `llm-image-admission` 是 `dsh-plugin-api` 门面的第一个垂直切片。它给第三方插件提供一个**语义化的图片输入准入钩子**：插件声明“某个会话/请求需要携带图片，并且交出同步投影器负责在模型请求发出前处理图片块”，由门面负责通过 DeepSeek Harness 的 API 准入闸门，并在模型请求最后边界强制执行投影。

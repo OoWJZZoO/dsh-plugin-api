@@ -18,7 +18,7 @@ type RouteSnapshot = Readonly<{
 }>
 ```
 
-`pluginApi.agent.routeOf(exec)`（A9）与 `pluginApi.tools.routeOf(exec)`（T10）是同一个 feature-owned query authority 的两个委托入口。它们不各自读取 session，不提供 fallback，不暴露 `Session`、`Agent`、`RequestContext`，也不向官方对象写入字段或 symbol。
+`pluginApi.routing.ofExecution(exec)` 是 M2 的 canonical execution-route query；`pluginApi.agent.routeOf(exec)`（A9）与 `pluginApi.tools.routeOf(exec)`（T10）是同一个 feature-owned query authority 的兼容委托。三者不各自读取 session，不提供 fallback，不暴露 `Session`、`Agent`、`RequestContext`，也不向官方对象写入字段或 symbol。
 
 这是 B 类转译，不是官方 `exec.route`：route 的唯一公开来源是 `exec.agent.session.requestContext()`。该 public method 返回 session 最近已提交的 `request/context`，而非一个已与特定 `ToolExecution` 因果绑定的记录。因此非空结果只表示“本 execution 首次进入 `tools/pre-execute` 时可读取的最近已提交 route 快照”。
 
@@ -122,13 +122,14 @@ Normal missing route is not a diagnostic condition. Feature guard and activation
 
 The mounter owns an instance epoch token closed over by its hook and disposer. `dispose()` is idempotent, disables future capture by that owner, invokes the native hook disposer best-effort once, and releases strongly reachable diagnostic state. `WeakMap` and `WeakSet` entries need no explicit per-execution deletion. A stale disposer verifies that its epoch is still the service’s mounted `execRoute` epoch before it can unpublish; it cannot detach or disable a later owner.
 
-### 2. One facade authority with two namespace entries
+### 2. One facade authority with routing composite and compatibility entries
 
 `pluginApi` retains the existing tools service accessor and agent read API. The service gains a private current exec-route delegate initialized to a disabled delegate for feature key `execRoute`.
 
-Both namespace methods delegate to it:
+The stable routing composite and the two compatibility namespace methods delegate to it:
 
 ```ts
+pluginApi.routing.ofExecution(exec): RouteSnapshot | undefined
 pluginApi.agent.routeOf(exec): RouteSnapshot | undefined
 pluginApi.tools.routeOf(exec): RouteSnapshot | undefined
 ```
@@ -148,11 +149,11 @@ The `tools` accessor continues to resolve the official tools service only for ex
 | `ctx.on` | native capture hook registration is available | `ctx.on` unavailable |
 | `ctx.get('tools')` | existing official tools lifecycle support remains resolvable | tools service unavailable |
 | `ctx.get('sessions')` | established session read surface is available | sessions service unavailable |
-| `ctx.get('agents')` | established agent surface is available | agents service unavailable |
+| *(no `agents` probe)* | A9/T10 is a service delegate and does not require a later agent lookup | superseded H1 dependency |
 
 The guard does not read a particular execution, agent, session, or request context. Those values are operation-local and handled by the fail-open capture rules. It also does not add a synthetic event probe, since no B route event exists.
 
-The exec-route mounter verifies the already mounted M1 dependencies by `featureRegistry.isActive('tools')`, `isActive('events')`, `isActive('agent')`, and `isActive('session')` before registering its hook. Missing/inactive dependency, malformed registration return, or mount exception is P2. It logs via the established redacted guard/feature-failure path, installs no active delegate, and leaves official tools untouched.
+The exec-route mounter verifies only active `tools` and `session` substrates before registering its hook. It has no `events` or `agents` lifecycle dependency: `agent.routeOf` is a stable service delegate and the native owner binds directly to `tools/pre-execute`. Missing/inactive dependency, malformed registration return, or mount exception is P2. It logs via the established redacted guard/feature-failure path, installs no active delegate, and leaves official tools untouched.
 
 ### 4. Mount order and first-B publication transaction
 
@@ -251,7 +252,7 @@ This feature adds no P3 or P4 route behavior. It never changes a tool decision/r
 
 ## Migration: `dsh-read-image` A6
 
-Stage 4 migration changes only the A6 route acquisition path in `../dsh-read-image/lib/index.js`. At its supported tool lifecycle timing, it will obtain the route through one documented entry point, selected as `ctx.pluginApi.tools.routeOf(exec)`. It will no longer read `exec.agent.session.requestHeader()`, `exec.agent.options`, or equivalent nested layout to obtain provider/model.
+Stage 4 migration changes only the A6 route acquisition path in `../dsh-read-image/lib/index.js`. At its supported tool lifecycle timing, it obtains the route through canonical `ctx.pluginApi.routing.ofExecution(exec)` (the A9/T10 delegates remain equivalent compatibility entries). It no longer reads `exec.agent.session.requestHeader()`, `exec.agent.options`, or equivalent nested layout to obtain provider/model.
 
 The image plugin retains its existing missing-route behavior: `undefined` route selects its safe relay/fallback path and does not fail the tool operation. The migration does not introduce a dependency on A11, does not rewrite agent creation, and does not make image routing rewrite model selection.
 
