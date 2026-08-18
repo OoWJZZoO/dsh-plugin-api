@@ -97,6 +97,36 @@ test('mountFeature("llm", api) installs all methods and isActive true', () => {
   assert.deepEqual(calls, LLM_METHODS)
 })
 
+test('unmounted llm request surface throws P1/P2 before registration validation', () => {
+  const registry = createFeatureRegistry()
+  const active = instantiate(
+    createPluginApiService({ apiVersion: '0.1', registry, coreActive: true }),
+    mockCtx(),
+  )
+  const inert = instantiate(
+    createPluginApiService({ apiVersion: '0.1', registry, coreActive: false }),
+    mockCtx(),
+  )
+
+  assert.equal(typeof active.llm.request.transform, 'function')
+  assert.throws(() => inert.llm.request.transform({}), PluginApiInactiveError)
+  assert.throws(
+    () => active.llm.request.transform({}),
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
+  )
+})
+
+test('mountFeature("llm/request", api) installs only the request surface', () => {
+  const service = activeService()
+  const requestApi = { transform() {}, isActive: true }
+
+  service.mountFeature('llm/request', requestApi)
+
+  assert.equal(service.llm.request, requestApi)
+  assert.equal(service.llm.isActive, false)
+  assert.equal(service.llm.admission.isActive, false)
+})
+
 test('mountFeature("llm") does not overwrite an already-mounted admission surface', () => {
   const service = activeService()
   const admissionApi = { register() {}, isActive: true }
