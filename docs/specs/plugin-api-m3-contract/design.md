@@ -18,7 +18,7 @@ M3 是一个跨 host/client 的组合交付。host 侧将已有官方 settings�
 | ST6 | `clientCodec` / B | `client.codec` | client | `dsh-api-remotes` descriptor contract + bundled zod | `clientCodec` / `clientCodec` |
 | C1 | `clientManifest` / A | `client.defineManifest` | package + client | official `dsh.client` parser and `exports["./client"]` loader path | `clientManifest` / `clientManifest` |
 | C2 | `clientRemoteContribution` / B | `client.mountRemote` | client | official `ctx.remote.$mount` direct delegation with face validation | `clientRemoteContribution` / `clientRemoteContribution` |
-| C3 | `clientSettingsScope` / A | `client.settingsScope` | client | official connection/settings client service delegation | `clientSettingsScope` / `clientSettingsScope` |
+| C3 | `clientSettingsScope` / A | `client.settingsScope` | client | official `settingsScope.bind` service delegation; that service owns settings wire behavior | `clientSettingsScope` / `clientSettingsScope` |
 | C4 | `clientSlots` / A | `client.slots` | client | official `slots.register/inject/entries/subscribe` delegation | `clientSlots` / `clientSlots` |
 | C5 | `clientSlotEvents` / A | `client.slots` event surface | client | official `slots/changed` dispatch observation | `clientSlotEvents` / `clientSlotEvents` |
 | C6 | `clientRemoteEvents` / A | `client.remote.$on/$dispatch` | client | official forwarded remote event allowlist | `clientRemoteEvents` / `clientRemoteEvents` |
@@ -112,7 +112,7 @@ Wave boundaries are committed boundaries. A wave may run its listed worktrees in
 
 #### `settingsRemote`
 
-The host leaf resolves the M1 `settings` facade's namespace, obtains the official Typert remote service and binds a `TypertRemoteService` with `bindTypertRemote`. It validates namespace, deterministic service key, method descriptors, and wire-safe values before publication. It owns only its contribution handle and registers cleanup through the host fiber.
+The host leaf resolves the M1 `settings` facade's namespace, obtains the official Typert remote service and binds a `TypertRemoteService` with `bindTypertRemote`. Its omitted `serviceKey` is exactly the validated settings namespace (also the default wire namespace); an explicit key must satisfy the official Typert remote-segment grammar. It validates official method descriptors and wire-safe values before publication. It owns only its contribution handle and registers cleanup through the host fiber.
 
 It is a B-class adapter: no new Cordis event is emitted, and no official settings or Typert file is patched. A missing `settings` or Typert binding is a mandatory guard failure (P2); an optional existing settings service remains governed by the M1 settings feature's P3 semantics.
 
@@ -142,7 +142,7 @@ The codec leaf owns the only M3 bundled zod copy. It creates actual zod schema o
 
 #### `clientSettingsScope`
 
-The scope binds a validated settings specification to `clientConnection`. Snapshot reads are immutable, subscriptions are effect-scoped, and mutations use the connection wire unchanged. Scope loss cancels only its own listeners and resolves pending operations through the typed failure path.
+`clientSettingsScope` is a narrow forwarder to the official `settingsScope.bind(spec)` service. It returns the official `SettingsScope` unchanged: `getSnapshot()`, `subscribe(listener)`, `set(field, value)`, and `unset(field)`. The official binder, not M3, owns `settings.describe({})` and `settings.mutate({ ns, ops, expectedRevision? })`, queued-write recovery, unavailable/memory snapshots, and caller-fiber cleanup. There is no public M3 `load`, `dispose`, or `AbortSignal` extension.
 
 #### `clientSlots` and `clientSlotEvents`
 
@@ -150,7 +150,7 @@ The scope binds a validated settings specification to `clientConnection`. Snapsh
 
 #### `clientRemoteEvents`
 
-The event bridge delegates `$on` and `$dispatch` only for the official forwarded-event allowlist. It owns subscription handles, payload validation, and listener failure containment but not the shared remote service lifetime.
+The event bridge offers consumers only allowlisted `$on` subscriptions. `$dispatch(event, args)` is retained solely as the official decoded Host-frame carrier entry: it returns `void`, locally fans out the already-decoded argument list in subscription order, and isolates listener failures. It is neither a client-to-host transport nor a consumer emission API.
 
 ## Data Models
 
@@ -174,53 +174,38 @@ The record is a coordination model, not a runtime object exposed to consumers. I
 ### Remote contribution wire model
 
 ```ts
-type TypertRemoteContribution = Readonly<{
-  package: string
-  descriptors: readonly TypertRemoteDescriptor[]
-}>
-
-type TypertRemoteDescriptor = Readonly<{
-  namespace: string
-  serviceKey: string
-  method: string
-  parameters: readonly ParameterDescriptor[]
-  result: CodecDescriptor
-  errors?: readonly ErrorDescriptor[]
-}>
+import type {
+  InvocationDescriptor,
+  TypertRemoteContribution,
+} from '@deepseek-ai/dsh-typert-protocol'
 ```
 
-The exact descriptor field names remain those exported by `dsh-typert-protocol`/`dsh-api-remotes`; the model above identifies ownership and validation responsibilities, not permission to invent alternate wire keys. ST6's codec must accept the official descriptor object and reject unknown or invalid fields.
+`TypertRemoteContribution` and every descriptor are the official types, not M3-owned structural aliases. An `InvocationDescriptor` carries the authoritative `id`, `service`, `namespace`, `method`, optional `implementation`, `invocation`, optional `scope`, ordered `parameters`, optional `cancellation`, `result`, and optional `sourceLocation` fields. ST4 consumes official remote metadata; C2 accepts the official contribution; ST6 creates the real zod codecs embedded in those descriptors. No M3 module may add `serviceKey`, `errors`, or a replacement wire model.
 
 ### Settings scope model
 
 ```ts
-type ClientSettingsScope<T> = Readonly<{
-  getSnapshot(): Readonly<T>
-  subscribe(listener: (snapshot: Readonly<T>) => void): () => void
-  load(signal?: AbortSignal): Promise<Readonly<T>>
-  set(value: unknown, signal?: AbortSignal): Promise<Readonly<T>>
-  unset(key: string, signal?: AbortSignal): Promise<Readonly<T>>
-}>
+type ClientSettingsScope<T> = import('@deepseek-ai/dsh-client-runtime/client').SettingsScope<T>
 ```
 
-The model states the facade boundary; exact official endpoint argument names are taken from the connection and settings package exports during implementation. No method may infer or rename a wire field.
+The official scope has `getSnapshot()`, `subscribe(listener)`, `set(field, value)`, and `unset(field)`. Its binder owns the exact `describe({})` and `mutate({ns, ops, expectedRevision?})` requests; an M3 wrapper must forward the official object instead of reproducing those calls.
 
 ### Slot model and event
 
 ```ts
 type SlotEntryDef = Readonly<{
-  kind: string
-  scope?: string
-  owner?: string
-  keyProps?: readonly string[]
-  store?: unknown | (() => unknown)
-  inject?: unknown
+  kind: SlotKind
+  scope: SlotScope
+  owner?: object
+  keyProps?: Record<string, object>
+  hookContext?: unknown
+  inject?: object
 }>
 
 type SlotsChanged = string
 ```
 
-The official runtime currently dispatches `slots/changed` with exactly one slot-key string argument. C5 preserves that direct `(key: string)` client event shape and does not wrap it in an object or add an unrelated host catalog entry.
+`store` is a `SlotCore.register` `BaseOptions` concern rather than a `SlotEntryDef` member. The official runtime currently dispatches `slots/changed` with exactly one slot-key string argument. C5 preserves that direct `(key: string)` client event shape and does not wrap it in an object or add an unrelated host catalog entry.
 
 ## Error Handling
 
@@ -235,7 +220,7 @@ The official runtime currently dispatches `slots/changed` with exactly one slot-
 | `clientCodec` | bundled zod + remotes descriptor contract | P2 client-disabled | no descriptor publication |
 | `clientRemoteContribution` | official remote `$mount` | P2 client-disabled | inert contribution |
 | `clientSettingsRemote` | C2 + ST6 + host settings descriptor | P2 client-disabled | degraded UI |
-| `clientSettingsScope` | C9 + settings remote face | P2 when substrate absent; P3 on transient remote loss | typed scope failure |
+| `clientSettingsScope` | official `settingsScope.bind` service | P2 when service absent | official unavailable/memory snapshot behavior |
 | `clientSlots` | official slots service | P2 client-disabled | no slot registration |
 | `clientSlotEvents` | C4 event source | P2 client-disabled | no slot event surface |
 | `clientRemoteEvents` | official remote event bridge | P2 client-disabled | no bridge subscription |
@@ -257,9 +242,9 @@ Every B-class owner uses `prepare → effect registration → commit/publication
 | C9 | exact `rpc.call` endpoint/args/signal, `api.settings.*`, Promise/rejection/cancellation identity, unavailable-service disabled face |
 | ST4 | namespace/service key validation, descriptor validation, bind/mount once, disposer/stale replacement, missing primitive fail-safe |
 | C2/ST5/ST6 | real-zod acceptance, invalid/unknown descriptor rejection, face mismatch, one `$mount`, degraded UI, rollback and stale disposer |
-| C3 | immutable snapshot, subscription ordering/cancel, load/set/unset wire shape, AbortSignal, remote loss and disposer isolation |
+| C3 | `SettingsScopeSpec` forwarding, official `SettingsScope` identity and four-member surface, immutable snapshots, subscription order, `set`/`unset` Promise and official failure recovery, caller-fiber cleanup isolation |
 | C4/C5 | SlotEntryDef validation, injection wait/redeclaration, ordering, entries immutability, `slots/changed` after mutation, listener containment |
-| C6 | allowlist enforcement, exact `$on/$dispatch`, invalid payload pre-transport, listener failure containment and disposer identity |
+| C6 | allowlist enforcement before subscription, exact `$on` subscription and carrier-only `$dispatch(event, args)`, decoded argument fan-out, listener failure containment and disposer identity |
 
 ### Integration and migration gates
 
