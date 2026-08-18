@@ -58,10 +58,10 @@ function createMockCtx(options = {}) {
         }
       }
       if (options.throwDurableMount) {
-        const mountFeature = state.pluginApi.mountFeature.bind(state.pluginApi)
-        state.pluginApi.mountFeature = (name, api) => {
+        const prepareFeature = state.pluginApi.prepareFeature.bind(state.pluginApi)
+        state.pluginApi.prepareFeature = (name, api) => {
           if (name === 'sessionDurable') throw new Error('durable mount failed')
-          return mountFeature(name, api)
+          return prepareFeature(name, api)
         }
       }
     },
