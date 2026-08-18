@@ -21,7 +21,7 @@ L4 继续是唯一 raw `llm/stream` owner，L2 是其 scoped gateway；A11/SV17 
 
 先对每个输入分支作只读准入：确认 committed Stage 4/tasks/registration、clean worktree、Spec-to-code、未改官方包、shared ownership、tests/package/consumer conflict 与未报告偏离。产物记录 branch、commit、偏离、冲突边、admission decision。若冲突改变批准的 Goal、classification、acceptance 或 migration boundary，停止并请求人工裁决。
 
-principal merge wave 的唯一顺序是 `llm-request → agent-create → exec-route → session-durable → compaction`：先收敛共享 LLM service，再在 agent/tools composition 未统一前保留 A11 与 route 的各自 owner，随后收敛两个 session-adjacent owner，最后加入静态 services member。每步仅作维持已批准语义的冲突解决并运行 focused 与直接受影响的 shared tests。随后 unification wave 才处理 shared facade、publication、order/guards、routing、version、migration/docs。重叠语义只保留一个 authority；不由 merge order 决定公共契约。Stage 3 Tasks 必须以此为唯一 merge-wave authority，并显式 supersede 未批准旧草案中的任何不同顺序；旧 Tasks 不能反向约束本 Design。
+principal merge wave 已按冻结 preflight 和提交历史完成，唯一事实顺序是 `compaction → llm-request/L2-L4 → agent-create/A11 → session-durable → exec-route`。每步只作维持已批准语义的冲突解决，并在跨过边界前运行当时的 focused 与直接受影响 shared tests；随后已完成的 unification wave 才处理 shared facade、publication、order/guards、version 与共同测试。该历史不因本次 Stage 1/2 返工而重写，也不在 remaining-only Stage 3 Tasks 中重新执行。返工后的 reconciliation 只补当前代码到本 Design 的差异；重叠语义仍只保留一个 authority，公共契约不由历史 merge order 决定。
 
 ### 2. Topology and ownership
 
