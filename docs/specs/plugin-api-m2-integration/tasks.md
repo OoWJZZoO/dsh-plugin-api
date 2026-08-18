@@ -87,7 +87,7 @@
   - 运行 session-durable 与 M1 session/events 的全部受影响 focused tests，以及触及的 frozen events/facade tests；全部通过后才进入 6.2。
   - _Requirements: 3.5, 5.1–5.3, 5.8–5.9, 6.3–6.6, 6.9, 7.5, 8.5–8.6, 11.6, 11.8_
 
-- [ ] 6.2 实现 hub/epoch prepared transaction、恢复与 composite teardown
+- [x] 6.2 实现 hub/epoch prepared transaction、恢复与 composite teardown
   - 覆盖首次 hub transaction 失败、facade commit/registry activation 失败、breach 后 idle-hub re-apply、旧 callback/disposer/retained facade、后续 remount 失败和跨 epoch 单 native entry。
   - 实现唯一 composite disposer：先不可失败地关闭 hub、detach/dispose epoch、恢复 durable P2 overlay、disable matching registry epoch，再 best-effort 释放 native hook；所有步骤均尝试且重复 teardown 幂等。
   - 保留 M1 session base、五类 durable metadata、有限 `appendMessage` 一次官方 append 与 fail-before-persistence 语义。
