@@ -26,7 +26,7 @@
 **User Story:** As the M3 coordinator, I want each worktree to have a mechanical file boundary, so that integration resolves additions instead of semantic rewrites.
 
 1. WHEN worktrees are created, THEN the coordinator SHALL create them only from the committed `m3-contract` Stage 3 boundary and SHALL assign every feature to exactly one implementation owner and one integration owner.
-2. WHEN an implementation worktree edits a shared file, THEN it SHALL follow the ownership table: `package.json`/`exports`/`dsh.client` has C1 owner; `lib/index.js` host mounter composition has integration owner; `lib/client.js` client mounter composition has client-foundation owner; `lib/guards.js` host guard branches has the corresponding host feature owner with append-only insertion; shared error/freeze/remote registries are frozen until integration.
+2. WHEN an implementation worktree edits a shared file, THEN it SHALL follow the ownership table: `package.json`/`exports`/`dsh.client` has C1 owner; `lib/index.js` host mounter composition, `lib/client.js` client mounter composition, and shared integration tests have the W5 integration owner; `lib/guards.js` host guard branches have the corresponding host feature owner with append-only insertion; shared error/freeze/remote registries are frozen until integration.
 3. WHEN a feature adds an event descriptor, THEN it SHALL add a feature-local descriptor/slice and SHALL NOT directly edit a composed catalog or alter shared dispatch/freeze semantics; C5's client `slots/changed` descriptor is not a host `pluginApi.events` catalog slice.
 4. WHEN a worktree discovers a contract deviation, THEN it SHALL record the deviation and rationale in its own spec and delivery report before integration; an unreported deviation SHALL be rejected by pre-merge audit.
 5. WHEN a task is outside the assigned feature-list row or explicitly excluded dependency, THEN the worktree SHALL leave it untouched and report the needed change as an integration issue.
@@ -55,7 +55,7 @@
 **User Story:** As a host plugin author, I want a stable way to publish a settings service to the client, so that settings panels do not hand-roll Typert remote decorators.
 
 1. WHEN `pluginApi.settings.remote(namespace, serviceKey?)` is called with a valid registered settings namespace, THEN it SHALL create the approved `TypertRemoteService`/`bindTypertRemote` publication using the official Typert remote method metadata and return one effect-scoped disposer.
-2. WHEN `serviceKey` is omitted, THEN the adapter SHALL use the contract's deterministic default key; when it is supplied, the key SHALL be validated against the wire-safe key grammar and SHALL not collide with another active owner.
+2. WHEN `serviceKey` is omitted, THEN the adapter SHALL use the validated settings `namespace` itself as the deterministic service key and default wire namespace; when it is supplied, the key SHALL be validated against the official Typert remote-segment grammar and SHALL not collide with another active owner.
 3. WHEN a remote method is invoked, THEN the adapter SHALL validate the namespace, service key, arguments, return value, and error boundary according to the approved Typert descriptor; invalid input or output SHALL fail before persistence or client publication.
 4. WHEN the settings service, Typert remote service, or required binding primitive is absent or malformed, THEN `settingsRemote` SHALL fail closed as P2 and SHALL not monkey-patch `dsh-settings`, `dsh-typert-protocol`, or official gateway files.
 5. WHEN the returned disposer runs, THEN it SHALL unbind only the exact contribution it created, SHALL be idempotent and stale-safe, and SHALL preserve other namespaces and a later replacement.
@@ -77,20 +77,20 @@
 
 **User Story:** As a settings UI author, I want a typed client scope, so that reads, subscriptions, loads, and mutations share one connection and error contract.
 
-1. WHEN `client.settingsScope.bind(spec)` is called, THEN it SHALL validate the namespace, codec, and required operations and return a scope with `getSnapshot`, `subscribe`, `load`, `set`, and `unset` methods.
-2. WHEN `getSnapshot` or `subscribe` is used, THEN the scope SHALL return immutable snapshots and preserve official subscription ordering, cancellation, and update identity; it SHALL not mutate caller-owned values.
-3. WHEN `load`, `set`, or `unset` is called, THEN the scope SHALL use `client.connection` and preserve exact wire parameter names, `AbortSignal` behavior, Promise adoption, result shape, and rejection semantics.
-4. WHEN a scope loses its remote or connection, THEN active subscriptions SHALL terminate once with the contract error, pending calls SHALL reject through the typed failure path, and a later scope SHALL not inherit stale state.
-5. WHEN a scope disposer runs, THEN it SHALL unsubscribe only its own listeners, be idempotent, and not cancel unrelated settings scopes.
+1. WHEN `client.settingsScope.bind(spec)` is called, THEN it SHALL validate and forward the official `SettingsScopeSpec` to the official `settingsScope.bind` service and return its official `SettingsScope` result without adding methods or a second transport owner.
+2. WHEN the returned scope is used, THEN it SHALL expose exactly the official public surface: `getSnapshot()`, `subscribe(listener)`, `set(field, value)`, and `unset(field)`; M3 SHALL NOT claim a public `load`, `dispose`, or `AbortSignal` parameter.
+3. WHEN `set(field, value)` or `unset(field)` is called, THEN the official binder SHALL remain the sole owner of the `settings.describe({})` and `settings.mutate({ns, ops, expectedRevision?})` wire calls; the facade SHALL preserve returned Promise, failure, ordering, revision, and recovery semantics without rebuilding their request shapes.
+4. WHEN a settings namespace is unavailable or the official binder reports a process-local mode, THEN the returned official snapshot SHALL retain its documented unavailable/memory outcome; M3 SHALL NOT invent a second subscription-termination or pending-call error protocol.
+5. WHEN the caller's official fiber is disposed, THEN its official scope lifetime SHALL remain isolated from other scopes; the M3 facade SHALL not expose or call a private controller cleanup method.
 
 ## 8. C4 slots and C5 slot events (A class)
 
 **User Story:** As a client UI extension author, I want typed slot registration and change observation, so that panels can compose without depending on private slot internals.
 
-1. WHEN `client.slots.register(options, component)` is called, THEN it SHALL validate the `SlotEntryDef` fields `kind`, `scope`, `owner`, `keyProps`, `store`, and `inject` according to the agreed domain and return an effect-scoped disposer.
+1. WHEN `client.slots.register(options, component)` is called, THEN it SHALL validate the official `SlotEntryDef` fields `kind: SlotKind`, required `scope: SlotScope`, optional `owner?: object`, optional `keyProps?: Record<string, object>`, optional `hookContext?: unknown`, and optional `inject?: object`; `store` SHALL remain a `register` `BaseOptions` field and SHALL NOT be represented as a `SlotEntryDef` member.
 2. WHEN `client.slots.inject(key, callback)` is called, THEN it SHALL invoke the callback only for entries matching the canonical slot key and preserve official ordering, owner attribution, and callback disposal semantics.
 3. WHEN `client.slots.entries(key)` is called, THEN it SHALL return an immutable snapshot or official read view with stable ordering and SHALL not expose a mutable internal registry.
-4. WHEN `client.slots.subscribe(key, fn)` observes a change, THEN C5 SHALL dispatch `slots/changed` with the canonical slot ID, deterministic ordering, payload freeze policy, and contained listener failures defined by the client event contract.
+4. WHEN `client.slots.subscribe(key, fn)` observes a committed mutation, THEN C5 SHALL expose `slots/changed(key: string)` with the canonical slot ID, deterministic listener order, snapshot iteration, and contained listener failures defined by the client event contract; it SHALL not add a host catalog entry or assert a host payload-freeze policy.
 5. WHEN a slot key is accepted, THEN it SHALL be one of the canonical IDs (`settings.*`, `sidebar.*`, `shell.overlay`, `conversation`, `details`, or a contract-approved extension); arbitrary unregistered IDs SHALL be rejected before registration.
 6. WHEN a slot registration or event observer fails, THEN the owning feature SHALL roll back only its own entry/observer and SHALL preserve other slot entries, observers, and client features.
 
@@ -99,8 +99,8 @@
 **User Story:** As a client plugin author, I want the supported remote event bridge, so that host events can be observed and dispatched without importing gateway internals.
 
 1. WHEN `client.remote.$on(name, listener)` is called, THEN it SHALL subscribe through the official remote event service and return an idempotent disposer preserving listener order and cancellation semantics.
-2. WHEN `client.remote.$dispatch(name, payload)` is called, THEN it SHALL forward only names in the official forwarded-event allowlist and SHALL preserve payload wire shape, signal/cancellation, result/rejection, and containment semantics.
-3. WHEN an event name is outside the allowlist or its payload is invalid, THEN C6 SHALL reject it before transport and SHALL not silently dispatch a private or future event.
+2. WHEN the official Host-frame carrier calls `client.remote.$dispatch(name, args)`, THEN the bridge SHALL pass the decoded `readonly unknown[]` argument list to its local subscription table; this carrier-only method SHALL return `void`, SHALL not perform transport, and SHALL not be exposed as a consumer event-emission API.
+3. WHEN a consumer subscribes with `$on`, THEN C6 SHALL accept only names in the official forwarded-event allowlist before registering; unlisted names SHALL not create a subscription, and no M3 consumer API SHALL dispatch private or future events.
 4. WHEN the remote bridge is unavailable or a listener fails, THEN the bridge SHALL expose the agreed typed/inert client failure, contain the failure at the bridge boundary, and leave unrelated client features active.
 5. WHEN the bridge disposer runs, THEN it SHALL remove only the exact subscription created by that call, be stale-safe, and not dispose the shared remote service.
 
@@ -120,7 +120,7 @@
 
 **User Story:** As an integration maintainer, I want one dependency-aware schedule and evidence gate, so that parallel M3 work can be merged without hidden ordering assumptions.
 
-1. WHEN implementation worktrees are scheduled, THEN the dependency graph SHALL be executable in this order: `C1 → C8`; `C9 → ST6`; `C2 → ST5`; `ST4 + ST6 + C2 + C9 → ST5`; `C4 → C5`; `C3` after C9; and C6 independently after the contract boundary.
+1. WHEN implementation worktrees are scheduled, THEN the dependency graph SHALL be executable in this order: `C1 → C8`; `C9 → ST6`; `C2 → ST5`; `ST4 + ST6 + C2 + C9 → ST5`; `C3` after C9; `C4 → C5`; and C6 independently after the contract boundary.
 2. WHEN worktrees are derived, THEN W1 SHALL contain C1→C8; W2 SHALL run ST4, C9→ST6, and C6 in parallel; W3 SHALL run C2, C4→C5, and C3 in parallel; W4 SHALL run ST5 after W2/W3 prerequisites; W5 SHALL be the sole integration worktree.
 3. WHEN the merge wave starts, THEN W5 SHALL merge in the predetermined order `C1/C8`, `ST4`, `C9/ST6`, `C6`, `C2`, `C4/C5`, `C3`, `ST5`, followed by one shared unification wave; it SHALL not merge a worktree before its prerequisite boundary is committed and audited.
 4. WHEN integration completes, THEN it SHALL prove all 11 feature-list rows are covered, no M4 row or implementation is smuggled in, and no official DSH package file was modified.
