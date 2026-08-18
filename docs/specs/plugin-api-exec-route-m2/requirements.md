@@ -1,7 +1,7 @@
 # Requirements: plugin-api-exec-route-m2
 
 > feature_name: `plugin-api-exec-route-m2`
-> 状态：草案（Stage 1，待用户评审）
+> 状态：已完成（Stage 4）
 > 上游：`plugin-api-semantic-hooks-m2`（共同 B 类契约）、`plugin-api-agent-m1`、`plugin-api-tools-m1`、`plugin-api-session-m1`
 > 面：仅 host；不新增 client bundle、remote、codec 或 settings bridge
 > 分类：A9 + T10 为 B 类语义转译；既有 `tools/*` 生命周期事件保持 A 类

@@ -1,7 +1,7 @@
 # Design: plugin-api-exec-route-m2
 
 > feature_name: `plugin-api-exec-route-m2`
-> 状态：草案（Stage 2，待用户评审）
+> 状态：已完成（Stage 4）
 > 上游：`requirements.md`（Stage 1 已批准）、`plugin-api-semantic-hooks-m2`、`plugin-api-m1-integration/parallel-workflow.md`
 > 范围：host-only A9 + T10；不增加 client、remote、codec、settings 或 event catalog slice
 
