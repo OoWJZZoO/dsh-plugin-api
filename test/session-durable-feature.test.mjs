@@ -8,6 +8,7 @@ import { sessionLifecycleEventsCatalog } from '../lib/session-events-catalog.js'
 import {
   assertLiveSessionTarget,
   createDurableEpochRegistrationOwner,
+  createDurableObservationHub,
   createSessionDurableApi,
   appendMessage,
   preflightSurfaceMessageAppend,
@@ -301,6 +302,35 @@ test('onceDurable survives unrelated records until its first valid matching reco
   assert.equal(observed.length, 0)
   eventsApi.emit(session, durableEvent('approval/policy', { policy: 'ask' }, session.firstLiveSeq))
   assert.equal(observed.length, 1)
+})
+
+test('stable hub keeps one native entry, contains listener failures, and stops an outer snapshot after nested breach', async () => {
+  const { session, sessions } = createLiveSession()
+  const eventsApi = createEventsApi()
+  const resets = []
+  const owner = createDurableEpochRegistrationOwner()
+  const hub = createDurableObservationHub({ eventsApi, logger: { warn() {} } })
+  const api = createSessionDurableApi({
+    Session, sessions, eventsApi, contracts: durableContracts, owner, hub,
+    reset(diagnostic) { resets.push(diagnostic) },
+  })
+  const seen = []
+  api.onDurable(session, 'approval/policy', () => {
+    seen.push('first')
+    eventsApi.emit(session, durableEvent('approval/policy', { policy: 'wrong' }, session.firstLiveSeq))
+  })
+  api.onDurable(session, 'approval/policy', () => seen.push('must-not-run'))
+  api.onceDurable(session, 'approval/asked', () => { throw new Error('contained') })
+  api.onDurable(session, 'approval/asked', () => Promise.reject(new Error('contained async')))
+
+  assert.equal(eventsApi.listeners.length, 1)
+  eventsApi.emit(session, durableEvent('approval/policy', { policy: 'ask' }, session.firstLiveSeq))
+  eventsApi.emit(session, durableEvent('approval/asked', { id: 'a', toolName: 'x' }, session.firstLiveSeq))
+  await new Promise((resolve) => setImmediate(resolve))
+
+  assert.deepEqual(seen, ['first'])
+  assert.equal(resets[0].reason, 'durable-record-contract-breach')
+  assert.equal(eventsApi.listeners.length, 1, 'breach must not dispose or reconcile the native hook during dispatch')
 })
 
 test('direct official malformed durable append publishes raw but resets durable without payload diagnostics', () => {
