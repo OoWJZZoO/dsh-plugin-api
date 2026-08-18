@@ -16,7 +16,7 @@
 
 ## 1. Complete the approved M2 reconciliation batch
 
-- [ ] 1.1 以一个原子批次实现并测试当前实现到批准 Design 的完整差异。
+- [x] 1.1 以一个原子批次实现并测试当前实现到批准 Design 的完整差异。
   - Routing/sessionRoute：加入稳定不可变的 pluginApi.routing composite，不替换既有 facade；ofExecution、agent.routeOf、tools.routeOf 共用一份 snapshot authority。实现独立 sessionRoute feature/guard/mounter（位于 sessionDurable/execRoute 后）、冻结 availability matrix、单一 committed-session observer owner，且无 catalog/synthetic event/LLM owner。
   - 实现 current/on/once/wait：P1→leaf P2→同一 public live-session validator；sessions.get(id)===target 或 public list identity proof；get/list/requestContext throw 的 contained diagnostic + invalid-target outcome；firstLiveSeq seed barrier、event/context corroboration、per-session frozen cache identity、future ordered delivery、once-before-call、stale-safe disposer、disposal/replacement、current-seed 与 AbortSignal wait linearization。
   - 对齐 prepared composition/host lifecycle：private prepare→effect→commit→activation、全部 rollback boundary、retained refs/reapply/stale callback P2 safety。保留 H1（execRoute 仅 tools/session、无 agents/events 依赖）和 H2（durable dispatch 内无 hook dispose/reconcile，strict teardown）。

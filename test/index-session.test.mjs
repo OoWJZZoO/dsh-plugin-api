@@ -116,7 +116,7 @@ test('apply mounts session after events with a composed events catalog', () => {
   assert.equal(state.pluginApi.session.isActive, true)
   assert.deepEqual(
     state.pluginApi.features.map((feature) => feature.name),
-    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'settings', 'systemPrompt', 'services'],
+    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services'],
   )
   assert.ok(state.pluginApi.features.every((feature) => feature.isActive))
   assert.equal(state.pluginApi.features.some((feature) => feature.name === 'compaction'), false)
@@ -157,7 +157,7 @@ test('apply completes every guard pass before pass-2 publication and an early P2
   const features = state.pluginApi.features
   assert.deepEqual(
     features.map((feature) => feature.name),
-    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'settings', 'systemPrompt', 'services'],
+    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services'],
   )
   assert.equal(features.find((feature) => feature.name === 'tools')?.isActive, false)
   assert.equal(features.find((feature) => feature.name === 'execRoute')?.isActive, false)
@@ -176,8 +176,8 @@ test('session guard failure disables only session and keeps the facade active', 
   assert.equal(state.pluginApi.isActive, true)
 
   const features = state.pluginApi.features
-  assert.equal(features.length, 12)
-  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'settings', 'systemPrompt', 'services'])
+  assert.equal(features.length, 13)
+  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services'])
   assert.equal(features[0].isActive, true)
   assert.equal(features[1].isActive, true)
   assert.equal(features[2].isActive, true)
@@ -188,9 +188,10 @@ test('session guard failure disables only session and keeps the facade active', 
   assert.match(features[6].reason, /sessions\.get/)
   assert.equal(features[7].isActive, false)
   assert.equal(features[8].isActive, false)
-  assert.equal(features[9].isActive, true)
+  assert.equal(features[9].isActive, false)
   assert.equal(features[10].isActive, true)
   assert.equal(features[11].isActive, true)
+  assert.equal(features[12].isActive, true)
 
   assert.throws(
     () => state.pluginApi.session.get('s1'),
@@ -204,4 +205,27 @@ test('session guard failure disables only session and keeps the facade active', 
   assert.equal(typeof state.pluginApi.events.on, 'function')
   assert.equal(typeof state.pluginApi.services.web.registerSearchProvider, 'function')
   assert.equal(typeof state.pluginApi.llm.admission.register, 'function')
+})
+
+test('sessionRoute prepared cleanup rolls back its epoch, preserves routing identity, and reapplies cleanly', () => {
+  const { ctx, state } = createMockCtx()
+  apply(ctx)
+  const routing = state.pluginApi.routing
+  const firstEffect = state.effects.find((entry) => entry.label === 'dsh-plugin-api: sessionRoute cleanup')?.fn
+  assert.equal(typeof firstEffect, 'function')
+  const firstCleanup = firstEffect()
+  assert.equal(firstCleanup(), true)
+  assert.equal(state.pluginApi.features.find((entry) => entry.name === 'sessionRoute')?.isActive, false)
+  assert.equal(state.pluginApi.routing, routing)
+  assert.equal(firstCleanup(), false)
+
+  apply(ctx)
+  assert.equal(state.pluginApi.features.find((entry) => entry.name === 'sessionRoute')?.isActive, true)
+  assert.equal(state.pluginApi.routing, routing)
+  const secondEffect = state.effects
+    .filter((entry) => entry.label === 'dsh-plugin-api: sessionRoute cleanup')
+    .at(-1).fn
+  const secondCleanup = secondEffect()
+  assert.equal(secondCleanup(), true)
+  assert.equal(firstCleanup(), false)
 })

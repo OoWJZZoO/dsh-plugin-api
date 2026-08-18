@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createFeatureRegistry } from '../lib/feature-registry.js'
-import { PluginApiFeatureDisabledError } from '../lib/errors.js'
+import { PluginApiFeatureDisabledError, PluginApiInactiveError } from '../lib/errors.js'
 import { createPluginApiService } from '../lib/plugin-api-service.js'
 
 function serviceWithActiveCore() {
@@ -55,4 +55,52 @@ test('slot rollback revokes retained L2/L4 references without touching a newer s
   assert.equal(service.llm.request.transform(), 'second')
   second.rollback()
   assert.throws(() => service.llm.request.transform(), PluginApiFeatureDisabledError)
+})
+
+test('routing composes independent execution and session leaves with frozen availability', () => {
+  const registry = createFeatureRegistry()
+  const ServiceClass = createPluginApiService({ apiVersion: '0.3', registry, coreActive: true })
+  const service = new ServiceClass({ reflect: { provide() {} } })
+  const exec = {}
+  const execution = Object.freeze({ provider: 'p', model: 'm' })
+  const session = {}
+  const sessionRoute = Object.freeze({ provider: 'sp', model: 'sm' })
+  const routing = service.routing
+  assert.ok(Object.isFrozen(routing))
+  service.mountFeature('execRoute', { routeOf(value) { return value === exec ? execution : undefined } })
+  service.mountFeature('sessionRoute', {
+    current(value) { return value === session ? sessionRoute : undefined },
+    on() { return () => true },
+    once() { return () => true },
+    wait() { return Promise.resolve(sessionRoute) },
+  })
+  registry.mount('execRoute')
+  registry.mount('sessionRoute')
+  assert.equal(service.routing, routing, 'routing namespace identity is service-lifetime stable')
+  assert.equal(routing.ofExecution(exec), execution)
+  assert.equal(routing.current(session), sessionRoute)
+  assert.deepEqual(routing.availability, { execution: true, session: true })
+  assert.ok(Object.isFrozen(routing.availability))
+
+  service.unmountFeature('execRoute', service._execRouteToken)
+  registry.disable('execRoute', 'test teardown')
+  assert.throws(() => routing.ofExecution(exec), PluginApiFeatureDisabledError)
+  assert.equal(routing.current(session), sessionRoute)
+  assert.deepEqual(service.routing.availability, { execution: false, session: true })
+})
+
+test('routing checks core and leaf guards before inspecting hostile inputs', () => {
+  const registry = createFeatureRegistry()
+  const Inert = createPluginApiService({ apiVersion: '0.3', registry, coreActive: false })
+  const inert = new Inert({ reflect: { provide() {} } })
+  const hostile = new Proxy({}, { get() { throw new Error('inspected') } })
+  assert.throws(() => inert.routing.ofExecution(hostile), PluginApiInactiveError)
+  assert.throws(() => inert.routing.current(hostile), PluginApiInactiveError)
+  assert.throws(() => inert.routing.wait(hostile, { signal: hostile }), PluginApiInactiveError)
+  assert.throws(() => inert.routing.availability, PluginApiInactiveError)
+
+  const Active = createPluginApiService({ apiVersion: '0.3', registry, coreActive: true })
+  const active = new Active({ reflect: { provide() {} } })
+  assert.throws(() => active.routing.ofExecution(hostile), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'execRoute')
+  assert.throws(() => active.routing.current(hostile), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'sessionRoute')
 })

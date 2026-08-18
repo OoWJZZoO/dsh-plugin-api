@@ -26,7 +26,7 @@ function createCtx(options = {}) {
       state.effects.push({ fn, label })
     },
     on(name, listener, eventOptions) {
-      if (options.onThrows && name === 'tools/pre-execute') throw new Error('hook failed')
+      if ((options.onThrows && name === 'tools/pre-execute') || options.onThrowsName === name) throw new Error('hook failed')
       const entry = { name, listener, eventOptions }
       state.listeners.push(entry)
       return () => {
@@ -76,6 +76,20 @@ test('healthy apply activates execRoute after dependencies and installs one prep
   assert.equal(hooks[0].eventOptions.prepend, true)
   assert.equal(typeof state.pluginApi.agent.routeOf, 'function')
   assert.equal(typeof state.pluginApi.tools.routeOf, 'function')
+})
+
+test('sessionRoute registration failure disables only sessionRoute while execRoute remains active', () => {
+  const { ctx, state } = createCtx({ onThrowsName: 'session/disposed' })
+  apply(ctx)
+  assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
+  assert.equal(state.pluginApi.features.find((feature) => feature.name === 'sessionRoute')?.isActive, false)
+  assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 1)
+  assert.throws(() => state.pluginApi.routing.current({}), (error) => {
+    return error instanceof PluginApiFeatureDisabledError && error.feature === 'sessionRoute'
+  })
+  const exec = execWithRoute()
+  dispatchPreExecute(state, exec)
+  assert.deepEqual(state.pluginApi.routing.ofExecution(exec), { provider: 'provider-a', model: 'model-a' })
 })
 
 test('repeated apply retains the active execRoute hook and captured authority outcome', () => {

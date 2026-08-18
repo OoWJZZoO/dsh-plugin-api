@@ -110,6 +110,8 @@ routing.ofExecution ─┘
 
 All three return the exact stored snapshot identity or `undefined`. A11 preserves exact official receiver/arguments/return/promise/handle/disposer/error semantics. Session retains M1 plus approved durable members only; routing is not a second sessionDurable namespace. LLM removes only superseded admission members; services has exactly 19 static keys.
 
+The composite `pluginApi.routing` namespace is service-lifetime stable and may dynamically expose a newly committed routing epoch after re-apply; epoch-bound leaf callbacks, observers, waiters, and disposers never revive or mutate an older epoch, and retained references to those epoch-bound objects remain disabled according to the owning feature contract.
+
 ### 2. Execution owner
 
 Private state is `WeakSet<object> observed` plus `WeakMap<object, RouteSnapshot | undefined> outcomes`. One prepend `tools/pre-execute` wrapper marks an execution observed, reads only public `exec.agent.session.requestContext()`, validates non-empty string provider/model, deep-freezes a new snapshot, stores it, and invokes the native continuation exactly once unchanged.
