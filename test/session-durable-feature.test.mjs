@@ -357,6 +357,23 @@ test('stable hub validates known durable records even without a matching observe
   assert.deepEqual(ordinary.resets, [])
 })
 
+test('stable hub separates infallible state close, epoch disposal, and final native release', () => {
+  const order = []
+  const eventsApi = {
+    on() { return () => { order.push('native') } },
+  }
+  const hub = createDurableObservationHub({ eventsApi })
+  const epoch = hub.attachEpoch({ owner: { close() { order.push('epoch'); throw new Error('contained') } } })
+  assert.equal(hub.closeState(), epoch)
+  assert.equal(hub.isClosed, true)
+  assert.deepEqual(order, [])
+  assert.doesNotThrow(() => hub.disposeEpoch(epoch))
+  assert.deepEqual(order, ['epoch'])
+  assert.doesNotThrow(() => hub.releaseNative())
+  assert.deepEqual(order, ['epoch', 'native'])
+  assert.equal(hub.closeState(), null)
+})
+
 test('direct official malformed durable append publishes raw but resets durable without payload diagnostics', () => {
   const ctx = new Context()
   new SessionStore(ctx)
