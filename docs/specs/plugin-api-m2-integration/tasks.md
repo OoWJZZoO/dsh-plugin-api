@@ -111,7 +111,7 @@
 
 ## 8. 冻结 catalog、版本与 package contract
 
-- [ ] 8.1 保持 M1 catalog 并加入三项独立 cardinality regression
+- [x] 8.1 保持 M1 catalog 并加入三项独立 cardinality regression
   - 删除任何 M2 越界 slice/synthetic name，保持 M1 exact 47-name membership、schema、scope、freeze、fault 与 duplicate failure behavior。
   - 分别断言 47-name Cordis catalog、five-kind durable catalog 和 19-key services namespace，不用一个计数推导另两个集合。
   - 运行 M1 events/session/tools/agent/LLM/system-prompt/settings catalog tests、session-durable catalog tests、services shape tests 及触及的 frozen catalog tests；全部通过后才进入 8.2。
