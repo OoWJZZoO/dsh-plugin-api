@@ -5,4 +5,6 @@ coverage/
 *.log
 .DS_Store
 .dsh/
+.zcode/
+.worktree/
 .worktrees/
