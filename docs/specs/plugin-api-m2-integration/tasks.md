@@ -36,7 +36,7 @@
   - 运行 A11 focused tests 及本步触及的 agent facade/shared host tests，红测清零后才继续。
   - _Requirements: 2.1–2.7, 3.1, 3.4, 4.5, 9.1–9.2, 9.6–9.7, 11.1_
 
-- [ ] 2.4 合并 `feature/plugin-api-session-durable-m2`
+- [x] 2.4 合并 `feature/plugin-api-session-durable-m2`
   - 保留 durable catalog/audit、有限 append contract、observation API 与 feature-local tests；仅做冲突解算，不在本步实现最终 stable observation hub。
   - 运行 session-durable focused tests 及本步触及的 session/events/shared host tests，红测清零后才继续。
   - _Requirements: 2.1–2.7, 3.5, 4.3, 7.9–7.10, 8.5–8.7, 11.1, 15.5_
