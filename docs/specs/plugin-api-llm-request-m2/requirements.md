@@ -1,7 +1,7 @@
 # Requirements: plugin-api-llm-request-m2
 
 > feature_name: `plugin-api-llm-request-m2`
-> 状态：草案（Stage 1 reopened after public-substrate feasibility review）
+> 状态：已完成（Stage 4）
 > 上游：`plugin-api-semantic-hooks-m2`、`plugin-api-llm-m1`、`llm-image-admission`
 > 面：仅 host；不创建 client bundle、remote、codec 或 settings bridge
 > 范围：L4 synchronous compatibility transform + constrained L2 image admission policy
