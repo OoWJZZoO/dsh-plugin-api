@@ -165,7 +165,7 @@
 
 1. WHEN M2 integration delivers, THEN `package.json.dsh.api` SHALL advance from `0.2` to `0.3`.
 2. WHEN M2 integration delivers against official runtime `0.1.0-rc.6`, THEN `package.json.version` SHALL be `0.1.0-rc.6-0.3` and SHALL remain the repository's unique full version.
-3. WHEN runtime-to-facade compatibility is checked, THEN it SHALL compare the full runtime portion independently from plugin-to-facade API protocol comparison.
+3. WHEN runtime-to-facade compatibility is checked, THEN it SHALL require the facade version's full runtime portion (including patch and prerelease) to exactly equal the installed audited runtime, independently from plugin-to-facade API protocol comparison.
 4. WHEN API protocol minor versions advance, THEN they SHALL continue numeric progression and SHALL NOT promote to `1.0`; protocol `1.0` SHALL remain reserved for first public release.
 5. WHEN package metadata is unified, THEN every approved host package identity required by all M2 features SHALL be declared through peer dependencies or the existing approved package surface, and no facade-unrelated runtime dependency SHALL be introduced.
 6. WHEN version assertions, compatibility tests, docs, examples, or sibling-plugin requirements refer to the facade version, THEN they SHALL agree on the integrated `0.3` protocol and full version.

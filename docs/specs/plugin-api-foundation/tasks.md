@@ -41,7 +41,7 @@
     - `ctx.plugin`：服务注册入口；
     - `ctx.reflect.provide`：Service 构造函数所需；
     - `apiVersion` 可解析且匹配 `^\d+\.\d+$`（对应 requirements 4.4 的“`dsh.api` 缺失/不可解析”）；
-    - `runtimeVersion` 归一化后与 `apiVersion` 相等（`satisfiesContract(apiVersion, runtimeVersion)`，对应 requirements 4.3）。
+    - `runtimeVersion` 的归一化比较为初始实现记录；已由 `plugin-api-m2-integration` Task 8.2 supersede 为 facade runtime portion 与 installed runtime 的完整 identity 精确比较。
     - 返回 `GuardResult { ok, skipped, problems, coreProblems, featureProblems }`。
   - 实现 `runFeatureGuard(featureName, ctx, deps)`：
     - 本 spec 只实现 `llm/admission` feature guard；必须 probe：`ctx.get('llm')?.resolveModelInfo`、`ctx.get('agents')?.get`、`deps.dshLlm.contentHasImage`、`AsyncLocalStorage`、`ctx.get('apiProxy')?.sessions.prompt/selectModel`。

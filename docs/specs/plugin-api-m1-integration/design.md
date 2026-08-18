@@ -230,6 +230,6 @@ pass 2: for each (name, mount) of FEATURE_MOUNTERS:
 | KD-7 | 幂等信号统一为 `featureRegistry.isActive(name)` | registry 跨 re-apply 复用，信号单一且既有基础设施已支持 |
 | KD-8 | tools 保持唯一 scoped-accessor namespace + fail-safe 包装 | scope 正确性高于形态一致性；仅修补 fail-safe 缺口 |
 | KD-9 | `web` 迁入 `services.web` | 安置规则零例外；零发布负债窗口（AGENTS.md §3.0.1）允许 |
-| KD-10 | `0.1→0.2` bump；0.9 后是 0.10；1.0 保留正式发布 | 用户决策；已入 AGENTS.md §4.2 |
+| KD-10 | `0.1→0.2` bump；0.9 后是 0.10；1.0 保留正式发布 | 用户决策；已入 AGENTS.md §4.2；runtime exact-identity 比较由 M2 Task 8.2 supersede |
 | KD-11 | 三相执行（合并波 → 统一波 → 验收） | merge 与 refactor 分离，各自可审 |
 | KD-12 | 策略字段可显式携带缺省值 | 基线 19 条保留显式回填便于审计；新条目从简；总线以缺省值为准 |

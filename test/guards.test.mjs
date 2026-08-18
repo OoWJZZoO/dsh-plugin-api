@@ -80,10 +80,13 @@ test('runtime version mismatch is a core failure', () => {
   assert.ok(result.coreProblems.some((p) => p.name === 'runtime version'))
 })
 
-test('runtime match ignores patch and prerelease differences', () => {
-  // built for 0.1.0-rc.6, installed 0.1.0 (same major.minor) => compatible
-  const result = runCoreGuard(healthyCtx(), { apiVersion: '0.3', facadeVersion: '0.1.0-rc.6-0.3', runtimeVersion: '0.1.0' })
-  assert.equal(result.ok, true)
+test('runtime matching requires the exact full audited version while API protocol remains separate', () => {
+  assert.equal(runCoreGuard(healthyCtx(), versions).ok, true)
+  for (const runtimeVersion of ['0.1.0-rc.7', '0.1.0', '0.1.1-rc.6']) {
+    const result = runCoreGuard(healthyCtx(), { ...versions, runtimeVersion })
+    assert.equal(result.ok, false, `runtimeVersion=${runtimeVersion}`)
+    assert.ok(result.coreProblems.some((problem) => problem.name === 'runtime version'))
+  }
 })
 
 test('unparseable or inconsistent facade version is a core failure', () => {
