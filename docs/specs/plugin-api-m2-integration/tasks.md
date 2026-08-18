@@ -103,7 +103,7 @@
   - 运行五个 M2 feature 的 guard/apply-focused tests、全部受影响 M1 host-order tests 及触及的 frozen guard/host tests；全部通过后才进入 7.2。
   - _Requirements: 4.1–4.9, 5.1–5.5, 5.9, 9.7, 11.6, 11.8_
 
-- [ ] 7.2 统一 19-key services namespace 与 definition-level compaction P4
+- [x] 7.2 统一 19-key services namespace 与 definition-level compaction P4
   - 将 `compaction` 作为 `SERVICE_DEFINITIONS` 第 19 个且最后一个静态 key；精确转发三个批准操作并保持 receiver、argument count/identity、return/timing/error identity。
   - 测试 incomplete/hostile compaction 只产生完整 definition-level P4 disabled facade，其他 18 个服务和 parent services 状态不受影响，且不泄露 backend-specific members。
   - 运行 compaction 与 M1 capabilities/services 的全部受影响 focused tests，以及触及的 frozen services/facade tests；全部通过后才进入 8.1。
