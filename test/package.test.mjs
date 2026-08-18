@@ -38,6 +38,20 @@ test('peerDependencies include the SV15 session-reference public export host pac
   assert.equal(typeof pkg.peerDependencies['@deepseek-ai/dsh-session-reference'], 'string')
 })
 
+test('peerDependencies declare every session durable public audit identity', () => {
+  for (const name of [
+    '@deepseek-ai/dsh-llm',
+    '@deepseek-ai/dsh-session',
+    '@deepseek-ai/dsh-user-approval',
+    '@deepseek-ai/dsh-schedule',
+    '@deepseek-ai/dsh-subagent',
+    '@deepseek-ai/dsh-subagent-in-process-driver',
+    '@deepseek-ai/dsh-agent-loop',
+  ]) {
+    assert.equal(pkg.peerDependencies[name], '^0.1.0-rc.6')
+  }
+})
+
 test('capability services feature adds no runtime dependencies', () => {
   assert.ok(!pkg.dependencies || Object.keys(pkg.dependencies).length === 0)
 })

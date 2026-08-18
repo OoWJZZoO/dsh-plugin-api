@@ -97,7 +97,7 @@ test('apply mounts agent after events and exposes a working registry read API', 
   assert.deepEqual(agents.getCalls, ['agent-1'])
 
   const features = state.pluginApi.features
-  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/admission', 'session', 'settings', 'systemPrompt', 'services'])
+  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/admission', 'session', 'sessionDurable', 'settings', 'systemPrompt', 'services'])
   assert.ok(features.every((f) => f.isActive), 'all features active (web seam satisfies the services guard)')
 })
 
@@ -108,7 +108,7 @@ test('agent guard failure disables only agent and keeps facade active', () => {
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 9)
+  assert.equal(features.length, 10)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.equal(features[2].name, 'agent')
@@ -119,9 +119,10 @@ test('agent guard failure disables only agent and keeps facade active', () => {
   assert.equal(features[4].isActive, false)
   assert.match(features[4].reason, /agents\.get/)
   assert.deepEqual(features[5], { name: 'session', isActive: true })
-  assert.deepEqual(features[6], { name: 'settings', isActive: true })
-  assert.deepEqual(features[7], { name: 'systemPrompt', isActive: true })
-  assert.deepEqual(features[8], { name: 'services', isActive: true })
+  assert.deepEqual(features[6], { name: 'sessionDurable', isActive: true })
+  assert.deepEqual(features[7], { name: 'settings', isActive: true })
+  assert.deepEqual(features[8], { name: 'systemPrompt', isActive: true })
+  assert.deepEqual(features[9], { name: 'services', isActive: true })
 
   for (const method of ['get', 'list', 'roots']) {
     assert.throws(
@@ -144,7 +145,7 @@ test('events guard failure does not block the agent registry read API', () => {
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 9)
+  assert.equal(features.length, 10)
   assert.equal(features[0].name, 'tools')
   assert.equal(features[0].isActive, true)
   assert.equal(features[1].name, 'events')
@@ -157,12 +158,14 @@ test('events guard failure does not block the agent registry read API', () => {
   assert.equal(features[4].isActive, true)
   assert.equal(features[5].name, 'session')
   assert.equal(features[5].isActive, false)
-  assert.equal(features[6].name, 'settings')
-  assert.equal(features[6].isActive, true)
-  assert.equal(features[7].name, 'systemPrompt')
+  assert.equal(features[6].name, 'sessionDurable')
+  assert.equal(features[6].isActive, false)
+  assert.equal(features[7].name, 'settings')
   assert.equal(features[7].isActive, true)
-  assert.equal(features[8].name, 'services')
+  assert.equal(features[8].name, 'systemPrompt')
   assert.equal(features[8].isActive, true)
+  assert.equal(features[9].name, 'services')
+  assert.equal(features[9].isActive, true)
 
   assert.equal(state.pluginApi.agent.get('agent-1').id, 'agent-1')
   assert.throws(

@@ -93,7 +93,11 @@ test('mountFeature injects the session API and unknown feature still throws', ()
 
   const sessionApi = { isActive: true, get() {}, list() {}, fork() {} }
   service.mountFeature('session', sessionApi)
-  assert.equal(service.session, sessionApi)
+  assert.equal(service.session.isActive, true)
+  assert.equal(service.session.get, sessionApi.get)
+  assert.equal(service.session.list, sessionApi.list)
+  assert.equal(service.session.fork, sessionApi.fork)
+  assert.throws(() => service.session.appendMessage(), PluginApiFeatureDisabledError)
 
   assert.throws(
     () => service.mountFeature('unknown/feature', {}),
