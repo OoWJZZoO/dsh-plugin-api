@@ -95,6 +95,7 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     { name: 'llm/request', isActive: true },
     { name: 'llm/admission', isActive: true },
     { name: 'session', isActive: true },
+    { name: 'sessionDurable', isActive: true },
     { name: 'execRoute', isActive: true },
     { name: 'settings', isActive: true },
     { name: 'systemPrompt', isActive: true },
@@ -159,7 +160,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-  assert.equal(features.length, 11)
+  assert.equal(features.length, 12)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -169,10 +170,11 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.equal(features[5].isActive, false)
   assert.match(features[5].reason, /apiProxy/)
   assert.deepEqual(features[6], { name: 'session', isActive: true })
-  assert.deepEqual(features[7], { name: 'execRoute', isActive: true })
-  assert.deepEqual(features[8], { name: 'settings', isActive: true })
-  assert.deepEqual(features[9], { name: 'systemPrompt', isActive: true })
-  assert.deepEqual(features[10], { name: 'services', isActive: true })
+  assert.deepEqual(features[7], { name: 'sessionDurable', isActive: true })
+  assert.deepEqual(features[8], { name: 'execRoute', isActive: true })
+  assert.deepEqual(features[9], { name: 'settings', isActive: true })
+  assert.deepEqual(features[10], { name: 'systemPrompt', isActive: true })
+  assert.deepEqual(features[11], { name: 'services', isActive: true })
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),

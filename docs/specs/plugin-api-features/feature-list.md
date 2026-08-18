@@ -44,6 +44,7 @@
 | Feature | 外部 API | 范围 | 状态 |
 |---|---|---|---|
 | `plugin-api-semantic-hooks-m2` | 无；不增加 namespace、catalog slice 或 concrete B hook | B 类语义转译的分类、lifecycle、P1–P4、owner-local re-entry/durable 边界，以及首个 B 集成门槛；具体 L4、A9/T10、S2 仍待独立 spec。 | **delivered** |
+| `plugin-api-session-durable-m2` | `pluginApi.session` durable observation 与受限 `appendMessage` host overlay；不增加 client、remote 或 catalog surface | S2/O8/O13/O14 的 host-only durable observation/append 能力；`sessionDurable` P2 epoch rollback 与 stale-cleanup protection；运行时及七个 audited package identity 固定为 `0.1.0-rc.6`；consumer migration acceptance 明确 deferred 至独立获批的 consumer worktree/spec。 | **delivered** |
 
 ### 1.4 关键源码依据（缩写）
 
@@ -150,7 +151,7 @@
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
 | S1 会话生命周期事件 | `session/created`、`session/disposed`、`session/event`、`session/flush` 类型化订阅 | A | `dsh-session/lib/types/index.d.ts:44-75` | M1 | **delivered** |
-| S2 上屏事件构造 helper | `session.appendMessage(kind, payload)`：自动补齐 `surfaceOp: 'append'` 与 `sourceEventSeqs`，拒绝非法 surface 事件形状 | B | `dsh-session` `append` 上屏契约；dsh-pro-ex-ability-anchor 第 4 条不变量 | M2 | planned |
+| S2 上屏事件构造 helper | `session.appendMessage(kind, payload)`：自动补齐 `surfaceOp: 'append'` 与 `sourceEventSeqs`，拒绝非法 surface 事件形状；仅允许 `user/message`、`assistant/message`、`tool/result` | B | `dsh-session` `append` 上屏契约；dsh-pro-ex-ability-anchor 第 4 条不变量；spec `plugin-api-session-durable-m2` | M2 | **delivered** |
 | S3 会话读面 | `session.get(id)`、`session.list()`、`session.fork(source, boundary?, childId?)` 稳定直通 | A | `dsh-session/lib/types/index.d.ts:315-413` | M1 | **delivered** |
 | S4 会话状态访问器 | `session.header/events/seq/surface`、`requestHeader()`、`requestContext()`、`deriveMessages()` 的稳定只读访问 | A | `dsh-session/lib/types/index.d.ts:106-267` | M1 | **delivered** |
 | S5 会话事件目录 | `sessionEventTypes` / `surfaceEventTypes` 常量与类型守卫 | A | `dsh-session` `known-event-types`（`session/end-seed`、`session/title` 等） | M1 | **delivered** |
@@ -224,13 +225,13 @@
 | O5 子代理 provider | `subagent/provider-added`（payload `provider`）、`subagent/provider-removed`（payload `providerName`） | A | `dsh-subagent/lib/index.js:2474-2476` | M1 | **delivered** |
 | O6 工作流事件 | `workflow/start|phase|log|agent-start|agent-end|end`（payload 见 `dsh-workflow-worker-thread` 各 emit 点） | A | `dsh-workflow-worker-thread/lib/index.js:895-909` | M1 | **delivered** |
 | O7 审批请求瀑布 | `approval/request`（waterfall；payload `req {agent, toolName, callId?, reason?, signal}`；outcome `allowed-once|rejected|cancelled|unavailable`，fail-closed） | A | `dsh-user-approval/lib/index.js:189`；scope 权威表 `dsh-scope/lib/invariant.js` | M1 | **delivered** |
-| O8 审批 durable 事件 | `approval/policy|asked|decided`（session-log 事件，非 ctx 事件） | A | `dsh-user-approval/lib/index.js:78,148,155` | M2 | planned |
+| O8 审批 durable 事件 | `approval/policy|asked|decided`（session-log 事件，非 ctx 事件） | A | `dsh-user-approval/lib/index.js:78,148,155`；spec `plugin-api-session-durable-m2` | M2 | **delivered** |
 | O9 命令变更 | `commands/change`（emit） | A | `dsh-commands/lib/index.js:348` | M1 | **delivered** |
 | O10 技能变更 | `skills/change`（emit） | A | `dsh-skill/lib/index.js:404` | M1 | **delivered** |
 | O11 凭据更新 | `credentials/updated`（emit） | A | `dsh-credentials/lib/index.js:45` | M1 | **delivered** |
 | O12 目标变更 | `goal/changed`（agent-scoped emit；payload `{agent, change}`） | A | `dsh-goal/index.js:793`；`dsh-scope` 权威表 | M1 | **delivered** |
-| O13 调度 durable 事件 | `schedule/change`（session-log 事件；payload `{version:1, operation: create|delete|dispatch}`） | A | `dsh-schedule/lib/index.js:310-357` | M2 | planned |
-| O14 子代理 descriptor | `subagent/descriptor`（session-log 事件，非 ctx 事件） | A | `dsh-subagent/lib/index.js:640` | M2 | planned |
+| O13 调度 durable 事件 | `schedule/change`（session-log 事件；payload `{version:1, operation: create|delete|dispatch}`） | A | `dsh-schedule/lib/index.js:310-357`；spec `plugin-api-session-durable-m2` | M2 | **delivered** |
+| O14 子代理 descriptor | `subagent/descriptor`（session-log 事件，非 ctx 事件） | A | `dsh-subagent/lib/index.js:640`；spec `plugin-api-session-durable-m2` | M2 | **delivered** |
 | O15 Web 检索/抓取 provider | `services.web.registerSearchProvider(provider)`、`services.web.registerFetchProvider(provider)` 稳定直通（`plugin-api-m1-integration` 任务 2.9 起经 `pluginApi.services.web` 提供；原顶层 `pluginApi.web` 已移除） | A | `dsh-web/lib/index.js:67-77` | M1 | **delivered** |
 | O16 会话遥测记录 | `session-telemetry/record`（waterfall；payload `{record}`） | A | `dsh-session-telemetry/lib/index.js:174` | M1 | **delivered** |
 

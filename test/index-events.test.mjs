@@ -156,7 +156,7 @@ test('events guard failure disables only events and keeps facade active', () => 
 
 
 
-  assert.equal(features.length, 11)
+  assert.equal(features.length, 12)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.equal(features[1].name, 'events')
   assert.equal(features[1].isActive, false)
@@ -167,11 +167,13 @@ test('events guard failure disables only events and keeps facade active', () => 
   assert.deepEqual(features[5], { name: 'llm/admission', isActive: true })
   assert.equal(features[6].name, 'session')
   assert.equal(features[6].isActive, false)
-  assert.equal(features[7].name, 'execRoute')
+  assert.equal(features[7].name, 'sessionDurable')
   assert.equal(features[7].isActive, false)
-  assert.deepEqual(features[8], { name: 'settings', isActive: true })
-  assert.deepEqual(features[9], { name: 'systemPrompt', isActive: true })
-  assert.deepEqual(features[10], { name: 'services', isActive: true })
+  assert.equal(features[8].name, 'execRoute')
+  assert.equal(features[8].isActive, false)
+  assert.deepEqual(features[9], { name: 'settings', isActive: true })
+  assert.deepEqual(features[10], { name: 'systemPrompt', isActive: true })
+  assert.deepEqual(features[11], { name: 'services', isActive: true })
 
   assert.throws(
     () => state.pluginApi.events.on('goal/changed', () => {}),
@@ -192,7 +194,7 @@ test('web service absence disables the services feature when no other capability
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
 
-  assert.equal(features.length, 11)
+  assert.equal(features.length, 12)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -200,12 +202,13 @@ test('web service absence disables the services feature when no other capability
   assert.deepEqual(features[4], { name: 'llm/request', isActive: true })
   assert.deepEqual(features[5], { name: 'llm/admission', isActive: true })
   assert.deepEqual(features[6], { name: 'session', isActive: true })
-  assert.deepEqual(features[7], { name: 'execRoute', isActive: true })
-  assert.deepEqual(features[8], { name: 'settings', isActive: true })
-  assert.deepEqual(features[9], { name: 'systemPrompt', isActive: true })
-  assert.equal(features[10].name, 'services')
-  assert.equal(features[10].isActive, false)
-  assert.match(features[10].reason, /capability services/)
+  assert.deepEqual(features[7], { name: 'sessionDurable', isActive: true })
+  assert.deepEqual(features[8], { name: 'execRoute', isActive: true })
+  assert.deepEqual(features[9], { name: 'settings', isActive: true })
+  assert.deepEqual(features[10], { name: 'systemPrompt', isActive: true })
+  assert.equal(features[11].name, 'services')
+  assert.equal(features[11].isActive, false)
+  assert.match(features[11].reason, /capability services/)
 
   // the disabled services namespace throws typed errors for web too
   assert.throws(
