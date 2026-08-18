@@ -41,7 +41,7 @@
   - 运行 session-durable focused tests 及本步触及的 session/events/shared host tests，红测清零后才继续。
   - _Requirements: 2.1–2.7, 3.5, 4.3, 7.9–7.10, 8.5–8.7, 11.1, 15.5_
 
-- [ ] 2.5 合并 `feature/plugin-api-exec-route-m2`
+- [x] 2.5 合并 `feature/plugin-api-exec-route-m2`
   - 保留唯一 route owner、native pre-execute capture 与 feature-local tests；在冲突记录中明确旧 `agents` guard probe 和 `events/agent` mounter 依赖待统一波 supersede。
   - 运行 exec-route focused tests 及本步触及的 tools/agent/session/shared host tests；确认五分支 merge wave 全绿后才进入统一波。
   - _Requirements: 2.1–2.7, 3.2–3.4, 4.4, 5.7, 7.8, 7.10, 8.4, 11.1, 15.4_
