@@ -48,7 +48,7 @@
 
 ## 3. 统一 facade composition 与 prepared publication
 
-- [ ] 3.1 以测试先行方式重建唯一 `PluginApiService` composition authority
+- [x] 3.1 以测试先行方式重建唯一 `PluginApiService` composition authority
   - 先新增失败测试，覆盖 additive agent/tools/llm/session composition、稳定 disabled presentation、retained references、不可变形状、identity-bound token 以及旧 disposer 不得覆盖新 epoch。
   - 统一 `lib/plugin-api-service.js` 的 feature slots、agent composer、route delegate、durable overlay 和 services assignment；任何 mounter 都不得独立替换完整公共 namespace。
   - 运行 agent-create、exec-route、LLM、session-durable、compaction 的 facade-focused tests 及所有触及的 frozen facade tests；全部通过后才进入 3.2。
