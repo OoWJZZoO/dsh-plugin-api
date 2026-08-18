@@ -333,6 +333,30 @@ test('stable hub keeps one native entry, contains listener failures, and stops a
   assert.equal(eventsApi.listeners.length, 1, 'breach must not dispose or reconcile the native hook during dispatch')
 })
 
+test('stable hub validates known durable records even without a matching observer, but ignores ordinary session events', () => {
+  const makeActiveHub = () => {
+    const { session, sessions } = createLiveSession()
+    const eventsApi = createEventsApi()
+    const resets = []
+    const owner = createDurableEpochRegistrationOwner()
+    const hub = createDurableObservationHub({ eventsApi })
+    const api = createSessionDurableApi({
+      Session, sessions, eventsApi, contracts: durableContracts, owner, hub,
+      reset(diagnostic) { resets.push(diagnostic) },
+    })
+    return { session, eventsApi, resets, api }
+  }
+
+  const malformed = makeActiveHub()
+  malformed.api.onDurable(malformed.session, 'approval/policy', () => assert.fail('wrong kind must not deliver'))
+  malformed.eventsApi.emit(malformed.session, durableEvent('approval/asked', { id: 1, toolName: 'x' }, malformed.session.firstLiveSeq))
+  assert.deepEqual(malformed.resets, [{ kind: 'approval/asked', seq: malformed.session.firstLiveSeq, reason: 'durable-record-contract-breach' }])
+
+  const ordinary = makeActiveHub()
+  ordinary.eventsApi.emit(ordinary.session, Object.freeze({ type: 'user/message', seq: ordinary.session.firstLiveSeq, time: 0, data: {} }))
+  assert.deepEqual(ordinary.resets, [])
+})
+
 test('direct official malformed durable append publishes raw but resets durable without payload diagnostics', () => {
   const ctx = new Context()
   new SessionStore(ctx)
