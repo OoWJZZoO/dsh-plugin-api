@@ -117,7 +117,7 @@
   - 运行 M1 events/session/tools/agent/LLM/system-prompt/settings catalog tests、session-durable catalog tests、services shape tests 及触及的 frozen catalog tests；全部通过后才进入 8.2。
   - _Requirements: 8.1–8.9, 11.4–11.7, 14.4, 15.1_
 
-- [ ] 8.2 将 facade/package/version contract 统一到 API `0.3`
+- [x] 8.2 将 facade/package/version contract 统一到 API `0.3`
   - 更新 `package.json.version` 为 `0.1.0-rc.6-0.3`、`dsh.api` 为 `0.3`，合并全部 audit-only peer dependencies 且不增加无关 runtime dependency。
   - 更新 runtime↔facade 与 plugin↔API 两方向兼容测试、数字 minor progression、runtime mismatch fail-safe 及所有仓库内 version assertions。
   - 运行 foundation/version/package tests、全部因 peer metadata 变化受影响的 M2 guard tests 及触及的 frozen compatibility tests；全部通过后才进入 9.1。
