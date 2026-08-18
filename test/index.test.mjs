@@ -95,6 +95,7 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     { name: 'llm/request', isActive: true },
     { name: 'llm/admission', isActive: true },
     { name: 'session', isActive: true },
+    { name: 'execRoute', isActive: true },
     { name: 'settings', isActive: true },
     { name: 'systemPrompt', isActive: true },
     { name: 'services', isActive: true },
@@ -158,7 +159,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-  assert.equal(features.length, 10)
+  assert.equal(features.length, 11)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -168,9 +169,10 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.equal(features[5].isActive, false)
   assert.match(features[5].reason, /apiProxy/)
   assert.deepEqual(features[6], { name: 'session', isActive: true })
-  assert.deepEqual(features[7], { name: 'settings', isActive: true })
-  assert.deepEqual(features[8], { name: 'systemPrompt', isActive: true })
-  assert.deepEqual(features[9], { name: 'services', isActive: true })
+  assert.deepEqual(features[7], { name: 'execRoute', isActive: true })
+  assert.deepEqual(features[8], { name: 'settings', isActive: true })
+  assert.deepEqual(features[9], { name: 'systemPrompt', isActive: true })
+  assert.deepEqual(features[10], { name: 'services', isActive: true })
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),
@@ -183,6 +185,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.equal(typeof services.llm.resolveModelInfo, 'function')
   // The request owner stays available; admission disabled without a gateway.
   assert.equal(state.listeners.filter((l) => l.name === 'llm/stream').length, 1)
+  assert.equal(state.listeners.filter((l) => l.name === 'tools/pre-execute').length, 1)
 })
 
 test('repeated apply reuses the existing branded service and does not provide twice', () => {

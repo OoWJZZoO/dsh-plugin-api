@@ -27,6 +27,16 @@ export function apply(ctx) {
 - `ctx.pluginApi.features`：各 feature 的启用/禁用快照，例如 `[{ name: 'llm/admission', isActive: true }]`。
 - `ctx.pluginApi.assertCompatible(requirement, pluginName?)`：插件对门面的版本协商；不满足时抛出 `PluginApiVersionError`，插件应捕获后自行 fail-safe。
 
+### Agent 创建与 provider 生命周期（A11，host-only）
+
+当 `pluginApi.agent` 与 M1 注册表读面启用时，门面提供以下受支持的 host API：
+
+- Consumer：`agent.create(options)`、`agent.resume(options)`、`agent.register(agent)`。
+- Advanced provider：`agent.provider.enter(agent, owner)`、`agent.provider.announce(agent)`、`agent.provider.setFactory(factory)`。这些是受支持的有序 provider 生命周期原语，不是普通插件的推荐创建入口。
+- `agent.availability`：只读、冻结的 `{ create, resume, register, provider: { enter, announce, setFactory } }` 六叶能力矩阵；`agent.provider.isActive` 仅在三个 provider 成员都可用时为 `true`。
+
+A11 成员是官方 AgentRegistry 的 A 类同参直通。调用从消费者的 Cordis context 解析 `agents`，保留精确参数、官方 receiver、同步返回值、registry Promise、`AgentHandle`、Agent、disposer、官方错误、生命周期发布和 teardown 行为；门面不包装或拦截返回的 handle/disposer。成员级探测或调用前解析失败只将对应成员降级为 `PluginApiFeatureDisabledError('agent', ...)`，并保留其他已验证成员。core inactive 仍优先抛出 P1，M1 whole-agent guard 失败时为 P2；factory 缺失或 provider slot 被占用属于官方调用时结果，不改变 availability。
+
 ## 逃生舱（unsupported escape hatch）
 
 第三方插件**可以**绕过门面直接 `import` / `inject` `@deepseek-ai/dsh-*` 内部包。门面不拦截、不 patch、不 block 这种直连。
