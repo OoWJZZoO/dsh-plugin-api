@@ -124,7 +124,8 @@ test('mountFeature("llm/request", api) installs only the request surface', () =>
 
   assert.equal(service.llm.request, requestApi)
   assert.equal(service.llm.isActive, false)
-  assert.equal(service.llm.admission.isActive, false)
+  // admission.isActive is retired; the disabled surface exposes only register.
+  assert.equal('isActive' in service.llm.admission, false)
 })
 
 test('mountFeature("llm") does not overwrite an already-mounted admission surface', () => {
