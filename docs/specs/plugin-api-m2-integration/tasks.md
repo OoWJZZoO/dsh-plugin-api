@@ -80,7 +80,7 @@
 
 ## 6. 用 stable observation hub 统一 session durable 生命周期
 
-- [ ] 6.1 以测试先行方式实现 service-lifetime durable observation hub
+- [x] 6.1 以测试先行方式实现 service-lifetime durable observation hub
   - 用一个 native `session/event` entry 和 epoch-local ordered observer maps 替代 worktree 的 per-epoch subscription；`onDurable`/`onceDurable` disposer 只操作 identity-bound private entries。
   - 每次进入用户 listener 前重检 hub/current epoch/state/entry；覆盖 once-before-call、registration order、同步 throw/异步 rejection containment，以及 observer 触发 nested breach 后停止外层 snapshot 后续交付。
   - breach 仅 CAS-detach 当前 epoch、P2-disable、清空私有 observers，不在同步、异步、parallel 或 nested dispatch 中 dispose/reconcile events-bus hooks。
