@@ -126,6 +126,48 @@ test('hostile compaction member inspection degrades locally without interrupting
   assert.equal(loggerMessages.length, 1)
 })
 
+test('an incomplete compaction target is one sealed definition-level P4 facade while all static peers remain active', () => {
+  let officialCalls = 0
+  const incomplete = {
+    compactIfNeeded() { officialCalls += 1 },
+    compactNow() { officialCalls += 1 },
+    // `compactRegion` is deliberately absent: the whole declared definition,
+    // not only the missing member, must degrade to P4.
+    backendOnly() { officialCalls += 1 },
+    scheduler: { queued: true },
+  }
+  const services = createServicesNamespace({
+    ctx: fullCtx({
+      get(name, byService) {
+        return name === 'compaction' ? incomplete : byService[name]
+      },
+    }),
+    active: true,
+    uriHelpers: URI_HELPERS,
+  })
+
+  assert.deepEqual(Object.keys(services), SERVICES_NAMESPACE_KEYS)
+  assert.equal(services.compaction.isActive, false)
+  assert.deepEqual(Object.keys(services.compaction), [
+    'isActive',
+    'compactIfNeeded',
+    'compactNow',
+    'compactRegion',
+  ])
+  assert.equal('backendOnly' in services.compaction, false)
+  assert.equal('scheduler' in services.compaction, false)
+  for (const name of ['compactIfNeeded', 'compactNow', 'compactRegion']) {
+    assert.throws(
+      () => services.compaction[name]({ marker: name }),
+      (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.compaction',
+    )
+  }
+  assert.equal(officialCalls, 0)
+  for (const key of SERVICES_NAMESPACE_KEYS) {
+    if (key !== 'compaction') assert.equal(services[key].isActive, true, `${key} stays active`)
+  }
+})
+
 test('facade values are observably disabled per service when one official service is missing', () => {
   const missing = 'fs'
   const services = createServicesNamespace({
