@@ -16,8 +16,8 @@
 
 ## Audit
 
-The W1 reviewer slot was unavailable, so the coordinator self-audited the C8
-batch against the approved contract and the official Typert registry/protocol
-declarations. No contract deviation was found. Shared services composition,
+The W1 adversarial review found and the batch corrected the missing official
+`TYPERT` artifact, missing peer dependencies, raw error detail logging, and
+cached nested registry views. Shared services composition,
 `lib/index.js`, `lib/plugin-api-service.js`, and official DSH files were not
 modified.

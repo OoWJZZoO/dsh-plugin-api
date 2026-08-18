@@ -23,7 +23,7 @@ test('defineManifest copies and freezes inject while preserving immediately', ()
 
 test('defineManifest rejects malformed official fields before side effects', () => {
   assert.throws(() => defineManifest(null), /must be an object/)
-  assert.throws(() => defineManifest({ platform: 'node' }), /platform.*web/)
+  assert.throws(() => defineManifest({ platform: '' }), /platform.*non-empty string/)
   assert.throws(() => defineManifest({ platform: 'web', inject: 'bad' }), /inject.*string array/)
   assert.throws(() => defineManifest({ platform: 'web', inject: ['ok', 1] }), /inject.*string array/)
   assert.throws(() => defineManifest({ platform: 'web', immediately: 'yes' }), /immediately.*boolean/)
@@ -32,7 +32,7 @@ test('defineManifest rejects malformed official fields before side effects', () 
 test('isManifest is a side-effect-free shape predicate and ignores unknown metadata', () => {
   assert.equal(isManifest({ platform: 'web', extra: 'ignored' }), true)
   assert.equal(isManifest({ platform: 'web', inject: ['a'], immediately: false }), true)
-  assert.equal(isManifest({ platform: 'node' }), false)
+  assert.equal(isManifest({ platform: 'node' }), true)
   assert.equal(isManifest({ platform: 'web', inject: [1] }), false)
   assert.equal(isManifest({ platform: 'web', immediately: 1 }), false)
 })

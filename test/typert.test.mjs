@@ -88,7 +88,8 @@ test('malformed or throwing registry is contained locally', () => {
     logger: { error(message) { logs.push(message) } },
   })
   assert.equal(throwing.isActive, false)
-  assert.match(logs.at(-1), /private detail/)
+  assert.doesNotMatch(logs.at(-1), /private detail/)
+  assert.match(logs.at(-1), /error/)
 })
 
 test('package exports expose the Typert artifact boundary without changing official loader files', () => {
