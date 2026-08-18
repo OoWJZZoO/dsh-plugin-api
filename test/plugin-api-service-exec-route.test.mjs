@@ -43,7 +43,7 @@ test('agent and tools routeOf share the mounted owner outcome without tools look
   const snapshot = Object.freeze({ provider: 'provider-a', model: 'model-a' })
   const token = service.mountFeature('execRoute', { routeOf(received) { return received === exec ? snapshot : undefined } })
   service.mountFeature('tools', { isActive: true })
-  service.mountFeature('agent', { isActive: true, get() {}, list() {}, roots() {} })
+  service.mountFeature('agent', () => ({ isActive: true, get() {}, list() {}, roots() {}, routeOf: (received) => service._execRouteDelegate(received) }))
   const lookupsBeforeRoute = getCalls.length
 
   assert.equal(service.agent.routeOf(exec), snapshot)
@@ -105,8 +105,8 @@ test('execRoute P2 diagnostic failures remain inert', () => {
 
 test('existing agent and tools forwarding remains available after execRoute additions', () => {
   const { service } = createService()
-  const agentApi = { isActive: true, get: () => 'agent', list: () => [], roots: () => [] }
-  service.mountFeature('agent', agentApi)
+  const agentApi = { isActive: true, get: () => 'agent', list: () => [], roots: () => [], routeOf: (exec) => service._execRouteDelegate(exec) }
+  service.mountFeature('agent', () => agentApi)
 
   assert.equal(service.agent.get(), 'agent')
   assert.deepEqual(service.agent.list(), [])

@@ -94,6 +94,7 @@ test('apply with healthy ctx registers active service and mounts llm/admission',
     { name: 'llm', isActive: true },
     { name: 'llm/admission', isActive: true },
     { name: 'session', isActive: true },
+    { name: 'execRoute', isActive: true },
     { name: 'settings', isActive: true },
     { name: 'systemPrompt', isActive: true },
     { name: 'services', isActive: true },
@@ -155,7 +156,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-  assert.equal(features.length, 9)
+  assert.equal(features.length, 10)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -164,9 +165,10 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.equal(features[4].isActive, false)
   assert.match(features[4].reason, /apiProxy/)
   assert.deepEqual(features[5], { name: 'session', isActive: true })
-  assert.deepEqual(features[6], { name: 'settings', isActive: true })
-  assert.deepEqual(features[7], { name: 'systemPrompt', isActive: true })
-  assert.deepEqual(features[8], { name: 'services', isActive: true })
+  assert.deepEqual(features[6], { name: 'execRoute', isActive: true })
+  assert.deepEqual(features[7], { name: 'settings', isActive: true })
+  assert.deepEqual(features[8], { name: 'systemPrompt', isActive: true })
+  assert.deepEqual(features[9], { name: 'services', isActive: true })
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),
@@ -177,7 +179,8 @@ test('feature guard failure disables only llm/admission and keeps the facade act
     },
   )
   assert.equal(typeof services.llm.resolveModelInfo, 'function')
-  assert.equal(state.listeners.length, 0)
+  assert.equal(state.listeners.length, 1)
+  assert.equal(state.listeners[0].name, 'tools/pre-execute')
 })
 
 test('repeated apply reuses the existing branded service and does not provide twice', () => {
