@@ -22,7 +22,7 @@
 
 ### 1. Define the static SV17 contract and baseline namespace shape
 
-- [ ] 1.1 Update `test/services-definitions.test.mjs` and
+- [x] 1.1 Update `test/services-definitions.test.mjs` and
   `test/services-namespace.test.mjs` first to declare the 19-key namespace
   contract.
   - Assert the stable key order ends with `compaction`, and that no additional
@@ -40,7 +40,7 @@
   - References: `requirements.md` §1 AC 1, 3-6; §2; §3 AC 1-2; `design.md`
     §3.1, §6.
 
-- [ ] 1.2 Update `lib/services.js` by appending the approved static
+- [x] 1.2 Update `lib/services.js` by appending the approved static
   `compaction` definition to `SERVICE_DEFINITIONS`.
   - Reuse the existing generic definition/facade machinery. Do not add a
     compaction-specific builder, runtime property enumeration, class/package
@@ -54,7 +54,7 @@
 
 ### 2. Preserve transparent compaction passthrough behavior
 
-- [ ] 2.1 Extend `test/services-passthrough.test.mjs` with compaction-specific
+- [x] 2.1 Extend `test/services-passthrough.test.mjs` with compaction-specific
   call-recording mocks before relying on the generic implementation.
   - Verify each declared operation delegates with the official service as
     `this`, forwards all supplied values by identity and in order, and returns
@@ -70,7 +70,7 @@
   - References: `requirements.md` §2 AC 1-7, §6 AC 2; `design.md` §2.2,
     §3.1, §5.
 
-- [ ] 2.2 Confirm the generic `buildActiveFacade()` method delegation satisfies
+- [x] 2.2 Confirm the generic `buildActiveFacade()` method delegation satisfies
   the new tests; make only the narrowly required shared-factory correction if
   the test demonstrates a gap.
   - Preserve rest-argument delegation so omitted optional trailing arguments
@@ -81,7 +81,7 @@
 
 ### 3. Implement per-definition build containment and disabled facades
 
-- [ ] 3.1 Extend `test/services-optional-member.test.mjs`,
+- [x] 3.1 Extend `test/services-optional-member.test.mjs`,
   `test/services-disabled.test.mjs`, and `test/services-namespace.test.mjs`
   with SV17 degradation cases before implementation.
   - With active `services`, verify a missing or non-callable declared method
@@ -103,7 +103,7 @@
   - References: `requirements.md` §3 AC 1-6; §4 AC 1-3, 5-6; §6 AC 3-6;
     `design.md` §3.2, §5-6.
 
-- [ ] 3.2 Strengthen `createServicesNamespace()` in `lib/services.js` with the
+- [x] 3.2 Strengthen `createServicesNamespace()` in `lib/services.js` with the
   approved per-definition active-facade construction boundary.
   - Keep `safeGet()` as the resolution boundary. For each resolved service,
     contain member inspection or facade-construction exceptions, issue a
@@ -119,7 +119,7 @@
 
 ### 4. Exercise definition-derived guard, pre-mount, and apply behavior
 
-- [ ] 4.1 Update `test/guards.test.mjs` and `test/plugin-api-service.test.mjs`
+- [x] 4.1 Update `test/guards.test.mjs` and `test/plugin-api-service.test.mjs`
   for the 19-definition services contract.
   - Verify a complete compaction service as the only resolvable official
     capability makes `runFeatureGuard('services')` pass.
@@ -131,7 +131,7 @@
   - References: `requirements.md` §1 AC 2; §4 AC 3-4; §6 AC 6-7;
     `design.md` §3.3-3.4, §5-6.
 
-- [ ] 4.2 Make only the test/cardinality expectation updates required by the
+- [x] 4.2 Make only the test/cardinality expectation updates required by the
   existing definition-driven `lib/guards.js` and `lib/plugin-api-service.js`
   behavior to satisfy Task 4.1.
   - The added static definition updates their derived behavior automatically;
@@ -141,7 +141,7 @@
   - Run `node --test test/guards.test.mjs test/plugin-api-service.test.mjs`.
   - References: `requirements.md` §1, §4; `design.md` §3.3-3.4.
 
-- [ ] 4.3 Extend `test/index-services.test.mjs` with host-apply isolation
+- [x] 4.3 Extend `test/index-services.test.mjs` with host-apply isolation
   coverage and implement only corrections exposed by that test.
   - With only a complete compaction mock available, assert `services` mounts
     active, compaction is active, all other 18 unavailable capability facades
@@ -158,7 +158,7 @@
 
 ### 5. Run full regression suite and register the delivered feature
 
-- [ ] 5.1 Run `node --test` for the entire repository after Tasks 1-4 pass.
+- [x] 5.1 Run `node --test` for the entire repository after Tasks 1-4 pass.
   - Resolve only regressions caused by the approved SV17 implementation. Keep
     the work limited to the design's existing services infrastructure and
     listed tests.
@@ -166,7 +166,7 @@
     the injected service only and imports neither compaction package.
   - References: `requirements.md` §5; §6 AC 1-8; `design.md` §3.5, §6.
 
-- [ ] 5.2 After the full suite passes, update the delivered-feature records.
+- [x] 5.2 After the full suite passes, update the delivered-feature records.
   - Update `docs/specs/plugin-api-features/feature-list.md`: mark SV17
     `delivered`, replace the stale Basic-only `summarize()` sketch with the
     three public abstract operations, state that `compaction/*` is not exposed
