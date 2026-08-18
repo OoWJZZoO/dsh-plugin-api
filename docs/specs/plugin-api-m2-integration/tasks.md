@@ -62,7 +62,7 @@
 
 ## 4. 统一 L2/L4 请求与准入链
 
-- [ ] 4.1 集成唯一 L4 owner、L2 gateway 及其原子降级关系
+- [x] 4.1 集成唯一 L4 owner、L2 gateway 及其原子降级关系
   - 先更新 combined tests，覆盖 L4-before-L2、registration snapshot、unchanged continuation、至多一次 marked public re-entry、foreign marker/AbortSignal identity、nested/concurrent isolation、convergence fail-closed 和 terminal error identity。
   - 删除或退役旧 admission/projection owner；将 `resolveModelInfo` exactly-one wrapper 的唯一权威迁至 L2 scoped gateway，并替换所有被 supersede 的旧断言。
   - 保留 L4 可独立 active、L2 依赖 L4 的批准降级关系，不新增事件 catalog 条目或公共异步 rewrite。
