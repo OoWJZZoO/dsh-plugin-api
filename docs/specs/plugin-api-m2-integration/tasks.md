@@ -125,7 +125,7 @@
 
 ## 9. 完成 combined lifecycle 与全仓回归
 
-- [ ] 9.1 补齐共享 facade/host fail-safe 测试矩阵
+- [x] 9.1 补齐共享 facade/host fail-safe 测试矩阵
   - 覆盖 P1–P4 precedence、每个 guard/mount/publication boundary、malformed/throwing substrate、registration/diagnostic/disposer failure、repeated apply/dispose、stale epochs、nested/concurrent B operations、retained references 和 unrelated-feature survival。
   - 覆盖 additive public shapes、single authorities、无重复 hooks/wrappers/facade construction，以及所有范围排除项未进入公开 API。
   - 运行所有 M2 focused tests、未受影响 M0/M1 回归和 repository-root `node --test`，修复整合引入的红测但不夹带新功能。
