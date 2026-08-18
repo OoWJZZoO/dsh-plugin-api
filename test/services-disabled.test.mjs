@@ -9,6 +9,7 @@ import {
 import { PluginApiFeatureDisabledError, PluginApiInactiveError } from '../lib/errors.js'
 
 const def = SERVICE_DEFINITIONS.find((d) => d.key === 'fs')
+const compactionDef = SERVICE_DEFINITIONS.find((d) => d.key === 'compaction')
 
 test('disabled facade throws inactive error when core is inactive', () => {
   const facade = buildDisabledFacade(def, () => false, 'test reason')
@@ -77,6 +78,112 @@ test('per-service degradation facade does not call into official services', () =
   const services = createServicesNamespace({ ctx, active: true })
   assert.equal(services.fs.isActive, false)
   assert.throws(() => services.fs.readText({}), PluginApiFeatureDisabledError)
+  assert.equal(officialCalls, 0)
+})
+
+test('compaction P4 facade reports services.compaction without official calls', () => {
+  let calls = 0
+  const services = createServicesNamespace({
+    ctx: {
+      get(name) {
+        if (name === 'compaction') return undefined
+        if (name === 'fs') {
+          return {
+            get sandboxMode() { return 'sandboxed' },
+            resolve() { calls += 1 },
+            processPath() {},
+            fileUrl() {},
+            contains() {},
+            stat() {},
+            lstat() {},
+            readText() {},
+            streamText() {},
+            readBytes() {},
+            listDir() {},
+            writeText() {},
+            editText() {},
+          }
+        }
+        return undefined
+      },
+    },
+    active: true,
+  })
+
+  assert.equal(services.compaction.isActive, false)
+  for (const name of compactionDef.members.map((member) => member.name)) {
+    assert.throws(
+      () => services.compaction[name](),
+      (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.compaction',
+    )
+  }
+  assert.equal(calls, 0)
+})
+
+test('throwing compaction lookup degrades only compaction as P4', () => {
+  const services = createServicesNamespace({
+    ctx: {
+      get(name) {
+        if (name === 'compaction') throw new Error('lookup failed')
+        if (name === 'fs') {
+          return {
+            sandboxMode: 'sandboxed',
+            resolve() {},
+            processPath() {},
+            fileUrl() {},
+            contains() {},
+            stat() {},
+            lstat() {},
+            readText() {},
+            streamText() {},
+            readBytes() {},
+            listDir() {},
+            writeText() {},
+            editText() {},
+          }
+        }
+        return undefined
+      },
+    },
+    active: true,
+  })
+
+  assert.equal(services.fs.isActive, true)
+  assert.equal(services.compaction.isActive, false)
+  assert.throws(
+    () => services.compaction.compactIfNeeded(),
+    (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.compaction',
+  )
+})
+
+test('mounted active and P4 compaction facades prioritize inactive core errors', () => {
+  let active = true
+  let officialCalls = 0
+  const complete = {
+    compactIfNeeded() { officialCalls += 1 },
+    compactNow() { officialCalls += 1 },
+    compactRegion() { officialCalls += 1 },
+  }
+  const activeServices = createServicesNamespace({
+    ctx: { get: (name) => (name === 'compaction' ? complete : undefined) },
+    active: () => active,
+  })
+  const disabledServices = createServicesNamespace({
+    ctx: {
+      get(name) {
+        if (name === 'compaction') return undefined
+        if (name === 'fs') return { resolve() {}, processPath() {}, fileUrl() {}, contains() {}, stat() {}, lstat() {}, readText() {}, streamText() {}, readBytes() {}, listDir() {}, writeText() {}, editText() {}, sandboxMode: 'x' }
+        return undefined
+      },
+    },
+    active: () => active,
+  })
+
+  active = false
+  for (const name of compactionDef.members.map((member) => member.name)) {
+    assert.throws(() => activeServices.compaction[name](), PluginApiInactiveError)
+    assert.throws(() => disabledServices.compaction[name](), PluginApiInactiveError)
+  }
   assert.equal(officialCalls, 0)
 })
 

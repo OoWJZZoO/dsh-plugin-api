@@ -198,14 +198,15 @@ test('no official service calls happen before inactive or feature-disabled throw
   assert.throws(() => activeService.llm.admission.register({}), PluginApiFeatureDisabledError)
 })
 
-test('default services namespace exposes the 18 disabled facades before mount', () => {
+test('default services namespace exposes the 19 disabled facades before mount', () => {
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
   const service = instantiate(ServiceClass, mockCtx())
 
   assert.equal(typeof service.services, 'object')
-  assert.equal(Object.keys(service.services).length, 18)
+  assert.equal(Object.keys(service.services).length, 19)
   assert.ok(Object.isFrozen(service.services))
+  assert.equal(service.services.compaction.isActive, false)
   for (const key of Object.keys(service.services)) {
     assert.equal(service.services[key].isActive, false)
   }
@@ -214,7 +215,8 @@ test('default services namespace exposes the 18 disabled facades before mount', 
 test('default services namespace throws feature-disabled error with feature code "services"', () => {
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
-  const service = instantiate(ServiceClass, mockCtx())
+  const ctx = mockCtx()
+  const service = instantiate(ServiceClass, ctx)
 
   assert.throws(
     () => service.services.fs.readText({}),
@@ -224,6 +226,15 @@ test('default services namespace throws feature-disabled error with feature code
       return true
     },
   )
+  assert.throws(
+    () => service.services.compaction.compactNow({}, {}),
+    (error) => {
+      assert.ok(error instanceof PluginApiFeatureDisabledError)
+      assert.equal(error.feature, 'services')
+      return true
+    },
+  )
+  assert.equal(ctx.getCalls.length, 0)
 })
 
 test('inert service services namespace throws inactive error before touching official services', () => {
@@ -234,6 +245,14 @@ test('inert service services namespace throws inactive error before touching off
 
   assert.throws(
     () => service.services.fs.readText({}),
+    (error) => {
+      assert.ok(error instanceof PluginApiInactiveError)
+      assert.equal(error.code, 'PLUGIN_API_INACTIVE')
+      return true
+    },
+  )
+  assert.throws(
+    () => service.services.compaction.compactRegion(0, 1, {}, {}),
     (error) => {
       assert.ok(error instanceof PluginApiInactiveError)
       assert.equal(error.code, 'PLUGIN_API_INACTIVE')

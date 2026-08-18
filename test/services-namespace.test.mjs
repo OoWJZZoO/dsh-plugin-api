@@ -28,11 +28,11 @@ const URI_HELPERS = {
   decodeSessionReferenceUri: () => ({}),
 }
 
-test('namespace exposes exactly the 18 keys and nothing else', () => {
+test('namespace exposes exactly the 19 keys and nothing else', () => {
   const services = createServicesNamespace({ ctx: fullCtx(), active: true, uriHelpers: URI_HELPERS })
   assert.deepEqual(Object.keys(services), SERVICES_NAMESPACE_KEYS)
-  assert.equal(Object.keys(services).length, 18)
-  assert.ok(!('compaction' in services))
+  assert.equal(Object.keys(services).length, 19)
+  assert.ok('compaction' in services)
 })
 
 test('namespace and every facade are frozen (read-only at runtime)', () => {
@@ -42,6 +42,88 @@ test('namespace and every facade are frozen (read-only at runtime)', () => {
     assert.ok(Object.isFrozen(services[key]), `${key} facade frozen`)
     assert.equal(services[key].isActive, true)
   }
+
+  const compaction = services.compaction
+  assert.deepEqual(Object.keys(compaction), [
+    'isActive',
+    'compactIfNeeded',
+    'compactNow',
+    'compactRegion',
+  ])
+  assert.equal('summarize' in compaction, false)
+  assert.equal('config' in compaction, false)
+
+  assert.throws(() => { services.extra = true }, TypeError)
+  assert.throws(() => { delete services.compaction }, TypeError)
+  assert.throws(() => { Object.defineProperty(services, 'extra', { value: true }) }, TypeError)
+  assert.throws(() => { compaction.extra = true }, TypeError)
+  assert.throws(() => { delete compaction.compactNow }, TypeError)
+  assert.throws(() => { Object.defineProperty(compaction, 'extra', { value: true }) }, TypeError)
+  assert.equal(services.extra, undefined)
+  assert.equal(services.compaction, compaction)
+  assert.equal(compaction.extra, undefined)
+  assert.equal(typeof compaction.compactNow, 'function')
+})
+
+test('compaction facade does not mutate the official service target', () => {
+  const compaction = {
+    compactIfNeeded() {},
+    compactNow() {},
+    compactRegion() {},
+    summarize() {},
+    config: { mode: 'basic' },
+    providerState: { active: true },
+  }
+  const services = createServicesNamespace({
+    ctx: fullCtx({
+      get(name, byService) {
+        return name === 'compaction' ? compaction : byService[name]
+      },
+    }),
+    active: true,
+    uriHelpers: URI_HELPERS,
+  })
+
+  assert.equal(services.compaction.isActive, true)
+  assert.equal('summarize' in services.compaction, false)
+  assert.equal('config' in services.compaction, false)
+  assert.equal('providerState' in services.compaction, false)
+  assert.equal(Object.isFrozen(compaction), false)
+  assert.equal(typeof compaction.summarize, 'function')
+  assert.deepEqual(compaction.config, { mode: 'basic' })
+  assert.deepEqual(compaction.providerState, { active: true })
+})
+
+test('hostile compaction member inspection degrades locally without interrupting other facades', () => {
+  const loggerMessages = []
+  const compaction = {
+    compactIfNeeded() {},
+    compactNow() {},
+    compactRegion() {},
+  }
+  Object.defineProperty(compaction, 'compactNow', {
+    get() {
+      throw new Error('hostile member getter')
+    },
+  })
+  const services = createServicesNamespace({
+    ctx: fullCtx({
+      get(name, byService) {
+        return name === 'compaction' ? compaction : byService[name]
+      },
+    }),
+    active: true,
+    logger: { error(message) { loggerMessages.push(message) } },
+    uriHelpers: URI_HELPERS,
+  })
+
+  assert.equal(services.compaction.isActive, false)
+  assert.equal(services.fs.isActive, true)
+  assert.throws(
+    () => services.compaction.compactNow(),
+    (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.compaction',
+  )
+  assert.equal(loggerMessages.length, 1)
 })
 
 test('facade values are observably disabled per service when one official service is missing', () => {
