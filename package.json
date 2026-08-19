@@ -4,10 +4,14 @@
   "version": "0.1.0-rc.6-0.3",
   "type": "module",
   "main": "lib/index.js",
+  "bin": {
+    "dsh-plugin-api-migrate": "./scripts/migrate-cli.js"
+  },
   "exports": {
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
     "./typert": "./lib/typert.js",
+    "./migrate": "./lib/migrate/index.js",
     "./package.json": "./package.json"
   },
   "dsh": {
@@ -28,6 +32,9 @@
   },
   "scripts": {
     "test": "node --test"
+  },
+  "dependencies": {
+    "@babel/parser": "^8.0.4"
   },
   "keywords": [
     "deepseek-harness",

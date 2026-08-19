@@ -87,11 +87,13 @@ Each rule has:
   aClass: 'A' | 'B' | 'C' | 'infrastructure' | 'unknown',
   classification: 'SAFE' | 'REVIEW' | 'MANUAL' | 'UNSUPPORTED',
   source: { packages?, services?, methods?, events?, nodeKinds? },
+  methodsByService?,
   target: { namespace?, method? },
   minApiProtocol,
   exactRuntimeIdentity,
   guidance,
   specificity,
+  equivalence,
 }
 ```
 

@@ -8,7 +8,9 @@ test('package.json is parseable and exposes the expected entry points', () => {
   assert.equal(pkg.type, 'module')
   assert.equal(pkg.main, 'lib/index.js')
   assert.equal(pkg.exports['.'], './lib/index.js')
+  assert.equal(pkg.exports['./migrate'], './lib/migrate/index.js')
   assert.equal(pkg.exports['./package.json'], './package.json')
+  assert.equal(pkg.bin['dsh-plugin-api-migrate'], './scripts/migrate-cli.js')
 })
 
 test('dsh.api is a major.minor contract', () => {
@@ -73,6 +75,7 @@ test('peerDependencies are the exact union of facade host and durable-audit iden
   }
 })
 
-test('capability services feature adds no runtime dependencies', () => {
-  assert.ok(!pkg.dependencies || Object.keys(pkg.dependencies).length === 0)
+test('runtime facade has only the scanner parser as a direct dependency', () => {
+  assert.deepEqual(Object.keys(pkg.dependencies ?? {}), ['@babel/parser'])
+  assert.equal(pkg.dependencies['@babel/parser'], '^8.0.4')
 })
