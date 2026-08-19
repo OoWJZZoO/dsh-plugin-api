@@ -1,6 +1,8 @@
 # Feature Requirements: plugin-api-foundation
 
 > **Rename/version pointer（`plugin-api-compaction-events-r1`）**：主包现名 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），唯一 full version `0.1.0-rc.6-0.4` / `dsh.api: 0.4`；monorepo 见 `pnpm-workspace.yaml`。本文正文是 M0 历史记录。
+>
+> **权威指针（`plugin-api-session-title-r1`）**：上行为 compaction-events-r1 承接的 boundary；现行 authority 为 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`（由 `plugin-api-session-title-r1` 承接），见 AGENTS.md §8 与 README。
 
 ## Introduction
 
@@ -78,6 +80,8 @@
 > **修订注记（`plugin-api-m2-integration` Task 8.2）**：门面版本号语义规范化——本门面的**全量唯一版本号**定义为 `<runtime全量版本>-<API协议大版本.迭代小版本>`（如 `0.1.0-rc.6-0.3`）：前半记录门面为哪个 runtime 构建（含 rc 等预发布后缀），后半是门面自己的 API 协议世代，**不与官方包版本混同**。方向 ① 的比较对象是自身版本号中的完整 runtime 部分与实际安装的 runtime 版本，必须精确相等（含 patch 与 prerelease）；`dsh.api` 字段仅承载 API 协议版本（方向 ② 插件↔门面协商）。原实现把 `dsh.api` 直接与官方 runtime 版本相等比较，偏离本意，已纠正。
 >
 > **修订注记（`plugin-api-compaction-events-r1` R1）**：主包改名为 `@deepseek-ai/dsh-plugin-api-main`，唯一 full version 升至 `0.1.0-rc.6-0.4` / `dsh.api: 0.4`（协议 minor 数字递增，`1.0` 保留）。
+>
+> **修订注记（`plugin-api-session-title-r1` R2）**：在 R1 之上，`session-title-r1` 把主包唯一 full version 升至 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`（新增 `session-title/candidate` R 类 catalog 条目，属协议 minor 变更）；现行 authority 见 AGENTS.md §8 与 README。
 
 **Acceptance Criteria — direction ① facade ↔ DSH runtime:**
 

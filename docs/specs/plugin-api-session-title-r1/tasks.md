@@ -1,7 +1,7 @@
 # Tasks: plugin-api-session-title-r1
 
 > feature_name: `plugin-api-session-title-r1`
-> 状态：Stage 3 草案（待对抗性审查与用户批准）
+> 状态：Stage 4 交付完成（Requirements/Design/Tasks 已获批；每个顶层大任务经阻塞式子代理对抗性审查通过）
 > 上游：`requirements.md`（Stage 1 已批准，含 Stage 2 同步的 R-5.11 修订）、`design.md`（Stage 2 已批准）
 > 基线：worktree 已 rebase 到 main `bacf593`（compaction-events-r1 已交付：主包 `@deepseek-ai/dsh-plugin-api-main@0.1.0-rc.6-0.4`、`rSlices` 机制在位）。本分支只做追加/新建，不重造 R-slice 机制、不改 frozen files。
 > 执行注：Stage 4 每完成一个**顶层大任务**（`1.x`–`8.x`）必须调用**一次**子代理做对抗性审查，并**阻塞等待其完成**（`run_in_background: false`）；通过后才进入下一顶层任务。审查只核对当前批次与 Tasks/Design/Requirements 的一致性，不向上溯源。

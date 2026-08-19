@@ -7,6 +7,8 @@
 > 上游：已完成 Stage 4 的 `plugin-api-llm-request-m2`、`plugin-api-exec-route-m2`、`plugin-api-agent-create-m2`、`plugin-api-session-durable-m2`、`plugin-api-compaction-m2`，以及已交付的 `plugin-api-semantic-hooks-m2`
 >
 > **Rename/version pointer（`plugin-api-compaction-events-r1`）**：M2 的 `0.1.0-rc.6-0.3` / `dsh.api: 0.3` 与主包名 `@deepseek-ai/dsh-plugin-api` 为历史记录；现主包 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），full version `0.1.0-rc.6-0.4` / `dsh.api: 0.4`，monorepo 见根 `pnpm-workspace.yaml`。
+>
+> **权威指针（`plugin-api-session-title-r1`）**：上行为 compaction-events-r1 承接的 boundary；现行 authority 为 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`（由 `plugin-api-session-title-r1` 承接），见 AGENTS.md §8 与 README。
 
 ---
 

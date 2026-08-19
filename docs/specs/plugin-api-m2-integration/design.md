@@ -5,6 +5,8 @@
 > 面：host-only 整合；不新增 client、remote、codec、catalog slice 或官方补丁
 >
 > **Rename/version pointer（`plugin-api-compaction-events-r1`）**：M2 交付时的版本 `0.1.0-rc.6-0.3` / `dsh.api: 0.3` 及主包名 `@deepseek-ai/dsh-plugin-api` 为历史记录；现主包 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），唯一 full version `0.1.0-rc.6-0.4` / `dsh.api: 0.4`，monorepo 见根 `pnpm-workspace.yaml`。
+>
+> **权威指针（`plugin-api-session-title-r1`）**：上行为 compaction-events-r1 承接的 boundary；现行 authority 为 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`（由 `plugin-api-session-title-r1` 承接），见 AGENTS.md §8 与 README。
 
 ## Overview
 

@@ -5,6 +5,8 @@
 > `docs/specs/plugin-api-llm-request-m2/supersession.md`.
 >
 > **Rename/version pointer（`plugin-api-compaction-events-r1`）**：正文中的包名 `@deepseek-ai/dsh-plugin-api` / row id `plugin-api` 为主包历史记录；当前主包 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），full version `0.1.0-rc.6-0.4` / `dsh.api: 0.4`。
+>
+> **权威指针（`plugin-api-session-title-r1`）**：上行为 compaction-events-r1 承接的 boundary；现行 authority 为 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`（由 `plugin-api-session-title-r1` 承接），见 AGENTS.md §8 与 README。
 
 > 需求引用记号：`R<section>.<criterion>`，例如 `R2.1` 表示 requirements.md 第 2 节第 1 条验收标准。
 > 执行顺序：从上到下；每个任务完成后停下等待用户复核，不得自动连续执行。

@@ -7,6 +7,8 @@
 > provenance; use the M2 design for implementation and API guidance.
 >
 > **Rename/version pointer（`plugin-api-compaction-events-r1`）**：正文中的包名 `@deepseek-ai/dsh-plugin-api` / row `plugin-api` / 旧名均为主包历史记录；当前主包为 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），full version `0.1.0-rc.6-0.4` / `dsh.api: 0.4`，monorepo 见根 `pnpm-workspace.yaml`。
+>
+> **权威指针（`plugin-api-session-title-r1`）**：上行为 compaction-events-r1 承接的 boundary；现行 authority 为 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`（由 `plugin-api-session-title-r1` 承接），见 AGENTS.md §8 与 README。
 
 ## Overview
 

@@ -3,6 +3,8 @@
 > **M2 supersession note:** F0.3 version policy and the foundation guard remain policy foundations, but any admission-bridge or projection-guard implementation reference in this historical M0 design is obsolete. The current L2 owner is solely `lib/llm-admission-gateway.js`; do not reintroduce a foundation-level wrapper or the historical bridge.
 >
 > **Rename/version pointer（`plugin-api-compaction-events-r1`）**：主包现已更名为 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`，Cordis 服务 key 仍为 `pluginApi`），monorepo 工作区见根 `pnpm-workspace.yaml` / `packages/`；唯一 full version 为 `0.1.0-rc.6-0.4` / `dsh.api: 0.4`。本文历史正文保留原始 M0 记录。
+>
+> **权威指针（`plugin-api-session-title-r1`）**：上行为 compaction-events-r1 承接的 boundary；现行 authority 为 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`（由 `plugin-api-session-title-r1` 承接），见 AGENTS.md §8 与 README。
 
 ## Overview
 

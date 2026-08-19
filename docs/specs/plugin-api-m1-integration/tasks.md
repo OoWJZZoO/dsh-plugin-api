@@ -3,6 +3,8 @@
 > **Historical M1 execution record / M2 supersession:** These tasks describe the original `0.2` integration work and are retained as a historical record, not as an executable current plan. The old admission-bridge/resolver ownership and active/no-op wording are superseded; current authority is the M2 L2 gateway in `lib/llm-admission-gateway.js` under `0.1.0-rc.6-0.3` / `dsh.api` `0.3`. Do not rerun this list or reintroduce the old projection-guard path.
 >
 > **Rename/version pointer（`plugin-api-compaction-events-r1`）**：主包现名 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），full version 升至 `0.1.0-rc.6-0.4` / `dsh.api: 0.4`；monorepo 见根 `pnpm-workspace.yaml`。
+>
+> **权威指针（`plugin-api-session-title-r1`）**：上行为 compaction-events-r1 交付 boundary；现行 authority 为 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`（由 `plugin-api-session-title-r1` 承接），见 AGENTS.md §8 与 README。
 
 > feature_name: `plugin-api-m1-integration`
 > 状态：历史执行记录（M1 `0.2`，已被 M2 superseded）

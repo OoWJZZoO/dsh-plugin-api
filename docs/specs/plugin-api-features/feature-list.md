@@ -91,7 +91,7 @@
 |---|---|---|---|---|---|
 | F0.1 门面服务 | `ctx.pluginApi`（Cordis Service，`inject: ['pluginApi']`）；**推荐、受支持**的门面入口；直连 `@deepseek-ai/dsh-*` 内部包为 unsupported escape hatch | 门面基础 | 本仓库 `lib/index.js` / `lib/plugin-api-service.js`；spec `plugin-api-foundation` | M0 | **delivered** |
 | F0.2 fail-safe guard | `pluginApi.isActive: boolean`；核心 guard 失败时服务仍注册为 inert；非核心 feature 失败时只禁用该 feature 并显式报错 | 门面基础 | 本仓库 `lib/guards.js`；对齐 dsh-read-image G1；spec `plugin-api-foundation` | M0 | **delivered** |
-| F0.3 版本协商 | 门面全量唯一版本号 = `<runtime全量版本>-<API协议大版本.迭代小版本>`（当前 `0.1.0-rc.6-0.4`，`dsh.api: 0.4`，写入 `package.json.version`）；`dsh.api` 仅承载 API 协议版本。主包名 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），monorepo 辅助 replacement bundles 位于 `packages/`。双向协商——方向① runtime 部分与安装的官方 runtime 不匹配时门面 inert；方向② 插件要求不满足时插件收到 typed 错误 | 门面基础 | 本仓库 `lib/version.js` / `lib/guards.js` / `package.json`；spec `plugin-api-foundation` 与 M2 integration reconciliation | M0 | **delivered** |
+| F0.3 版本协商 | 门面全量唯一版本号 = `<runtime全量版本>-<API协议大版本.迭代小版本>`（当前 `0.1.0-rc.6-0.5`，`dsh.api: 0.5`，写入 `package.json.version`）；`dsh.api` 仅承载 API 协议版本。主包名 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），monorepo 辅助 replacement bundles 位于 `packages/`。双向协商——方向① runtime 部分与安装的官方 runtime 不匹配时门面 inert；方向② 插件要求不满足时插件收到 typed 错误 | 门面基础 | 本仓库 `lib/version.js` / `lib/guards.js` / `package.json`；spec `plugin-api-foundation` 与 M2 integration reconciliation | M0 | **delivered** |
 | F0.4 符号解析门面 | `pluginApi` 作为**推荐** import/inject 面；第三方插件默认经门面解析符号；直连 `dsh-tools`/`dsh-llm` 等内部包属于 unsupported escape hatch（门面不拦截、不保障） | 门面基础 | `docs/specs/plugin-api-facade-integrity/requirements.md` §1（权威定义）；`README.md` | M0–M3 | delivered（F0.4 策略；符号覆盖随命名空间逐步扩展） |
 | F0.5 包装链安全 | dispose 用 identity-guard；目标被其他插件包装时降级透传，不拆别人的链 | 门面基础 | 本仓库 `lib/wrap-safety.js` / `lib/admission-bridge.js`；dsh-read-image A1 加固；spec `plugin-api-facade-integrity` | M0 | **delivered** |
 
@@ -276,6 +276,7 @@
 | U6 | 客户端 `remote.<ns>` 原生动态发现 | 第三方 client 插件无需 `ctx.remote.$mount` 自挂载 | C2/C7 |
 | U7 | 官方 session 上屏事件构造 helper（可选） | 把 `surfaceOp` / `sourceEventSeqs` 的上屏契约封装为高级 API | S2/S6 |
 | U8 | 官方 `compaction/*` 事件词汇（可选） | 当前压缩只有 `CompactionEngine.summarize()` 子类钩子，无 dispatch 点；R 类辅助包 `@deepseek-ai/dsh-plugin-api-compaction-events`（`compaction-events-r1`）为 current workaround | SV17 + R1 replacement |
+| U9 | 官方 session-title 候选资格 / 合成消息排除 | 官方 `session-title` 的 fallback 与 first-prompt provider 会把已入库的 `source.kind: 'user'` 合成消息直接当作标题候选，无候选资格 dispatch 点；R 类辅助包 `@deepseek-ai/dsh-plugin-api-session-title`（`session-title-r1`）为 current workaround。**退役条件**：官方提供等价候选资格 seam（如官方 `session-title/candidate` 事件或内置合成消息排除）后，`session-title-r1` 辅助包 deprecate/退役，消费者迁移至官方 seam | session-title 服务（R 类） |
 
 ---
 
@@ -295,6 +296,7 @@
 | ST5/ST6/C2（+C7） | `$mount` 自挂载 + 手搓 codec | `api-remotes`（client bundle） | 高 | 高 | 维持方案一；C7 维持 proposal |
 | E8/E9/E11 priority / deepFreeze / fault containment | facade 注册侧/派发侧统一实现 | 无单一官方行（框架级横切） | — | — | **永不 R** |
 | U8 `compaction/*` 事件词汇 | 仅 `summarize()` 子类钩子 | `compaction-basic` | 低–中 | 高 | **已交付**（`plugin-api-compaction-events-r1`；U8 保留为上游提案，stale-index B4 已迁移） |
+| U9 `session-title/candidate` 候选资格 / 合成消息排除 | 官方 fallback + first-prompt provider 直接消费 `source.kind:'user'`，无候选资格 dispatch 点 | `session-title`（`dsh-session-title`） | 低–中 | 高 | **已交付**（`plugin-api-session-title-r1`；U9 保留为上游提案，replacement 为 current workaround，退役条件见 §3 U9 行） |
 
 ---
 
@@ -309,6 +311,7 @@
 | `dsh-pro-ex-ability-anchor` | 手写 `surfaceOp`/`sourceEventSeqs` 上屏事件 | `pluginApi.session.appendMessage(targetSession, kind, payload, {sourceEventSeqs?})` | delivered（M2 migration） |
 | `dsh-pro-ex-ability-anchor` | `system-prompt/assemble` 直接监听 | P6 类型化瀑布（行为等价） | planned（M1） |
 | `dsh-pro-ex-ability-anchor` | panel 手写 client bundle/manifest + slot glue | C1 client manifest helper + C4 slot | delivered（M3；已迁移） |
+| `dsh-pro-ex-ability-anchor` | 标题纠偏 hack（`lib/index.js:574-691`：`titleFixed`/`realTitleText`/`titleCitesVirtual`/`fixSessionTitle` + 两处 `session/event` 事后监听） | `pluginApi.events.on('session-title/candidate', ...)` exclude 策略（`source.form === ANCHOR_USER_SOURCE_FORM`） | blocked（迁移在 pro-ex 仓库执行，须其独立获批任务；本仓库 fixture 与配方见 `packages/session-title-r1/MIGRATION_RECIPE.md`） |
 
 ---
 

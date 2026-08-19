@@ -5,6 +5,8 @@
 > 上游：已批准 requirements.md（0705dd1）与 design.md（a511c5b；事实顺序修正 fd470fd）
 >
 > **Rename/version pointer（`plugin-api-compaction-events-r1`）**：M2 交付记录中的主包名 `@deepseek-ai/dsh-plugin-api` / 版本 `0.1.0-rc.6-0.3`（`dsh.api: 0.3`）为历史；现主包 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），full version `0.1.0-rc.6-0.4` / `dsh.api: 0.4`。
+>
+> **权威指针（`plugin-api-session-title-r1`）**：上行为 compaction-events-r1 承接的 boundary；现行 authority 为 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`（由 `plugin-api-session-title-r1` 承接），见 AGENTS.md §8 与 README。
 
 ## Final delivery baseline and execution record
 

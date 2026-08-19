@@ -2,7 +2,7 @@
 
 DeepSeek Harness 社区插件 API 门面（主包 `@deepseek-ai/dsh-plugin-api-main`）：把官方 Cordis 扩展点稳定化，给第三方插件一个统一、受支持的 import/inject 入口。仓库路径仍为 `agent/dsh-plugin-api`（monorepo，辅助 replacement bundles 位于 `packages/`）。
 
-> 当前状态：M2 host 能力 + R 类 compaction-events 通道已交付。唯一 full version 为 `0.1.0-rc.6-0.4`，协议为 `dsh.api: 0.4`；consumer 仍须按 feature availability 做 fail-safe 降级。
+> 当前状态：M2 host 能力 + R 类 replacement 通道已交付（`compaction-events-r1` 压缩事件词汇、`session-title-r1` 会话标题候选资格策略）。唯一 full version 为 `0.1.0-rc.6-0.5`，协议为 `dsh.api: 0.5`；consumer 仍须按 feature availability 做 fail-safe 降级。
 
 ## 推荐用法（supported）
 

@@ -80,6 +80,7 @@ R9. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 | ST5/ST6/C2（+C7） client remote/codec/mount | `$mount` 自挂载 + 手搓 codec | `api-remotes`（client bundle 5900+ 行，需自建构建） | 高 | 高（C7） | **维持方案一**；C7 维持 upstream proposal |
 | E8 priority / E9 deepFreeze / E11 fault containment | facade 注册侧/派发侧统一实现 | 无单一官方行（跨所有事件生产者；`@deepseek-ai/cordis` 不是 loader 行） | — | — | **永不转 R**，维持方案一或 Cordis 上游提案 |
 | U8 `compaction/*` 事件词汇 | `CompactionEngine.summarize()` 子类钩子 | `compaction-basic`（962 行） | 低–中 | 高 | **已交付**：R1 辅助包 `@deepseek-ai/dsh-plugin-api-compaction-events`（`plugin-api-compaction-events-r1`）作为 current workaround；U8 保留为上游提案（见 feature-list §3） |
+| U9 `session-title/candidate` 候选资格 / 合成消息排除 | 官方 `session-title` 的 fallback + first-prompt provider 直接消费 `source.kind:'user'`，无候选资格 dispatch 点 | `session-title`（`dsh-session-title`，580 行） | 低–中 | 高 | **已交付**：R1 辅助包 `@deepseek-ai/dsh-plugin-api-session-title`（`plugin-api-session-title-r1`）作为 current workaround（fallback 与 first-prompt provider 在统一候选资格策略下消费同一候选集）；U9 保留为上游提案（见 feature-list §3） |
 
 重估条件（允许已判“维持方案一”的条目回到 R 评估）：官方把对应包拆小/提供 src 构建流水线；出现第二个插件对同一语义的独立需求；或官方升级使门面转译的收敛证明不再成立。
 
