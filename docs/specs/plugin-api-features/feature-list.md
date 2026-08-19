@@ -159,7 +159,7 @@
 | S5 会话事件目录 | `sessionEventTypes` / `surfaceEventTypes` 常量与类型守卫 | A | `dsh-session` `known-event-types`（`session/end-seed`、`session/title` 等） | M1 | **delivered** |
 | S6 官方上屏 helper | 官方提供 `session.appendSurface(...)` 级别的高级构造 API | C | 当前 surface 契约靠插件自维护（dsh-pro-ex-ability-anchor） | M4 | planned（proposal，可选） |
 
-### 2.6 `pluginApi.tools` —— 工具注册与执行管线面（M1/M2）
+### 2.6 `pluginApi.tools` —— 工具注册与执行管线面（M1/M2/M4）
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
@@ -173,6 +173,7 @@
 | T8 工具限制与守卫 | `tools.restrict(filter)`、`tools.guard(guard)` 稳定直通 | A | `dsh-tools` `ToolRuntime.restrict/guard` | M1 | **delivered** |
 | T9 工具查询与执行 | `tools.get(name, scope?)`、`tools.schemas(scope?)`、`tools.execute(input)`、`tools.presentAs` 稳定直通 | A | `dsh-tools` `ToolRuntime` 公共方法 | M1 | **delivered** |
 | T10 执行路由查询 | `tools.routeOf(exec)`：与 `agent.routeOf(exec)`、`routing.ofExecution(exec)` 返回同一按 execution 缓存的冻结 route 快照；捕获仅发生在 prepended `tools/pre-execute`，不创建 `exec.route` 或 route event/catalog slice | B | 官方无 `exec.route`；与 A9 同源 | M2 | **delivered** |
+| T11 工具中止错误构造 | `tools.toolAbortedError()`：返回与官方 dsh-tool-bash/pwsh 一致的“工具调用已中止”错误（`HarnessError('tool call aborted', TOOL_ABORTED)` + `name='AbortError'`，typed identity）；官方常量缺失时降级裸 `Error`（`name='AbortError'`） | A | `dsh-tools/lib/index.js:2411`（`TOOL_ABORTED`）；`dsh-llm/lib/types/error.js`（`HarnessError`）；`dsh-tool-bash/lib/index.js:408-409` | M4 | **delivered** |
 
 > 管线顺序（官方已定，门面只稳定化不重排）：`tools/pre-execute` → 单调 `guard()` 检查 → `tools/execute` → `tools/post-execute` → 工具 `finalizeContent` → `tools/result`。定义里的 `timeoutMs` 由 `dsh-tool-call-timeout-policy`（`tools/execute` wrapper）执行，不在门面内复制。
 
@@ -309,6 +310,7 @@
 | `dsh-pro-ex-ability-anchor` | 手写 `surfaceOp`/`sourceEventSeqs` 上屏事件 | `pluginApi.session.appendMessage(targetSession, kind, payload, {sourceEventSeqs?})` | delivered（M2 migration） |
 | `dsh-pro-ex-ability-anchor` | `system-prompt/assemble` 直接监听 | P6 类型化瀑布（行为等价） | planned（M1） |
 | `dsh-pro-ex-ability-anchor` | panel 手写 client bundle/manifest + slot glue | C1 client manifest helper + C4 slot | delivered（M3；已迁移） |
+| `dsh-pro-ex-ability-anchor` | 手工组合 `loadAbortedErrorFactory`（`lib/index.js`，`HarnessError(TOOL_ABORTED)` + 裸 `AbortError` 兜底） | `pluginApi.tools.toolAbortedError()`（含裸 `AbortError` 兜底） | delivered（M4；迁移 headless 验收 123/123 通过，dev-boot 待 M4 integration） |
 
 ---
 

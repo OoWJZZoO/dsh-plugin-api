@@ -96,19 +96,25 @@ export function createToolAbortedErrorFactory(deps)
   - 注意该方法**不调用 `tools()` 服务**——它是纯构造，与官方 tools 服务可解析性无关（requirements 1.4 语义；服务不可解析也仅在调用 register/execute 等成员时抛错，不影响本 helper）。
 - `createDisabledToolsApi(active, routeOf)` 新增 `toolAbortedError: fail`：与 `register`/`restrict`/`get` 等常规成员一致，抛 `PluginApiInactiveError` / `PluginApiFeatureDisabledError('tools')`（1.5；`routeOf` 是本命名空间唯一豁免，见 requirements 1.5 注）。
 
-### C4. `package.json` —— peerDependency 声明（Stage 4 落地）
+### C4. `package.json` —— **不**新增 peerDependency（Stage 4 落地修正）
 
-- 新增 `"@deepseek-ai/dsh-tools": "^0.1.0-rc.6"` 到 `peerDependencies`。理由：本 feature 直接消费 `TOOL_ABORTED` 官方公开导出，声明即诚实（与仓库对所有被消费官方包列为 peer 的约定一致）。运行时**仍**走惰性解析、缺包不 boot 失败（声明与容错并存；peer 缺失时门面降级可用）。
+- **修订（执行期发现的设计矛盾，AGENTS.md §3.2 处理）**：原草案拟把 `@deepseek-ai/dsh-tools` 加到 `peerDependencies`。但仓库既有不变式（`test/package.test.mjs`：peerDependencies **必须**是“门面 host 静态消费 + durable audit”身份的**精确并集**）禁止纳入**惰性**解析（非静态 import）的官方包。因此本 feature **不**新增任何 peerDependency。
+- `TOOL_ABORTED` 仍经 createRequire **惰性**解析（C2）：包存在即取真实常量，缺失即降级；与 `test/package.test.mjs` 的精确并集不变式（保持原样）一致。
+- `HarnessError` 仍来自既有静态 import 的 `@deepseek-ai/dsh-llm`（早已是 peerDependency，不新增）。
 
 ### C5. `dsh-pro-ex-ability-anchor` 迁移（验收证据，跨仓库只读验证）
 
 - 删除 `loadAbortedErrorFactory`（`lib/index.js:290-308`）及其唯一调用点 `const makeAbortedError = loadAbortedErrorFactory()`（`lib/index.js:384`）。
-- 替换为 fiber ctx 上的插件间解析 + 兜底：
+- 替换为 fiber ctx 上的插件间解析 + 兜底（解析**与调用**都包在 try/catch：pro-ex 既有家法要求所有 `ctx.get` 均可失败——未登记服务名可能抛；且 tools feature 禁用时门面 `toolAbortedError` 是抛 typed 错误的 `fail`，同样必须吞掉走兜底）：
   ```js
   const makeAbortedError = () => {
-    const pluginApi = typeof ctx.get === 'function' ? ctx.get('pluginApi') : undefined
-    const f = pluginApi?.tools?.toolAbortedError
-    return typeof f === 'function' ? f() : fallbackPlainAbortError() // 裸 AbortError 兜底
+    try {
+      const pluginApi = typeof ctx.get === 'function' ? ctx.get('pluginApi') : undefined
+      const f = pluginApi?.tools?.toolAbortedError
+      return typeof f === 'function' ? f() : fallbackPlainAbortError() // 裸 AbortError 兜底
+    } catch {
+      return fallbackPlainAbortError()
+    }
   }
   ```
 - 兜底保留当前“裸 `Error` 命名 `AbortError`”行为，保证 `pluginApi.tools` 不可达时（要点：pro-ex 现有 `ctx.get('pluginApi')` 可用路径在 `lib/index.js:467-475`，工具执行体内有 fiber ctx）工具中止仍可识别。
@@ -175,7 +181,7 @@ export function createToolAbortedErrorFactory(deps)
 | D2 | 零参数、固定字面量 `message==='tool call aborted'` | typed identity 可逐字节锁定（2.3/2.4）；极小面；“自定义 message”无路由价值且会造成社区实现再次分化（与要解决的问题相反） |
 | D3 | 常量缺失 → 降级裸 `Error`（不抛），而非 typed 错误 | 匹配 pro-ex 现行兜底与“agent loop 也识别 bare AbortError”的前提；helper 的本职是“可以 throw 的对象”，调用时不应再抛；Goal 允许的“或 typed error”落到 1.5 门面禁用路径 |
 | D4 | `HarnessError` 用既有静态 `dshLlm`；`TOOL_ABORTED` 用惰性 `createRequire` 且可缺失 | dsh-llm 已是硬 peerDep/静态 import（预存事实）；dsh-tools 非硬依赖，惰性解析保证“缺包不 boot 失败”（3.2） |
-| D5 | `@deepseek-ai/dsh-tools` 登记为 peerDependency（声明）但运行时仍容错 | 声明诚实（直接消费其公开导出），容错保 fail-safe；声明与缺失容忍并存 |
+| D5 | **不**把 `dsh-tools` 登记为 peerDependency；保持惰性解析可选能力 | 仓库不变式要求 peerDependencies = “静态消费 + durable audit”精确并集（`package.json.test`）；dsh-tools 仅惰性消费、缺包降级，故不声明（执行期修正，见 C4） |
 | D6 | 工厂在 apply 内一次创建、经服务注入 | 满足 3.3 host 生命周期稳定；`tools` getter 每次重建 `createToolsApi` 也不影响稳定性（注入的是同一稳定函数） |
 | D7 | 无新 hook / 事件 / dispatch；A 类的“引出机制”= 仅消费官方公开导出 | requirements 4.1–4.6：本 feature 无 Cordis 事件绑定，无失败呈现四路径参与，无 catalog slice |
 
