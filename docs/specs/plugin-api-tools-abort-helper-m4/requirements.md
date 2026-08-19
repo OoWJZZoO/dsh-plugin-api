@@ -124,7 +124,7 @@ throw error
 
 5.3. WHEN this feature is delivered THEN the delivered-feature registry in AGENTS.md §8 SHALL append one entry for `plugin-api-tools-abort-helper-m4`（范围 / 状态 / spec 目录 / 关键约束），and the corresponding feature-list status（§2.6 的 T11 条目与 §4 迁移行）SHALL be kept consistent（feature-list 无独立 feature 登记表；登记本体在 AGENTS.md §8，feature-list 只同步状态，见 AGENTS.md §8 防过期规则）.（Governance）
 
-5.4. WHEN this feature is delivered THEN its API 协议版本号 SHALL NOT be bumped by this feature alone；任何 minor 升级 SHALL 由 M4 integration 统一定界并记录（并行 `plugin-api-compaction-events-r1` 已按 AGENTS.md §8 规划承接 `0.1.0-rc.6-0.4` / `dsh.api` `0.4` 且尚未交付；本 feature 不提前断言版本，最终 boundary 以 M4 integration 批准记录为准）.（Governance）
+5.4. WHEN this feature is delivered THEN its API 协议版本号 SHALL NOT be bumped by this feature alone；任何 minor 升级 SHALL 由 M4 integration 统一定界并记录（经 AGENTS.md §8 登记，`plugin-api-compaction-events-r1` 已交付并承接 `0.1.0-rc.6-0.4` / `dsh.api` `0.4` 作为现行 boundary；本 feature 不提前断言版本，最终 boundary 以 M4 integration 批准记录为准）.（Governance）
 
 **Type**: Governance
 
