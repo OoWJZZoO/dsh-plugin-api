@@ -1,6 +1,6 @@
 # Feature List: plugin-api-features
 
-> 状态：delivery registry（历史条目保留其原始 spec 链接；已交付项的最终形状以对应 approved spec 与 M2 integration reconciliation 为准）。本文不是脱离 spec 的独立 API 契约。
+> 状态：delivery registry（历史条目保留其原始 spec 链接；已交付项的最终形状以对应 approved spec 与 M2 integration reconciliation 为准）。本文不是脱离 spec 的独立 API 契约。A/B/C/R 分类与能力上限策略的权威细则见 `docs/capability-strategy.md`。
 >
 > feature_name: `plugin-api-features`
 > 范围：全量（host 面 + client 面 + C 类上游提案）
@@ -27,6 +27,7 @@
 | **A 类** | 官方已 dispatch / 已提供服务，只需稳定化 | 类型化、只读 payload、priority、错误隔离，不再发明语义 |
 | **B 类** | 官方没有 dispatch 点，只能用底层钩子模拟 | 用官方服务边界 + 底层事件转译，必须幂等收敛 + fail-safe |
 | **C 类** | 不改官方做不到 | 只写 upstream proposal，不写实现；保留公开 API 迁移路径 |
+| **R 类（替换类）** | 官方没有 dispatch 点，且缺失语义天然属于某个官方 loader 行 | 经 `docs/capability-strategy.md` 批准登记后，用官方 patch 机制（`disabled: true` + 插入替代行）禁用该官方行并以替代行提供“官方原接口 + 扩展接口”；绝不 patch 官方包文件 |
 | 门面基础 | 不属于 A/B/C 的服务/打包/协商能力 | 遵循 AGENTS.md 第 1–2 节硬约束 |
 
 ### 1.3 里程碑建议
@@ -278,6 +279,25 @@
 
 ---
 
+## 3.1 R 类（replacement bundle）与 B→R 迁移策略
+
+> 权威细则见 `docs/capability-strategy.md`（含 R1–R9 硬性规则与方案二例外条件）。本节只做登记，不引入实现。
+
+判定规则：**低/中工作量且高价值 → 优先 R 类；高工作量 → 维持门面转译；横切派发语义 → 永不 R。**
+
+| B/C 项 | 现转译/现状 | 拟 fork 行 | 工作量 | 价值 | 决策 |
+|---|---|---|---|---|---|
+| L4 同步 `llm/request` | `llm/stream` 重入 + marker + 收敛 | `llm` | 高 | 高 | 维持方案一（R 类候选，暂不排期） |
+| L2 图片准入 | 包装 `apiProxy.sessions` + `llm.resolveModelInfo` | `llm` + `api-gateway` | 很高 | 高 | 维持方案一 |
+| A9/T10 `exec.route` | `tools/pre-execute` prepend + `session.requestContext()` | `tools`（完整 route 还需 `agent-loop` 协同） | 高 | 高 | 维持方案一 |
+| S2 session 上屏 helper | 门面校验后调官方 `Session.append` | `session` | 高 | 高 | 维持方案一 |
+| ST4 host 设置 remote 桥 | 自建 `bindTypertRemote` 等价实现 | `typert-gateway` 或 typert 相关行 | 中 | 中 | R 类观察项，不单独立项 |
+| ST5/ST6/C2（+C7） | `$mount` 自挂载 + 手搓 codec | `api-remotes`（client bundle） | 高 | 高 | 维持方案一；C7 维持 proposal |
+| E8/E9/E11 priority / deepFreeze / fault containment | facade 注册侧/派发侧统一实现 | 无单一官方行（框架级横切） | — | — | **永不 R** |
+| U8 `compaction/*` 事件词汇 | 仅 `summarize()` 子类钩子 | `compaction-basic` | 低–中 | 高 | **首批 R 类候选** |
+
+---
+
 ## 4. 迁移验收对象（后续 spec 的现实来源）
 
 | 插件 | 现有 hack | 门面 API 替代 | 状态 |
@@ -296,7 +316,7 @@
 
 - 本文不是 API 契约定稿，不承诺签名稳定；每个 feature 的 EARS 需求、设计、任务在其独立 spec 目录中另行确认。
 - 本文不包含实现代码；在对应 feature 的 Stage 4 之前不创建新的 `lib/` 模块。
-- 不修改官方 DSH 包文件；C 类只写 proposal。
+- 不修改官方 DSH 包文件。C 类默认只写 proposal；经 `docs/capability-strategy.md` 批准登记的 R 类可经官方 patch 机制替代官方行（仍不 patch 官方包文件）。
 - 不公开 `resolveModelInfo` 的变更能力（只读查询 L7 可以；L2 scoped gateway 的唯一 wrapper 仅为 facade 内部实现）。
 - 门面不替插件决定投影/改写内容，只负责调用并校验结果（fail-closed）。
 

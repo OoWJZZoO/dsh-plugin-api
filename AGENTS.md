@@ -7,7 +7,7 @@
 
 ## 1. 这个仓库是什么
 
-`dsh-plugin-api` 是 DeepSeek Harness 的**社区兼容层 / 插件 API 门面**：在不修改官方 DSH 包文件的前提下，把官方已有的 Cordis 扩展点稳定化，并用现有底层钩子把缺失的语义钩子尽量“转译”出来，给第三方插件一个统一的 import/inject 面。
+`dsh-plugin-api` 是 DeepSeek Harness 的**社区兼容层 / 插件 API 门面**：在不修改官方 DSH 包文件的前提下，把官方已有的 Cordis 扩展点稳定化，并用现有底层钩子把缺失的语义钩子尽量“转译”出来，给第三方插件一个统一的 import/inject 面。经批准登记的 **R 类 replacement bundle**（见 §2 第 7 条与 `docs/capability-strategy.md`）可另经官方 patch 机制替代官方插件行；任何情况下都不 patch 官方包文件。
 
 计划形态（与 `agent/dsh-read-image` 同构的**双面 Cordis 插件**）：
 
@@ -27,12 +27,20 @@ agent/dsh-plugin-api/
 1. **不是 fork，不 patch 官方包文件。** 绝不修改 `/usr/lib/node_modules/@deepseek-ai/dsh/**`；只通过 profile/bundle 把本插件作为一行 entry 加载。
 2. **同一棵 Cordis 树里的普通插件**，必须在第三方插件之前加载（row 顺序）。
 3. 只通过 `inject` 消费官方服务（`llm`、`tools`、`agents`、`systemPrompt`、`settings` 等），**不 import 官方包的模块私有变量**。
-4. 官方插件对本仓库无感知；本仓库不替代任何官方包。
-5. 能被外部“引出”的钩子分两类，设计时必须写清：
+4. 官方插件对本仓库无感知；本仓库默认不替代任何官方包。唯一例外是 §2 第 7 条的 **R 类 replacement bundle**：经批准登记后，用官方 patch 机制（`disabled: true` + 插入替代行）替代官方行，且仍然绝不修改官方包文件。
+5. 能被外部“引出”的钩子分四类，设计时必须写清：
    - **A 类：官方已 dispatch，只需稳定化**（如 `agent/*`、`tools/*`、`session/*`、`llm/stream`）。
    - **B 类：官方没有 dispatch 点，只能用底层钩子模拟**（如同步 `llm/request` 用 `llm/stream` 重入模拟）。
    - **C 类：不改官方做不到**，只能写 proposal / 等上游（如异步完整请求改写、boot 故障隔离、`WEB_SETTINGS_NAMESPACES` 动态化、客户端 `remote.<ns>` 原生动态发现）。
+   - **R 类（替换类）：官方没有 dispatch 点，且缺失语义天然属于某个官方 loader 行**。经 `docs/capability-strategy.md` 批准登记后，用官方 patch 机制（`disabled: true` + 插入替代行）禁用该官方行并以替代行提供“官方原接口 + 扩展接口”。R 类不 patch 官方包文件，也不再是普通门面转译。
 6. 任何插件 apply 抛错当前会杀死整个 harness boot，因此本仓库所有入口必须遵循 **fail-safe**：失败只记录日志并安静停用，绝不抛穿 apply（dsh-read-image 的 G1 模式）。
+7. **R 类 replacement bundle 硬约束（权威细则见 `docs/capability-strategy.md`）**：
+   - 替代单位是**整行/整包**：必须完整复刻被替代行的 ctx 服务面与事件面契约，之后才可增加接口；只替换 ctx 服务/事件面，**不覆盖** `@deepseek-ai/dsh-*` 包 import 面。
+   - 只走官方 patch 机制：`- id: <官方行>; disabled: true` + `- insert:` 替代行；绝不修改 `/usr/lib/node_modules/@deepseek-ai/dsh/**`。
+   - 替代包 apply 内必须做 boot 自检（官方行已 disabled、替代行已 active、关键契约可用）；失败 = fail-safe 提示 + 正常 return，绝不静默双跑。
+   - 版本锁定 runtime 全量版本与被替代官方包 identity，不匹配时安全停用；同行唯一 owner，必须检测冲突。
+   - 每个 R 类必须登记一条 U-series 上游提案与明确退役条件；新增 R 类必须走 spec coding Stage 0–4。
+   - 横切派发语义（priority / deepFreeze / fault containment）与 boot 胶水**永不走 R 类**。
 
 ## 3. Kiro spec coding 工作流规范（本仓库铁律）
 
@@ -115,6 +123,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
    - settings 可视化配置桥（`TypertRemoteService` + 客户端 `ctx.remote.$mount`）
    - session 上屏事件构造 helper（封装 `surfaceOp` / `sourceEventSeqs`）
 5. client bundle 允许打包一份 zod，用于生成满足 `dsh-api-remotes` 校验的真 codec；其余依赖尽量保持 peerDependencies 以共享宿主实例。
+6. **能力上限策略（权威细则 `docs/capability-strategy.md`）**：采用方案一（门面转译）+ 方案三（replacement bundle）双通道。B 类迁移判据——低/中工作量且高价值 → R 类；高工作量 → 维持门面转译；横切派发语义（priority / deepFreeze / fault containment）永不 R。方案二（修改运行时源码）不作为插件分发通道，仅 boot 胶水级 C 类（如 U4）可作部署/运维例外，且必须人工批准、可逆、升级重放、不受 `dsh.api` 版本承诺。任何新增 R 类都须走 spec coding Stage 0–4。
 
 ## 5. 验收对象（spec 需求的现实来源）
 
@@ -130,6 +139,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 - 测试（进入 execute 阶段后）：`node --test`；纯函数模块保持零 harness 依赖。
 - 不引入与门面无关的运行时依赖；需要宿主共享实例的包一律 `peerDependencies`。
 - 临时验证脚本放 `temp/`，用完即删。
+- 治理文档 `docs/capability-strategy.md` 是 A/B/C/R 分类与能力上限策略的权威来源；修订能力边界时，必须同步 AGENTS.md §2/§4 与 `docs/specs/plugin-api-features/feature-list.md`。
 
 ## 7. 关键链接
 

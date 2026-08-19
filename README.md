@@ -66,6 +66,10 @@ L2 图片准入政策的 scoped gateway 是唯一 `resolveModelInfo` wrapper own
 - 不受门面版本协商与 fail-safe guard 保护。
 - 风险自担。只有在门面尚未覆盖的命名空间上，才建议临时走逃生舱，并计划迁移回门面 API。
 
+## 替换行通道（R 类，replacement bundle）
+
+当缺失语义天然属于某个官方 loader 行、且经 `docs/capability-strategy.md` 批准登记时，可发布独立 replacement bundle：用官方 patch 机制（`- id: <官方行>; disabled: true` + `- insert:` 替代行）禁用该官方行，由替代行完整提供原行的 ctx 服务/事件契约并增加接口。R 类绝不修改官方安装文件；它只替换 ctx 服务/事件面，**不替换** `@deepseek-ai/dsh-*` 包 import 面。细则与候选清单见 `docs/capability-strategy.md`。
+
 ## 门面完整性（F0.4 / F0.5）
 
 - 符号解析门面（F0.4）的权威定义见 `docs/specs/plugin-api-facade-integrity/requirements.md` §1。
