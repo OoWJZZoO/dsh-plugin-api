@@ -201,6 +201,7 @@
 | ST6 真 codec 生成 | client bundle 打包一份 zod，生成满足 `dsh-api-remotes` 校验的 descriptor（替代 looseSchema） | B | dsh-read-image A4（伪造 zod schema）；AGENTS.md 第 4.5 条 | M3 | **delivered** |
 | ST7 插件设置命名空间动态化 | 官方 `WEB_SETTINGS_NAMESPACES` 支持第三方插件命名空间 | C | `dsh-host-apiproxy/lib/types/api-proxy.js:50-52` 当前硬编码 7 个命名空间 | M4 | planned（proposal） |
 | ST8 设置描述与安装 helper | `settings.describe({redactSecrets})` 稳定直通；`installSettingsSection(ctx, ns, schema, entry, hooks)` 作为注册便利封装 | A | `dsh-settings/lib/index.js`（`describe` L352；`installSettingsSection` L618） | M1 | **delivered** |
+| RB1 通用 Typert Remote host 发布 | `remote.publish(serviceKey, service)`：任意 JSON-safe 配置/状态服务经官方 `bindTypertRemote` + `Remote` marker + `ctx.reflect.provide` 发布为 web 可消费的 Typert remote，返回 owner 作用域 disposer；`service` 自有可调用成员即 endpoint，方法参数名即 wire 名 | B | `dsh-typert-protocol`（`bindTypertRemote`/`Remote`/`remoteMethods`/`isTypertRemoteSegment`）；`dsh-api-gateway` source-mode 自动发现（`dsh-api-gateway/lib/index.js:75-88,143-156`）；pro-ex `lib/config-remote.js`（95 行手搓桥，迁移目标） | M4 | **delivered** |
 
 ### 2.9 `pluginApi.client` —— 客户端 bundle / slot / remote（M3/M4）
 
@@ -309,6 +310,7 @@
 | `dsh-pro-ex-ability-anchor` | 手写 `surfaceOp`/`sourceEventSeqs` 上屏事件 | `pluginApi.session.appendMessage(targetSession, kind, payload, {sourceEventSeqs?})` | delivered（M2 migration） |
 | `dsh-pro-ex-ability-anchor` | `system-prompt/assemble` 直接监听 | P6 类型化瀑布（行为等价） | planned（M1） |
 | `dsh-pro-ex-ability-anchor` | panel 手写 client bundle/manifest + slot glue | C1 client manifest helper + C4 slot | delivered（M3；已迁移） |
+| `dsh-pro-ex-ability-anchor` | `lib/config-remote.js`（95 行手搓 `TypertRemoteService` 桥） | RB1 `pluginApi.remote.publish('extraproAnchorConfig', service)`（wire 参数名 `settings` 保留） | delivered（M4 predicate + 仓库侧 contract-lock；消费者删文件迁移按 AC 7.3 记录 waive，理由见 delivery report） |
 
 ---
 
