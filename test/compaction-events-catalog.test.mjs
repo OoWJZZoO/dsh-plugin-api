@@ -147,6 +147,6 @@ test('the main facade does not import the auxiliary replacement package', () => 
   const combined = `${indexSource}\n${sliceSource}`
   assert.ok(!combined.includes("from '@deepseek-ai/dsh-plugin-api-compaction-events'"),
     'main facade must not import the auxiliary package (requirements 1.5)')
-  assert.ok(indexSource.includes('rSlices: [compactionEventsCatalogSlice]'),
-    'mountEventsFeature must wire the R slice into createEventsBus')
+  assert.ok(indexSource.includes('rSlices: [compactionEventsCatalogSlice, sessionTitleEventsCatalogSlice]'),
+    'mountEventsFeature must wire the R slices into createEventsBus')
 })
