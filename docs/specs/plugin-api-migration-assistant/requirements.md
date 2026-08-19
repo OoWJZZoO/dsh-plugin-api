@@ -216,7 +216,7 @@ Promise/handle/disposer identity, or an argument whose static shape is unknown
 mode.
 
 **WHEN** a file has already been migrated by the same rule registry
-**THEN** a second run SHALL produce zero edits and one `idempotence` diagnostic
+**THEN** a second run SHALL produce zero edits and one `idempotence` finding
 with `INFO` severity and `SAFE` classification for each already-converged file.
 
 ### 9. Facade injection and entry identification
@@ -225,7 +225,8 @@ with `INFO` severity and `SAFE` classification for each already-converged file.
 **THEN** the tool SHALL add exactly one `inject` declaration containing
 `'pluginApi'`, preserve all existing injection entries and exports, and add a
 guard equivalent to `if (!ctx?.pluginApi?.isActive) return` only when the entry
-function has a statically provable `ctx` parameter.
+function has a statically provable `ctx` parameter; when a directive prologue is
+present, the guard SHALL be the first non-directive statement.
 
 **WHEN** a plugin entry is identified by `package.json.main`, an exported
 `apply` function, or a `dsh.client` declaration
@@ -267,7 +268,14 @@ hashes for every changed file.
 **WHEN** the user runs `migrate --rollback <migrationId>`
 **THEN** the tool SHALL restore only files whose current hash equals the
 recorded post hash and SHALL refuse the entire rollback if any owned file has
-changed since migration.
+changed since migration. `<migrationId>` MAY be a bare id resolved below
+`.dsh/migrations/` or an explicit migration directory.
+
+**WHEN** a write or rollback transaction fails after one or more files have been
+replaced
+**THEN** the tool SHALL attempt inverse restoration, record restored and
+unrestored paths in a recovery manifest, exit non-zero, and SHALL not report a
+partial success.
 
 ### 12. CLI behavior and exit codes
 
