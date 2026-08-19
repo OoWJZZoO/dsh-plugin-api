@@ -142,3 +142,14 @@ record final evidence in the delivery document.
   and `passed` verification status.
 - The final Stage 4 commit exists with a clean working tree. Remote push is a
   delivery action performed separately when credentials and user policy allow.
+
+## Execution status
+
+- Batches 1–4: implemented, tested, reviewed, and committed on the feature
+  branch.
+- Batch 5: scan and verification evidence is recorded in `acceptance.md`.
+  `dsh-read-image` passed its 23-test upstream verification. The available
+  replacement for the named `dsh-pro-ex-ability-anchor` target,
+  `dsh-extrapro-anchor`, reached 88/93 under Windows; the five failures are
+  existing POSIX/Git-Bash path assumptions. The assistant therefore leaves this
+  target as `failed` instead of claiming a migration pass.

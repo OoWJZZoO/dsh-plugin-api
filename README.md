@@ -80,3 +80,6 @@ L2 图片准入政策的 scoped gateway 是唯一 `resolveModelInfo` wrapper own
 ```bash
 node --test
 ```
+
+迁移助手的扫描、基线、dry-run、写入、回滚和审计用法见
+[`docs/migration.md`](docs/migration.md)。

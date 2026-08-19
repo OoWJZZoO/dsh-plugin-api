@@ -139,6 +139,8 @@ test('rule registry maps public service methods and classifies dynamic access', 
   assert.equal(selectRule({ surface: 'host', service: 'tools' }).selected.id, 'host.service.alias')
   assert.equal(selectRule({ surface: 'host', service: 'tools', method: 'delete' }).selected, undefined)
   assert.equal(selectRule({ surface: 'host', service: 'tools', method: 'register' }, { apiProtocol: '0.4' }).selected.classification, 'SAFE')
+  assert.equal(selectRule({ surface: 'host', service: 'sessions', method: 'get' }).selected.classification, 'SAFE')
+  assert.equal(selectRule({ surface: 'host', service: 'session', method: 'get' }).selected.classification, 'SAFE')
   assert.equal(selectRule({ surface: 'host', kind: 'dynamic-access' }).selected.classification, 'MANUAL')
   assert.equal(selectRule({ surface: 'client', kind: 'client-dynamic-namespace' }).selected.aClass, 'C')
 })
