@@ -22,11 +22,13 @@ const EXPECTED_KEYS = [
   'agentDefaultModel',
   'web',
   'compaction',
+  'jobs',
+  'shellEnv',
 ]
 
-test('SERVICE_DEFINITIONS declares exactly the 19 capability namespace keys', () => {
+test('SERVICE_DEFINITIONS declares exactly the 21 capability namespace keys', () => {
   assert.deepEqual(SERVICES_NAMESPACE_KEYS, EXPECTED_KEYS)
-  assert.equal(SERVICE_DEFINITIONS.length, 19)
+  assert.equal(SERVICE_DEFINITIONS.length, 21)
 })
 
 test('capability namespace contains only its approved static service definitions', () => {
@@ -89,6 +91,38 @@ test('SV17 compaction exposes exactly the public abstract operations', () => {
     { kind: 'method', name: 'compactNow' },
     { kind: 'method', name: 'compactRegion' },
   ])
+})
+
+test('SV19 jobs exposes exactly the nine public abstract JobRegistry operations', () => {
+  const def = SERVICE_DEFINITIONS.find((d) => d.key === 'jobs')
+  assert.ok(def)
+  assert.equal(def.ctxService, 'jobs')
+  assert.equal(def.pkg, 'dsh-jobs')
+  assert.equal(def.members.length, 9)
+  const kinds = new Set(def.members.map((m) => m.kind))
+  assert.deepEqual([...kinds], ['method'])
+  assert.deepEqual(
+    def.members.map((m) => m.name),
+    ['start', 'list', 'get', 'read', 'kill', 'wait', 'onJobDone', 'onJobsChanged', 'attachController'],
+  )
+  assert.equal(def.members.some((m) => m.optional), false)
+  assert.equal(def.members.some((m) => m.kind === 'getter'), false)
+  assert.equal(def.members.some((m) => m.kind === 'forward'), false)
+})
+
+test('SV20 shellEnv exposes exactly the three public ShellEnvRegistry operations', () => {
+  const def = SERVICE_DEFINITIONS.find((d) => d.key === 'shellEnv')
+  assert.ok(def)
+  assert.equal(def.ctxService, 'shellEnv')
+  assert.equal(def.pkg, 'dsh-shell-env')
+  assert.equal(def.members.length, 3)
+  assert.deepEqual(
+    def.members.map((m) => m.name),
+    ['register', 'collect', 'list'],
+  )
+  assert.equal(def.members.some((m) => m.optional), false)
+  assert.equal(def.members.some((m) => m.kind === 'getter'), false)
+  assert.equal(def.members.some((m) => m.kind === 'forward'), false)
 })
 
 test('fs, workspaces, skills surfaces contain the corrected official method names', () => {

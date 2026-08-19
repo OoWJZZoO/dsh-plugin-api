@@ -19,6 +19,11 @@ function createHost(options = {}) {
     tools: { register() {}, restrict() {}, guard() {}, get() {}, schemas() {}, execute() {}, presentAs() {} },
     systemPrompt: { section() {}, context() {}, variable() {}, tools() {}, suppressRuntimeContext() {} },
     web: { registerSearchProvider() {}, registerFetchProvider() {} },
+    jobs: {
+      start() {}, list() {}, get() {}, read() {}, kill() {}, wait() {},
+      onJobDone() {}, onJobsChanged() {}, attachController() {},
+    },
+    shellEnv: { register() {}, collect() {}, list() {} },
     ...options.services,
   }
   const state = { pluginApi: undefined, effects: [], listeners: [], provides: 0 }
@@ -82,7 +87,9 @@ test('combined host publishes additive immutable M2 shapes once without syntheti
     assert.equal(first.events.catalog[excluded], undefined)
   }
   for (const view of views) assert.ok(Object.isFrozen(view))
-  assert.equal(Object.keys(first.services).length, 19)
+  assert.equal(Object.keys(first.services).length, 21)
+  assert.equal(first.services.jobs.isActive, true)
+  assert.equal(first.services.shellEnv.isActive, true)
 })
 
 test('combined host preserves P1 → P2 → P3/P4 precedence', () => {

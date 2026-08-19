@@ -76,6 +76,8 @@
 | `dsh-web` | `lib/index.js` | `web` 服务：`registerSearchProvider` / `registerFetchProvider` |
 | `dsh-host-apiproxy` | `lib/types/api-proxy.js` | `WEB_SETTINGS_NAMESPACES` 硬编码位置 |
 | `dsh-fs` / `dsh-code-runtime` / `dsh-workspace` / `dsh-subagent` / `dsh-workflow-worker-thread` / `dsh-user-approval` / `dsh-user-questions` / `dsh-attachment` / `dsh-storage` | 各 `lib/index.js` | capability seams：`fs`、`codeRuntime`、`workspaceRegistry`、`subagents`、`workflowEngine`、`approval`、`userQuestions`、`attachments`、`storage` |
+| `dsh-jobs` / `dsh-jobs-local` | 各 `lib/index.js` | `jobs` 后台任务注册表 seam（抽象 `JobRegistry` Service Definition + live `LocalJobRegistry` provider） |
+| `dsh-shell-env` | `lib/index.js` | `shellEnv` 受管 `DSH_*` 环境注册表 seam（`ShellEnvRegistry`） |
 | `dsh-tool-fs` / `dsh-tool-bash` / `dsh-tool-str-replace-editor` / `dsh-commands` / `dsh-skill` / `dsh-credentials` / `dsh-goal` / `dsh-schedule` | 各 `lib/index.js` | `fs/*`、`commands/change`、`skills/change`、`credentials/updated`、`goal/changed`、`schedule/change` |
 
 ---
@@ -261,6 +263,8 @@
 | SV16 Token 计量 | `pluginApi.services.tokenMeter.measure(session, requestHeader)` / `estimateMessage` 直通 | A | `dsh-token-meter`（服务 `tokenMeter`） | M1 | **delivered** |
 | SV17 压缩服务 seam | `pluginApi.services.compaction.compactIfNeeded/compactNow/compactRegion` 直通；不暴露 Basic 专有成员，且 `compaction/*` 不作为 events API 暴露 | A | `dsh-compaction`（服务 `compaction`） | M2 | **delivered** |
 | SV18 默认模型选择 | `pluginApi.services.agentDefaultModel.currentSelection()` / `saveSelection(next)` 直通 | A | `dsh-agent-default-model`（服务 `agentDefaultModel`） | M1 | **delivered** |
+| SV19 后台任务注册表 seam | `pluginApi.services.jobs`：`start/list/get/read/kill/wait/onJobDone/onJobsChanged/attachController` 九个抽象 `JobRegistry` 操作直通；`onJobDone/onJobsChanged/attachController` 返回官方 disposer；不暴露 concrete-provider 私有成员，且无 `jobs/*` events API | A | `dsh-jobs` 抽象 Service Definition（服务 `jobs`；live provider `dsh-jobs-local`） | M4 | **delivered** |
+| SV20 受管环境 seam | `pluginApi.services.shellEnv`：`register/collect/list` 三个 `ShellEnvRegistry` 操作直通；`register` 返回官方 disposer；不暴露 registry 私有成员，且无 `shellEnv/*` events API | A | `dsh-shell-env`（服务 `shellEnv`） | M4 | **delivered** |
 
 ---
 
@@ -309,6 +313,7 @@
 | `dsh-pro-ex-ability-anchor` | 手写 `surfaceOp`/`sourceEventSeqs` 上屏事件 | `pluginApi.session.appendMessage(targetSession, kind, payload, {sourceEventSeqs?})` | delivered（M2 migration） |
 | `dsh-pro-ex-ability-anchor` | `system-prompt/assemble` 直接监听 | P6 类型化瀑布（行为等价） | planned（M1） |
 | `dsh-pro-ex-ability-anchor` | panel 手写 client bundle/manifest + slot glue | C1 client manifest helper + C4 slot | delivered（M3；已迁移） |
+| `dsh-pro-ex-ability-anchor` | Git Bash 工具 `ctx.get('jobs')` / `ctx.get('shellEnv')` 直连 | `pluginApi.services.jobs` / `pluginApi.services.shellEnv`（`isActive` 门控 + typed-error 降级） | delivered（M4 migration；pro-ex 工作树内测试全绿，commit 与 `plugin-api-tools-abort-helper-m4` 共享文件协调） |
 
 ---
 

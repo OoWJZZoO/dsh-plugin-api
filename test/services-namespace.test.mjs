@@ -28,11 +28,13 @@ const URI_HELPERS = {
   decodeSessionReferenceUri: () => ({}),
 }
 
-test('namespace exposes exactly the 19 keys and nothing else', () => {
+test('namespace exposes exactly the 21 keys and nothing else', () => {
   const services = createServicesNamespace({ ctx: fullCtx(), active: true, uriHelpers: URI_HELPERS })
   assert.deepEqual(Object.keys(services), SERVICES_NAMESPACE_KEYS)
-  assert.equal(Object.keys(services).length, 19)
+  assert.equal(Object.keys(services).length, 21)
   assert.ok('compaction' in services)
+  assert.ok('jobs' in services)
+  assert.ok('shellEnv' in services)
 })
 
 test('namespace and every facade are frozen (read-only at runtime)', () => {
@@ -53,16 +55,51 @@ test('namespace and every facade are frozen (read-only at runtime)', () => {
   assert.equal('summarize' in compaction, false)
   assert.equal('config' in compaction, false)
 
+  const jobs = services.jobs
+  assert.deepEqual(Object.keys(jobs), [
+    'isActive',
+    'start',
+    'list',
+    'get',
+    'read',
+    'kill',
+    'wait',
+    'onJobDone',
+    'onJobsChanged',
+    'attachController',
+  ])
+  assert.ok(!('servesOwner' in jobs))
+  assert.ok(!('layers' in jobs))
+
+  const shellEnv = services.shellEnv
+  assert.deepEqual(Object.keys(shellEnv), ['isActive', 'register', 'collect', 'list'])
+  assert.ok(!('contributors' in shellEnv))
+  assert.ok(!('keyOwners' in shellEnv))
+
   assert.throws(() => { services.extra = true }, TypeError)
   assert.throws(() => { delete services.compaction }, TypeError)
   assert.throws(() => { Object.defineProperty(services, 'extra', { value: true }) }, TypeError)
   assert.throws(() => { compaction.extra = true }, TypeError)
   assert.throws(() => { delete compaction.compactNow }, TypeError)
   assert.throws(() => { Object.defineProperty(compaction, 'extra', { value: true }) }, TypeError)
+  assert.throws(() => { jobs.extra = true }, TypeError)
+  assert.throws(() => { delete jobs.start }, TypeError)
+  assert.throws(() => { Object.defineProperty(jobs, 'extra', { value: true }) }, TypeError)
+  assert.throws(() => { shellEnv.extra = true }, TypeError)
+  assert.throws(() => { delete shellEnv.register }, TypeError)
+  assert.throws(() => { Object.defineProperty(shellEnv, 'extra', { value: true }) }, TypeError)
   assert.equal(services.extra, undefined)
   assert.equal(services.compaction, compaction)
   assert.equal(compaction.extra, undefined)
   assert.equal(typeof compaction.compactNow, 'function')
+  assert.equal(services.jobs, jobs)
+  assert.equal(jobs.extra, undefined)
+  assert.equal(typeof jobs.start, 'function')
+  assert.equal(typeof jobs.attachController, 'function')
+  assert.equal(services.shellEnv, shellEnv)
+  assert.equal(shellEnv.extra, undefined)
+  assert.equal(typeof shellEnv.register, 'function')
+  assert.equal(typeof shellEnv.collect, 'function')
 })
 
 test('compaction facade does not mutate the official service target', () => {
@@ -92,6 +129,100 @@ test('compaction facade does not mutate the official service target', () => {
   assert.equal(typeof compaction.summarize, 'function')
   assert.deepEqual(compaction.config, { mode: 'basic' })
   assert.deepEqual(compaction.providerState, { active: true })
+})
+
+test('jobs facade does not mutate the official service target', () => {
+  const jobs = {
+    start() {},
+    list() {},
+    get() {},
+    read() {},
+    kill() {},
+    wait() {},
+    onJobDone() {},
+    onJobsChanged() {},
+    attachController() {},
+    layers: { internal: true },
+    ownerCleanups: new Map(),
+  }
+  const services = createServicesNamespace({
+    ctx: fullCtx({
+      get(name, byService) {
+        return name === 'jobs' ? jobs : byService[name]
+      },
+    }),
+    active: true,
+    uriHelpers: URI_HELPERS,
+  })
+
+  assert.equal(services.jobs.isActive, true)
+  assert.deepEqual(Object.keys(services.jobs), [
+    'isActive',
+    'start',
+    'list',
+    'get',
+    'read',
+    'kill',
+    'wait',
+    'onJobDone',
+    'onJobsChanged',
+    'attachController',
+  ])
+  assert.ok(!('layers' in services.jobs))
+  assert.ok(!('ownerCleanups' in services.jobs))
+  assert.equal(Object.isFrozen(jobs), false)
+  assert.equal(typeof jobs.start, 'function')
+})
+
+test('shellEnv facade does not mutate the official service target', () => {
+  const shellEnv = {
+    register() {},
+    collect() {},
+    list() {},
+    contributors: new Map(),
+    keyOwners: new Map(),
+  }
+  const services = createServicesNamespace({
+    ctx: fullCtx({
+      get(name, byService) {
+        return name === 'shellEnv' ? shellEnv : byService[name]
+      },
+    }),
+    active: true,
+    uriHelpers: URI_HELPERS,
+  })
+
+  assert.equal(services.shellEnv.isActive, true)
+  assert.deepEqual(Object.keys(services.shellEnv), ['isActive', 'register', 'collect', 'list'])
+  assert.ok(!('contributors' in services.shellEnv))
+  assert.ok(!('keyOwners' in services.shellEnv))
+  assert.equal(Object.isFrozen(shellEnv), false)
+  assert.equal(typeof shellEnv.register, 'function')
+})
+
+test('complete jobs and shellEnv services alone yield active facades while static peers stay P4-disabled', () => {
+  const jobs = {
+    start() {}, list() {}, get() {}, read() {}, kill() {}, wait() {},
+    onJobDone() {}, onJobsChanged() {}, attachController() {},
+  }
+  const shellEnv = { register() {}, collect() {}, list() {} }
+  const services = createServicesNamespace({
+    ctx: fullCtx({
+      get(name, byService) {
+        if (name === 'jobs') return jobs
+        if (name === 'shellEnv') return shellEnv
+        return undefined
+      },
+    }),
+    active: true,
+    uriHelpers: URI_HELPERS,
+  })
+
+  assert.equal(services.jobs.isActive, true)
+  assert.equal(services.shellEnv.isActive, true)
+  for (const key of ['fs', 'compaction', 'web', 'sessionQuery']) {
+    assert.equal(services[key].isActive, false, `${key} stays P4-disabled`)
+  }
 })
 
 test('hostile compaction member inspection degrades locally without interrupting other facades', () => {

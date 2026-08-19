@@ -13,7 +13,7 @@ import { SERVICES_NAMESPACE_KEYS } from '../lib/services.js'
 
 // These are deliberately separate approved sets. Their counts must never be
 // inferred from each other: Cordis events (47), durable records (5), and
-// services namespace keys (19) have distinct ownership and boundaries.
+// services namespace keys (21) have distinct ownership and boundaries.
 const M1_CORDIS_EVENT_NAMES = [
   'agent/created',
   'agent/disposed',
@@ -92,6 +92,8 @@ const SERVICES_KEYS = [
   'agentDefaultModel',
   'web',
   'compaction',
+  'jobs',
+  'shellEnv',
 ]
 
 test('M1 Cordis catalog remains the exact 47-name frozen union with no M2 synthetic event', () => {
@@ -124,6 +126,10 @@ test('M1 Cordis catalog remains the exact 47-name frozen union with no M2 synthe
     'agent/create',
     ...DURABLE_KIND_NAMES,
     'compaction/started',
+    'jobs/started',
+    'jobs/changed',
+    'shellEnv/register',
+    'shellEnv/changed',
   ]) {
     assert.equal(catalog[nonEvent], undefined, `${nonEvent} is not a Cordis catalog entry`)
   }
@@ -140,7 +146,7 @@ test('durable observation retains its independent exact five-kind catalog', () =
   assert.deepEqual(Object.keys(DURABLE_EVENT_DESCRIPTORS), DURABLE_KIND_NAMES)
 })
 
-test('services namespace retains its independent exact 19-key static allowlist', () => {
-  assert.equal(SERVICES_NAMESPACE_KEYS.length, 19)
+test('services namespace retains its independent exact 21-key static allowlist', () => {
+  assert.equal(SERVICES_NAMESPACE_KEYS.length, 21)
   assert.deepEqual(SERVICES_NAMESPACE_KEYS, SERVICES_KEYS)
 })

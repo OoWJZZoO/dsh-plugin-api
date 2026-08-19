@@ -24,7 +24,7 @@
 
 #### 1.1 Contract-first tests
 
-- [ ] Update `test/services-definitions.test.mjs` and
+- [x] Update `test/services-definitions.test.mjs` and
   `test/services-namespace.test.mjs` first to declare the 21-key namespace
   contract.
   - Assert the stable key order ends with `jobs` then `shellEnv`, and that no
@@ -53,7 +53,7 @@
 
 #### 1.2 Implementation
 
-- [ ] Update `lib/services.js` by appending the approved static `jobs` and
+- [x] Update `lib/services.js` by appending the approved static `jobs` and
   `shellEnv` definitions to `SERVICE_DEFINITIONS` (after `compaction`).
   - Reuse the existing generic definition/facade machinery. Do not add a
     special-purpose builder, runtime property enumeration, class/package
@@ -71,7 +71,7 @@
 
 #### 2.1 Contract-first tests
 
-- [ ] Extend `test/services-passthrough.test.mjs` with jobs/shellEnv-specific
+- [x] Extend `test/services-passthrough.test.mjs` with jobs/shellEnv-specific
   call-recording mocks before relying on the generic implementation.
   - Reword the generic test that iterates `SERVICE_DEFINITIONS` (its title
     currently says "all 19 services") to "all 21 services"; the loop
@@ -96,7 +96,7 @@
 
 #### 2.2 Implementation
 
-- [ ] Confirm the generic `buildActiveFacade()` method delegation satisfies the
+- [x] Confirm the generic `buildActiveFacade()` method delegation satisfies the
   new tests; make only the narrowly required shared-factory correction if the
   test demonstrates a gap.
   - Preserve rest-argument delegation so omitted optional trailing arguments
@@ -111,7 +111,7 @@
 
 #### 3.1 Contract-first tests
 
-- [ ] Extend `test/services-optional-member.test.mjs`,
+- [x] Extend `test/services-optional-member.test.mjs`,
   `test/services-disabled.test.mjs`, and `test/services-namespace.test.mjs`
   with jobs/shellEnv degradation cases before implementation.
   - With active `services`, verify a missing or non-callable declared member on
@@ -140,7 +140,7 @@
 
 #### 3.2 Implementation
 
-- [ ] Confirm `createServicesNamespace()` in `lib/services.js` already
+- [x] Confirm `createServicesNamespace()` in `lib/services.js` already
   enforces per-definition containment for the two new definitions (the SV17
   boundary is generic). Make only the narrowly required correction if the new
   tests demonstrate a gap.
@@ -162,7 +162,7 @@
 
 #### 4.1 Contract-first tests
 
-- [ ] Update `test/guards.test.mjs` and `test/plugin-api-service.test.mjs`
+- [x] Update `test/guards.test.mjs` and `test/plugin-api-service.test.mjs`
   for the 21-definition services contract.
   - Verify a complete jobs service as the only resolvable official capability
     makes `runFeatureGuard('services')` pass; same for a complete shellEnv
@@ -177,7 +177,7 @@
 
 #### 4.2 Implementation
 
-- [ ] Make the narrowly required updates: update the `services` guard
+- [x] Make the narrowly required updates: update the `services` guard
   diagnostic message text in `lib/guards.js` from "19" to "21", and update
   `test/guards.test.mjs` wording/counts accordingly. Do not change either
   module's production behavior for jobs/shellEnv beyond that text.
@@ -189,7 +189,7 @@
 
 #### 4.3 Apply and cardinality tests
 
-- [ ] Extend `test/index-services.test.mjs`, `test/m2-integration-cardinality.test.mjs`,
+- [x] Extend `test/index-services.test.mjs`, `test/m2-integration-cardinality.test.mjs`,
   and `test/m2-integration-lifecycle.test.mjs` with host-apply isolation and
   exact-cardinality coverage.
   - With only complete jobs/shellEnv mocks available, assert `services` mounts
@@ -222,7 +222,7 @@
 
 #### 5.1 Migration implementation
 
-- [ ] In `../dsh-pro-ex-ability-anchor`, rewire the Windows Git Bash tool's two
+- [x] In `../dsh-pro-ex-ability-anchor`, rewire the Windows Git Bash tool's two
   seams through the facade:
   - In `lib/index.js`, resolve `pluginApi.services.jobs` and
     `pluginApi.services.shellEnv` from `ctx.get('pluginApi')` and pass them (or
@@ -243,7 +243,7 @@
 
 #### 5.2 Migration tests
 
-- [ ] Update `test/windows-gitbash.test.mjs`:
+- [x] Update `test/windows-gitbash.test.mjs`:
   - Extend `makeCtx()` (or the relevant fixtures) to inject facade doubles for
     `pluginApi.services.jobs` and `pluginApi.services.shellEnv` with
     `isActive: true` and recording `start`/`collect`/`list`/`register` methods
@@ -268,7 +268,7 @@
 
 #### 5.3 Migration acceptance verification
 
-- [ ] Run the relevant `dsh-pro-ex-ability-anchor` test command (its repository
+- [x] Run the relevant `dsh-pro-ex-ability-anchor` test command (its repository
   convention) and confirm it passes; report exact output if it fails.
   - Verify no supported Git Bash path still reaches `ctx.get('jobs')` /
     `ctx.get('shellEnv')` for these seams.
@@ -280,7 +280,7 @@
 
 ### 6. Run full verification and synchronize feature records
 
-- [ ] 6.1 Run `node --test` for the entire `dsh-plugin-api` repository after
+- [x] 6.1 Run `node --test` for the entire `dsh-plugin-api` repository after
   Tasks 1–5 pass.
   - Resolve only regressions caused by the approved implementation. Keep the
     work limited to the design's existing services infrastructure and listed
@@ -290,7 +290,7 @@
     `dsh-jobs-local`, nor `dsh-shell-env`.
   - References: `requirements.md` §5, §7; `design.md` §3.5–3.6, §8.
 
-- [ ] 6.2 After the full suite passes, update the delivered-feature records.
+- [x] 6.2 After the full suite passes, update the delivered-feature records.
   - Update `docs/specs/plugin-api-features/feature-list.md`:
     - Add source rows in §1.4 for `dsh-jobs`/`dsh-jobs-local` and
       `dsh-shell-env`.
@@ -306,7 +306,7 @@
     affect checked repository artifacts.
   - References: `AGENTS.md` §8; `requirements.md` §1, §5–7; `design.md` §8.
 
-- [ ] 6.3 Final clean-up and commit.
+- [x] 6.3 Final clean-up and commit.
   - Run `git diff --check` in both `dsh-plugin-api` and
     `../dsh-pro-ex-ability-anchor`.
   - Commit all Stage 4 code, tests, specs, migration, and registry updates in
@@ -326,3 +326,24 @@
 | §5 no event, behavior, or namespace changes | 2, 4, 6 |
 | §6 migration acceptance evidence (pro-ex Git Bash) | 5 |
 | §7 focused tests and full regression coverage | 1–6 |
+
+---
+
+## Execution revision notes (Stage 4)
+
+- **Parallel shared-file interaction (pro-ex, Task 5):** the sibling
+  `plugin-api-tools-abort-helper-m4` feature (an explicit non-goal here) owns
+  an in-flight, uncommitted migration in the same
+  `../dsh-pro-ex-ability-anchor/lib/index.js` Git Bash block (its
+  `makeAbortedError` / `fallbackPlainAbortError` region, lines ~289–295 and
+  ~374–384). This feature's migration touched only the disjoint
+  `shellEnv`/`getJobs` region. Both edits coexist in the shared working tree
+  and the combined pro-ex suite (126 tests) passes. Per parallel-workflow
+  protocol §2.3/§2.5, this is recorded and reported; the pro-ex commit is
+  intentionally deferred to integration coordination so neither feature's
+  uncommitted work is swept into the other's commit. No dsh-plugin-api shared
+  production file is at risk (this feature changes only `lib/services.js` and
+  the `lib/guards.js` message text).
+- Tasks 1–5 completed with blocking adversarial review per batch (PASS;
+  non-blocking suggestions folded in). Task 6 finalizes docs/registry and
+  commits the dsh-plugin-api worktree.
