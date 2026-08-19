@@ -84,6 +84,8 @@ clientRemoteEvents
 
 `clientRemoteEvents` has no semantic dependency on slots and may initialize earlier internally, but the deterministic list order above is used for repeatable boot and tests. The client list is not a Cordis host `FEATURE_MOUNTERS` replacement and does not alter host guard results.
 
+The client entry SHALL not declare optional browser services (`connection`, `remote`, `settingsScope`, or `slots`) as top-level Cordis injections. Each leaf resolves and guards its own substrate, publishes a typed/inert disabled face when unavailable, and leaves unrelated leaves mountable. A missing service therefore disables only its owning leaf instead of leaving the whole client entry pending.
+
 ### Worktree waves
 
 ```mermaid
@@ -138,7 +140,7 @@ The codec leaf owns the only M3 bundled zod copy. It creates actual zod schema o
 
 #### `clientRemoteContribution` and `clientSettingsRemote`
 
-`clientRemoteContribution` owns the generic `$mount` adapter and exact contribution disposer. `clientSettingsRemote` owns only the settings-specific descriptor/face adapter and calls the generic owner; it cannot duplicate `$mount` or create a second remote registry. The settings client uses an inert/degraded render result when host publication is unavailable. Native `remote.<ns>` discovery remains C7/M4.
+`clientRemoteContribution` owns the generic `$mount` adapter and exact contribution disposer. After `$mount` resolves, its face check uses the official remote dynamic-service accessor (`remote[namespace]` or the documented equivalent), not own-property enumeration, because the gateway exposes Cordis dynamic services. The owner uses `pending → active → stale/disposed` records: disposal during a pending mount defers official cleanup until the promise settles, and late failure cleanup removes an owner only when the map still points to that record. `clientSettingsRemote` owns only the settings-specific descriptor/face adapter and calls the generic owner; it cannot duplicate `$mount` or create a second remote registry. The settings client uses an inert/degraded render result when host publication is unavailable. Native `remote.<ns>` discovery remains C7/M4.
 
 #### `clientSettingsScope`
 
@@ -146,11 +148,11 @@ The codec leaf owns the only M3 bundled zod copy. It creates actual zod schema o
 
 #### `clientSlots` and `clientSlotEvents`
 
-`clientSlots` delegates to the official slots service and owns registration, injection, read, and subscription. `clientSlotEvents` registers the typed client event descriptor for `slots/changed`; it observes the official event after the slot mutation has committed. The event payload is the canonical slot ID and is not added to the host 47-entry Cordis catalog.
+`clientSlots` delegates to the official slots service and owns registration, injection, read, and subscription. `clientSlotEvents` registers the typed client event descriptor for `slots/changed`; it observes the official event after the slot mutation has committed. The event payload is the canonical slot ID and is not added to the host 47-entry Cordis catalog. Both synchronous throws and returned thenables are contained at the listener boundary; rejected thenables are observed and reported rather than becoming unhandled rejections.
 
 #### `clientRemoteEvents`
 
-The event bridge offers consumers only allowlisted `$on` subscriptions. `$dispatch(event, args)` is retained solely as the official decoded Host-frame carrier entry: it returns `void`, locally fans out the already-decoded argument list in subscription order, and isolates listener failures. It is neither a client-to-host transport nor a consumer emission API.
+The event bridge offers consumers only allowlisted `$on` subscriptions. `$dispatch(event, args)` is retained solely as the official decoded Host-frame carrier entry: it returns `void`, locally fans out the already-decoded argument list in subscription order, and isolates synchronous and asynchronous listener failures by observing returned thenables. It is neither a client-to-host transport nor a consumer emission API.
 
 ## Data Models
 
@@ -227,9 +229,11 @@ type SlotsChanged = string
 
 Failure rules are inherited from the M1 four-path vocabulary: P1 inactive core, P2 feature disabled, P3 optional service unavailable, and P4 per-member disabled facade. The client leaves use equivalent typed/inert presentation but do not create a fifth host error category. All apply/boot boundaries catch and report errors; official call-time errors are preserved inside direct A-class forwarding methods.
 
+Client composition is itself a fail-safe boundary: optional leaf substrates are resolved inside their leaf guards, never as mandatory top-level injection prerequisites. A failed leaf construction or guard cannot prevent the client facade and unrelated leaf faces from being published.
+
 ### Transaction and stale-cleanup rules
 
-Every B-class owner uses `prepare → effect registration → commit/publication → activation` and reverses the exact completed steps on failure. A disposer is idempotent, proves slot ownership before clearing a composition slot, and does not clear a newer epoch. A-class forwarders preserve official disposer identity when the official API returns one; adapter-created scope/bridge disposers are stable and own only adapter registrations.
+Every B-class owner uses `prepare → effect registration → commit/publication → activation` and reverses the exact completed steps on failure. A disposer is idempotent, proves slot ownership before clearing a composition slot, and does not clear a newer epoch. For asynchronous remote mounting, the owner record remains addressable until settlement so a pending disposal can perform the eventual official cleanup exactly once; rejection cleanup is conditional on record identity. A-class forwarders preserve official disposer identity when the official API returns one; adapter-created scope/bridge disposers are stable and own only adapter registrations.
 
 ## Testing Strategy
 
@@ -241,10 +245,10 @@ Every B-class owner uses `prepare → effect registration → commit/publication
 | C8 | Typert artifact discovery, schema/invocation/lookup/context registration, official receiver/disposer/error identity, missing registry guard |
 | C9 | exact `rpc.call` endpoint/args/signal, `api.settings.*`, Promise/rejection/cancellation identity, unavailable-service disabled face |
 | ST4 | namespace/service key validation, descriptor validation, bind/mount once, disposer/stale replacement, missing primitive fail-safe |
-| C2/ST5/ST6 | real-zod acceptance, invalid/unknown descriptor rejection, face mismatch, one `$mount`, degraded UI, rollback and stale disposer |
+| C2/ST5/ST6 | real-zod acceptance, invalid/unknown descriptor rejection, real official gateway dynamic-namespace resolution, face mismatch, one `$mount`, degraded UI, rollback, pending mount disposal/replacement races, and stale disposer |
 | C3 | `SettingsScopeSpec` forwarding, official `SettingsScope` identity and four-member surface, immutable snapshots, subscription order, `set`/`unset` Promise and official failure recovery, caller-fiber cleanup isolation |
-| C4/C5 | SlotEntryDef validation, injection wait/redeclaration, ordering, entries immutability, `slots/changed` after mutation, listener containment |
-| C6 | allowlist enforcement before subscription, exact `$on` subscription and carrier-only `$dispatch(event, args)`, decoded argument fan-out, listener failure containment and disposer identity |
+| C4/C5 | SlotEntryDef validation, injection wait/redeclaration, ordering, entries immutability, `slots/changed` after mutation, synchronous and asynchronous listener containment |
+| C6 | allowlist enforcement before subscription, exact `$on` subscription and carrier-only `$dispatch(event, args)`, decoded argument fan-out, synchronous and asynchronous listener failure containment, and disposer identity |
 
 ### Integration and migration gates
 
@@ -252,7 +256,7 @@ Every B-class owner uses `prepare → effect registration → commit/publication
 2. **Merge wave:** merge in dependency order and run focused tests for every affected owner after each top-level batch; do not perform shared refactors in this wave.
 3. **Unification wave:** build the parent `pluginApi.services`/client composition once, enforce guard/mounter order, wire typed errors, run repeated apply/disposal and no-cross-owner cleanup tests, then synchronize package/docs.
 4. **Host regression:** run the existing full `node --test` suite plus M3 host guard/apply/service tests; verify M0–M2 event catalog remains 47 and services remains 19 plus only the approved `typert` child placement.
-5. **Client regression:** execute bundle boot in a browser-capable/headless harness with real zod descriptor acceptance, malformed-wire cases, remote loss, slot changes, forwarded event allowlist, and settings scope cancellation.
+5. **Client regression:** execute bundle boot in a browser-capable/headless harness with real zod descriptor acceptance, malformed-wire cases, real gateway dynamic namespace resolution, remote loss, missing optional services with partial leaf boot, pending mount races, slot changes, forwarded event allowlist, asynchronous listener rejection containment, and settings scope cancellation.
 6. **Consumer migration:** run the real `dsh-read-image` settings-panel path and `dsh-pro-ex-ability-anchor` panel bundle/slot path, their relevant tests, documented headless smoke, and dev boot.
 7. **Delivery:** run `node --test`, `git diff --check`, package/export checks, official-package modification check, and verify all 11 rows are registered as delivered while C7/ST7 remain outside the M3 implementation.
 

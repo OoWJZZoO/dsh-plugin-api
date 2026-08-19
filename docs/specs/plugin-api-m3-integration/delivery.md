@@ -1,5 +1,10 @@
 # M3 Integration Delivery
 
+> Status: **M3 final acceptance complete**. The post-delivery adversarial review
+> findings (2026-08-19) were fixed in reconciliation batch 10 of
+> `plugin-api-m3-contract/tasks.md`; the reconciliation evidence below supersedes
+> the earlier `reconciliation-pending` boundary and closes the final acceptance.
+
 ## Boundary
 
 M3 integrates the eleven contracted features from `plugin-api-m3-contract`:
@@ -49,6 +54,58 @@ from committed stage boundaries and merged in the order above.
   to remove its obsolete check for the deleted `lib/config-remote.js`; the
   remaining headless/dev boot checks are retained for the deployed profile.
 
+## Reconciliation batch 10 evidence
+
+The four post-delivery review findings were fixed and verified in batch 10 of
+`plugin-api-m3-contract/tasks.md`:
+
+1. **C2 namespace validation** now resolves published namespaces through the
+   official dynamic-service accessor (`remote[namespace]`), accepting Cordis
+   dynamic properties; `in`/own-property enumeration is no longer used. A
+   Proxy-based test proves a face that is readable but reports false for `in`
+   mounts successfully, and the bundle `$mount` publishes namespaces as dynamic
+   properties.
+2. **Client composition** no longer declares `connection`, `remote`,
+   `settingsScope`, or `slots` as top-level Cordis injections (`inject = []`).
+   Each leaf resolves and guards its own substrate; missing, malformed, or
+   throwing (`ctx.get`) optional services disable only their owning leaf while
+   `pluginApi.client` and unrelated leaves keep publishing.
+3. **Pending C2 `$mount` lifecycle** uses `pending → active → stale/disposed`
+   records: disposal during a pending mount drops the addressable owner
+   immediately, defers the official disposer to settlement (invoked exactly
+   once), and late rejection cleanup is record-identity guarded so a newer
+   owner is never removed. ST5 rolls back a contribution disposed while its C2
+   mount is pending.
+4. **C5/C6 listener containment** attaches `Promise.resolve(result).catch(...)`
+   to every returned thenable; rejected async listeners are reported and
+   contained with no `unhandledRejection`, and snapshot order plus later
+   listener delivery are preserved.
+
+Reconciliation verification results:
+
+- Affected leaf tests: `client-remote-contribution` 7/7,
+  `client-remote-events` 3/3, `client-slot-events` 2/2,
+  `client-settings-remote` 5/5, `client-bundle` 4/4 (including partial boot
+  with each optional service absent, malformed, or throwing, and a
+  bundle-level `client.mountRemote` case).
+- Full `node --test`: **706/706 passed**.
+- Consumer migration: `dsh-read-image` **24/24**, `dsh-pro-ex-ability-anchor`
+  **123/123** passed.
+- `scripts/verify-migration.sh`: `node --test` and `node --check lib/*.js`
+  passed; dev boot readiness returned HTTP 200. The headless CLI smoke step is
+  blocked by an environment-level failure unrelated to this plugin: the local
+  headless profile's `MC Source` MCP server exceeds the upstream provider's
+  `tool_count_limit` (`[unsupported_tool_schema]` from Console Go). The
+  identical failure reproduces on the pristine pre-reconciliation commit, and
+  no `dsh-plugin-api` module or stack frame appears in the failure. No official
+  DSH package file was modified.
+- `lib/client.js` was regenerated with the same esbuild invocation (iife +
+  `window.__ModuleLoader__.load` wrapper, single bundled zod copy) and matches
+  the source modules.
+- `git diff --check`: passed.
+- The earlier `697/697`, consumer counts, headless smoke, and HTTP 200 results
+  remain valid baseline evidence and are now subsumed by the figures above.
+
 ## Explicit Non-Goals
 
 - C7 native `remote.<namespace>` dynamic discovery remains planned/proposal.
@@ -58,6 +115,7 @@ from committed stage boundaries and merged in the order above.
 ## Governance
 
 The unattended run treated the owner authorization as the human confirmation
-for Stage 0-3 gates. Each Stage 4 top-level batch was completed and adversarially
-audited before the next merge wave; deviations are recorded in the owning
-feature directories.
+for Stage 0-3 gates. Each original Stage 4 top-level batch was completed and
+adversarially audited before the next merge wave; the post-delivery review adds
+reconciliation batch 10, which must be completed and audited before the final
+M3 acceptance claim. Deviations are recorded in the owning feature directories.

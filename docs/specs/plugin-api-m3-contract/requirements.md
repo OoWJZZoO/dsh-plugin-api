@@ -66,12 +66,13 @@
 **User Story:** As a client plugin author, I want remote contributions to be mounted with real wire validation, so that a settings panel either receives a valid remote face or degrades predictably.
 
 1. WHEN `client.mountRemote(contribution)` is called, THEN C2 SHALL validate the contribution's package identity and descriptor collection, invoke the official `ctx.remote.$mount` exactly once, and return the official disposer or a contract disposer with equivalent lifetime semantics.
-2. WHEN a contribution declares a remote namespace or face, THEN C2 SHALL check the namespace/face against the host-published descriptor and SHALL reject a missing, duplicate, malformed, or mismatched face before UI publication.
+2. WHEN the official `$mount` promise resolves, THEN C2 SHALL verify each declared namespace/face through the official dynamic-service resolution semantics (`remote[namespace]` or the documented equivalent), SHALL accept Cordis dynamic properties, and SHALL NOT require own-property enumeration or the JavaScript `in` operator; an unresolved, duplicate, malformed, or mismatched face SHALL fail closed before UI publication.
 3. WHEN ST6 generates a descriptor codec, THEN it SHALL use the client bundle's bundled zod copy to produce a real schema object accepted by `dsh-api-remotes` validation; it SHALL not use a loose predicate, forged `_zod` marker, or host-only zod instance.
 4. WHEN a descriptor payload crosses the client/host wire, THEN its method name, parameter names, optionality, defaulting, return shape, error shape, and JSON-safe value domain SHALL be validated symmetrically by the generated codec; unknown or invalid fields SHALL fail closed.
 5. WHEN ST5 mounts the settings-specific contribution, THEN it SHALL reuse C2's generic mount owner and ST6's codec, apply the settings face contract, and provide a visible inert/degraded UI outcome when the host remote is unavailable; it SHALL not implement native `remote.<ns>` dynamic discovery.
 6. WHEN C2, ST5, or ST6 encounters a malformed descriptor, unavailable remote, duplicate mount, or client boot error, THEN it SHALL contain the failure, release its own partial registration, and keep unrelated client bundles running.
 7. WHEN a remote contribution disposer runs, THEN it SHALL be idempotent, stale-safe, and limited to its own contribution; a stale disposer SHALL not unmount a later contribution with the same package/namespace identity.
+8. WHEN disposal or owner replacement occurs while an official `$mount` promise is pending, THEN C2 SHALL mark that record stale, await the mount settlement, invoke the official disposer exactly once if the mount committed, and SHALL compare record identity before removing an owner; a late rejection SHALL not remove or disable a newer owner.
 
 ## 7. C3 client settings scope (A class)
 
@@ -91,8 +92,9 @@
 2. WHEN `client.slots.inject(key, callback)` is called, THEN it SHALL invoke the callback only for entries matching the canonical slot key and preserve official ordering, owner attribution, and callback disposal semantics.
 3. WHEN `client.slots.entries(key)` is called, THEN it SHALL return an immutable snapshot or official read view with stable ordering and SHALL not expose a mutable internal registry.
 4. WHEN `client.slots.subscribe(key, fn)` observes a committed mutation, THEN C5 SHALL expose `slots/changed(key: string)` with the canonical slot ID, deterministic listener order, snapshot iteration, and contained listener failures defined by the client event contract; it SHALL not add a host catalog entry or assert a host payload-freeze policy.
-5. WHEN a slot key is accepted, THEN it SHALL be one of the canonical IDs (`settings.*`, `sidebar.*`, `shell.overlay`, `conversation`, `details`, or a contract-approved extension); arbitrary unregistered IDs SHALL be rejected before registration.
-6. WHEN a slot registration or event observer fails, THEN the owning feature SHALL roll back only its own entry/observer and SHALL preserve other slot entries, observers, and client features.
+5. WHEN a `slots/changed` listener returns a thenable that rejects, THEN C5 SHALL attach a containment handler, report the failure through the client diagnostics path, and continue notifying other listeners without producing an unhandled rejection.
+6. WHEN a slot key is accepted, THEN it SHALL be one of the canonical IDs (`settings.*`, `sidebar.*`, `shell.overlay`, `conversation`, `details`, or a contract-approved extension); arbitrary unregistered IDs SHALL be rejected before registration.
+7. WHEN a slot registration or event observer fails, THEN the owning feature SHALL roll back only its own entry/observer and SHALL preserve other slot entries, observers, and client features.
 
 ## 9. C6 client event bridge (A class)
 
@@ -102,7 +104,8 @@
 2. WHEN the official Host-frame carrier calls `client.remote.$dispatch(name, args)`, THEN the bridge SHALL pass the decoded `readonly unknown[]` argument list to its local subscription table; this carrier-only method SHALL return `void`, SHALL not perform transport, and SHALL not be exposed as a consumer event-emission API.
 3. WHEN a consumer subscribes with `$on`, THEN C6 SHALL accept only names in the official forwarded-event allowlist before registering; unlisted names SHALL not create a subscription, and no M3 consumer API SHALL dispatch private or future events.
 4. WHEN the remote bridge is unavailable or a listener fails, THEN the bridge SHALL expose the agreed typed/inert client failure, contain the failure at the bridge boundary, and leave unrelated client features active.
-5. WHEN the bridge disposer runs, THEN it SHALL remove only the exact subscription created by that call, be stale-safe, and not dispose the shared remote service.
+5. WHEN a remote listener returns a thenable that rejects, THEN C6 SHALL attach a containment handler, report the failure through the client diagnostics path, and continue dispatching other listeners without producing an unhandled rejection.
+6. WHEN the bridge disposer runs, THEN it SHALL remove only the exact subscription created by that call, be stale-safe, and not dispose the shared remote service.
 
 ## 10. Lifecycle, availability, and fail-safe behavior
 
@@ -115,6 +118,7 @@
 5. WHEN an M3 feature is applied twice, THEN it SHALL reuse one active owner and SHALL not duplicate hooks, remote descriptors, event listeners, slots, or public facade members.
 6. WHEN an older cleanup callback runs after a newer owner has replaced the same composition slot, THEN the older callback SHALL not remove or disable the newer owner.
 7. WHEN a feature partially publishes and a later publication step fails, THEN it SHALL roll back its own prior publication and registrations in reverse order while preserving unrelated feature state.
+8. WHEN the client runtime resolves a dependency used by one M3 leaf and that dependency is absent or malformed, THEN the runtime SHALL invoke the client composition with that leaf locally disabled and SHALL keep unrelated leaves mountable; optional browser services SHALL NOT be declared as top-level Cordis injections that prevent the entire client entry from applying.
 
 ## 11. Dependency order and integration acceptance
 
@@ -125,7 +129,7 @@
 3. WHEN the merge wave starts, THEN W5 SHALL merge in the predetermined order `C1/C8`, `ST4`, `C9/ST6`, `C6`, `C2`, `C4/C5`, `C3`, `ST5`, followed by one shared unification wave; it SHALL not merge a worktree before its prerequisite boundary is committed and audited.
 4. WHEN integration completes, THEN it SHALL prove all 11 feature-list rows are covered, no M4 row or implementation is smuggled in, and no official DSH package file was modified.
 5. WHEN integration validates host behavior, THEN it SHALL run focused guard/apply/service tests, repeated apply/disposal tests, typed failure tests, and the full `node --test` suite.
-6. WHEN integration validates client behavior, THEN it SHALL run manifest/loader boot tests, real-zod acceptance and negative codec tests, exact wire/AbortSignal tests, remote/slot/event lifecycle tests, and an inert degraded-UI path.
+6. WHEN integration validates client behavior, THEN it SHALL run manifest/loader boot tests, real-zod acceptance and negative codec tests, exact wire/AbortSignal tests, remote/slot/event lifecycle tests, pending-mount disposal/replacement races, asynchronous listener rejection containment, missing-service partial boot tests, a real official gateway dynamic-namespace test, and an inert degraded-UI path.
 7. WHEN migration acceptance runs, THEN `dsh-read-image` SHALL replace its A3/A4/A5 settings-panel hacks with ST4/ST5/ST6 and `dsh-pro-ex-ability-anchor` SHALL replace its panel bundle glue with C1/C4; each consumer SHALL pass its relevant tests, documented headless smoke, and dev boot.
 8. WHEN the final M3 boundary is delivered, THEN `AGENTS.md` §8 and `feature-list.md` SHALL record the 11 delivered features and their final host/client/C classification, while C7/ST7 remain proposal/planned and no protocol version bump SHALL be made by the contract feature alone.
 

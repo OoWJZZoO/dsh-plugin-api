@@ -37,3 +37,29 @@ test('official carrier preserves snapshot iteration and client listener failures
   assert.doesNotMatch(logs[0], /private/)
   assert.throws(() => createDisabledClientRemoteEvents().$on('x', () => {}), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED')
 })
+
+test('remote events contain a rejected thenable without breaking later listeners or unhandledRejection', async () => {
+  const logs = []
+  const table = new Map()
+  const remote = {
+    $on(event, listener) { const list = table.get(event) ?? []; list.push(listener); table.set(event, list); return () => { list.splice(list.indexOf(listener), 1) } },
+    $dispatch(event, args) { for (const listener of [...(table.get(event) ?? [])]) listener(...args) },
+  }
+  const events = createClientRemoteEvents({ remote, logger: { error: (line) => logs.push(line) } })
+  let unhandled = 0
+  const onUnhandled = () => { unhandled += 1 }
+  process.on('unhandledRejection', onUnhandled)
+  try {
+    const calls = []
+    events.$on('llm/adapters-updated', () => Promise.reject(new Error('async failure')))
+    const dispose = events.$on('llm/adapters-updated', (...args) => calls.push(args))
+    events.$dispatch('llm/adapters-updated', ['x'])
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.deepEqual(calls, [['x']])
+    assert.equal(unhandled, 0)
+    assert.ok(logs.some((line) => /remote event listener rejected/i.test(line)))
+    assert.equal(dispose(), true)
+  } finally {
+    process.off('unhandledRejection', onUnhandled)
+  }
+})

@@ -46,3 +46,21 @@ test('settings remote refuses a different active contribution with the same pack
   assert.equal(conflicting.reason, 'duplicate-mount')
   assert.equal(mounts, 1)
 })
+
+test('settings remote rolls back a contribution disposed while its C2 mount is pending', async () => {
+  let mounts = 0
+  let disposals = 0
+  let release
+  const gate = new Promise((resolve) => { release = resolve })
+  const remote = { settings: { get() {} } }
+  const api = createClientSettingsRemote({ remote, codec, remoteContribution: { async mountRemote() { mounts += 1; await gate; return () => { disposals += 1 } } } })
+  const pending = api.mountRemoteContribution(contribution, { namespace: 'settings' })
+  await api.dispose() // dispose while the C2 mount is still pending
+  release()
+  const result = await pending
+  assert.equal(result.status, 'degraded')
+  assert.equal(result.reason, 'remote-unavailable')
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(disposals, 1) // the committed contribution is cleaned up exactly once
+  assert.equal(mounts, 1)
+})
