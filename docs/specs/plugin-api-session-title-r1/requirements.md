@@ -1,7 +1,7 @@
 # Requirements: plugin-api-session-title-r1
 
 > feature_name: `plugin-api-session-title-r1`
-> 状态：Stage 1 草案（待对抗性审查与用户批准）
+> 状态：Stage 1 已批准（R-5.11 于 Stage 2 设计批准时同步修订，见文末修订记录）
 > 上游：Stage 0 Goal（已批准）、`AGENTS.md` §2/§4/§6、`docs/capability-strategy.md`（R1–R9）
 > 类型：R 类（replacement bundle）；host-only，无 client bundle。
 
@@ -159,7 +159,7 @@
 
 5.10. WHEN policy decisions leave zero eligible candidates for a title-generation attempt THEN the service SHALL behave exactly as the official service behaves when no eligible candidate exists, and SHALL NOT introduce any policy-specific error type or failure mode。（R）
 
-5.11. WHEN a `session-title/candidate` payload is produced THEN the replacement SHALL deliver an immutable, deep-frozen snapshot regardless of whether the facade is active；no listener SHALL be able to mutate the session or the candidate through the payload。（R）
+5.11. WHEN a `session-title/candidate` payload is produced THEN the replacement SHALL deliver an immutable candidate snapshot：`message` 与其 `source` 深冻结，`agent`/`session` 保持 live 引用；no listener SHALL be able to mutate the candidate through the payload。（R）
 
 5.12. WHERE an explicit rename assigns a caller-provided title rather than generating a title from candidates IF eligibility policies are registered THEN those policies SHALL NOT apply, and the official rename semantics SHALL be preserved。（R）
 
@@ -244,3 +244,9 @@
 - **外部可实现 vs 必须上游**：候选资格策略与事件词汇由 R 类 replacement 实现；官方原生 seam 为 U9 上游提案；boot 级故障隔离为 U4，不在本 feature 范围。
 - **零策略等价**：§5.2 明确零监听器时与官方行为等价，§5.4 明确 no-decision 时行为等价。
 - **文档新鲜度**：§1.4–1.5 要求本次交付触及的旧 spec、`AGENTS.md`、`README.md`、`docs/capability-strategy.md` 必须追加/修订或加注权威指针。
+
+---
+
+## 修订记录
+
+- **R-5.11**（Stage 2 设计批准时修订）：payload 不可变承诺由「session 与 candidate 均不可通过 payload 变更」收窄为「`message` 与其 `source` 深冻结，`agent`/`session` 为 live 引用；no listener SHALL be able to mutate the candidate through the payload」。理由与备选形状见 `design.md`「Requirements 修订注记」第 1 条。
