@@ -41,9 +41,9 @@
 
 1.5. WHEN the monorepo workspace is introduced THEN the main package SHALL remain independently installable and the auxiliary package SHALL be independently installable without forcing the other。（Governance）
 
-1.6. WHEN this feature's refactor changes a subject already covered by an older delivered spec (for example facade package naming, row id, package layout, catalog schema, or A/B/C/R classification) THEN the affected old spec SHALL be appended or revised in place so that it stays fresh and current, while preserving its delivery history。（Governance）
+1.6. WHEN this feature's refactor changes a subject already covered by an older delivered spec, or by `AGENTS.md` / `README.md` (for example facade package naming, row id, package layout, catalog schema, or A/B/C/R classification) THEN the affected document SHALL be appended or revised in place so that it stays fresh and current, while preserving its delivery history。（Governance）
 
-1.7. GIVEN an old spec is intentionally kept as a historical snapshot IF it is not revised THEN it SHALL carry a top-level note pointing to the newer authority (for example `docs/capability-strategy.md` or the current integration boundary), so that no stale spec remains without a pointer。（Governance）
+1.7. GIVEN an old spec or a governance document (`AGENTS.md` / `README.md`) is intentionally kept as a historical snapshot IF it is not revised THEN it SHALL carry a top-level note pointing to the newer authority (for example `docs/capability-strategy.md` or the current integration boundary), so that no stale document remains without a pointer。（Governance）
 
 ---
 
@@ -205,4 +205,4 @@
 - Host 面：§2–§7 全覆盖。
 - Client 面：本 feature 无 client bundle（明确非目标）。
 - 外部可实现 vs 必须上游：事件词汇与策略钩子由 R 类 replacement 实现；官方原生 seam 为 U8 上游提案；boot 级故障隔离为 U4，不在本 feature 范围。
-- 文档新鲜度：§1.6–1.7 要求本次重构触及的旧 spec 必须追加/修订或加注权威指针。
+- 文档新鲜度：§1.6–1.7 要求本次重构触及的旧 spec、`AGENTS.md` 与 `README.md` 必须追加/修订或加注权威指针。
