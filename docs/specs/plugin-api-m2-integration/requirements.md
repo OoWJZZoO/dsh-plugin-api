@@ -5,6 +5,8 @@
 > 类型标注：本 feature 为整合基础，并新增经人类批准返工的 B 类通用 routing capability plane；pre-assembly prepared route 与 route-conditioned contribution 为 C 类上游边界
 > 面：host 整合 + 两个目标插件迁移验收；不新增 client 面
 > 上游：已完成 Stage 4 的 `plugin-api-llm-request-m2`、`plugin-api-exec-route-m2`、`plugin-api-agent-create-m2`、`plugin-api-session-durable-m2`、`plugin-api-compaction-m2`，以及已交付的 `plugin-api-semantic-hooks-m2`
+>
+> **Rename/version pointer（`plugin-api-compaction-events-r1`）**：M2 的 `0.1.0-rc.6-0.3` / `dsh.api: 0.3` 与主包名 `@deepseek-ai/dsh-plugin-api` 为历史记录；现主包 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），full version `0.1.0-rc.6-0.4` / `dsh.api: 0.4`，monorepo 见根 `pnpm-workspace.yaml`。
 
 ---
 

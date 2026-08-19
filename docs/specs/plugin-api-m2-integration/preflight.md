@@ -6,6 +6,8 @@
 
 ## 1. Admission summary
 
+> **Rename/version pointer（`plugin-api-compaction-events-r1`）**：本 preflight 记录的主包名 `@deepseek-ai/dsh-plugin-api` / `0.1.0-rc.6-0.3`（`dsh.api: 0.3`）为 M2 历史；现主包 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），full version `0.1.0-rc.6-0.4` / `dsh.api: 0.4`。
+>
 > **Historical preflight note:** The tables below preserve the read-only merge-wave audit
 > as it existed before the final reconciliation. The active authority after Tasks 1.1–4.1
 > is the closure record in §6; historical branch versions, 0.2 metadata, and deferred

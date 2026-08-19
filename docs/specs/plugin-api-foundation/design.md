@@ -1,6 +1,8 @@
 # Design: plugin-api-foundation
 
 > **M2 supersession note:** F0.3 version policy and the foundation guard remain policy foundations, but any admission-bridge or projection-guard implementation reference in this historical M0 design is obsolete. The current L2 owner is solely `lib/llm-admission-gateway.js`; do not reintroduce a foundation-level wrapper or the historical bridge.
+>
+> **Rename/version pointer（`plugin-api-compaction-events-r1`）**：主包现已更名为 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`，Cordis 服务 key 仍为 `pluginApi`），monorepo 工作区见根 `pnpm-workspace.yaml` / `packages/`；唯一 full version 为 `0.1.0-rc.6-0.4` / `dsh.api: 0.4`。本文历史正文保留原始 M0 记录。
 
 ## Overview
 
@@ -41,7 +43,7 @@
 
 ## Packaging and row order
 
-- 包名：`@deepseek-ai/dsh-plugin-api`。
+- 包名（历史 M0 为 `@deepseek-ai/dsh-plugin-api`，现主包）：`@deepseek-ai/dsh-plugin-api-main`。
 - `package.json`：
   - `"type": "module"`；`main`/`exports` 指向 `lib/index.js`。
   - `"version": "0.1.0"`（门面自身版本，`major.minor` 归一为 `0.1`）。
@@ -49,7 +51,7 @@
 
 > **修订注记（`plugin-api-m2-integration` Task 8.2）**：版本号语义规范化。`package.json.version` 采用全量唯一格式 `<runtime全量版本>-<API协议大版本.迭代小版本>`（如 `0.1.0-rc.6-0.3`，由 `parseFacadeVersion` 解析为 `{ runtime, api }`）。方向 ① 要求 `version` 中的完整 runtime 部分与实际安装 runtime（`dsh-llm` 探针）精确相等，包含 patch 与 prerelease；`dsh.api` 只承载 API 协议版本，仅用于方向 ②（`assertCompatible`）。core guard 探针为 `dsh.api`（格式）、`facade version`（全量格式可解析且 api 部分与 `dsh.api` 一致）、`runtime version`（完整 runtime identity 精确匹配）。
   - `peerDependencies`：`@deepseek-ai/cordis`、`@deepseek-ai/dsh-llm`（共享宿主实例；`dsh-llm` 同时是 runtime 版本探针）。
-- `cordis.patch.yml`：保持现有 insert row（`id: plugin-api`）。
+- `cordis.patch.yml`：保持现有 insert row（历史 id `plugin-api`，现改为 `id: plugin-api-main`）。
 - Row 顺序硬约束不变：本插件必须先于第三方插件加载，否则 `inject: ['pluginApi']` 的第三方插件会 pending 并杀死 boot。
 
 ---

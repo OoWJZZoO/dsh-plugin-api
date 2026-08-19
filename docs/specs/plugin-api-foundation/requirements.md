@@ -1,5 +1,7 @@
 # Feature Requirements: plugin-api-foundation
 
+> **Rename/version pointer（`plugin-api-compaction-events-r1`）**：主包现名 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），唯一 full version `0.1.0-rc.6-0.4` / `dsh.api: 0.4`；monorepo 见 `pnpm-workspace.yaml`。本文正文是 M0 历史记录。
+
 ## Introduction
 
 `plugin-api-foundation` 是 `dsh-plugin-api` 的 **M0 基础三件套**，合并了 feature-list 中的 F0.1 / F0.2 / F0.3：
@@ -22,9 +24,9 @@
 
 **Acceptance Criteria:**
 
-1. WHEN the `dsh-plugin-api` host plugin is applied to a Cordis context before third-party plugins, THEN that context SHALL provide a service named `pluginApi` that is injectable as `ctx.pluginApi` via `inject: ['pluginApi']`.
+1. WHEN the `@deepseek-ai/dsh-plugin-api-main` host plugin is applied to a Cordis context before third-party plugins, THEN that context SHALL provide a service named `pluginApi` that is injectable as `ctx.pluginApi` via `inject: ['pluginApi']`.
 2. WHEN a third-party plugin consumes the facade through `ctx.pluginApi`, THEN it SHALL NOT be required to import any `@deepseek-ai/dsh-*` internal module.
-3. WHEN the `dsh-plugin-api` host plugin has not been applied, THEN third-party plugins SHALL observe a normal missing-service condition for `pluginApi` and SHALL NOT receive a partially initialized facade.
+3. WHEN the `@deepseek-ai/dsh-plugin-api-main` host plugin has not been applied, THEN third-party plugins SHALL observe a normal missing-service condition for `pluginApi` and SHALL NOT receive a partially initialized facade.
 4. WHEN the host plugin is applied more than once in the same context (for example reload/HMR), THEN service registration SHALL be idempotent: the effective `ctx.pluginApi` SHALL be equivalent to a single registration.
 
 **Type:** 门面基础
@@ -74,10 +76,12 @@
 **Contract granularity:** Direction ① requires exact equality of the full audited runtime version, including patch and prerelease. Direction ② remains an independent `major.minor` API-protocol comparison.
 
 > **修订注记（`plugin-api-m2-integration` Task 8.2）**：门面版本号语义规范化——本门面的**全量唯一版本号**定义为 `<runtime全量版本>-<API协议大版本.迭代小版本>`（如 `0.1.0-rc.6-0.3`）：前半记录门面为哪个 runtime 构建（含 rc 等预发布后缀），后半是门面自己的 API 协议世代，**不与官方包版本混同**。方向 ① 的比较对象是自身版本号中的完整 runtime 部分与实际安装的 runtime 版本，必须精确相等（含 patch 与 prerelease）；`dsh.api` 字段仅承载 API 协议版本（方向 ② 插件↔门面协商）。原实现把 `dsh.api` 直接与官方 runtime 版本相等比较，偏离本意，已纠正。
+>
+> **修订注记（`plugin-api-compaction-events-r1` R1）**：主包改名为 `@deepseek-ai/dsh-plugin-api-main`，唯一 full version 升至 `0.1.0-rc.6-0.4` / `dsh.api: 0.4`（协议 minor 数字递增，`1.0` 保留）。
 
 **Acceptance Criteria — direction ① facade ↔ DSH runtime:**
 
-1. WHEN the `dsh-plugin-api` package is installed, THEN its `package.json` SHALL declare a machine-readable API version contract under the `dsh` field (`dsh.api`) that the facade checks at apply time.
+1. WHEN the `@deepseek-ai/dsh-plugin-api-main` package is installed, THEN its `package.json` SHALL declare a machine-readable API version contract under the `dsh` field (`dsh.api`) that the facade checks at apply time.
 2. GIVEN the installed runtime exactly matches the runtime part of the facade's full unique version (including patch and prerelease), WHEN the host plugin applies, THEN the facade SHALL treat runtime version negotiation as passed and proceed with the environment guard checks.
 3. GIVEN the installed runtime does not match the runtime part of the facade's full unique version, WHEN the host plugin applies, THEN the facade SHALL log a readable version-mismatch diagnostic and enter inert mode (`isActive === false`) without throwing through `apply`.
 4. GIVEN the `dsh.api` declaration or the runtime version metadata is missing or unparseable, WHEN the host plugin applies, THEN the facade SHALL treat the situation as a mismatch and enter inert mode with a readable diagnostic.

@@ -91,7 +91,7 @@
 |---|---|---|---|---|---|
 | F0.1 门面服务 | `ctx.pluginApi`（Cordis Service，`inject: ['pluginApi']`）；**推荐、受支持**的门面入口；直连 `@deepseek-ai/dsh-*` 内部包为 unsupported escape hatch | 门面基础 | 本仓库 `lib/index.js` / `lib/plugin-api-service.js`；spec `plugin-api-foundation` | M0 | **delivered** |
 | F0.2 fail-safe guard | `pluginApi.isActive: boolean`；核心 guard 失败时服务仍注册为 inert；非核心 feature 失败时只禁用该 feature 并显式报错 | 门面基础 | 本仓库 `lib/guards.js`；对齐 dsh-read-image G1；spec `plugin-api-foundation` | M0 | **delivered** |
-| F0.3 版本协商 | 门面全量唯一版本号 = `<runtime全量版本>-<API协议大版本.迭代小版本>`（当前 `0.1.0-rc.6-0.3`，写入 `package.json.version`）；`dsh.api` 仅承载 API 协议版本。双向协商——方向① runtime 部分与安装的官方 runtime 不匹配时门面 inert；方向② 插件要求不满足时插件收到 typed 错误 | 门面基础 | 本仓库 `lib/version.js` / `lib/guards.js` / `package.json`；spec `plugin-api-foundation` 与 M2 integration reconciliation | M0 | **delivered** |
+| F0.3 版本协商 | 门面全量唯一版本号 = `<runtime全量版本>-<API协议大版本.迭代小版本>`（当前 `0.1.0-rc.6-0.4`，`dsh.api: 0.4`，写入 `package.json.version`）；`dsh.api` 仅承载 API 协议版本。主包名 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），monorepo 辅助 replacement bundles 位于 `packages/`。双向协商——方向① runtime 部分与安装的官方 runtime 不匹配时门面 inert；方向② 插件要求不满足时插件收到 typed 错误 | 门面基础 | 本仓库 `lib/version.js` / `lib/guards.js` / `package.json`；spec `plugin-api-foundation` 与 M2 integration reconciliation | M0 | **delivered** |
 | F0.4 符号解析门面 | `pluginApi` 作为**推荐** import/inject 面；第三方插件默认经门面解析符号；直连 `dsh-tools`/`dsh-llm` 等内部包属于 unsupported escape hatch（门面不拦截、不保障） | 门面基础 | `docs/specs/plugin-api-facade-integrity/requirements.md` §1（权威定义）；`README.md` | M0–M3 | delivered（F0.4 策略；符号覆盖随命名空间逐步扩展） |
 | F0.5 包装链安全 | dispose 用 identity-guard；目标被其他插件包装时降级透传，不拆别人的链 | 门面基础 | 本仓库 `lib/wrap-safety.js` / `lib/admission-bridge.js`；dsh-read-image A1 加固；spec `plugin-api-facade-integrity` | M0 | **delivered** |
 
@@ -259,7 +259,7 @@
 | SV14 会话遥测 seam | `pluginApi.services.sessionTelemetry`（backend seam 直通；`session-telemetry/record` 事件已由 O16 交付） | A | `dsh-session-telemetry/lib/index.js:174`（服务 `sessionTelemetry`） | M1 | **delivered** |
 | SV15 会话引用解析 | `pluginApi.services.sessionReferences.listCandidates/prepare` + `encodeSessionReferenceUri/decodeSessionReferenceUri` 转发 | A | `dsh-session-reference`（服务 `sessionReferenceResolver`） | M1 | **delivered** |
 | SV16 Token 计量 | `pluginApi.services.tokenMeter.measure(session, requestHeader)` / `estimateMessage` 直通 | A | `dsh-token-meter`（服务 `tokenMeter`） | M1 | **delivered** |
-| SV17 压缩服务 seam | `pluginApi.services.compaction.compactIfNeeded/compactNow/compactRegion` 直通；不暴露 Basic 专有成员，且 `compaction/*` 不作为 events API 暴露 | A | `dsh-compaction`（服务 `compaction`） | M2 | **delivered** |
+| SV17 压缩服务 seam | `pluginApi.services.compaction.compactIfNeeded/compactNow/compactRegion` 直通；不暴露 Basic 专有成员。SV17 直通本身不产生 events；`compaction/*` 事件词汇由 R 类辅助包 `compaction-events-r1` 提供（见 U8） | A | `dsh-compaction`（服务 `compaction`） | M2 | **delivered** |
 | SV18 默认模型选择 | `pluginApi.services.agentDefaultModel.currentSelection()` / `saveSelection(next)` 直通 | A | `dsh-agent-default-model`（服务 `agentDefaultModel`） | M1 | **delivered** |
 
 ---
@@ -275,7 +275,7 @@
 | U5 | `WEB_SETTINGS_NAMESPACES` 动态化 | 第三方插件设置命名空间无需修改官方即可出现在设置 UI | ST7 |
 | U6 | 客户端 `remote.<ns>` 原生动态发现 | 第三方 client 插件无需 `ctx.remote.$mount` 自挂载 | C2/C7 |
 | U7 | 官方 session 上屏事件构造 helper（可选） | 把 `surfaceOp` / `sourceEventSeqs` 的上屏契约封装为高级 API | S2/S6 |
-| U8 | 官方 `compaction/*` 事件词汇（可选） | 当前压缩只有 `CompactionEngine.summarize()` 子类钩子，无 dispatch 点 | SV17 |
+| U8 | 官方 `compaction/*` 事件词汇（可选） | 当前压缩只有 `CompactionEngine.summarize()` 子类钩子，无 dispatch 点；R 类辅助包 `@deepseek-ai/dsh-plugin-api-compaction-events`（`compaction-events-r1`）为 current workaround | SV17 + R1 replacement |
 
 ---
 
@@ -294,7 +294,7 @@
 | ST4 host 设置 remote 桥 | 自建 `bindTypertRemote` 等价实现 | `typert-gateway` 或 typert 相关行 | 中 | 中 | R 类观察项，不单独立项 |
 | ST5/ST6/C2（+C7） | `$mount` 自挂载 + 手搓 codec | `api-remotes`（client bundle） | 高 | 高 | 维持方案一；C7 维持 proposal |
 | E8/E9/E11 priority / deepFreeze / fault containment | facade 注册侧/派发侧统一实现 | 无单一官方行（框架级横切） | — | — | **永不 R** |
-| U8 `compaction/*` 事件词汇 | 仅 `summarize()` 子类钩子 | `compaction-basic` | 低–中 | 高 | **首批 R 类候选** |
+| U8 `compaction/*` 事件词汇 | 仅 `summarize()` 子类钩子 | `compaction-basic` | 低–中 | 高 | **已交付**（`plugin-api-compaction-events-r1`；U8 保留为上游提案，stale-index B4 已迁移） |
 
 ---
 

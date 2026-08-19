@@ -194,7 +194,7 @@ type CatalogEntry = {
   payload: string
   args: string
   source: string
-  type: 'A' | 'B'
+  type: 'A' | 'B' | 'R'
   fault?: 'contain' | 'created' | 'propagate'
   freeze?: 'all' | { deep: string[] } | 'except-signal'
 }

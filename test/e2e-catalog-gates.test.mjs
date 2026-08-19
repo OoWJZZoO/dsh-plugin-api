@@ -11,7 +11,7 @@ import { scopeTarget } from '@deepseek-ai/dsh-scope'
  * fixed by the m1-integration bus unification.
  */
 
-function createFullCtx() {
+function createFullCtx({ withCompactionReplacement = false } = {}) {
   const hooks = new Map()
   const hooksOf = (name) => {
     let list = hooks.get(name)
@@ -44,6 +44,20 @@ function createFullCtx() {
     systemPrompt: { section() {}, context() {}, variable() {}, tools() {}, suppressRuntimeContext() {} },
     apiProxy: { sessions: { prompt() {}, selectModel() {} } },
     web: { registerSearchProvider() {}, registerFetchProvider() {} },
+  }
+
+  let compactionRows = []
+  if (withCompactionReplacement) {
+    services.compaction = {
+      [Symbol.for('dsh-plugin-api.compaction-events-r1.active')]: true,
+      compactIfNeeded() {},
+      compactNow() {},
+      compactRegion() {},
+      summarize() {},
+    }
+    compactionRows = [
+      { options: { name: '@deepseek-ai/dsh-plugin-api-compaction-events' }, fiber: {}, disabled: false },
+    ]
   }
 
   const state = { pluginApi: undefined, listeners: [], effects: [] }
@@ -129,6 +143,13 @@ function createFullCtx() {
       }
       return run(0)
     },
+  }
+  if (withCompactionReplacement) {
+    ctx.loader = {
+      entries() {
+        return compactionRows[Symbol.iterator]()
+      },
+    }
   }
   return { ctx, state, services }
 }
@@ -275,4 +296,61 @@ test('settings slice gate: settings/updated dispatches with frozen args through 
   assert.equal(received.length, 1)
   assert.ok(Object.isFrozen(received[0][0]), 'ns argument must be deep-frozen')
   assert.deepEqual(received[0][1], 'update')
+})
+
+// ---------------------------------------------------------------------------
+// 5.x R-class catalog (compaction-events-r1)
+// ---------------------------------------------------------------------------
+
+const COMPACTION_EVENTS = [
+  'compaction/request',
+  'compaction/started',
+  'compaction/completed',
+  'compaction/failed',
+  'compaction/skipped',
+]
+
+test('without the replacement row the public catalog does not list compaction/* events', () => {
+  const { ctx, state } = createFullCtx()
+  apply(ctx)
+  assert.equal(Object.keys(state.pluginApi.events.catalog).length, 47)
+  for (const name of COMPACTION_EVENTS) {
+    assert.ok(!(name in state.pluginApi.events.catalog), `${name} must be hidden when the replacement is inactive`)
+  }
+})
+
+test('with the replacement row active the public catalog lists all five compaction/* R events', () => {
+  const { ctx, state } = createFullCtx({ withCompactionReplacement: true })
+  apply(ctx)
+  const catalog = state.pluginApi.events.catalog
+  assert.equal(Object.keys(catalog).length, 52)
+  for (const name of COMPACTION_EVENTS) {
+    const entry = catalog[name]
+    assert.ok(entry, `${name} must be cataloged`)
+    assert.equal(entry.type, 'R')
+    assert.equal(entry.scopeFiltered, false)
+    assert.equal(entry.scopeKey, null)
+    assert.equal(entry.fault, 'contain')
+    assert.ok(Object.isFrozen(entry), `${name} entry must be frozen`)
+  }
+  assert.equal(catalog['compaction/request'].mode, 'waterfall')
+  assert.equal(catalog['compaction/completed'].mode, 'emit')
+  assert.deepEqual(catalog['compaction/completed'].freeze, { deep: ['range', 'result'] })
+})
+
+test('compaction/request is wrapped through the facade even while the row is inactive (static metadata)', () => {
+  const { ctx, state } = createFullCtx()
+  apply(ctx)
+  assert.ok(!('compaction/request' in state.pluginApi.events.catalog))
+
+  const bucket = []
+  state.pluginApi.events.on('compaction/request', (payload, next) => {
+    bucket.push(payload)
+    return next()
+  })
+  const payload = { agent: {}, session: {}, trigger: 'manual', range: { start: 1, end: 3 } }
+  const result = ctx.waterfall('compaction/request', payload, () => 'done')
+  assert.equal(result, 'done')
+  assert.equal(bucket.length, 1, 'facade subscription must be wrapped even when the slice is inactive')
+  assert.ok(Object.isFrozen(bucket[0]), 'request payload must be frozen by the facade freeze policy')
 })

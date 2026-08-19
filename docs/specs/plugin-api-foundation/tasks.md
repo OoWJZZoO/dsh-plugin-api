@@ -1,6 +1,8 @@
 # Tasks: plugin-api-foundation
 
 > **M2 supersession note:** This M0 task record remains useful for historical foundation traceability. Its old admission-bridge/projection-guard ownership is not an executable current task or contract: M2 L2 is owned solely by `lib/llm-admission-gateway.js`. Do not reintroduce that historical implementation while maintaining the F0.3 version and guard policy.
+>
+> **Rename/version pointer（`plugin-api-compaction-events-r1`）**：主包现名 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），full version `0.1.0-rc.6-0.4` / `dsh.api: 0.4`；monorepo 见根 `pnpm-workspace.yaml`。本任务正文为历史执行记录。
 
 > 说明：每个任务按 TDD 执行——先补测试、再改实现、最后跑 `node --test`。任务只覆盖 `plugin-api-foundation` spec（requirements 第 1–5 节）范围内的代码、测试与包入口；不夹带 spec 外功能。实现一律在 worktree 分支 `feature/m0-f0.1` 的 `lib/`、`test/`、`package.json`、`README.md` 中进行。
 
@@ -89,7 +91,7 @@
 
 - [x] 6.1 **目标：更新 `package.json` 与根 `README.md`，完成门面公共入口的接线，并写 `test/package.test.mjs`。**
   - `package.json`：增加 `"dsh": { "api": "0.1", "bundle": { "patch": "./cordis.patch.yml" } }`；确认 `peerDependencies` 仍为共享宿主实例所需包。
-  - `cordis.patch.yml`：确认 insert `id` 仍为 `plugin-api` 且 `name` 指向 `@deepseek-ai/dsh-plugin-api`（本 feature 不改变 row 顺序）。
+  - `cordis.patch.yml`：确认 insert `id` 为 `plugin-api-main`（历史 `plugin-api`）且 `name` 指向 `@deepseek-ai/dsh-plugin-api-main`（本 feature 不改变 row 顺序，Cordis 服务 key 仍为 `pluginApi`）。
   - 根 `README.md`：写明推荐入口 `inject: ['pluginApi']`、unsupported escape hatch 边界、`isActive` / `features` / `assertCompatible` 用法。
   - `test/package.test.mjs`：断言 `package.json` 可解析、`dsh.api` 满足 `^\d+\.\d+$`、`main`/`exports` 指向 `lib/index.js`。
   - 引用：requirements 1.1 / 2.1 / 2.3 / 4.1；design 的 “Packaging and row order” 与 “User-facing documentation landing points”。

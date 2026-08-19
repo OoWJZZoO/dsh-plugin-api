@@ -5,6 +5,8 @@
 > record replaces the old `project`/ProjectionGuard/admission-bridge wording with the
 > constrained L2 policy and sole scoped `resolveModelInfo` wrapper. Keep this document for
 > provenance; use the M2 design for implementation and API guidance.
+>
+> **Rename/version pointer（`plugin-api-compaction-events-r1`）**：正文中的包名 `@deepseek-ai/dsh-plugin-api` / row `plugin-api` / 旧名均为主包历史记录；当前主包为 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），full version `0.1.0-rc.6-0.4` / `dsh.api: 0.4`，monorepo 见根 `pnpm-workspace.yaml`。
 
 ## Overview
 

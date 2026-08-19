@@ -3,11 +3,12 @@
 # (see package.json -> dsh.bundle.patch).
 #
 # ROW ORDER (hard requirement): this row must be loaded BEFORE third-party
-# plugin rows. `dsh-plugin-api` registers the `pluginApi` Cordis service during
-# its own apply(); any third-party plugin that `inject: ['pluginApi']` must
-# therefore apply after this row, otherwise that plugin pends forever and kills
-# the harness boot (see AGENTS.md section 2, item 2).
+# plugin rows. `@deepseek-ai/dsh-plugin-api-main` (row id `plugin-api-main`)
+# registers the `pluginApi` Cordis service during its own apply(); any
+# third-party plugin that `inject: ['pluginApi']` must therefore apply after
+# this row, otherwise that plugin pends forever and kills the harness boot
+# (see AGENTS.md section 2, item 2).
 - insert:
-    - id: plugin-api
-      name: '@deepseek-ai/dsh-plugin-api'
+    - id: plugin-api-main
+      name: '@deepseek-ai/dsh-plugin-api-main'
       config: {}

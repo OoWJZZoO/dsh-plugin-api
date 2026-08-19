@@ -3,6 +3,8 @@
 > feature_name: plugin-api-m2-integration
 > 状态：已交付（Stage 4）
 > 上游：已批准 requirements.md（0705dd1）与 design.md（a511c5b；事实顺序修正 fd470fd）
+>
+> **Rename/version pointer（`plugin-api-compaction-events-r1`）**：M2 交付记录中的主包名 `@deepseek-ai/dsh-plugin-api` / 版本 `0.1.0-rc.6-0.3`（`dsh.api: 0.3`）为历史；现主包 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），full version `0.1.0-rc.6-0.4` / `dsh.api: 0.4`。
 
 ## Final delivery baseline and execution record
 

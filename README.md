@@ -1,8 +1,8 @@
-# dsh-plugin-api
+# dsh-plugin-api-main
 
-DeepSeek Harness 社区插件 API 门面：把官方 Cordis 扩展点稳定化，给第三方插件一个统一、受支持的 import/inject 入口。
+DeepSeek Harness 社区插件 API 门面（主包 `@deepseek-ai/dsh-plugin-api-main`）：把官方 Cordis 扩展点稳定化，给第三方插件一个统一、受支持的 import/inject 入口。仓库路径仍为 `agent/dsh-plugin-api`（monorepo，辅助 replacement bundles 位于 `packages/`）。
 
-> 当前状态：M2 host 能力已交付。唯一 full version 为 `0.1.0-rc.6-0.3`，协议为 `dsh.api: 0.3`；consumer 仍须按 feature availability 做 fail-safe 降级。
+> 当前状态：M2 host 能力 + R 类 compaction-events 通道已交付。唯一 full version 为 `0.1.0-rc.6-0.4`，协议为 `dsh.api: 0.4`；consumer 仍须按 feature availability 做 fail-safe 降级。
 
 ## 推荐用法（supported）
 
@@ -70,6 +70,8 @@ L2 图片准入政策的 scoped gateway 是唯一 `resolveModelInfo` wrapper own
 
 当缺失语义天然属于某个官方 loader 行、且经 `docs/capability-strategy.md` 批准登记时，可发布独立 replacement bundle：用官方 patch 机制（`- id: <官方行>; disabled: true` + `- insert:` 替代行）禁用该官方行，由替代行完整提供原行的 ctx 服务/事件契约并增加接口。R 类绝不修改官方安装文件；它只替换 ctx 服务/事件面，**不替换** `@deepseek-ai/dsh-*` 包 import 面。细则与候选清单见 `docs/capability-strategy.md`。
 
+**已交付示例：`plugin-api-compaction-events-r1`**（辅助包 `@deepseek-ai/dsh-plugin-api-compaction-events`，源码 `packages/compaction-events-r1/`）fork 官方 `compaction-basic` 行，在完整保留 `ctx.compaction` 契约的前提下新增 `compaction/*` 事件词汇（`request/started/completed/failed/skipped`），主包 `pluginApi.events.catalog` 以动态 R slice 呈现（仅替代行 active 时列出），并配套 boot 自检矩阵与 `dsh-read-image` B4 stale-index 消费迁移。详见 `docs/specs/plugin-api-compaction-events-r1/`。
+
 ## 门面完整性（F0.4 / F0.5）
 
 - 符号解析门面（F0.4）的权威定义见 `docs/specs/plugin-api-facade-integrity/requirements.md` §1。
@@ -77,7 +79,7 @@ L2 图片准入政策的 scoped gateway 是唯一 `resolveModelInfo` wrapper own
 
 ## 加载顺序
 
-`dsh-plugin-api` 必须在第三方插件之前加载（`cordis.patch.yml` 已声明对应 row），否则依赖 `inject: ['pluginApi']` 的第三方插件会 pending 并杀死 boot。
+`@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`）必须在第三方插件之前加载（`cordis.patch.yml` 已声明对应 row），否则依赖 `inject: ['pluginApi']` 的第三方插件会 pending 并杀死 boot。
 
 ## 测试
 

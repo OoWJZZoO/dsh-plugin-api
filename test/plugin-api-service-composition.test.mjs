@@ -59,7 +59,7 @@ test('slot rollback revokes retained L2/L4 references without touching a newer s
 
 test('routing composes independent execution and session leaves with frozen availability', () => {
   const registry = createFeatureRegistry()
-  const ServiceClass = createPluginApiService({ apiVersion: '0.3', registry, coreActive: true })
+  const ServiceClass = createPluginApiService({ apiVersion: '0.4', registry, coreActive: true })
   const service = new ServiceClass({ reflect: { provide() {} } })
   const exec = {}
   const execution = Object.freeze({ provider: 'p', model: 'm' })
@@ -91,7 +91,7 @@ test('routing composes independent execution and session leaves with frozen avai
 
 test('routing checks core and leaf guards before inspecting hostile inputs', () => {
   const registry = createFeatureRegistry()
-  const Inert = createPluginApiService({ apiVersion: '0.3', registry, coreActive: false })
+  const Inert = createPluginApiService({ apiVersion: '0.4', registry, coreActive: false })
   const inert = new Inert({ reflect: { provide() {} } })
   const hostile = new Proxy({}, { get() { throw new Error('inspected') } })
   assert.throws(() => inert.routing.ofExecution(hostile), PluginApiInactiveError)
@@ -99,7 +99,7 @@ test('routing checks core and leaf guards before inspecting hostile inputs', () 
   assert.throws(() => inert.routing.wait(hostile, { signal: hostile }), PluginApiInactiveError)
   assert.throws(() => inert.routing.availability, PluginApiInactiveError)
 
-  const Active = createPluginApiService({ apiVersion: '0.3', registry, coreActive: true })
+  const Active = createPluginApiService({ apiVersion: '0.4', registry, coreActive: true })
   const active = new Active({ reflect: { provide() {} } })
   assert.throws(() => active.routing.ofExecution(hostile), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'execRoute')
   assert.throws(() => active.routing.current(hostile), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'sessionRoute')

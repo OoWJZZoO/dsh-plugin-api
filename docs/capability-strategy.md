@@ -79,7 +79,7 @@ R9. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 | ST4 host 设置 remote 桥 | 自建 `bindTypertRemote` 等价实现 | `typert-gateway`（396 行）或 typert 相关行 | 中 | 中 | **R 类观察项**，不排期 |
 | ST5/ST6/C2（+C7） client remote/codec/mount | `$mount` 自挂载 + 手搓 codec | `api-remotes`（client bundle 5900+ 行，需自建构建） | 高 | 高（C7） | **维持方案一**；C7 维持 upstream proposal |
 | E8 priority / E9 deepFreeze / E11 fault containment | facade 注册侧/派发侧统一实现 | 无单一官方行（跨所有事件生产者；`@deepseek-ai/cordis` 不是 loader 行） | — | — | **永不转 R**，维持方案一或 Cordis 上游提案 |
-| U8 `compaction/*` 事件词汇（planned） | `CompactionEngine.summarize()` 子类钩子 | `compaction-basic`（962 行） | 低–中 | 高 | **首批 R 类候选**（见 §6） |
+| U8 `compaction/*` 事件词汇 | `CompactionEngine.summarize()` 子类钩子 | `compaction-basic`（962 行） | 低–中 | 高 | **已交付**：R1 辅助包 `@deepseek-ai/dsh-plugin-api-compaction-events`（`plugin-api-compaction-events-r1`）作为 current workaround；U8 保留为上游提案（见 feature-list §3） |
 
 重估条件（允许已判“维持方案一”的条目回到 R 评估）：官方把对应包拆小/提供 src 构建流水线；出现第二个插件对同一语义的独立需求；或官方升级使门面转译的收敛证明不再成立。
 
@@ -87,7 +87,7 @@ R9. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 
 ## 6. 首批 R 类候选与执行边界
 
-- **候选 1：U8 `compaction/*` 事件词汇** —— fork `compaction-basic` 行，在保留官方 `compaction` 服务契约的前提下增加压缩事件 dispatch。启动前必须完成 R1–R9 的 requirements/design（含 boot 自检、版本锁定、同行冲突检测、上游提案 U8 的退役条件）。
+- **候选 1：U8 `compaction/*` 事件词汇 —— 已交付**：fork `compaction-basic` 行，在保留官方 `compaction` 服务契约的前提下增加压缩事件 dispatch，经 `plugin-api-compaction-events-r1` 落地（含 R1–R9 的 requirements/design：boot 自检、版本锁定、同行冲突检测、上游提案 U8 的退役条件）。U8 仍保留为上游提案，replacement 为 current workaround；官方提供等价词汇后辅助包进入 deprecation。
 - **观察项：ST4 settings remote 原生绑定** —— 价值中等，仅在其他理由已 fork typert 相关行时合并评估，不单独立项。
 
 其余 B 类维持方案一门面转译；`E8/E9/E11` 明确禁止 R 化。

@@ -14,7 +14,7 @@ import { join } from 'node:path'
 import { homedir, tmpdir } from 'node:os'
 import { SERVICE_DEFINITIONS } from '../lib/services.js'
 
-const versions = { apiVersion: '0.3', facadeVersion: '0.1.0-rc.6-0.3', runtimeVersion: '0.1.0-rc.6' }
+const versions = { apiVersion: '0.4', facadeVersion: '0.1.0-rc.6-0.4', runtimeVersion: '0.1.0-rc.6' }
 
 function healthyCtx(overrides = {}) {
   return {
@@ -75,7 +75,7 @@ test('missing or unparseable dsh.api is a core failure', () => {
 
 test('runtime version mismatch is a core failure', () => {
   // facade built for runtime 0.1.0-rc.6 but 0.2.0 is installed
-  const result = runCoreGuard(healthyCtx(), { apiVersion: '0.3', facadeVersion: '0.1.0-rc.6-0.3', runtimeVersion: '0.2.0' })
+  const result = runCoreGuard(healthyCtx(), { apiVersion: '0.4', facadeVersion: '0.1.0-rc.6-0.4', runtimeVersion: '0.2.0' })
   assert.equal(result.ok, false)
   assert.ok(result.coreProblems.some((p) => p.name === 'runtime version'))
 })

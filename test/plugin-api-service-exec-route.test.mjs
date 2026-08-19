@@ -6,7 +6,7 @@ import { createPluginApiService } from '../lib/plugin-api-service.js'
 
 function createService({ coreActive = true, logWriter, featureNotice, logger } = {}) {
   const registry = createFeatureRegistry()
-  const ServiceClass = createPluginApiService({ apiVersion: '0.3', registry, coreActive, logWriter, featureNotice })
+  const ServiceClass = createPluginApiService({ apiVersion: '0.4', registry, coreActive, logWriter, featureNotice })
   const getCalls = []
   const ctx = {
     reflect: { provide() {} },

@@ -1,7 +1,7 @@
 {
-  "name": "@deepseek-ai/dsh-plugin-api",
+  "name": "@deepseek-ai/dsh-plugin-api-main",
   "description": "DeepSeek Harness community plugin API facade: stabilized semantic hooks over official extension points. First feature: llm-image-admission (scoped image input admission with enforced projection).",
-  "version": "0.1.0-rc.6-0.3",
+  "version": "0.1.0-rc.6-0.4",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -11,7 +11,7 @@
     "./package.json": "./package.json"
   },
   "dsh": {
-    "api": "0.3",
+    "api": "0.4",
     "client": {
       "platform": "web",
       "inject": [
@@ -33,7 +33,7 @@
     "deepseek-harness",
     "dsh",
     "plugin",
-    "dsh-plugin-api",
+    "dsh-plugin-api-main",
     "llm-admission"
   ],
   "license": "MIT",

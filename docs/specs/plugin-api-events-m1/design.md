@@ -255,7 +255,7 @@ type CatalogEntry = {
   payload: string          // 类型/形状描述（文档用）
   args: string             // listener 实际收到的位置参数形状
   source: string           // feature id（E1..O16）
-  type: 'A' | 'B'
+  type: 'A' | 'B' | 'R'    // R = R 类 replacement bundle 贡献的事件词汇（plugin-api-compaction-events-r1 起）
 }
 
 type Priority = 'lowest' | 'low' | 'normal' | 'high' | 'highest' | 'monitor'
@@ -282,6 +282,8 @@ type EventsApi = {
 ```
 
 > **修订注记（`plugin-api-agent-m1`）**：`plugin-api-agent-m1` 交付后，catalog schema 已升级：`subject` 更名为 `scopeKey`，每个 entry 新增 `fault`（`'contain' | 'created' | 'propagate'`）与 `freeze`（`'all' | { deep: string[] }`）两个策略字段。既有 19 个事件回填为 `fault:'contain'`、`freeze:'all'`、`scopeKey` 同原 `subject`；新增 12 个 `agent/*` 条目。运行时 catalog 总数从 19 增至 31。
+>
+> **修订注记（`plugin-api-compaction-events-r1`）**：catalog entry `type` 联合扩展为 `'A' | 'B' | 'R'`；R 类辅助包贡献 `compaction/*` 事件词汇（host-global，`scopeKey: null`），主包 `createEventsBus` 接收 `rSlices`，公开 `catalog` 为按 guard 过滤的 accessor（替代行 inactive 时 R 条目不进入快照，静态订阅元数据仍可用）。
 
 ---
 

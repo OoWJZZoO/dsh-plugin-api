@@ -6,6 +6,7 @@ const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url),
 
 test('package.json is parseable and exposes the expected entry points', () => {
   assert.equal(pkg.type, 'module')
+  assert.equal(pkg.name, '@deepseek-ai/dsh-plugin-api-main')
   assert.equal(pkg.main, 'lib/index.js')
   assert.equal(pkg.exports['.'], './lib/index.js')
   assert.equal(pkg.exports['./package.json'], './package.json')
@@ -15,20 +16,20 @@ test('dsh.api is a major.minor contract', () => {
   assert.ok(pkg.dsh, 'package.json must declare the dsh field')
   assert.equal(typeof pkg.dsh.api, 'string')
   assert.match(pkg.dsh.api, /^\d+\.\d+$/)
-  assert.equal(pkg.dsh.api, '0.3')
+  assert.equal(pkg.dsh.api, '0.4')
 })
 
 test('package version is the full unique version: <runtime-full-version>-<api-major>.<api-minor>', () => {
   assert.match(pkg.version, /^(.+)-(\d+\.\d+)$/)
   const apiPart = pkg.version.match(/^(.+)-(\d+\.\d+)$/)[2]
   assert.equal(apiPart, pkg.dsh.api, 'version api part must equal dsh.api')
-  assert.equal(pkg.version, '0.1.0-rc.6-0.3')
+  assert.equal(pkg.version, '0.1.0-rc.6-0.4')
 })
 
-test('the protocol advances numerically from 0.2 to 0.3 without promoting the reserved 1.0', () => {
+test('the protocol advances numerically from 0.3 to 0.4 without promoting the reserved 1.0', () => {
   const [major, minor] = pkg.dsh.api.split('.').map(Number)
   assert.equal(major, 0)
-  assert.equal(minor, 2 + 1)
+  assert.equal(minor, 3 + 1)
   assert.notEqual(pkg.dsh.api, '1.0')
 })
 

@@ -18,7 +18,7 @@ function loadClientBundle() {
   }
   sandbox.globalThis = sandbox
   vm.runInNewContext(bundle, sandbox, { filename: 'client.js' })
-  assert.equal(handoff?.id, '@deepseek-ai/dsh-plugin-api')
+  assert.equal(handoff?.id, '@deepseek-ai/dsh-plugin-api-main')
   assert.equal(typeof handoff?.factory, 'function')
   return handoff.factory(() => { throw new Error('the bundled facade has no cross-plugin runtime imports') })
 }

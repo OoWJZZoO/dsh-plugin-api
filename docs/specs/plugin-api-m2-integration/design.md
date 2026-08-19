@@ -3,6 +3,8 @@
 > feature_name: `plugin-api-m2-integration`
 > 状态：已交付（Stage 4）
 > 面：host-only 整合；不新增 client、remote、codec、catalog slice 或官方补丁
+>
+> **Rename/version pointer（`plugin-api-compaction-events-r1`）**：M2 交付时的版本 `0.1.0-rc.6-0.3` / `dsh.api: 0.3` 及主包名 `@deepseek-ai/dsh-plugin-api` 为历史记录；现主包 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），唯一 full version `0.1.0-rc.6-0.4` / `dsh.api: 0.4`，monorepo 见根 `pnpm-workspace.yaml`。
 
 ## Overview
 
@@ -199,7 +201,7 @@ Diagnostics are redacted, constant-shaped, deduplicated, best-effort; absent/thr
 
 ## Package and compatibility contract
 
-The final package contract is `package.json.dsh.api = '0.3'` and the repository's unique full version is `0.1.0-rc.6-0.3`. The facade parser splits that into runtime portion `0.1.0-rc.6` and protocol `0.3`: runtime-to-facade comparison requires exact full runtime identity, including patch and prerelease, with the installed audited DSH runtime; plugin-to-facade compatibility independently compares numeric API major/minor. A runtime `rc.7`, release `0.1.0`, or patch mismatch is fail-safe, never normalized to major/minor. Protocol minor progression remains numeric (`0.9 → 0.10`) and `1.0` stays reserved for public release.
+The final package contract at M2 delivery was `package.json.dsh.api = '0.3'` and the repository's unique full version was `0.1.0-rc.6-0.3` (superseded to `0.4` / `0.1.0-rc.6-0.4` by `plugin-api-compaction-events-r1`). The facade parser splits that into runtime portion `0.1.0-rc.6` and protocol `0.3`: runtime-to-facade comparison requires exact full runtime identity, including patch and prerelease, with the installed audited DSH runtime; plugin-to-facade compatibility independently compares numeric API major/minor. A runtime `rc.7`, release `0.1.0`, or patch mismatch is fail-safe, never normalized to major/minor. Protocol minor progression remains numeric (`0.9 → 0.10`) and `1.0` stays reserved for public release.
 
 All M2 official package identities needed by guards/audits are declared through existing approved package surfaces or peerDependencies, so host and plugin share one official instance. No facade-unrelated runtime dependency is added. Package assertions, peer tests, examples, docs and both consumer dependency declarations use the same full version/protocol facts.
 
