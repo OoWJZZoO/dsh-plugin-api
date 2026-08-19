@@ -30,7 +30,7 @@
 - `SAFE`、`REVIEW`、`MANUAL`、`UNSUPPORTED` 迁移等级及版本化规则库；
 - dry-run、可审查 diff、备份/回滚和机器可读报告；
 - 首批 A 类一对一直通能力的 AST codemod；
-- 开发环境只读运行时审计，记录绕过 facade 的访问但不代理调用。
+- 开发环境只读审计记录器：由开发 harness 显式提交绕过 facade 的观察，工具负责规范化、持久化和报告，但不代理调用。
 
 本 feature 明确不承诺：
 
@@ -42,6 +42,6 @@
 
 ## Success boundary
 
-当迁移助手能够对一个真实第三方插件完整列出其 DSH 直连面，并对首批 A 类调用生成通过测试的最小 diff；对 B/C 类、动态访问和不确定语义给出明确的非静默报告；且迁移结果可在 CI 中重复检查时，本 Goal 达成。
+当迁移助手能够对真实第三方插件完整列出 host/client 两面的 DSH 直连面，并对首批 A 类调用生成通过测试的最小 diff；对 B/C 类、动态访问和不确定语义给出明确的非静默报告；由开发 harness 提交的 audit observation 可被持久化读取；且迁移结果可通过 baseline/delta 在 CI 中重复检查时，本 Goal 达成。
 
 Requirements、Design 和 Tasks 阶段将进一步冻结规则格式、CLI 边界、AST 变换契约、报告 schema、测试夹具和真实插件迁移验收对象。
