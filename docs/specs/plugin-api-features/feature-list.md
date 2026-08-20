@@ -133,6 +133,7 @@
 | L9 provider 注册直通 | `llm.registerAdapter(providers, adapter)`、`llm.registerConfigurableProviders(entries)`、`llm.registerModelDiscovery(settingsNs, discover)` | A | `dsh-llm/lib/index.js:960` 起 | M1 | **delivered**（面向 provider/adapter 插件） |
 | L10 官方准入事件 | 官方 `llm/admission` 事件（payload 含 session/request 上下文） | C | 本仓库 `llm-image-admission` R6 提案 | M-final | planned（proposal） |
 | L11 官方 provider 目录与调用配置查询 | `llm.listProviders()`、`listConfigurableProviders()`、`discoverModels(settingsNs, request)`、`providerRetryPolicy(provider)`、`listModels(provider)`、`resolveCallConfig(config, signal?)` | A | `dsh-llm/lib/types/index.d.ts`；`LlmRuntime` 公共方法 | M4 | planned |
+| L12 LLM 公共构造与流处理工件 | `llm.contentHasImage(content)`、`llm.createUserMessage(input)`、`llm.BlockAssembler` 及同组官方公开工件稳定直通 | A | `dsh-llm/lib/index.js:176,650,673,1407`；`dsh-llm/lib/types/content.d.ts`、`message.d.ts`、`assembler.d.ts` | M4 | planned |
 
 ### 2.4 `pluginApi.agent` —— Agent 生命周期与驱动面（M1/M2/M4/M-final）
 
@@ -150,6 +151,7 @@
 | A10 官方路由 API | 官方 `exec.route` / `routeOf(exec)` 或等价字段 | C | AGENTS.md 第 2.5 条 C 类 | M-final | planned（proposal） |
 | A11 Agent 创建/注册高级面 | Consumer：`agent.create(options)`、`agent.resume(options)`、`agent.register(agent)`；advanced provider-only：`agent.provider.enter(agent, owner)`、`agent.provider.announce(agent)`、`agent.provider.setFactory(factory)`；只读 `agent.availability`：`{ create, resume, register, provider: { enter, announce, setFactory } }`，以及仅当全部 provider leaves 可用时为真的 `agent.provider.isActive` | A | `dsh-agent/lib/index.js:519` 起；`dsh-agent-loop/lib/index.js:1000` | M2 | **delivered** |
 | A12 Agent initiator 与所有权查询 | `agent.currentInitiator()`、`requireInitiator()`、`withInitiator(agent, operation)`、`withoutInitiator(operation)`、`isOwnedBy(id, owner)` | A | `dsh-agent/lib/types/index.d.ts`；`AgentRegistry` 公共方法 | M4 | planned |
+| A13 Agent 声明配置快照 | `agent.options` 的稳定只读快照（至少 `provider`、`model`，保留官方声明配置字段） | A | `dsh-agent/lib/types/runtime-types.d.ts:20-28,60-66`；官方 `Agent.options` | M4 | planned |
 
 > A1–A8 已由 `plugin-api-agent-m1` 交付（spec 目录 `docs/specs/plugin-api-agent-m1/`）。关键约束：12 个 `agent/*` 事件作为独立 slice 纳入 `pluginApi.events.catalog` 并集；catalog 统一 schema 含 `scopeKey/fault/freeze` 字段（`plugin-api-m1-integration`）；`agent/created` 保留官方 sync-veto / async-report 语义；A3–A6 为 `fault:'propagate'`；`agent`/`signal` 永不 deepFreeze。
 >
@@ -166,6 +168,7 @@
 | S5 会话事件目录 | `sessionEventTypes` / `surfaceEventTypes` 常量与类型守卫 | A | `dsh-session` `known-event-types`（`session/end-seed`、`session/title` 等） | M1 | **delivered** |
 | S6 官方上屏 helper | 官方提供 `session.appendSurface(...)` 级别的高级构造 API | C | 当前 surface 契约靠插件自维护（dsh-pro-ex-ability-anchor） | M-final | planned（proposal，可选） |
 | S7 会话创建与生命周期控制 | `session.create(id?, options?)`、`prepare(id?, options?)`、`enter(session)`、`announce(session)`、`flush(session)` | A | `dsh-session/lib/types/index.d.ts:290-385`；`SessionStore` 公共方法 | M4 | planned |
+| S8 原始 session 事件与派生 helper | `session.append(type, data, opts?)`、`session.deriveEventMessage(event)` 稳定直通，并保留官方 durable event / projection 语义 | A | `dsh-session/lib/types/index.d.ts:212,261-266`；`dsh-session/lib/index.js:1440` | M4 | planned |
 
 ### 2.6 `pluginApi.tools` —— 工具注册与执行管线面（M1/M2/M4）
 
@@ -183,6 +186,7 @@
 | T10 执行路由查询 | `tools.routeOf(exec)`：与 `agent.routeOf(exec)`、`routing.ofExecution(exec)` 返回同一按 execution 缓存的冻结 route 快照；捕获仅发生在 prepended `tools/pre-execute`，不创建 `exec.route` 或 route event/catalog slice | B | 官方无 `exec.route`；与 A9 同源 | M2 | **delivered** |
 | T11 工具中止错误构造 | `tools.toolAbortedError()`：返回与官方 dsh-tool-bash/pwsh 一致的“工具调用已中止”错误（`HarnessError('tool call aborted', TOOL_ABORTED)` + `name='AbortError'`，typed identity）；官方常量缺失时降级裸 `Error`（`name='AbortError'`） | A | `dsh-tools/lib/index.js:2411`（`TOOL_ABORTED`）；`dsh-llm/lib/types/error.js`（`HarnessError`）；`dsh-tool-bash/lib/index.js:408-409` | M4 | **delivered**（旧 M4 已交付，现归入新 M4） |
 | T12 执行模式查询 | `tools.executionMode(exec)`：读取官方工具执行的 `parallel` / `exclusive` 模式 | A | `dsh-tools/lib/types/index.d.ts:690`；`ToolRuntime.executionMode` | M4 | planned |
+| T13 工具定义构造器 | `tools.defineTool(options)`：schema 转换、参数校验、输出/调用呈现器、超时与并发元数据生成官方 `ToolDefinition` | A | `dsh-tools/lib/index.js:836`；`dsh-tools/lib/types/schema.d.ts:177-239` | M4 | planned |
 
 > 管线顺序（官方已定，门面只稳定化不重排）：`tools/pre-execute` → 单调 `guard()` 检查 → `tools/execute` → `tools/post-execute` → 工具 `finalizeContent` → `tools/result`。定义里的 `timeoutMs` 由 `dsh-tool-call-timeout-policy`（`tools/execute` wrapper）执行，不在门面内复制。
 
@@ -195,10 +199,11 @@
 | P3 变量注册 | `systemPrompt.variable(name, provider): () => void` | A | 同上 `:218` | M1 | **delivered** |
 | P4 工具 schema 提供者 | `systemPrompt.tools(provider): () => void` | A | 同上 `:209` | M1 | **delivered** |
 | P5 运行时上下文抑制 | `systemPrompt.suppressRuntimeContext(): () => void` | A | 同上 `:201` | M1 | **delivered** |
-| P6 组装瀑布 | `events.waterfall('system-prompt/assemble', assembly, context, next)` 类型化（经 `pluginApi.events` catalog） | A | `dsh-system-prompt/lib/index.js:283` | M1 | **delivered** |
+| P6 组装瀑布 | `events.waterfall('system-prompt/assemble', assembly, context, next)` 类型化（经 `pluginApi.events` catalog） | A | `dsh-system-prompt/lib/index.js:283` | M1 | **delivered（受限只读近似；完整可写语义见 P10）** |
 | P7 变更通知 | `events.on('system-prompt/change', listener)`（经 `pluginApi.events` catalog） | A | `dsh-system-prompt/lib/index.js:160` | M1 | **delivered** |
 | P8 渲染 helper | `systemPrompt.render(assembly)` / `renderContextSections(assembly)` 稳定直通（官方公开导出直通） | A | `dsh-system-prompt` 导出的 `renderPrompt/renderContextSections` | M1 | **delivered** |
 | P9 官方组装入口 | `systemPrompt.assemble(context?)` | A | `dsh-system-prompt/lib/types/index.d.ts:228`；`SystemPrompt.assemble` | M4 | planned |
+| P10 可写组装瀑布语义 | `system-prompt/assemble` 在 `await next()` 前后允许监听器按官方语义改写 `assembly.sections/contexts/tools/variables`，不被门面冻结策略破坏 | A | `dsh-system-prompt/lib/index.js:267-289`；现有 catalog `freeze: 'all'` 与官方可写 waterfall 不等价 | M4 | planned |
 
 ### 2.8 `pluginApi.settings` —— 设置与可视化配置桥（M1/M3/M4/M-final）
 
@@ -243,6 +248,7 @@
 | C22 theme 变更事件 | `events.on('theme/change', snapshot)` 类型化 | A | `dsh-client-ui-theme/lib/client.js`；`lib/types/client/index.d.ts` | M4 | planned |
 | C23 连接重置事件 | `events.on('connection/reset', listener)` 类型化 | A | `dsh-client-runtime/lib/client.js`；`lib/types/client/index.d.ts` | M4 | planned |
 | C24 命令执行确认事件 | `events.on('command/executed', (sessionId, commandName, result) => {})` 类型化 | A | `dsh-client-ui-commands/lib/types/client/service.d.ts` 事件契约；`lib/client.js` 派发点 | M4 | planned |
+| C25 客户端 LLM catalog API | `client.connection.api.llm.providers/models/discoverModels` 稳定读面，并保留官方 RPC payload、signal 与返回语义 | A | `dsh-client-connection/lib/client.js:6349-6353`；官方 `connection.api.llm` | M4 | planned |
 
 ### 2.10 其他宿主事件稳定化（统一走 `pluginApi.events`，M1/M2/M4）
 
@@ -275,7 +281,7 @@
 
 > 这些官方服务是工具/子代理/审批等能力的底层 seam。门面策略：**稳定直通 + 类型化 + fail-safe**，不发明新语义；个别服务（如 `approval`、`userQuestions`）保留官方 fail-closed 行为。
 >
-> M4 以 `dsh-tool-cordis` 生成 `SERVICE_API` 的 55 个 host service key 与 `EVENT_API` 的 56 个 host event 为盘点基线。现有 host event catalog 交付 47 条，余下 9 条列于 O17–O20；M3 C6 的浏览器远程转发不计作 host catalog。原 M4 已合并的 `T11`、`RB1`、`SV19`、`SV20` 原编号保留在新 M4，并显式标为已交付；其余 A 类 service key 与 `web` 尚未透传的方法在本节逐项列出。
+> M4 的 host 盘点以 `dsh-tool-cordis` 生成 `SERVICE_API` 的 55 个 service key 与 `EVENT_API` 的 56 个 event 为一条基线，但不把它当作官方公开面总表：LLM/工具/session/agent 的公开导出与构造器、客户端 provider service 与 connection API 仍需分别核对。现有 host event catalog 交付 47 条，余下 9 条列于 O17–O20；M3 C6 的浏览器远程转发不计作 host catalog。原 M4 已合并的 `T11`、`RB1`、`SV19`、`SV20` 原编号保留在新 M4，并显式标为已交付；其余 A 类 service key 与 `web` 尚未透传的方法在本节逐项列出。
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
