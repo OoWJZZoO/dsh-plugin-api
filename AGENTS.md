@@ -116,7 +116,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 ## 4. 核心设计决策（已讨论，作为 constitution 输入）
 
 1. 插件作者的**推荐、受支持**入口是主门面包 `@deepseek-ai/dsh-plugin-api-main`（仓库/项目名仍为 `dsh-plugin-api`；运行时通过 `ctx.pluginApi` 服务解析符号），由门面提供稳定性、版本协商与 fail-safe 保障。第三方插件**可以**绕过门面直接与 `dsh-tools`/`dsh-llm` 等内部包交互，但该路径被明确标记为 **unsupported escape hatch**：无兼容承诺、官方内部变化时可能破坏、自担风险。门面不强制、不拦截这种直连，也不为其提供任何保障。
-2. 版本协商（**主包与全部辅助包统一适用**）：全量唯一版本号定义为 **`<runtime全量版本（含 rc 等后缀）>-<API协议大版本.迭代小版本>`**（如 `0.1.0-rc.6-0.5`，写入各自 `package.json.version`）：runtime 部分记录该包为哪个官方 runtime 构建，API 协议部分是门面的世代号（`package.json.dsh.api` 仅承载后者）。方向 ①（runtime↔包）要求 runtime 部分与实际安装的官方 runtime 完整 identity 精确相等，含 patch 与 prerelease；方向 ②（插件↔门面，`assertCompatible`）独立比较 API 协议 `major.minor`。任一方向不匹配时安全停用/显式报错。API 协议 minor 按**数字递增**：`0.9` 之后是 `0.10`，永不进位为 `1.0`；**协议 `1.0` 保留给正式发布**，标志着公开发布（此前均为纯本地开发期契约，见 §3.0.1）。**主包要求辅助包版本一致**：每个辅助包的 runtime 全量部分与 API 协议版本必须与主包完全一致（同一官方 runtime identity、同一 `dsh.api` `major.minor`），主包/装配层必须校验该一致性；任何辅助包不匹配时按方向 ①/② fail-safe 停用并显式报错，绝不静默混跑。
+2. 版本协商（**主包与全部辅助包统一适用**）：全量唯一版本号定义为 **`<runtime全量版本（含 rc 等后缀）>-<API协议大版本.迭代小版本>`**（如 `0.1.0-rc.6-0.5`，写入各自 `package.json.version`）：runtime 部分记录该包为哪个官方 runtime 构建，API 协议部分是门面的世代号（`package.json.dsh.api` 仅承载后者）。方向 ①（runtime↔包）要求 runtime 部分与实际安装的官方 runtime 完整 identity 精确相等，含 patch 与 prerelease；方向 ②（插件↔门面，`assertCompatible`）独立比较 API 协议 `major.minor`。任一方向不匹配时安全停用/显式报错。API 协议 minor 按**数字递增**：`0.9` 之后是 `0.10`，永不进位为 `1.0`；**协议 `1.0` 保留给正式发布**，标志着公开发布（此前均为纯本地开发期契约，见 §3.0.1）。**主包要求辅助包版本一致**：每个辅助包的 runtime 全量部分与 API 协议版本必须与主包完全一致（同一官方 runtime identity、同一 `dsh.api` `major.minor`），主包/装配层必须校验该一致性；任何辅助包与主包版本不一致时，**只停用该辅助包对应的 R 类特性**（其替代行与相关 catalog slice/feature 按 fail-safe 降级并显式报错），不得连带停用主包门面或其他无关特性，也绝不静默混跑。
 3. 事件 API 保留 Cordis 的 `ctx.on` + `emit/serial/parallel/waterfall`，只增加稳定类型、只读 payload 与 `priority`（lowest/low/normal/high/highest/monitor）。
 4. 需要优先“转译”的语义钩子：
    - 同步 `llm/request`（基于 `llm/stream` 重入，必须幂等收敛）
@@ -127,7 +127,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 5. client bundle 允许打包一份 zod，用于生成满足 `dsh-api-remotes` 校验的真 codec；其余依赖尽量保持 peerDependencies 以共享宿主实例。
 6. **能力上限策略（权威细则 `docs/capability-strategy.md`）**：采用方案一（门面转译）+ 方案三（replacement bundle）双通道。B 类迁移判据——低/中工作量且高价值 → R 类；高工作量 → 维持门面转译；横切派发语义（priority / deepFreeze / fault containment）永不 R。方案二（修改运行时源码）不作为插件分发通道，仅 boot 胶水级 C 类（如 U4）可作部署/运维例外，且必须人工批准、可逆、升级重放、不受 `dsh.api` 版本承诺。任何新增 R 类都须走 spec coding Stage 0–4。
 7. **包策略与安装模式（constitution 级）**：
-   - 辅助包拥有与主包一致的版本协商规则（官方 runtime 全量版本 + `dsh.api` API 协议版本），且主包要求辅助包版本一致（见第 2 条）。
+   - 辅助包拥有与主包一致的版本协商规则（官方 runtime 全量版本 + `dsh.api` API 协议版本），且主包要求辅助包版本一致（见第 2 条）；辅助包与主包版本不一致时，仅停用该辅助包相关的 R 类特性，不波及主包门面与其他能力。
    - 只提供两种明确的安装模式：
      ```bash
      # 默认全量
