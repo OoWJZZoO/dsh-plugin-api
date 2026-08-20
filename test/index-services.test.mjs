@@ -64,7 +64,7 @@ function createMockCtx(options = {}) {
   return { ctx, state, services }
 }
 
-test('apply mounts an active frozen services namespace when all 19 official services are present', () => {
+test('apply mounts an active frozen services namespace when all 21 official services are present', () => {
   const allServices = {}
   for (const def of SERVICE_DEFINITIONS) {
     const svc = {}
@@ -96,9 +96,11 @@ test('apply mounts an active frozen services namespace when all 19 official serv
   assert.equal(state.pluginApi.isActive, true)
   assert.equal(state.pluginApi.services[servicesNamespaceBrand], true)
   assert.ok(Object.isFrozen(state.pluginApi.services))
-  assert.equal(Object.keys(state.pluginApi.services).length, 19)
+  assert.equal(Object.keys(state.pluginApi.services).length, 21)
   assert.equal(state.pluginApi.services.fs.isActive, true)
   assert.equal(state.pluginApi.services.compaction.isActive, true)
+  assert.equal(state.pluginApi.services.jobs.isActive, true)
+  assert.equal(state.pluginApi.services.shellEnv.isActive, true)
 })
 
 test('apply mounts services when compaction is the only complete capability service', () => {
@@ -123,6 +125,64 @@ test('apply mounts services when compaction is the only complete capability serv
       assert.equal(state.pluginApi.services[def.key].isActive, false, `${def.key} is locally disabled`)
     }
   }
+})
+
+test('apply mounts services when jobs and shellEnv are the only complete capability services', () => {
+  const jobs = completeService(SERVICE_DEFINITIONS.find((def) => def.key === 'jobs'))
+  const shellEnv = completeService(SERVICE_DEFINITIONS.find((def) => def.key === 'shellEnv'))
+  const { ctx, state } = createMockCtx({ services: { jobs, shellEnv } })
+
+  assert.doesNotThrow(() => apply(ctx))
+
+  const feature = state.pluginApi.features.find((entry) => entry.name === 'services')
+  assert.equal(feature.isActive, true)
+  assert.equal(state.pluginApi.services.jobs.isActive, true)
+  assert.equal(state.pluginApi.services.shellEnv.isActive, true)
+  assert.throws(
+    () => state.pluginApi.services.compaction.compactNow({}, {}),
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.compaction',
+  )
+  for (const def of SERVICE_DEFINITIONS) {
+    if (def.key !== 'jobs' && def.key !== 'shellEnv') {
+      assert.equal(state.pluginApi.services[def.key].isActive, false, `${def.key} is locally disabled`)
+    }
+  }
+})
+
+test('apply keeps jobs/shellEnv siblings active when only one is hostile or incomplete', () => {
+  const jobs = completeService(SERVICE_DEFINITIONS.find((def) => def.key === 'jobs'))
+  const shellEnv = completeService(SERVICE_DEFINITIONS.find((def) => def.key === 'shellEnv'))
+  delete shellEnv.collect
+  const { ctx, state } = createMockCtx({ services: { jobs, shellEnv } })
+
+  assert.doesNotThrow(() => apply(ctx))
+
+  assert.equal(state.pluginApi.services.jobs.isActive, true)
+  assert.equal(state.pluginApi.services.shellEnv.isActive, false)
+  assert.throws(
+    () => state.pluginApi.services.shellEnv.collect({}),
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.shellEnv',
+  )
+})
+
+test('apply degrades hostile jobs construction while shellEnv stays active', () => {
+  const jobs = completeService(SERVICE_DEFINITIONS.find((def) => def.key === 'jobs'))
+  const shellEnv = completeService(SERVICE_DEFINITIONS.find((def) => def.key === 'shellEnv'))
+  Object.defineProperty(jobs, 'wait', {
+    get() {
+      throw new Error('hostile member getter')
+    },
+  })
+  const { ctx, state } = createMockCtx({ services: { jobs, shellEnv } })
+
+  assert.doesNotThrow(() => apply(ctx))
+
+  assert.equal(state.pluginApi.services.jobs.isActive, false)
+  assert.equal(state.pluginApi.services.shellEnv.isActive, true)
+  assert.throws(
+    () => state.pluginApi.services.jobs.wait(),
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.jobs',
+  )
 })
 
 test('apply degrades a missing capability service per-service while keeping the services feature active', () => {
@@ -185,7 +245,7 @@ test('apply degrades hostile compaction construction while another capability re
   )
 })
 
-test('apply keeps the facade active and disables services when none of the 19 services is present', () => {
+test('apply keeps the facade active and disables services when none of the 21 services is present', () => {
   const { ctx, state } = createMockCtx({
     services: {
       llm: { resolveModelInfo() {} },

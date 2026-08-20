@@ -54,7 +54,7 @@ function createMockServiceAndHelpers(def) {
   return { service, calls, returns, getterValues, uriHelpers, uriCalls, uriReturns }
 }
 
-test('active facade delegates every declared method 1:1 for all 19 services', () => {
+test('active facade delegates every declared method 1:1 for all 21 services', () => {
   for (const def of SERVICE_DEFINITIONS) {
     const { service, calls, returns, getterValues, uriHelpers, uriCalls, uriReturns } = createMockServiceAndHelpers(def)
     const facade = buildActiveFacade(def, service, uriHelpers)
@@ -229,4 +229,123 @@ test('optional method is omitted when absent and present when the official servi
 
   const facadeWithout = buildActiveFacade(def, withoutFlush, {})
   assert.ok(!('flush' in facadeWithout))
+})
+
+test('jobs delegates exact optional argument lists and preserves value identities', () => {
+  const def = SERVICE_DEFINITIONS.find((entry) => entry.key === 'jobs')
+  const calls = []
+  const disposers = {
+    onJobDone: () => 'dispose-jobdone',
+    onJobsChanged: () => 'dispose-jobschanged',
+    attachController: () => 'dispose-controller',
+  }
+  const service = {}
+  for (const name of def.members.map((m) => m.name)) {
+    service[name] = function (...args) {
+      assert.equal(this, service, `jobs.${name} must preserve this binding`)
+      calls.push({ name, args })
+      if (name in disposers) return disposers[name]
+      return { name, len: args.length }
+    }
+  }
+  const facade = buildActiveFacade(def, service)
+  const id = 'bash-1'
+  const caller = { id: 'agent-1' }
+  const reason = 'user requested stop'
+  const timeoutMs = 5000
+  const signal = new AbortController().signal
+  const listener = () => {}
+
+  // Omitted trailing optionals stay omitted.
+  assert.deepEqual(facade.list(), { name: 'list', len: 0 })
+  assert.deepEqual(facade.get(id), { name: 'get', len: 1 })
+  assert.deepEqual(facade.read(id), { name: 'read', len: 1 })
+  assert.deepEqual(facade.kill(id), { name: 'kill', len: 1 })
+  assert.deepEqual(facade.wait(id, timeoutMs), { name: 'wait', len: 2 })
+
+  // Fully-specified forms preserve supplied identities.
+  assert.deepEqual(facade.get(id, caller), { name: 'get', len: 2 })
+  assert.deepEqual(facade.kill(id, caller, reason), { name: 'kill', len: 3 })
+  assert.deepEqual(facade.wait(id, timeoutMs, caller, signal), { name: 'wait', len: 4 })
+
+  // Disposer-returning members return the exact disposer the official service returns.
+  assert.equal(facade.onJobDone(listener), disposers.onJobDone)
+  assert.equal(facade.onJobsChanged(listener), disposers.onJobsChanged)
+  assert.equal(facade.attachController('host-controls'), disposers.attachController)
+
+  const byName = Object.fromEntries(calls.map((call) => [call.name, call.args]))
+  assert.equal(byName.list.length, 0)
+  assert.equal(byName.get[0], id)
+  assert.equal(byName.read[0], id)
+  assert.equal(byName.kill[0], id)
+  assert.equal(byName.wait[0], id)
+  assert.equal(byName.wait[1], timeoutMs)
+  assert.equal(byName.get[1], caller)
+  assert.equal(byName.kill[1], caller)
+  assert.equal(byName.kill[2], reason)
+  assert.equal(byName.wait[2], caller)
+  assert.equal(byName.wait[3], signal)
+  assert.equal(byName.onJobDone[0], listener)
+  assert.equal(byName.onJobsChanged[0], listener)
+  assert.equal(byName.attachController[0], 'host-controls')
+})
+
+test('shellEnv delegates arguments, returns disposers and values by identity', () => {
+  const def = SERVICE_DEFINITIONS.find((entry) => entry.key === 'shellEnv')
+  const calls = []
+  const disposer = () => 'dispose-env'
+  const collected = { DSH_SESSION_JSONL: '/tmp/s.jsonl' }
+  const declared = [{ key: 'DSH_FOO', contributor: 'pro-ex' }]
+  const service = {
+    register(...args) {
+      assert.equal(this, service)
+      calls.push({ name: 'register', args })
+      return disposer
+    },
+    collect(...args) {
+      assert.equal(this, service)
+      calls.push({ name: 'collect', args })
+      return collected
+    },
+    list(...args) {
+      assert.equal(this, service)
+      calls.push({ name: 'list', args })
+      return declared
+    },
+  }
+  const facade = buildActiveFacade(def, service)
+  const contributor = { name: 'pro-ex', variables: { DSH_FOO: { description: 'x' } }, resolve() {} }
+  const execution = { id: 'exec-1' }
+
+  assert.equal(facade.register(contributor), disposer)
+  assert.equal(facade.collect(execution), collected)
+  assert.equal(facade.list(), declared)
+
+  const byName = Object.fromEntries(calls.map((call) => [call.name, call.args]))
+  assert.equal(byName.register[0], contributor)
+  assert.equal(byName.collect[0], execution)
+})
+
+test('jobs and shellEnv propagate official throws and rejections unchanged', async () => {
+  for (const key of ['jobs', 'shellEnv']) {
+    const def = SERVICE_DEFINITIONS.find((entry) => entry.key === key)
+    const thrown = new Error(`${key} throw`)
+    const rejected = new Error(`${key} rejection`)
+    const rejectedPromise = Promise.reject(rejected)
+    const service = {}
+    for (const [index, name] of def.members.map((m) => m.name).entries()) {
+      if (index === 0) {
+        service[name] = () => { throw thrown }
+      } else if (index === 1) {
+        service[name] = () => rejectedPromise
+      } else {
+        service[name] = () => ({ ok: name })
+      }
+    }
+    const facade = buildActiveFacade(def, service)
+
+    assert.throws(() => facade[def.members[0].name](), (error) => error === thrown)
+    assert.equal(facade[def.members[1].name](), rejectedPromise)
+    await assert.rejects(rejectedPromise, (error) => error === rejected)
+  }
 })

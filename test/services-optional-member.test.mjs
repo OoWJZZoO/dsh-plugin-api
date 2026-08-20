@@ -67,3 +67,68 @@ test('non-optional missing member degrades the whole facade to disabled (never s
     },
   )
 })
+
+test('incomplete jobs service disables the whole nine-method facade', () => {
+  const def = SERVICE_DEFINITIONS.find((d) => d.key === 'jobs')
+  const facade = buildActiveFacade(def, {
+    start() {},
+    list() {},
+    get() {},
+    read() {},
+    kill() {},
+    wait() {},
+    onJobDone() {},
+    // onJobsChanged deliberately absent; attachController present.
+    attachController() {},
+  }, {})
+
+  assert.equal(facade.isActive, false)
+  for (const name of def.members.map((m) => m.name)) {
+    assert.equal(typeof facade[name], 'function', `${name} stays observable`)
+    assert.throws(
+      () => facade[name](),
+      (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.jobs',
+    )
+  }
+})
+
+test('jobs non-callable member degrades the whole nine-method facade', () => {
+  const def = SERVICE_DEFINITIONS.find((d) => d.key === 'jobs')
+  const facade = buildActiveFacade(def, {
+    start() {},
+    list() {},
+    get() {},
+    read() {},
+    kill() {},
+    wait: 'not callable',
+    onJobDone() {},
+    onJobsChanged() {},
+    attachController() {},
+  }, {})
+
+  assert.equal(facade.isActive, false)
+  for (const name of def.members.map((m) => m.name)) {
+    assert.throws(
+      () => facade[name](),
+      (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.jobs',
+    )
+  }
+})
+
+test('incomplete shellEnv service disables the whole three-method facade', () => {
+  const def = SERVICE_DEFINITIONS.find((d) => d.key === 'shellEnv')
+  const facade = buildActiveFacade(def, {
+    register() {},
+    // collect deliberately absent; list present.
+    list() {},
+  }, {})
+
+  assert.equal(facade.isActive, false)
+  for (const name of def.members.map((m) => m.name)) {
+    assert.equal(typeof facade[name], 'function', `${name} stays observable`)
+    assert.throws(
+      () => facade[name](),
+      (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.shellEnv',
+    )
+  }
+})
