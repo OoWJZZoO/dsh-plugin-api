@@ -127,7 +127,7 @@ test('AC 2.5: endpoint resolves to the exact registered service and is callable'
 
 test('AC 2.5: discovery needs no modification of dsh-api-remotes hard-coded contributions', () => {
   // Endpoint claims arise purely from the service's own binding + markers; the
-  // client side continues to consume via delivered ST5/C2 (AC 5.1) — nothing in
+  // client side continues to consume via delivered remote adapter/remote mount owner — nothing in
   // this feature adds to dsh-api-remotes (which we cannot modify anyway).
   const { ctx } = makeGatewayHost()
   const api = createHostRemoteApi({ ctx, protocol, active: true })

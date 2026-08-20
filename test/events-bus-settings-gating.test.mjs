@@ -41,7 +41,7 @@ function createBusMockCtx() {
   }
 }
 
-// Mount-time exclusion is the one and only gating mechanism (design C5): the
+// Mount-time exclusion is the one and only gating mechanism the
 // bus itself performs NO feature gating at subscribe time.
 
 test('bus subscriptions to settings events are ungated when the entries are cataloged', () => {

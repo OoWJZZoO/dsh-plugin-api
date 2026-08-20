@@ -39,7 +39,7 @@ function createMockSystemPrompt() {
   }
 }
 
-test('P1–P5 forward to the official service with the same arguments and return its disposer', () => {
+test('system prompt passthroughs forward to the official service with the same arguments and return its disposer', () => {
   const mock = createMockSystemPrompt()
   const api = createSystemPromptApi({ systemPrompt: mock.service })
 
@@ -63,7 +63,7 @@ test('P1–P5 forward to the official service with the same arguments and return
   assert.deepEqual(mock.calls[4], ['suppressRuntimeContext'])
 })
 
-test('P1–P5 propagate official service errors unchanged', () => {
+test('system prompt passthroughs propagate official service errors unchanged', () => {
   const sentinel = new Error('duplicate section name')
   const service = {
     section() {

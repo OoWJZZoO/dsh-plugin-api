@@ -58,7 +58,7 @@ function message(id, role, source, content) {
   return { id, role, source, content }
 }
 
-test('ability-anchor S2 mapping appends only supported messages without hand-authored surface metadata', () => {
+test('ability-anchor finite append mapping appends only supported messages without hand-authored surface metadata', () => {
   const { ctx, service } = createPublishedFacade()
   const session = ctx.sessions.create('ability-anchor-mapping')
 
@@ -115,7 +115,7 @@ test('ability-anchor mapping rejects title, replacement, and atomic-turn attempt
   const user = message('user-1', 'user', { kind: 'user' }, [])
 
   for (const [kind, payload, options] of [
-    ['session/title', { title: 'outside S2' }, undefined],
+    ['session/title', { title: 'outside finite append' }, undefined],
     ['user/message', user, { surfaceOp: 'replace' }],
     ['virtual-turn/commit', { events: [] }, undefined],
   ]) {

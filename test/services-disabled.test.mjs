@@ -83,7 +83,7 @@ test('per-service degradation facade does not call into official services', () =
   assert.equal(officialCalls, 0)
 })
 
-test('compaction P4 facade reports services.compaction without official calls', () => {
+test('compaction degraded facade reports services.compaction without official calls', () => {
   let calls = 0
   const services = createServicesNamespace({
     ctx: {
@@ -122,7 +122,7 @@ test('compaction P4 facade reports services.compaction without official calls', 
   assert.equal(calls, 0)
 })
 
-test('throwing compaction lookup degrades only compaction as P4', () => {
+test('throwing compaction lookup degrades only compaction as degraded', () => {
   const services = createServicesNamespace({
     ctx: {
       get(name) {
@@ -158,7 +158,7 @@ test('throwing compaction lookup degrades only compaction as P4', () => {
   )
 })
 
-test('mounted active and P4 compaction facades prioritize inactive core errors', () => {
+test('mounted active and degraded compaction facades prioritize inactive core errors', () => {
   let active = true
   let officialCalls = 0
   const complete = {
@@ -196,7 +196,7 @@ test('all-disabled fallback never exposes an active facade', () => {
   }
 })
 
-test('jobs P4 facade reports services.jobs without official calls', () => {
+test('jobs degraded facade reports services.jobs without official calls', () => {
   const calls = { jobs: 0, fs: 0 }
   const services = createServicesNamespace({
     ctx: {
@@ -228,7 +228,7 @@ test('jobs P4 facade reports services.jobs without official calls', () => {
   assert.equal(calls.fs, 0)
 })
 
-test('shellEnv P4 facade reports services.shellEnv without official calls', () => {
+test('shellEnv degraded facade reports services.shellEnv without official calls', () => {
   const calls = { shellEnv: 0, fs: 0 }
   const services = createServicesNamespace({
     ctx: {
@@ -261,7 +261,7 @@ test('shellEnv P4 facade reports services.shellEnv without official calls', () =
   assert.equal(calls.fs, 0)
 })
 
-test('throwing jobs lookup degrades only jobs as P4 while shellEnv sibling stays active', () => {
+test('throwing jobs lookup degrades only jobs as degraded while shellEnv sibling stays active', () => {
   const shellEnv = {
     register() {}, collect() {}, list() {},
   }
@@ -356,7 +356,7 @@ test('shellEnv extras are never exposed on the active facade and never mutate th
   assert.equal(Object.isFrozen(shellEnv), false)
 })
 
-test('throwing shellEnv lookup degrades only shellEnv as P4 while the jobs sibling stays active', () => {
+test('throwing shellEnv lookup degrades only shellEnv as degraded while the jobs sibling stays active', () => {
   const jobs = {
     start() {}, list() {}, get() {}, read() {}, kill() {}, wait() {},
     onJobDone() {}, onJobsChanged() {}, attachController() {},
@@ -452,7 +452,7 @@ test('hostile jobs construction degrades only jobs and keeps shellEnv active', (
   assert.ok(loggerMessages.some((m) => m.includes('services.jobs')))
 })
 
-test('mounted active and P4 jobs/shellEnv facades prioritize inactive core errors', () => {
+test('mounted active and degraded jobs/shellEnv facades prioritize inactive core errors', () => {
   let active = true
   let officialCalls = 0
   const completeJobs = {

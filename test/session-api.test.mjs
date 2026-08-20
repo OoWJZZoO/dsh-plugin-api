@@ -92,7 +92,7 @@ function createMocks() {
   }
 }
 
-test('S1: lifecycle names delegate to pluginApi.events.on/once and return its disposer', () => {
+test('session lifecycle: lifecycle names delegate to pluginApi.events.on/once and return its disposer', () => {
   const mocks = createMocks()
   const api = createSessionApi({
     ctx: mocks.ctx,
@@ -121,7 +121,7 @@ test('S1: lifecycle names delegate to pluginApi.events.on/once and return its di
   assert.deepEqual(mocks.delegatedOnce.map((call) => call.name), [...SESSION_LIFECYCLE_EVENT_NAMES])
 })
 
-test('S1: non-lifecycle names pass through to ctx.on/ctx.once raw and ignore opts', () => {
+test('session lifecycle: non-lifecycle names pass through to ctx.on/ctx.once raw and ignore opts', () => {
   const mocks = createMocks()
   const api = createSessionApi({
     ctx: mocks.ctx,
@@ -145,7 +145,7 @@ test('S1: non-lifecycle names pass through to ctx.on/ctx.once raw and ignore opt
   assert.equal(mocks.rawOnceCalls[0].listener, onceListener)
 })
 
-test('S3: get/list/fork delegate to the sessions service with arguments and errors unchanged', () => {
+test('session read surface: get/list/fork delegate to the sessions service with arguments and errors unchanged', () => {
   const mocks = createMocks()
   const api = createSessionApi({
     ctx: mocks.ctx,
@@ -169,7 +169,7 @@ test('S3: get/list/fork delegate to the sessions service with arguments and erro
   assert.throws(() => api.fork('bad'), (error) => error === mocks.forkError)
 })
 
-test('S4: read-only accessors return frozen snapshots without mutating the session', () => {
+test('read-only state accessors: read-only accessors return frozen snapshots without mutating the session', () => {
   const mocks = createMocks()
   const api = createSessionApi({
     ctx: mocks.ctx,
@@ -199,7 +199,7 @@ test('S4: read-only accessors return frozen snapshots without mutating the sessi
   assert.ok(Object.isFrozen(messages[0]), 'deriveMessages entries must be frozen')
 })
 
-test('S5: catalogs and type guards come from createSessionTypeCatalogs; invalid input degrades with warn', () => {
+test('session type catalogs: catalogs and type guards come from createSessionTypeCatalogs; invalid input degrades with warn', () => {
   const mocks = createMocks()
   const logger = { warns: [], warn(message) { this.warns.push(message) } }
   const api = createSessionApi({

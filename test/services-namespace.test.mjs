@@ -200,7 +200,7 @@ test('shellEnv facade does not mutate the official service target', () => {
   assert.equal(typeof shellEnv.register, 'function')
 })
 
-test('complete jobs and shellEnv services alone yield active facades while static peers stay P4-disabled', () => {
+test('complete jobs and shellEnv services alone yield active facades while static peers stay degraded-disabled', () => {
   const jobs = {
     start() {}, list() {}, get() {}, read() {}, kill() {}, wait() {},
     onJobDone() {}, onJobsChanged() {}, attachController() {},
@@ -221,7 +221,7 @@ test('complete jobs and shellEnv services alone yield active facades while stati
   assert.equal(services.jobs.isActive, true)
   assert.equal(services.shellEnv.isActive, true)
   for (const key of ['fs', 'compaction', 'web', 'sessionQuery']) {
-    assert.equal(services[key].isActive, false, `${key} stays P4-disabled`)
+    assert.equal(services[key].isActive, false, `${key} stays degraded-disabled`)
   }
 })
 
@@ -257,13 +257,13 @@ test('hostile compaction member inspection degrades locally without interrupting
   assert.equal(loggerMessages.length, 1)
 })
 
-test('an incomplete compaction target is one sealed definition-level P4 facade while all static peers remain active', () => {
+test('an incomplete compaction target is one sealed definition-level degraded facade while all static peers remain active', () => {
   let officialCalls = 0
   const incomplete = {
     compactIfNeeded() { officialCalls += 1 },
     compactNow() { officialCalls += 1 },
     // `compactRegion` is deliberately absent: the whole declared definition,
-    // not only the missing member, must degrade to P4.
+    // not only the missing member, must degrade to degraded.
     backendOnly() { officialCalls += 1 },
     scheduler: { queued: true },
   }

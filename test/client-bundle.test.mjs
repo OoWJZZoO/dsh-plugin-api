@@ -70,7 +70,7 @@ function createCtx({ omit = [], throwGet = [] } = {}) {
   }
 }
 
-test('official client artifact registers, composes all M3 leaves, and supports reapply cleanup', async () => {
+test('official client artifact registers, composes all client leaves, and supports reapply cleanup', async () => {
   const artifact = loadClientBundle()
   assert.deepEqual([...artifact.CLIENT_MOUNTERS], [
     'clientManifest', 'clientConnection', 'clientCodec', 'clientRemoteContribution',

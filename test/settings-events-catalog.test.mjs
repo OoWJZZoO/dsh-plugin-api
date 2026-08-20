@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { settingsEventsCatalog } from '../lib/settings-events-catalog.js'
 
-test('settings slice contains exactly the ST3 event names', () => {
+test('settings slice contains exactly the two settings event names', () => {
   assert.deepEqual(Object.keys(settingsEventsCatalog).sort(), ['settings/document-updated', 'settings/updated'])
   assert.ok(Object.isFrozen(settingsEventsCatalog), 'catalog must be frozen')
 })
@@ -14,8 +14,8 @@ test('settings/updated entry matches the confirmed emit metadata', () => {
   assert.equal(updated.scopeKey, undefined)
   assert.equal(updated.fault, 'contain')
   assert.equal(updated.freeze, 'all')
-  assert.equal(updated.source, 'ST3')
-  assert.equal(updated.type, 'A')
+  assert.ok(!('source' in updated), 'governance source ids must not leak')
+  assert.ok(!('type' in updated), 'governance class letters must not leak')
   assert.equal(updated.args, '(ns, next, prev, source)')
   assert.match(updated.payload, /source/)
 })
@@ -27,8 +27,8 @@ test('settings/document-updated entry matches the confirmed emit metadata', () =
   assert.equal(documentUpdated.scopeKey, undefined)
   assert.equal(documentUpdated.fault, 'contain')
   assert.equal(documentUpdated.freeze, 'all')
-  assert.equal(documentUpdated.source, 'ST3')
-  assert.equal(documentUpdated.type, 'A')
+  assert.ok(!('source' in documentUpdated), 'governance source ids must not leak')
+  assert.ok(!('type' in documentUpdated), 'governance class letters must not leak')
   assert.equal(documentUpdated.args, '(ns, revision)')
   assert.match(documentUpdated.payload, /revision/)
 })

@@ -22,7 +22,7 @@ function assertDisabledView(agent) {
     assert.throws(() => agent[method]('x'), (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
       assert.equal(error.feature, 'agent')
-      assert.doesNotMatch(error.message, /A11 member/)
+      assert.doesNotMatch(error.message, /agent extension member/)
       return true
     })
   }
@@ -30,7 +30,7 @@ function assertDisabledView(agent) {
     assert.throws(() => agent[method]('x'), (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
       assert.equal(error.feature, 'agent')
-      assert.match(error.message, new RegExp(`A11 member "${method}"`))
+      assert.match(error.message, new RegExp(`agent extension member "${method}"`))
       return true
     })
   }

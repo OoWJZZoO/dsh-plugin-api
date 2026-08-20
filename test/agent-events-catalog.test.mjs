@@ -22,12 +22,13 @@ test('agent slice contains exactly the 12 agent/* event names', () => {
   assert.ok(Object.isFrozen(agentEventsCatalog), 'catalog must be frozen')
 })
 
-test('every agent entry is agent-scoped and typed A', () => {
+test('every agent entry is agent-scoped and free of governance class metadata', () => {
   for (const name of AGENT_NAMES) {
     const entry = agentEventsCatalog[name]
     assert.equal(entry.scopeFiltered, true, `${name}: scopeFiltered`)
     assert.equal(entry.scopeKey, 'args[0].agent', `${name}: scopeKey`)
-    assert.equal(entry.type, 'A', `${name}: type`)
+    assert.ok(!('type' in entry), `${name}: type must not leak governance letters`)
+    assert.ok(!('source' in entry), `${name}: source must not leak governance ids`)
   }
 })
 
@@ -49,23 +50,22 @@ test('agent entries carry the confirmed fault/freeze policy matrix', () => {
   assert.deepEqual(agentEventsCatalog['agent/request-error'].freeze.deep, ['failure'])
 })
 
-test('agent slice entries match the confirmed mode/source matrix', () => {
+test('agent slice entries match the confirmed mode matrix', () => {
   const matrix = {
-    'agent/created': ['emit', 'A1'],
-    'agent/disposed': ['emit', 'A1'],
-    'agent/status': ['emit', 'A1'],
-    'agent/session-start': ['emit', 'A1'],
-    'agent/inbox/inserted': ['emit', 'A2'],
-    'agent/inbox/claimed': ['emit', 'A2'],
-    'agent/inbox/discarded': ['emit', 'A2'],
-    'agent/pre-step': ['waterfall', 'A3'],
-    'agent/request': ['waterfall', 'A4'],
-    'agent/request-error': ['waterfall', 'A5'],
-    'agent/turn-stopping': ['serial', 'A6'],
-    'agent/error': ['emit', 'A7'],
+    'agent/created': 'emit',
+    'agent/disposed': 'emit',
+    'agent/status': 'emit',
+    'agent/session-start': 'emit',
+    'agent/inbox/inserted': 'emit',
+    'agent/inbox/claimed': 'emit',
+    'agent/inbox/discarded': 'emit',
+    'agent/pre-step': 'waterfall',
+    'agent/request': 'waterfall',
+    'agent/request-error': 'waterfall',
+    'agent/turn-stopping': 'serial',
+    'agent/error': 'emit',
   }
-  for (const [name, [mode, source]] of Object.entries(matrix)) {
+  for (const [name, mode] of Object.entries(matrix)) {
     assert.equal(agentEventsCatalog[name].mode, mode, `${name}: mode`)
-    assert.equal(agentEventsCatalog[name].source, source, `${name}: source`)
   }
 })

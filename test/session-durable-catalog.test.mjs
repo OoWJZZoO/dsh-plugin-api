@@ -138,7 +138,7 @@ test('durable type helpers are total and do not widen the catalog', () => {
   }
 })
 
-test('static durable metadata does not alter M1 session or event catalogs', () => {
+test('static durable metadata does not alter baseline session or event catalogs', () => {
   const sessionCatalogs = createSessionTypeCatalogs({
     knownSessionEventTypes: new Set(['user/message', 'session/title']),
     isSurfaceEligibleType: (type) => type === 'user/message',

@@ -140,7 +140,7 @@ test('apply mounts sessionDurable immediately after session without extending th
   assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 2)
 })
 
-test('durable cleanup restores P2, and a stale cleanup cannot revoke a re-mounted epoch', () => {
+test('durable cleanup restores feature-disabled, and a stale cleanup cannot revoke a re-mounted epoch', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
   const firstSessionApi = state.pluginApi.session
@@ -218,7 +218,7 @@ test('sessionDurable remains disabled when session or events cannot mount', () =
   }
 })
 
-test('a sessionDurable mounter exception leaves the composed session facade at P2', () => {
+test('a sessionDurable mounter exception leaves the composed session facade at feature-disabled', () => {
   const { ctx, state } = createMockCtx({ throwDurableMount: true, logger: { error() {}, warn() {} } })
   assert.doesNotThrow(() => apply(ctx))
 
@@ -247,7 +247,7 @@ test('apply-time durable failure routes contain absent and throwing loggers', ()
   }
 })
 
-test('host audit and public contract mismatches retain M1 session while disabling sessionDurable', () => {
+test('host audit and public contract mismatches retain baseline session while disabling sessionDurable', () => {
   const scheduleManifest = require('@deepseek-ai/dsh-schedule/package.json')
   const originalScheduleVersion = scheduleManifest.version
   const scheduleType = 'schedule/change'

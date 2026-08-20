@@ -652,7 +652,7 @@ test('tools/result emit receives frozen exec and frozen result', () => {
   ctx.emit('tools/result', exec, result)
 })
 
-// -- plugin-api-agent-m1 agent/* fault/freeze/scope tests --
+// -- pluginApi agent/* fault/freeze/scope tests --
 
 test('agent contain emit events contain sync throw while remaining listeners run', () => {
   const ctx = createMockCordisCtx()

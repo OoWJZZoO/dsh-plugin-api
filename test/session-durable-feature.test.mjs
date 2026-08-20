@@ -266,7 +266,7 @@ test('seed-boundary and audited-record breaches reset the epoch without delivery
   assert.equal(state.owner.isCurrent(), false)
 })
 
-test('hostile S1 event accessors fail closed without leaking payload to reset', () => {
+test('hostile session lifecycle event accessors fail closed without leaking payload to reset', () => {
   const { api, eventsApi, resets, session } = createDurableApi()
   api.onDurable(session, 'approval/policy', () => assert.fail('must not deliver'))
   const payload = { secret: 'must not reach reset' }
@@ -446,7 +446,7 @@ test('a seeded live child does not replay durable seed records to a new observer
   assert.equal(seen[0].seq >= child.firstLiveSeq, true)
 })
 
-test('cataloged S1 containment isolates durable listener throws and rejections', async () => {
+test('cataloged session lifecycle containment isolates durable listener throws and rejections', async () => {
   const ctx = new Context()
   ctx.provide('logger', { warn() {} })
   new SessionStore(ctx)

@@ -30,7 +30,7 @@ function createExtension(registry, options = {}) {
   })
 }
 
-test('all A11 members preserve exact arguments, receiver, and raw return identities', () => {
+test('all agent extension members preserve exact arguments, receiver, and raw return identities', () => {
   const { registry, calls, results } = createRegistry()
   const api = createExtension(registry).createView({ registry })
   const options = {}
@@ -147,8 +147,8 @@ test('late resolution failure degrades only the affected member once and never i
   const view = extension.createView({})
 
   failCreate = true
-  assert.throws(() => view.create({}), /A11 member "create" is unavailable/)
-  assert.throws(() => view.create({}), /A11 member "create" is unavailable/)
+  assert.throws(() => view.create({}), /agent extension member "create" is unavailable/)
+  assert.throws(() => view.create({}), /agent extension member "create" is unavailable/)
   assert.equal(extension.availability.create, false)
   assert.equal(calls.length, 0)
   assert.deepEqual(logs, ['dsh-plugin-api agent create is unavailable (call-resolution)'])
@@ -233,7 +233,7 @@ test('direct and facade calls preserve receiver ownership for all ownership-sens
   ])
 })
 
-test('every A11 leaf independently degrades for missing, non-function, and throwing probes', () => {
+test('every agent extension leaf independently degrades for missing, non-function, and throwing probes', () => {
   for (const member of ['create', 'resume', 'register', 'enter', 'announce', 'setFactory']) {
     for (const mode of ['missing', 'non-function', 'throwing']) {
       const { registry } = createRegistry()

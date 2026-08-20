@@ -297,7 +297,7 @@ test('self-reentry bypasses the pipeline: apply runs once and the marked candida
   })
 
   assert.equal(result, 'terminal-result')
-  assert.equal(applyCalls, 1, 'L4 apply must not re-run for the marked candidate')
+  assert.equal(applyCalls, 1, 'compat request apply must not re-run for the marked candidate')
   assert.equal(harness.state.continuationCalls, 0)
   assert.equal(harness.state.streamCalls.length, 1)
   assert.equal(harness.state.streamCalls[0].messages[0].content[0].text, 'projected')
@@ -657,7 +657,7 @@ test('image-absent operation never queries target capability', () => {
   assert.equal(harness.state.resolverCalls.length, 0)
 })
 
-test('native-image target bypasses the policy phase and continues with the L4 candidate', async () => {
+test('native-image target bypasses the policy phase and continues with the compat request candidate', async () => {
   const harness = createHarness({
     resolveModelInfo: async () => ({ provider: 'provider-a', id: 'model-a', name: 'model-a', inputModalities: ['text', 'image'] }),
   })
@@ -679,7 +679,7 @@ test('native-image target bypasses the policy phase and continues with the L4 ca
 
   assert.equal(result, 'outer-terminal')
   assert.equal(harness.state.continuationCalls, 1)
-  assert.equal(policyProcessed, false, 'native-image input must bypass L2 processing')
+  assert.equal(policyProcessed, false, 'native-image input must bypass image admission processing')
   assert.equal(harness.state.resolverCalls.length, 1)
 })
 

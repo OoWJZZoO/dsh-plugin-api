@@ -1,0 +1,54 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const here = dirname(fileURLToPath(import.meta.url))
+const readPackage = (...parts) => JSON.parse(readFileSync(join(here, ...parts), 'utf8'))
+
+const main = readPackage('..', 'package.json')
+const compaction = readPackage('..', 'packages', 'compaction-events', 'package.json')
+const sessionTitle = readPackage('..', 'packages', 'session-title', 'package.json')
+const full = readPackage('..', 'packages', 'full', 'package.json')
+
+test('main, auxiliary, and full packages all share the unified full-version + dsh.api policy', () => {
+  for (const pkg of [main, compaction, sessionTitle, full]) {
+    assert.match(pkg.version, /^(.+)-(\d+\.\d+)$/, `${pkg.name}: full unique version shape`)
+    assert.equal(pkg.version.match(/^(.+)-(\d+\.\d+)$/)[2], pkg.dsh.api, `${pkg.name}: version suffix must equal dsh.api`)
+    assert.equal(pkg.dsh.api, main.dsh.api, `${pkg.name}: API protocol must equal the main package`)
+    assert.equal(pkg.version.match(/^(.+)-\d+\.\d+$/)[1], main.version.match(/^(.+)-\d+\.\d+$/)[1], `${pkg.name}: runtime part must equal the main package`)
+  }
+  assert.equal(main.version, '0.1.0-rc.6-0.5')
+  assert.equal(main.dsh.api, '0.5')
+})
+
+test('the auxiliary packages do not declare the main package as a runtime dependency', () => {
+  for (const pkg of [compaction, sessionTitle]) {
+    assert.ok(!pkg.dependencies?.['@deepseek-ai/dsh-plugin-api-main'], pkg.name)
+    assert.ok(!pkg.peerDependencies?.['@deepseek-ai/dsh-plugin-api-main'], `${pkg.name}: version consistency is enforced by apply-time metadata check`)
+  }
+})
+
+test('the full aggregate bundle depends on main and every auxiliary package at workspace-consistent versions', () => {
+  assert.deepEqual(full.dependencies, {
+    '@deepseek-ai/dsh-plugin-api-main': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-compaction-events': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-session-title': 'workspace:*',
+  })
+  assert.equal(full.dsh.bundle.patch, './cordis.patch.yml')
+})
+
+test('replacement row ids use capability names without governance suffixes', () => {
+  const compactionPatch = readFileSync(join(here, '..', 'packages', 'compaction-events', 'cordis.patch.yml'), 'utf8')
+  const titlePatch = readFileSync(join(here, '..', 'packages', 'session-title', 'cordis.patch.yml'), 'utf8')
+  const fullPatch = readFileSync(join(here, '..', 'packages', 'full', 'cordis.patch.yml'), 'utf8')
+  assert.match(compactionPatch, /id: plugin-api-compaction-events/)
+  assert.doesNotMatch(compactionPatch, /r1/)
+  assert.match(titlePatch, /id: plugin-api-session-title/)
+  assert.doesNotMatch(titlePatch, /r1/)
+  assert.match(fullPatch, /id: plugin-api-main/)
+  assert.match(fullPatch, /id: plugin-api-compaction-events/)
+  assert.match(fullPatch, /id: plugin-api-session-title/)
+  assert.doesNotMatch(fullPatch, /r1/)
+})

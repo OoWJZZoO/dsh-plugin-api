@@ -47,7 +47,7 @@ function createMockCtx({ tools = true } = {}) {
   return { ctx, state }
 }
 
-test('active tools: toolAbortedError returns the AbortError identity without touching the tools service (req 1.4/2.x)', async () => {
+test('active tools: toolAbortedError returns the AbortError identity without touching the tools service', async () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
   assert.equal(state.pluginApi.tools.isActive, true)
@@ -63,7 +63,7 @@ test('active tools: toolAbortedError returns the AbortError identity without tou
   assert.equal(err.message, 'tool call aborted')
 
   // When the real dsh-tools package resolves in the test environment, the
-  // full typed identity holds (req 2.1–2.3); otherwise only the degraded
+  // full typed identity holds; otherwise only the degraded
   // shape is asserted (mirrors the lazy-import/skip strategy of T2).
   let TOOL_ABORTED
   try {
@@ -80,7 +80,7 @@ test('active tools: toolAbortedError returns the AbortError identity without tou
   }
 })
 
-test('disabled tools: toolAbortedError exists and throws PluginApiFeatureDisabledError, never crashing apply (req 1.5/3.2)', () => {
+test('disabled tools: toolAbortedError exists and throws PluginApiFeatureDisabledError, never crashing apply', () => {
   const { ctx, state } = createMockCtx({ tools: false })
   assert.doesNotThrow(() => apply(ctx))
   assert.equal(state.pluginApi.tools.isActive, false)
@@ -95,7 +95,7 @@ test('disabled tools: toolAbortedError exists and throws PluginApiFeatureDisable
   )
 })
 
-test('buildToolAbortedErrorFactory degrades to a usable factory when dsh-tools resolution fails (req 3.2)', () => {
+test('buildToolAbortedErrorFactory degrades to a usable factory when dsh-tools resolution fails', () => {
   const throwing = () => buildToolAbortedErrorFactory(() => { throw new Error('module not found') })
   const empty = () => buildToolAbortedErrorFactory(() => ({}))
   for (const build of [throwing, empty]) {

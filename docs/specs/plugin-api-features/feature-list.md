@@ -93,7 +93,7 @@
 |---|---|---|---|---|---|
 | F0.1 门面服务 | `ctx.pluginApi`（Cordis Service，`inject: ['pluginApi']`）；**推荐、受支持**的门面入口；直连 `@deepseek-ai/dsh-*` 内部包为 unsupported escape hatch | 门面基础 | 本仓库 `lib/index.js` / `lib/plugin-api-service.js`；spec `plugin-api-foundation` | M0 | **delivered** |
 | F0.2 fail-safe guard | `pluginApi.isActive: boolean`；核心 guard 失败时服务仍注册为 inert；非核心 feature 失败时只禁用该 feature 并显式报错 | 门面基础 | 本仓库 `lib/guards.js`；对齐 dsh-read-image G1；spec `plugin-api-foundation` | M0 | **delivered** |
-| F0.3 版本协商 | 门面全量唯一版本号 = `<runtime全量版本>-<API协议大版本.迭代小版本>`（当前 `0.1.0-rc.6-0.5`，`dsh.api: 0.5`，写入 `package.json.version`）；`dsh.api` 仅承载 API 协议版本。主包名 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），monorepo 辅助 replacement bundles 位于 `packages/`。双向协商——方向① runtime 部分与安装的官方 runtime 不匹配时门面 inert；方向② 插件要求不满足时插件收到 typed 错误 | 门面基础 | 本仓库 `lib/version.js` / `lib/guards.js` / `package.json`；spec `plugin-api-foundation` 与 M2 integration reconciliation | M0 | **delivered** |
+| F0.3 版本协商 | 门面全量唯一版本号 = `<runtime全量版本>-<API协议大版本.迭代小版本>`（当前 `0.1.0-rc.6-0.5`，`dsh.api: 0.5`，写入 `package.json.version`）；`dsh.api` 仅承载 API 协议版本。主包名 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），辅助 replacement bundles 位于 `packages/`。**主包与全部辅助包统一适用**该版本规则；主包校验辅助包版本一致，不一致仅停用该辅助包对应 R 特性。双向协商——方向① runtime 部分与安装的官方 runtime 不匹配时该包安全停用；方向② 插件要求不满足时插件收到 typed 错误。安装只提供全量聚合 `@deepseek-ai/dsh-plugin-api-full` 或选择性安装主包 + 辅助包 | 门面基础 | 本仓库 `lib/version.js` / `lib/guards.js` / `package.json` / `packages/*/package.json`；spec `plugin-api-foundation` 与 M2 integration reconciliation | M0 | **delivered** |
 | F0.4 符号解析门面 | `pluginApi` 作为**推荐** import/inject 面；第三方插件默认经门面解析符号；直连 `dsh-tools`/`dsh-llm` 等内部包属于 unsupported escape hatch（门面不拦截、不保障） | 门面基础 | `docs/specs/plugin-api-facade-integrity/requirements.md` §1（权威定义）；`README.md` | M0–M3 | delivered（F0.4 策略；符号覆盖随命名空间逐步扩展） |
 | F0.5 包装链安全 | dispose 用 identity-guard；目标被其他插件包装时降级透传，不拆别人的链 | 门面基础 | 本仓库 `lib/wrap-safety.js` / `lib/admission-bridge.js`；dsh-read-image A1 加固；spec `plugin-api-facade-integrity` | M0 | **delivered** |
 
@@ -281,8 +281,8 @@
 | U5 | `WEB_SETTINGS_NAMESPACES` 动态化 | 第三方插件设置命名空间无需修改官方即可出现在设置 UI | ST7 |
 | U6 | 客户端 `remote.<ns>` 原生动态发现 | 第三方 client 插件无需 `ctx.remote.$mount` 自挂载 | C2/C7 |
 | U7 | 官方 session 上屏事件构造 helper（可选） | 把 `surfaceOp` / `sourceEventSeqs` 的上屏契约封装为高级 API | S2/S6 |
-| U8 | 官方 `compaction/*` 事件词汇（可选） | 当前压缩只有 `CompactionEngine.summarize()` 子类钩子，无 dispatch 点；R 类辅助包 `@deepseek-ai/dsh-plugin-api-compaction-events`（`compaction-events-r1`）为 current workaround | SV17 + R1 replacement |
-| U9 | 官方 session-title 候选资格 / 合成消息排除 | 官方 `session-title` 的 fallback 与 first-prompt provider 会把已入库的 `source.kind: 'user'` 合成消息直接当作标题候选，无候选资格 dispatch 点；R 类辅助包 `@deepseek-ai/dsh-plugin-api-session-title`（`session-title-r1`）为 current workaround。**退役条件**：官方提供等价候选资格 seam（如官方 `session-title/candidate` 事件或内置合成消息排除）后，`session-title-r1` 辅助包 deprecate/退役，消费者迁移至官方 seam | session-title 服务（R 类） |
+| U8 | 官方 `compaction/*` 事件词汇（可选） | 当前压缩只有 `CompactionEngine.summarize()` 子类钩子，无 dispatch 点；R 类辅助包 `@deepseek-ai/dsh-plugin-api-compaction-events`（运行时名 `plugin-api-compaction-events`，历史治理名 `compaction-events-r1`）为 current workaround | SV17 + R1 replacement |
+| U9 | 官方 session-title 候选资格 / 合成消息排除 | 官方 `session-title` 的 fallback 与 first-prompt provider 会把已入库的 `source.kind: 'user'` 合成消息直接当作标题候选，无候选资格 dispatch 点；R 类辅助包 `@deepseek-ai/dsh-plugin-api-session-title`（运行时名 `plugin-api-session-title`，历史治理名 `session-title-r1`）为 current workaround。**退役条件**：官方提供等价候选资格 seam（如官方 `session-title/candidate` 事件或内置合成消息排除）后，辅助包 deprecate/退役，消费者迁移至官方 seam | session-title 服务（R 类） |
 
 ---
 
@@ -301,8 +301,8 @@
 | ST4 host 设置 remote 桥 | 自建 `bindTypertRemote` 等价实现 | `typert-gateway` 或 typert 相关行 | 中 | 中 | R 类观察项，不单独立项 |
 | ST5/ST6/C2（+C7） | `$mount` 自挂载 + 手搓 codec | `api-remotes`（client bundle） | 高 | 高 | 维持方案一；C7 维持 proposal |
 | E8/E9/E11 priority / deepFreeze / fault containment | facade 注册侧/派发侧统一实现 | 无单一官方行（框架级横切） | — | — | **永不 R** |
-| U8 `compaction/*` 事件词汇 | 仅 `summarize()` 子类钩子 | `compaction-basic` | 低–中 | 高 | **已交付**（`plugin-api-compaction-events-r1`；U8 保留为上游提案，stale-index B4 已迁移） |
-| U9 `session-title/candidate` 候选资格 / 合成消息排除 | 官方 fallback + first-prompt provider 直接消费 `source.kind:'user'`，无候选资格 dispatch 点 | `session-title`（`dsh-session-title`） | 低–中 | 高 | **已交付**（`plugin-api-session-title-r1`；U9 保留为上游提案，replacement 为 current workaround，退役条件见 §3 U9 行） |
+| U8 `compaction/*` 事件词汇 | 仅 `summarize()` 子类钩子 | `compaction-basic` | 低–中 | 高 | **已交付**（运行时名 `plugin-api-compaction-events`；U8 保留为上游提案，stale-index B4 已迁移） |
+| U9 `session-title/candidate` 候选资格 / 合成消息排除 | 官方 fallback + first-prompt provider 直接消费 `source.kind:'user'`，无候选资格 dispatch 点 | `session-title`（`dsh-session-title`） | 低–中 | 高 | **已交付**（运行时名 `plugin-api-session-title`；U9 保留为上游提案，replacement 为 current workaround，退役条件见 §3 U9 行） |
 
 ---
 
@@ -317,7 +317,7 @@
 | `dsh-pro-ex-ability-anchor` | 手写 `surfaceOp`/`sourceEventSeqs` 上屏事件 | `pluginApi.session.appendMessage(targetSession, kind, payload, {sourceEventSeqs?})` | delivered（M2 migration） |
 | `dsh-pro-ex-ability-anchor` | `system-prompt/assemble` 直接监听 | P6 类型化瀑布（行为等价） | planned（M1） |
 | `dsh-pro-ex-ability-anchor` | panel 手写 client bundle/manifest + slot glue | C1 client manifest helper + C4 slot | delivered（M3；已迁移） |
-| `dsh-pro-ex-ability-anchor` | 标题纠偏 hack（`lib/index.js:574-691`：`titleFixed`/`realTitleText`/`titleCitesVirtual`/`fixSessionTitle` + 两处 `session/event` 事后监听） | `pluginApi.events.on('session-title/candidate', ...)` exclude 策略（`source.form === ANCHOR_USER_SOURCE_FORM`） | blocked（迁移在 pro-ex 仓库执行，须其独立获批任务；本仓库 fixture 与配方见 `packages/session-title-r1/MIGRATION_RECIPE.md`） |
+| `dsh-pro-ex-ability-anchor` | 标题纠偏 hack（`lib/index.js:574-691`：`titleFixed`/`realTitleText`/`titleCitesVirtual`/`fixSessionTitle` + 两处 `session/event` 事后监听） | `pluginApi.events.on('session-title/candidate', ...)` exclude 策略（`source.form === ANCHOR_USER_SOURCE_FORM`） | blocked（迁移在 pro-ex 仓库执行，须其独立获批任务；本仓库 fixture 与配方见 `packages/session-title/MIGRATION_RECIPE.md`） |
 | `dsh-pro-ex-ability-anchor` | `lib/config-remote.js`（95 行手搓 `TypertRemoteService` 桥） | RB1 `pluginApi.remote.publish('extraproAnchorConfig', service)`（wire 参数名 `settings` 保留） | delivered（M4 predicate + 仓库侧 contract-lock；消费者删文件迁移按 AC 7.3 记录 waive，理由见 delivery report） |
 | `dsh-pro-ex-ability-anchor` | Git Bash 工具 `ctx.get('jobs')` / `ctx.get('shellEnv')` 直连 | `pluginApi.services.jobs` / `pluginApi.services.shellEnv`（`isActive` 门控 + typed-error 降级） | delivered（M4 migration；pro-ex 工作树内测试全绿，commit 与 `plugin-api-tools-abort-helper-m4` 共享文件协调） |
 | `dsh-pro-ex-ability-anchor` | 手工组合 `loadAbortedErrorFactory`（`lib/index.js`，`HarnessError(TOOL_ABORTED)` + 裸 `AbortError` 兜底） | `pluginApi.tools.toolAbortedError()`（含裸 `AbortError` 兜底） | delivered（M4；迁移 headless 验收 123/123 通过，dev-boot 待 M4 integration） |

@@ -141,7 +141,7 @@ test('staged publication: effect failure rolls back the disabled facade, dispose
   const admission = features.find((f) => f.name === 'llm/admission')
   assert.equal(request.isActive, false)
   assert.match(request.reason, /failed to register cleanup/)
-  assert.equal(admission.isActive, false, 'request failure independently P2-disables admission')
+  assert.equal(admission.isActive, false, 'request failure independently feature-disabled-disables admission')
 
   assert.throws(
     () => state.pluginApi.llm.request.transform({}),
@@ -154,7 +154,7 @@ test('staged publication: effect failure rolls back the disabled facade, dispose
   assert.equal(features.find((f) => f.name === 'events').isActive, true)
 })
 
-test('private L4/L2 prepare failure leaves no owner residue while preserving independent L4 activation', () => {
+test('private compat request/image admission prepare failure leaves no owner residue while preserving independent compat request activation', () => {
   for (const featureName of ['llm/request', 'llm/admission']) {
     const { ctx, state, services } = createMockCtx({ prepareThrowsFor: featureName })
     const originalResolve = services.llm.resolveModelInfo
@@ -164,11 +164,11 @@ test('private L4/L2 prepare failure leaves no owner residue while preserving ind
     const admission = state.pluginApi.features.find((feature) => feature.name === 'llm/admission')
     assert.equal(request.isActive, featureName !== 'llm/request')
     assert.equal(admission.isActive, false)
-    assert.equal(services.llm.resolveModelInfo, originalResolve, 'an unpublished L2 gateway must not retain its resolver wrapper')
+    assert.equal(services.llm.resolveModelInfo, originalResolve, 'an unpublished image admission gateway must not retain its resolver wrapper')
     assert.equal(
       state.listeners.filter((entry) => entry.name === 'llm/stream').length,
       featureName === 'llm/request' ? 0 : 1,
-      'only a committed L4 owner may retain the raw listener',
+      'only a committed compat request owner may retain the raw listener',
     )
   }
 })
@@ -237,7 +237,7 @@ test('facade modelInfo stays authoritative pre-overlay inside an active gateway 
   assert.deepEqual(result, { ok: true })
 })
 
-test('inert core keeps P1 precedence for the request and admission surfaces', () => {
+test('inert core keeps core-inactive precedence for the request and admission surfaces', () => {
   const previous = process.env.DSH_PLUGIN_API_FORCE_GUARD_FAIL
   process.env.DSH_PLUGIN_API_FORCE_GUARD_FAIL = '1'
   try {

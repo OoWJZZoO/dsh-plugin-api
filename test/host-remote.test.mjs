@@ -63,7 +63,7 @@ test('publish rejects null / array / no-callable-own member / non-extensible', (
   assert.throws(() => api.publish('k', []), PluginApiRemoteError)
   assert.throws(() => api.publish('k', {}), PluginApiRemoteError)
   assert.throws(() => api.publish('k', Object.preventExtensions({ a: 1 })), PluginApiRemoteError)
-  // class instance whose methods only live on the class prototype → B2 narrowing
+  // class instance whose methods only live on the class prototype → remote publication narrowing
   class Foo {
     hi() {
       return 1
@@ -127,7 +127,7 @@ test('conflict: same key + different service throws and does not mutate the pass
   const d1 = api.publish('k', first)
   const protoBefore = Object.getPrototypeOf(second)
   assert.throws(() => api.publish('k', second), PluginApiRemoteError)
-  assert.equal(Object.getPrototypeOf(second), protoBefore, 'conflicted object is not mutated (M3)')
+  assert.equal(Object.getPrototypeOf(second), protoBefore, 'conflicted object is not mutated (client)')
   assert.equal(isRehomedService(second), false, 'conflicted object is not re-homed')
   assert.equal(provided.get('k'), first)
   d1()
@@ -137,7 +137,7 @@ test('conflict: same key already published by another instance (shared owner map
   const { ctx, provided } = makeHost()
   // Two createHostRemoteApi instances on the same ctx resolve the SAME owner
   // map (ownerName:'remote'), so a second instance's different service conflicts
-  // via the owner record (AC 1.6 / 4.1, cross-instance).
+  // via the owner record.
   const apiA = createHostRemoteApi({ ctx, protocol, active: true })
   const apiB = createHostRemoteApi({ ctx, protocol, active: true })
   const s1 = makeService(['hello'])
@@ -160,16 +160,16 @@ test('conflict: live official-registry owner with no owner record throws', () =>
   assert.equal(provided.get('k'), foreign, 'foreign registry owner untouched')
 })
 
-test('P1: inactive api throws PluginApiInactiveError on publish', () => {
+test('core-inactive: inactive api throws PluginApiInactiveError on publish', () => {
   const { ctx } = makeHost()
   const api = createHostRemoteApi({ ctx, protocol, active: false })
-  // The active leaf is the mounted variant (isActive:true); runtime P1 gating
+  // The active leaf is the mounted variant (isActive:true); runtime core-inactive gating
   // happens inside publish() via the supplied active() predicate (ST4 precedent).
   assert.equal(api.isActive, true)
   assert.throws(() => api.publish('k', makeService()), PluginApiInactiveError)
 })
 
-test('P2 disabled face: missing protocol → publish throws PluginApiFeatureDisabledError', () => {
+test('feature-disabled disabled face: missing protocol → publish throws PluginApiFeatureDisabledError', () => {
   const { ctx } = makeHost()
   const api = createHostRemoteApi({ ctx, protocol: undefined, active: true })
   assert.equal(api.isActive, false)
@@ -215,7 +215,7 @@ test('pro-ex-shaped service: get/set plain methods publish with stable wire iden
   assert.equal(fn, service, 'identity preserved through publication')
   assert.deepEqual(protocol.remoteMethods(service).map((e) => e.method), ['get', 'set'])
   // Wire-name derivation: the `set` method's single parameter is `settings`
-  // (AC 7.1 wire identity lock at the facade level).
+  //.
   const setSource = Function.prototype.toString.call(service.set)
   assert.match(setSource, /^async set\(settings\)/)
   const snapshot = service.get()

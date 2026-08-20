@@ -77,7 +77,7 @@ function createMockCtx(options = {}) {
   return { ctx, state, services, systemPrompt }
 }
 
-test('apply mounts the systemPrompt API and P1 calls forward to the official service', () => {
+test('apply mounts the systemPrompt API and core-inactive calls forward to the official service', () => {
   const { ctx, state, systemPrompt } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
 

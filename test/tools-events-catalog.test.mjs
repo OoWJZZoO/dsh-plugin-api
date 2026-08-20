@@ -26,28 +26,26 @@ test('every tools catalog entry has the required metadata fields', () => {
     assert.ok(['all', 'except-signal'].includes(entry.freeze), `${name}: freeze`)
     assert.ok(typeof entry.payload === 'string', `${name}: payload`)
     assert.ok(typeof entry.args === 'string', `${name}: args`)
-    assert.ok(typeof entry.source === 'string', `${name}: source`)
-    assert.ok(['A', 'B'].includes(entry.type), `${name}: type`)
+    assert.ok(!('source' in entry), `${name}: governance source ids must not leak`)
+    assert.ok(!('type' in entry), `${name}: governance class letters must not leak`)
   }
 })
 
 test('tools catalog entries match the confirmed mode/scopeKey/freeze matrix', () => {
   const matrix = {
-    'tools/change': ['emit', false, undefined, 'all', 'T2'],
-    'tools/pre-execute': ['waterfall', true, 'args[0].agent', 'all', 'T3'],
-    'tools/execute': ['waterfall', true, 'args[0].agent', 'except-signal', 'T4'],
-    'tools/post-execute': ['waterfall', true, 'args[0].agent', 'all', 'T5'],
-    'tools/result': ['emit', true, 'args[0].agent', 'all', 'T6'],
-    'tools/code-dispatch-log': ['waterfall', true, 'args[0].agent', 'all', 'T7'],
+    'tools/change': ['emit', false, undefined, 'all'],
+    'tools/pre-execute': ['waterfall', true, 'args[0].agent', 'all'],
+    'tools/execute': ['waterfall', true, 'args[0].agent', 'except-signal'],
+    'tools/post-execute': ['waterfall', true, 'args[0].agent', 'all'],
+    'tools/result': ['emit', true, 'args[0].agent', 'all'],
+    'tools/code-dispatch-log': ['waterfall', true, 'args[0].agent', 'all'],
   }
-  for (const [name, [mode, scopeFiltered, subject, freeze, source]] of Object.entries(matrix)) {
+  for (const [name, [mode, scopeFiltered, subject, freeze]] of Object.entries(matrix)) {
     const entry = toolsCatalogEntryOf(name)
     assert.equal(entry.mode, mode, `${name}: mode`)
     assert.equal(entry.scopeFiltered, scopeFiltered, `${name}: scopeFiltered`)
     assert.equal(entry.scopeKey, subject, `${name}: subject`)
     assert.equal(entry.freeze, freeze, `${name}: freeze`)
-    assert.equal(entry.source, source, `${name}: source`)
-    assert.equal(entry.type, 'A', `${name}: type`)
   }
 })
 

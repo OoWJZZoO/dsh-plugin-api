@@ -53,7 +53,7 @@ test('events guard fails with a problem when any Cordis event method is missing'
   assert.deepEqual(result.featureProblems, { events: result.problems })
 })
 
-// web is no longer an independent feature (task 2.9): pluginApi.services.web
+// web is no longer an independent feature pluginApi.services.web
 // is covered by the services guard (SERVICE_DEFINITIONS includes web).
 
 test('agent guard passes when the official agents service exposes get/list/roots', () => {

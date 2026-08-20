@@ -3,6 +3,8 @@
 > **Rename/version pointer（`plugin-api-compaction-events-r1`）**：主包现名 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），唯一 full version `0.1.0-rc.6-0.4` / `dsh.api: 0.4`；monorepo 见 `pnpm-workspace.yaml`。本文正文是 M0 历史记录。
 >
 > **权威指针（`plugin-api-session-title-r1`）**：上行为 compaction-events-r1 承接的 boundary；现行 authority 为 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`（由 `plugin-api-session-title-r1` 承接），见 AGENTS.md §8 与 README。
+>
+> **维护修订（包政策推行）**：F0.3 版本协商现已扩展为主包与全部辅助包统一适用——每个包 `version = <runtime全量版本>-<API协议大版本.迭代小版本>`，`dsh.api` 仅承载协议版本；主包校验辅助包版本一致，不一致时**只停用该辅助包对应的 R 类特性**，不停用主包门面或其他能力。安装只提供两种模式：全量聚合 bundle `@deepseek-ai/dsh-plugin-api-full`，或选择性安装 `@deepseek-ai/dsh-plugin-api-main` + 所需辅助包。实现代码禁止出现治理魔法字母（分类字母、需求编号、`r1` 后缀、契约符号键等），审计见 `test/governance-token-audit.test.mjs`。
 
 ## Introduction
 

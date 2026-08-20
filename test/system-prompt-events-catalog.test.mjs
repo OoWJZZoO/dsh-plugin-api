@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { systemPromptEventsCatalog } from '../lib/system-prompt-events-catalog.js'
 
-test('system-prompt slice contains exactly the P6/P7 event names', () => {
+test('system-prompt slice contains exactly the assemble/change event names', () => {
   assert.deepEqual(Object.keys(systemPromptEventsCatalog).sort(), ['system-prompt/assemble', 'system-prompt/change'])
   assert.ok(Object.isFrozen(systemPromptEventsCatalog), 'catalog must be frozen')
 })
@@ -16,8 +16,8 @@ test('system-prompt/assemble entry matches the confirmed waterfall metadata', ()
   assert.equal(assemble.freeze, 'all')
   assert.match(assemble.payload, /assembly/)
   assert.equal(assemble.args, '(assembly, context, next)')
-  assert.equal(assemble.source, 'P6')
-  assert.equal(assemble.type, 'A')
+  assert.ok(!('source' in assemble), 'governance source ids must not leak')
+  assert.ok(!('type' in assemble), 'governance class letters must not leak')
 })
 
 test('system-prompt/change entry matches the confirmed emit metadata', () => {
@@ -29,6 +29,6 @@ test('system-prompt/change entry matches the confirmed emit metadata', () => {
   assert.equal(change.freeze, 'all')
   assert.equal(change.payload, 'none')
   assert.equal(change.args, '()')
-  assert.equal(change.source, 'P7')
-  assert.equal(change.type, 'A')
+  assert.ok(!('source' in change), 'governance source ids must not leak')
+  assert.ok(!('type' in change), 'governance class letters must not leak')
 })

@@ -4,6 +4,8 @@
 > 状态：Stage 2 已批准（用户已批准；含 R-5.11 收窄修订的明示同意，见「Requirements 修订注记」）
 > 上游：`requirements.md`（Stage 1 已批准，含一次已记录的头注小修订）、`AGENTS.md` §2.7/§4.6、`docs/capability-strategy.md` R1–R9、compaction-events-r1 的 design/tasks（R 类先例）
 > 类型：R 类 replacement bundle；host-only。
+>
+> **维护修订（包政策推行）**：实现已收敛到不含 `r1` 的运行时名（源码 `packages/session-title/`、row id `plugin-api-session-title`、feature `session-title`、契约符号 `dsh-plugin-api.session-title.contract`）。辅助包 `package.json` 与主包统一 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`，apply 内校验自身与主包的全量唯一版本；不一致时进入官方等价 fallback（replacement 特性停用）并显式诊断。主包 catalog slice 用工厂 `createSessionTitleEventsCatalogSlice({expectedContract, auxiliaryManifest, logger})` 做二次校验，只排除本 R slice。聚合 bundle `packages/full/` 以确定顺序装配主包与本替代行。
 
 ---
 

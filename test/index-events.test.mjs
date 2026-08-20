@@ -194,7 +194,7 @@ test('events guard failure disables only events and keeps facade active', () => 
   assert.equal(typeof state.pluginApi.services.web.registerSearchProvider, 'function')
 })
 
-test('web service absence disables the services feature when no other capability seam is present (task 2.9)', () => {
+test('web service absence disables the services feature when no other capability seam is present', () => {
   const { ctx, state } = createMockCtx({ web: false })
   assert.doesNotThrow(() => apply(ctx))
 

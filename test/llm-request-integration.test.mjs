@@ -156,7 +156,7 @@ test('native-image target bypasses the policy phase and continues with the origi
 
   assert.equal(result, 'original-continuation')
   assert.equal(continuationCalls, 1)
-  assert.equal(processCalls, 0, 'native-image input must bypass L2 processing')
+  assert.equal(processCalls, 0, 'native-image input must bypass image admission processing')
   assert.equal(harness.resolverCalls.length, 1)
 })
 
@@ -253,7 +253,7 @@ test('no matching policy for non-native image rejects without continuation or re
   assert.equal(continuationCalls, 0)
 })
 
-test('L4-introduced image input is handled by the unified L2 pipeline', async () => {
+test('compat request-introduced image input is handled by the unified image admission pipeline', async () => {
   const harness = createHarness()
   const request = makeRequest([textBlock('hello')])
   harness.state.pluginApi.llm.request.transform({
@@ -290,7 +290,7 @@ test('L4-introduced image input is handled by the unified L2 pipeline', async ()
 
   assert.equal(result, 'official-terminal')
   assert.equal(continuationCalls, 0)
-  assert.equal(processCalls, 1, 'the L4-introduced image must reach the L2 policy phase')
+  assert.equal(processCalls, 1, 'the compat request-introduced image must reach the image admission policy phase')
   assert.equal(harness.state.streamCalls, 1, 'the compatibility re-entry is called at most once')
 })
 

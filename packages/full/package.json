@@ -1,0 +1,24 @@
+{
+  "name": "@deepseek-ai/dsh-plugin-api-full",
+  "description": "Full aggregate bundle for dsh-plugin-api: installs the main facade and every replacement bundle through one deterministic patch assembly.",
+  "version": "0.1.0-rc.6-0.5",
+  "type": "module",
+  "dsh": {
+    "api": "0.5",
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@deepseek-ai/dsh-plugin-api-main": "workspace:*",
+    "@deepseek-ai/dsh-plugin-api-compaction-events": "workspace:*",
+    "@deepseek-ai/dsh-plugin-api-session-title": "workspace:*"
+  },
+  "devDependencies": {
+    "@deepseek-ai/dsh-app-boot": "^0.1.0-rc.6"
+  }
+}

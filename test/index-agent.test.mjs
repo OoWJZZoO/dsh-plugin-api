@@ -122,12 +122,12 @@ test('apply mounts agent after events and exposes a working registry read API', 
 
   const features = state.pluginApi.features
   assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote'])
-  assert.ok(features.slice(0, 13).every((f) => f.isActive), 'M0-M2 features remain active')
+  assert.ok(features.slice(0, 13).every((f) => f.isActive), 'foundation-to-compat features remain active')
   assert.equal(features[13].isActive, false)
   assert.equal(features[14].isActive, false)
 })
 
-test('mounted A11 facade preserves all registry lifecycle result identities alongside routeOf', () => {
+test('mounted agent extension facade preserves all registry lifecycle result identities alongside routeOf', () => {
   const { ctx, state, agents } = createMockCtx()
   const calls = []
   const values = {
@@ -166,7 +166,7 @@ test('mounted A11 facade preserves all registry lifecycle result identities alon
     provider: { enter: true, announce: true, setFactory: true },
   })
 })
-test('active composed facade degrades only a missing A11 leaf', () => {
+test('active composed facade degrades only a missing agent extension leaf', () => {
   const { ctx, state, agents } = createMockCtx()
   agents.create = () => 'created'
   agents.resume = () => 'resumed'
@@ -190,7 +190,7 @@ test('active composed facade degrades only a missing A11 leaf', () => {
   assert.equal(typeof agent.routeOf, 'function')
 })
 
-test('active composed facade degrades each missing A11 leaf independently', () => {
+test('active composed facade degrades each missing agent extension leaf independently', () => {
   const invoke = {
     create: (agent) => agent.create({}),
     resume: (agent) => agent.resume({}),
@@ -257,7 +257,7 @@ test('active composed facade availability tracks late member degradation', () =>
   assert.equal(agent.provider.isActive, false)
   assert.equal(state.pluginApi.agent.availability.provider.setFactory, false)
 })
-test('active composed A11 view resolves every official call from the consuming context', () => {
+test('active composed agent extension view resolves every official call from the consuming context', () => {
   const { ctx, state, agents: hostAgents } = createMockCtx()
   for (const name of ['create', 'resume', 'register', 'enter', 'announce', 'setFactory']) {
     hostAgents[name] = () => undefined
@@ -286,7 +286,7 @@ test('active composed A11 view resolves every official call from the consuming c
   assert.ok(consumerCalls.every(({ receiver }) => receiver === consumerAgents))
   assert.equal(hostAgents.create(), undefined)
 })
-test('exec-route publication failure leaves active A11 members unchanged', () => {
+test('exec-route publication failure leaves active agent extension members unchanged', () => {
   const { ctx, state, agents } = createMockCtx()
   for (const name of ['create', 'resume', 'register', 'enter', 'announce', 'setFactory']) {
     agents[name] = () => name
@@ -309,14 +309,14 @@ test('exec-route publication failure leaves active A11 members unchanged', () =>
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, false)
 })
 
-test('duplicate apply does not register A11 cleanup twice', () => {
+test('duplicate apply does not register agent extension cleanup twice', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
-  const before = state.effects.filter((effect) => effect.label === 'dsh-plugin-api: agent A11 cleanup').length
+  const before = state.effects.filter((effect) => effect.label === 'dsh-plugin-api: agent extension cleanup').length
   apply(ctx)
-  assert.equal(state.effects.filter((effect) => effect.label === 'dsh-plugin-api: agent A11 cleanup').length, before)
+  assert.equal(state.effects.filter((effect) => effect.label === 'dsh-plugin-api: agent extension cleanup').length, before)
 })
-test('A11 candidate publication failure preserves M1 reads and exec-route', () => {
+test('agent extension candidate publication failure preserves baseline reads and exec-route', () => {
   const { ctx, state } = createMockCtx()
   const originalPlugin = ctx.plugin
   ctx.plugin = (Class) => {
@@ -333,13 +333,13 @@ test('A11 candidate publication failure preserves M1 reads and exec-route', () =
   assert.equal(state.pluginApi.agent.get('agent-1').id, 'agent-1')
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
   assert.equal(typeof state.pluginApi.agent.routeOf, 'function')
-  assert.ok(state.errors.includes('dsh-plugin-api agent A11 extension unavailable (cleanup-registration-or-publication)'))
+  assert.ok(state.errors.includes('dsh-plugin-api agent extension unavailable (cleanup-registration-or-publication)'))
 })
-test('A11 cleanup registration failure preserves M1 reads and exec-route', () => {
+test('agent extension cleanup registration failure preserves baseline reads and exec-route', () => {
   const { ctx, state } = createMockCtx()
   const effect = ctx.effect
   ctx.effect = (fn, label) => {
-    if (label === 'dsh-plugin-api: agent A11 cleanup') throw new Error('candidate cleanup registration failed')
+    if (label === 'dsh-plugin-api: agent extension cleanup') throw new Error('candidate cleanup registration failed')
     return effect(fn, label)
   }
 
@@ -349,12 +349,12 @@ test('A11 cleanup registration failure preserves M1 reads and exec-route', () =>
   assert.throws(() => state.pluginApi.agent.create({}), PluginApiFeatureDisabledError)
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
 })
-test('A11 cleanup is idempotent after successful removal', () => {
+test('agent extension cleanup is idempotent after successful removal', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
-  const a11Cleanup = state.effects.find((effect) => effect.label === 'dsh-plugin-api: agent A11 cleanup')
-  assert.ok(a11Cleanup)
-  const dispose = a11Cleanup.fn()
+  const extensionCleanup = state.effects.find((effect) => effect.label === 'dsh-plugin-api: agent extension cleanup')
+  assert.ok(extensionCleanup)
+  const dispose = extensionCleanup.fn()
   assert.doesNotThrow(() => dispose())
   assert.doesNotThrow(() => dispose())
 
@@ -362,9 +362,9 @@ test('A11 cleanup is idempotent after successful removal', () => {
   assert.throws(() => state.pluginApi.agent.create({}), PluginApiFeatureDisabledError)
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
   assert.equal(typeof state.pluginApi.agent.routeOf, 'function')
-  assert.equal(state.errors.filter((message) => message === 'dsh-plugin-api agent A11 extension unavailable (cleanup)').length, 0)
+  assert.equal(state.errors.filter((message) => message === 'dsh-plugin-api agent extension unavailable (cleanup)').length, 0)
 })
-test('A11 cleanup failure is contained once and remains silent on retry', () => {
+test('agent extension cleanup failure is contained once and remains silent on retry', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
   const originalUnmount = state.pluginApi.unmountFeature.bind(state.pluginApi)
@@ -378,25 +378,25 @@ test('A11 cleanup failure is contained once and remains silent on retry', () => 
   state.pluginApi._removeAgentExtensionByCompose = () => {
     throw new Error('compose cleanup failed with secret')
   }
-  const a11Cleanup = state.effects.find((effect) => effect.label === 'dsh-plugin-api: agent A11 cleanup')
-  assert.ok(a11Cleanup)
-  const dispose = a11Cleanup.fn()
+  const extensionCleanup = state.effects.find((effect) => effect.label === 'dsh-plugin-api: agent extension cleanup')
+  assert.ok(extensionCleanup)
+  const dispose = extensionCleanup.fn()
   assert.doesNotThrow(() => dispose())
   assert.doesNotThrow(() => dispose())
   assert.equal(
-    state.errors.filter((message) => message === 'dsh-plugin-api agent A11 extension unavailable (cleanup)').length,
+    state.errors.filter((message) => message === 'dsh-plugin-api agent extension unavailable (cleanup)').length,
     1,
   )
   assert.ok(state.errors.every((message) => !message.includes('secret')))
   assert.equal(state.pluginApi.agent.get('agent-1').id, 'agent-1')
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
 })
-test('A11 cleanup restores the M1 base without removing exec-route', () => {
+test('agent extension cleanup restores the baseline base without removing exec-route', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
-  const a11Cleanup = state.effects.find((effect) => effect.label === 'dsh-plugin-api: agent A11 cleanup')
-  assert.ok(a11Cleanup)
-  const dispose = a11Cleanup.fn()
+  const extensionCleanup = state.effects.find((effect) => effect.label === 'dsh-plugin-api: agent extension cleanup')
+  assert.ok(extensionCleanup)
+  const dispose = extensionCleanup.fn()
   dispose()
 
   assert.equal(state.pluginApi.agent.get('agent-1').id, 'agent-1')
@@ -404,7 +404,7 @@ test('A11 cleanup restores the M1 base without removing exec-route', () => {
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
   assert.equal(typeof state.pluginApi.agent.routeOf, 'function')
 })
-test('A11 cleanup failure is idempotent and emits one fixed diagnostic', () => {
+test('agent extension cleanup failure is idempotent and emits one fixed diagnostic', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
   const originalUnmount = state.pluginApi.unmountFeature.bind(state.pluginApi)
@@ -418,13 +418,13 @@ test('A11 cleanup failure is idempotent and emits one fixed diagnostic', () => {
   state.pluginApi._removeAgentExtensionByCompose = () => {
     throw new Error('compose cleanup failed with secret')
   }
-  const a11Cleanup = state.effects.find((effect) => effect.label === 'dsh-plugin-api: agent A11 cleanup')
-  assert.ok(a11Cleanup)
-  const dispose = a11Cleanup.fn()
+  const extensionCleanup = state.effects.find((effect) => effect.label === 'dsh-plugin-api: agent extension cleanup')
+  assert.ok(extensionCleanup)
+  const dispose = extensionCleanup.fn()
   assert.doesNotThrow(() => dispose())
   assert.doesNotThrow(() => dispose())
   assert.equal(
-    state.errors.filter((message) => message === 'dsh-plugin-api agent A11 extension unavailable (cleanup)').length,
+    state.errors.filter((message) => message === 'dsh-plugin-api agent extension unavailable (cleanup)').length,
     1,
   )
   assert.ok(state.errors.every((message) => !message.includes('secret')))
@@ -432,10 +432,10 @@ test('A11 cleanup failure is idempotent and emits one fixed diagnostic', () => {
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
 })
 
-test('stale A11 cleanup cannot remove a later extension instance', () => {
+test('stale agent extension cleanup cannot remove a later extension instance', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
-  const firstCleanup = state.effects.find((effect) => effect.label === 'dsh-plugin-api: agent A11 cleanup')
+  const firstCleanup = state.effects.find((effect) => effect.label === 'dsh-plugin-api: agent extension cleanup')
   assert.ok(firstCleanup)
 
   const first = state.pluginApi.agent
@@ -462,7 +462,7 @@ test('stale A11 cleanup cannot remove a later extension instance', () => {
   assert.equal(first.marker, undefined)
 })
 
-test('exec-route cleanup failure leaves active A11 members intact', () => {
+test('exec-route cleanup failure leaves active agent extension members intact', () => {
   const { ctx, state, agents } = createMockCtx()
   for (const name of ['create', 'resume', 'register', 'enter', 'announce', 'setFactory']) {
     agents[name] = () => name
@@ -483,7 +483,7 @@ test('exec-route cleanup failure leaves active A11 members intact', () => {
   assert.equal(state.pluginApi.agent.availability.provider.setFactory, true)
 })
 
-test('successful exec-route disposal leaves active A11 members intact', () => {
+test('successful exec-route disposal leaves active agent extension members intact', () => {
   const { ctx, state, agents } = createMockCtx()
   for (const name of ['create', 'resume', 'register', 'enter', 'announce', 'setFactory']) {
     agents[name] = () => name
@@ -499,7 +499,7 @@ test('successful exec-route disposal leaves active A11 members intact', () => {
   assert.equal(state.pluginApi.agent.availability.create, true)
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
 })
-test('A11 and exec-route cleanup preserve the other extension and captured route state', () => {
+test('agent extension and exec-route cleanup preserve the other extension and captured route state', () => {
   const makeExec = (provider, model) => ({
     agent: { session: { requestContext: () => ({ provider, model }) } },
   })
@@ -512,9 +512,9 @@ test('A11 and exec-route cleanup preserve the other extension and captured route
     ctx.dispatchPreExecute(exec)
     const route = state.pluginApi.agent.routeOf(exec)
     assert.deepEqual(route, { provider: 'provider-a', model: 'model-a' })
-    const a11Cleanup = state.effects.find((effect) => effect.label === 'dsh-plugin-api: agent A11 cleanup')
-    assert.ok(a11Cleanup)
-    a11Cleanup.fn()()
+    const extensionCleanup = state.effects.find((effect) => effect.label === 'dsh-plugin-api: agent extension cleanup')
+    assert.ok(extensionCleanup)
+    extensionCleanup.fn()()
     assert.deepEqual(state.pluginApi.agent.routeOf(exec), route)
     assert.throws(() => state.pluginApi.agent.create({}), PluginApiFeatureDisabledError)
   }
@@ -558,7 +558,7 @@ test('A11 and exec-route cleanup preserve the other extension and captured route
   }
 })
 
-test('A11 partial publication failure rolls back a candidate published before throw', () => {
+test('agent extension partial publication failure rolls back a candidate published before throw', () => {
   const { ctx, state } = createMockCtx()
   const originalPlugin = ctx.plugin
   ctx.plugin = (Class) => {
@@ -575,10 +575,10 @@ test('A11 partial publication failure rolls back a candidate published before th
   assert.equal(state.pluginApi.agent.get('agent-1').id, 'agent-1')
   assert.throws(() => state.pluginApi.agent.create({}), PluginApiFeatureDisabledError)
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
-  assert.ok(state.errors.includes('dsh-plugin-api agent A11 extension unavailable (cleanup-registration-or-publication)'))
+  assert.ok(state.errors.includes('dsh-plugin-api agent extension unavailable (cleanup-registration-or-publication)'))
 })
 
-test('A11 double removal failure quarantines only the candidate extension', () => {
+test('agent extension double removal failure quarantines only the candidate extension', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
   const originalUnmount = state.pluginApi.unmountFeature.bind(state.pluginApi)
@@ -594,19 +594,19 @@ test('A11 double removal failure quarantines only the candidate extension', () =
   state.pluginApi._removeAgentExtensionByCompose = (compose) => {
     throw new Error('compose removal failed')
   }
-  const cleanup = state.effects.find((effect) => effect.label === 'dsh-plugin-api: agent A11 cleanup')
+  const cleanup = state.effects.find((effect) => effect.label === 'dsh-plugin-api: agent extension cleanup')
   assert.ok(cleanup)
   const dispose = cleanup.fn()
   assert.doesNotThrow(() => dispose())
   assert.equal(state.pluginApi.agent.get('agent-1').id, 'agent-1')
   assert.throws(() => state.pluginApi.agent.create({}), PluginApiFeatureDisabledError)
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
-  assert.equal(state.errors.filter((message) => message === 'dsh-plugin-api agent A11 extension unavailable (cleanup)').length, 1)
+  assert.equal(state.errors.filter((message) => message === 'dsh-plugin-api agent extension unavailable (cleanup)').length, 1)
   state.pluginApi.unmountFeature = originalUnmount
   state.pluginApi._removeAgentExtension = originalRemove
   state.pluginApi._removeAgentExtensionByCompose = originalRemoveByCompose
 })
-test('integrated A11 lifecycle double preserves official identity, ownership, and ordering', async () => {
+test('integrated agent extension lifecycle double preserves official identity, ownership, and ordering', async () => {
   const { ctx, state } = createMockCtx()
   const directFiber = { id: 'direct-fiber', agent: { id: 'direct-owner' } }
   const facadeFiber = { id: 'facade-fiber', agent: { id: 'facade-owner' } }
@@ -1052,21 +1052,21 @@ test('events guard failure does not block the agent registry read API', () => {
   )
 })
 
-test('duplicate apply does not reprobe or republish A11', () => {
+test('duplicate apply does not reprobe or republish agent extension', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
   const firstAgentEffects = state.effects.filter((effect) => effect.label === 'dsh-plugin-api: agent cleanup').length
-  const firstA11Effects = state.effects.filter((effect) => effect.label === 'dsh-plugin-api: agent A11 cleanup').length
-  let a11Mounts = 0
+  const firstExtensionEffects = state.effects.filter((effect) => effect.label === 'dsh-plugin-api: agent extension cleanup').length
+  let extensionMounts = 0
   const mount = state.pluginApi.mountFeature.bind(state.pluginApi)
   state.pluginApi.mountFeature = (name, api) => {
-    if (name === 'agentExtension') a11Mounts += 1
+    if (name === 'agentExtension') extensionMounts += 1
     return mount(name, api)
   }
   apply(ctx)
   assert.equal(state.effects.filter((effect) => effect.label === 'dsh-plugin-api: agent cleanup').length, firstAgentEffects)
-  assert.equal(state.effects.filter((effect) => effect.label === 'dsh-plugin-api: agent A11 cleanup').length, firstA11Effects)
-  assert.equal(a11Mounts, 0)
+  assert.equal(state.effects.filter((effect) => effect.label === 'dsh-plugin-api: agent extension cleanup').length, firstExtensionEffects)
+  assert.equal(extensionMounts, 0)
   assert.equal(state.pluginApi.agent.get('agent-1').id, 'agent-1')
 })
 test('a third-party plugin can consume pluginApi.agent and pluginApi.events without importing dsh-agent internals', () => {

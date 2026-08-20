@@ -37,7 +37,7 @@ function assertP2(callback) {
   })
 }
 
-test('durable session stubs report P2 while core is active', () => {
+test('durable session stubs report feature-disabled while core is active', () => {
   const { getCalls, service } = instantiate(true)
 
   for (const method of DURABLE_METHODS) assertP2(() => service.session[method]())
@@ -46,7 +46,7 @@ test('durable session stubs report P2 while core is active', () => {
   assert.deepEqual(getCalls, [])
 })
 
-test('durable session stubs report P1 while core is inactive', () => {
+test('durable session stubs report core-inactive while core is inactive', () => {
   const { getCalls, service } = instantiate(false)
 
   for (const method of DURABLE_METHODS) {
@@ -57,7 +57,7 @@ test('durable session stubs report P1 while core is inactive', () => {
   assert.deepEqual(getCalls, [])
 })
 
-test('session composition preserves M1 descriptors without eager getter access', () => {
+test('session composition preserves baseline descriptors without eager getter access', () => {
   const { service } = instantiate(true)
   let getterReads = 0
   const symbolKey = Symbol('m1-private')
@@ -212,7 +212,7 @@ test('durable reset contains close and logger failures', () => {
   assertP2(() => service.session.appendMessage())
 })
 
-test('a failed first durable mount leaves P2 available for a later epoch', () => {
+test('a failed first durable mount leaves feature-disabled available for a later epoch', () => {
   const registry = createFeatureRegistry()
   registry.mount('sessionDurable')
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
@@ -228,7 +228,7 @@ test('a failed first durable mount leaves P2 available for a later epoch', () =>
   assert.equal(service.resetSessionDurable(epoch), true)
 })
 
-test('retained durable facade reports P1 after core deactivation', () => {
+test('retained durable facade reports core-inactive after core deactivation', () => {
   let coreActive = true
   const registry = createFeatureRegistry()
   registry.mount('sessionDurable')
@@ -312,7 +312,7 @@ test('reconcile dynamically revokes published durable entry points', () => {
   assert.throws(() => retainedSession.appendMessage(), PluginApiInactiveError)
 })
 
-test('retained P2 durable stubs report P1 after reconcile deactivates core', () => {
+test('retained feature-disabled durable stubs report core-inactive after reconcile deactivates core', () => {
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
   const service = new ServiceClass({ reflect: { provide() {} } })

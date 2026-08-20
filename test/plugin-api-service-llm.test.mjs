@@ -97,7 +97,7 @@ test('mountFeature("llm", api) installs all methods and isActive true', () => {
   assert.deepEqual(calls, LLM_METHODS)
 })
 
-test('unmounted llm request surface throws P1/P2 before registration validation', () => {
+test('unmounted llm request surface throws core-inactive/feature-disabled before registration validation', () => {
   const registry = createFeatureRegistry()
   const active = instantiate(
     createPluginApiService({ apiVersion: '0.1', registry, coreActive: true }),

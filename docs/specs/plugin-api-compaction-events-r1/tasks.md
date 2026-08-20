@@ -5,6 +5,8 @@
 > 上游：`requirements.md`（49 条 AC，已批准）、`design.md`（已批准）
 > 执行注：Stage 4 每完成一个**顶层大任务**（如 `1.x`）必须调用**一次**子代理做对抗性审查，并**阻塞等待其完成**（`run_in_background: false`）；通过后才进入下一顶层任务。审查只核对当前批次与 Tasks/Design/Requirements 的一致性，不向上溯源。未批准前不创建/修改任何实现产物。
 > 测试约定：`node --test`；`lib/event-contract.js` 等纯函数模块保持零 harness 依赖；辅助包测试经 monorepo workspace 依赖运行。
+>
+> **维护修订（包政策推行，Stage 4 后执行）**：原 Stage 4 产物已按新包政策维护——`packages/compaction-events-r1/` → `packages/compaction-events/`，row id/feature/契约符号去除 `r1`；辅助包版本改为 `0.1.0-rc.6-0.5` + `dsh.api: 0.5`，peerDependencies 增加主包精确版本，apply 增加主包版本一致性校验（不一致仅停用 R 事件、保留官方等价 fallback）；新增 `packages/full/` 全量聚合 bundle；主包 catalog slice 增加已安装辅助包版本校验与一次显式诊断；新增 `test/package-policy.test.mjs` 与 `test/governance-token-audit.test.mjs`。
 
 ---
 

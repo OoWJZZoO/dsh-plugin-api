@@ -5,7 +5,7 @@ import { createClientSettingsRemote } from '../lib/client-settings-remote.js'
 const contribution = { package: 'settings-panel', descriptors: [{ id: 'settings#get', service: 'settings', namespace: 'settings', method: 'get', invocation: { kind: 'direct' }, parameters: [], result: { mode: 'strict' } }] }
 const codec = { validateInvocation(descriptor) { if (descriptor?.result?.mode !== 'strict') throw new TypeError('invalid') } }
 
-test('settings remote reuses C2 mount owner and exposes the published face', async () => {
+test('settings remote reuses remote mount owner mount owner and exposes the published face', async () => {
   let mounts = 0
   let disposals = 0
   const remote = { settings: { get() {} } }
@@ -47,7 +47,7 @@ test('settings remote refuses a different active contribution with the same pack
   assert.equal(mounts, 1)
 })
 
-test('settings remote rolls back a contribution disposed while its C2 mount is pending', async () => {
+test('settings remote rolls back a contribution disposed while its remote mount owner mount is pending', async () => {
   let mounts = 0
   let disposals = 0
   let release
@@ -55,7 +55,7 @@ test('settings remote rolls back a contribution disposed while its C2 mount is p
   const remote = { settings: { get() {} } }
   const api = createClientSettingsRemote({ remote, codec, remoteContribution: { async mountRemote() { mounts += 1; await gate; return () => { disposals += 1 } } } })
   const pending = api.mountRemoteContribution(contribution, { namespace: 'settings' })
-  await api.dispose() // dispose while the C2 mount is still pending
+  await api.dispose() // dispose while the remote mount owner mount is still pending
   release()
   const result = await pending
   assert.equal(result.status, 'degraded')

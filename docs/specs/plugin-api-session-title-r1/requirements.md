@@ -4,6 +4,8 @@
 > 状态：Stage 1 已批准（R-5.11 于 Stage 2 设计批准时同步修订，见文末修订记录）
 > 上游：Stage 0 Goal（已批准）、`AGENTS.md` §2/§4/§6、`docs/capability-strategy.md`（R1–R9）
 > 类型：R 类（replacement bundle）；host-only，无 client bundle。
+>
+> **维护修订（包政策推行）**：运行时命名已去除 `r1` 治理后缀——源码 `packages/session-title/`、row id `plugin-api-session-title`、feature `session-title`、契约符号 `Symbol.for('dsh-plugin-api.session-title.contract')`；本 spec 的历史治理名 `plugin-api-session-title-r1` 仅在 `docs/` 与 AGENTS.md 登记中保留。辅助包采用与主包一致的 `<runtime>-<api.protocol>` 版本协商（当前 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`），主包校验辅助包版本一致；不一致时仅停用本 R 类特性（官方原接口仍由替代行/官方等价 fallback 提供），不停用主包。安装经全量聚合 bundle `@deepseek-ai/dsh-plugin-api-full` 或选择性安装主包 + 本辅助包。
 
 ---
 

@@ -115,7 +115,7 @@ test('sessionDurable guard fails absent, malformed, or non-exact audit identitie
   }
 })
 
-test('sessionDurable guard remains isolated from M1 session and events guard results', () => {
+test('sessionDurable guard remains isolated from baseline session and events guard results', () => {
   assert.equal(runFeatureGuard('session', completeCtx(), {}).ok, false)
   assert.equal(runFeatureGuard('events', completeCtx(), {}).ok, false)
   assert.equal(runFeatureGuard('sessionDurable', completeCtx(), completeDeps()).ok, true)

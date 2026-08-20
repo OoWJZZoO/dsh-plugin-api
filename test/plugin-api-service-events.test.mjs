@@ -34,7 +34,7 @@ test('active service exposes disabled events stub', () => {
     )
   }
 
-  // web is no longer a service-level stub (task 2.9): pluginApi.services.web.
+  // web is no longer a service-level stub pluginApi.services.web.
   assert.equal(service.web, undefined)
 
   assert.equal(ctx.getCalls.length, 0)

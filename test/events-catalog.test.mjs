@@ -46,8 +46,8 @@ test('every base entry has the required unified-schema metadata fields', () => {
       || entry.scopeKey === 'args[0].agent' || entry.scopeKey === 'args[1].scope', `${name}: scopeKey domain`)
     assert.ok(typeof entry.payload === 'string', `${name}: payload`)
     assert.ok(typeof entry.args === 'string', `${name}: args`)
-    assert.ok(typeof entry.source === 'string', `${name}: source`)
-    assert.ok(entry.type === 'A' || entry.type === 'B', `${name}: type`)
+    assert.ok(!('source' in entry), `${name}: governance source ids must not leak into the catalog`)
+    assert.ok(!('type' in entry), `${name}: governance class letters must not leak into the catalog`)
   }
 })
 
@@ -66,7 +66,7 @@ test('base catalog and every entry are deeply frozen', () => {
   }
 })
 
-test('composing all M1 slices yields exactly the 47 stabilized event names', () => {
+test('composing all baseline slices yields exactly the 47 stabilized event names', () => {
   const composed = composeCatalogs(
     baseEventsCatalog,
     agentEventsCatalog,

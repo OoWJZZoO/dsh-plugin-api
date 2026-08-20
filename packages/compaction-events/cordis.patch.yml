@@ -1,0 +1,9 @@
+# dsh bundle patch for @deepseek-ai/dsh-plugin-api-compaction-events.
+# Replacement boundary: we replace the `ctx.compaction` service/event face ONLY;
+# the optional `@deepseek-ai/dsh-compaction-basic` import face stays official.
+- id: compaction-basic
+  disabled: true
+- insert:
+    - id: plugin-api-compaction-events
+      name: '@deepseek-ai/dsh-plugin-api-compaction-events'
+      config: {}

@@ -4,10 +4,10 @@ import { apply } from '../lib/index.js'
 import { scopeTarget } from '@deepseek-ai/dsh-scope'
 
 /**
- * End-to-end catalog gates (task 2.13): every contributed slice must receive
+ * End-to-end catalog gates every contributed slice must receive
  * REAL facade treatment through pluginApi.events after apply() — priority
  * ordering, freeze policy, fault policy, and scope gating — not raw ctx.on
- * passthrough. This file is the regression gate for the session S1 defect
+ * passthrough. This file is the regression gate for the session session lifecycle defect
  * fixed by the m1-integration bus unification.
  */
 
@@ -49,7 +49,7 @@ function createFullCtx({ withCompactionReplacement = false } = {}) {
   let compactionRows = []
   if (withCompactionReplacement) {
     services.compaction = {
-      [Symbol.for('dsh-plugin-api.compaction-events-r1.active')]: true,
+      [Symbol.for('dsh-plugin-api.compaction-events.contract')]: true,
       compactIfNeeded() {},
       compactNow() {},
       compactRegion() {},
@@ -163,7 +163,7 @@ test('catalog composition after apply covers all 47 stabilized events', () => {
   }
 })
 
-test('session slice gate: session/created receives freeze + containment + scope gating through pluginApi.events (S1 regression)', () => {
+test('session slice gate: session/created receives freeze + containment + scope gating through pluginApi.events (session lifecycle regression)', () => {
   const { ctx, state } = createFullCtx()
   apply(ctx)
 
@@ -299,7 +299,7 @@ test('settings slice gate: settings/updated dispatches with frozen args through 
 })
 
 // ---------------------------------------------------------------------------
-// 5.x R-class catalog (compaction-events-r1)
+// 5.x replacement catalog (compaction-events)
 // ---------------------------------------------------------------------------
 
 const COMPACTION_EVENTS = [
@@ -319,7 +319,7 @@ test('without the replacement row the public catalog does not list compaction/* 
   }
 })
 
-test('with the replacement row active the public catalog lists all five compaction/* R events', () => {
+test('with the replacement row active the public catalog lists all five compaction replacement events', () => {
   const { ctx, state } = createFullCtx({ withCompactionReplacement: true })
   apply(ctx)
   const catalog = state.pluginApi.events.catalog
@@ -327,7 +327,8 @@ test('with the replacement row active the public catalog lists all five compacti
   for (const name of COMPACTION_EVENTS) {
     const entry = catalog[name]
     assert.ok(entry, `${name} must be cataloged`)
-    assert.equal(entry.type, 'R')
+    assert.equal(entry.feature, 'compaction-events')
+    assert.ok(!('type' in entry), 'governance class letters must not leak into the catalog')
     assert.equal(entry.scopeFiltered, false)
     assert.equal(entry.scopeKey, null)
     assert.equal(entry.fault, 'contain')

@@ -8,7 +8,7 @@ import { HarnessError } from '@deepseek-ai/dsh-llm'
 // `@deepseek-ai/dsh-tools` is a peer-only package consumed lazily; the test
 // resolves it dynamically and skips the real-identity assertions when it is
 // unavailable, so a missing package can never crash this file at load time
-// (requirements 3.2 fail-safe philosophy).
+//.
 let dshTools = null
 try {
   dshTools = await import('@deepseek-ai/dsh-tools')
@@ -18,7 +18,7 @@ try {
 const canResolve = Boolean(dshTools && typeof dshTools.TOOL_ABORTED === 'string')
 
 test(
-  'official identity: instanceof real HarnessError, code === real TOOL_ABORTED, deep-equal to the real official composition (req 2.1–2.4)',
+  'official identity: instanceof real HarnessError, code === real TOOL_ABORTED, deep-equal to the real official composition',
   { skip: !canResolve },
   () => {
     const { TOOL_ABORTED } = dshTools

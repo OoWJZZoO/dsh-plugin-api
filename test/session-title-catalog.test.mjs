@@ -5,18 +5,13 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { baseEventsCatalog } from '../lib/events-catalog.js'
 import { createEventsBus } from '../lib/events-bus.js'
-import { sessionTitleEventsCatalogSlice, isSessionTitleReplacementActive } from '../lib/session-title-events-catalog.js'
+import { createSessionTitleEventsCatalogSlice, SESSION_TITLE_CONTRACT_SYMBOL } from '../lib/session-title-events-catalog.js'
 import { createServicesNamespace } from '../lib/services.js'
 
-const CONTRACT_SYMBOL = Symbol.for('dsh-plugin-api.session-title-r1.active')
 const AUX_NAME = '@deepseek-ai/dsh-plugin-api-session-title'
+const MATCHING_CONTRACT = { runtime: '0.1.0-rc.6', api: '0.5' }
+const MATCHING_MANIFEST = { version: '0.1.0-rc.6-0.5', api: '0.5' }
 
-// ---------------------------------------------------------------------------
-// Fake Cordis dispatch context mirroring Cordis dispatch mechanics (mirrors
-// test/events-bus.test.mjs createMockCordisCtx): the leading optional thisArg
-// and the event name are shifted before listeners run, and waterfall runs
-// outermost-first with a short-circuit when a listener returns without next().
-// ---------------------------------------------------------------------------
 function makeDispatchCtx() {
   const hooks = new Map()
 
@@ -99,7 +94,7 @@ function makeDispatchCtx() {
 function makeBusCtx() {
   const ctx = makeDispatchCtx()
   let active = false
-  ctx.get = () => (active ? { [CONTRACT_SYMBOL]: true, get() {}, rename() {}, refresh() {}, register() {} } : undefined)
+  ctx.get = () => (active ? { [SESSION_TITLE_CONTRACT_SYMBOL]: true, get() {}, rename() {}, refresh() {}, register() {} } : undefined)
   ctx.loader = { entries: () => [{ options: { name: AUX_NAME }, fiber: {}, disabled: !active }] }
   return {
     ctx,
@@ -109,51 +104,53 @@ function makeBusCtx() {
   }
 }
 
-test('the R slice exposes exactly one session-title/candidate entry with the required schema', () => {
-  assert.equal(sessionTitleEventsCatalogSlice.name, 'session-title-r1')
-  assert.equal(sessionTitleEventsCatalogSlice.entries.length, 1)
-  const entry = sessionTitleEventsCatalogSlice.entries[0]
+test('the replacement slice exposes exactly one session-title candidate entry with the required schema', () => {
+  const slice = createSessionTitleEventsCatalogSlice()
+  assert.equal(slice.name, 'session-title')
+  assert.equal(slice.entries.length, 1)
+  const entry = slice.entries[0]
   assert.equal(entry.name, 'session-title/candidate')
-  assert.equal(entry.type, 'R')
   assert.equal(entry.mode, 'waterfall')
   assert.equal(entry.scopeFiltered, false)
   assert.equal(entry.scopeKey, null)
   assert.equal(entry.fault, 'contain')
   assert.deepEqual(entry.freeze, { deep: ['message'] })
-  assert.equal(entry.feature, 'plugin-api-session-title-r1')
+  assert.equal(entry.feature, 'session-title')
   assert.ok(Object.isFrozen(entry), 'entry must be frozen')
-  assert.ok('payload' in entry && 'args' in entry && 'source' in entry)
-  assert.ok(Object.isFrozen(sessionTitleEventsCatalogSlice))
+  assert.ok('payload' in entry && 'args' in entry)
+  assert.ok(!('source' in entry), 'governance source ids must not leak into the catalog')
+  assert.ok(!('type' in entry), 'governance class letters must not leak into the catalog')
+  assert.ok(Object.isFrozen(slice))
 })
 
-test('isSessionTitleReplacementActive is true only when the aux row is live and the marker is present', () => {
+test('the slice guard requires live row, contract marker, and matching auxiliary version', () => {
   const liveRow = () => [{ options: { name: AUX_NAME }, fiber: {}, disabled: false }]
-  const marker = (present) => (present ? { [CONTRACT_SYMBOL]: true } : undefined)
-  const ctx = (row, service) => ({ loader: { entries: () => row[Symbol.iterator]() }, get: () => service })
+  const marker = (present) => (present ? { [SESSION_TITLE_CONTRACT_SYMBOL]: true } : undefined)
+  const makeCtx = (row, service) => ({ loader: { entries: () => row[Symbol.iterator]() }, get: () => service })
 
-  assert.equal(isSessionTitleReplacementActive(ctx(liveRow(), marker(true))), true)
-  assert.equal(isSessionTitleReplacementActive(ctx(liveRow(), marker(false))), false)
-  assert.equal(isSessionTitleReplacementActive(ctx([], marker(true))), false)
-  assert.equal(
-    isSessionTitleReplacementActive(ctx([{ options: { name: AUX_NAME }, fiber: undefined, disabled: false }], marker(true))),
-    false,
-  )
-  assert.equal(
-    isSessionTitleReplacementActive(ctx([{ options: { name: AUX_NAME }, fiber: {}, disabled: true }], marker(true))),
-    false,
-  )
-  assert.equal(
-    isSessionTitleReplacementActive({
-      loader: { entries() { throw new Error('boom') } },
-      get: () => marker(true),
-    }),
-    false,
-  )
+  const slice = createSessionTitleEventsCatalogSlice({ expectedContract: MATCHING_CONTRACT, auxiliaryManifest: MATCHING_MANIFEST })
+  assert.equal(slice.isActive(makeCtx(liveRow(), marker(true))), true)
+  assert.equal(slice.isActive(makeCtx(liveRow(), marker(false))), false)
+  assert.equal(slice.isActive(makeCtx([], marker(true))), false)
+  assert.equal(slice.isActive(makeCtx([{ options: { name: AUX_NAME }, fiber: undefined, disabled: false }], marker(true))), false)
+  assert.equal(slice.isActive(makeCtx([{ options: { name: AUX_NAME }, fiber: {}, disabled: true }], marker(true))), false)
+
+  const mismatched = createSessionTitleEventsCatalogSlice({
+    expectedContract: MATCHING_CONTRACT,
+    auxiliaryManifest: { version: '0.1.0-rc.6-0.4', api: '0.4' },
+  })
+  assert.equal(mismatched.isActive(makeCtx(liveRow(), marker(true))), false, 'aux version mismatch disables only this replacement slice')
+
+  assert.equal(slice.isActive({
+    loader: { entries() { throw new Error('boom') } },
+    get: () => marker(true),
+  }), false)
 })
 
-test('the public catalog accessor filters the R slice by guard while subscriptions use static metadata', () => {
+test('the public catalog accessor filters the replacement slice by guard while subscriptions use static metadata', () => {
   const { ctx, setActive } = makeBusCtx()
-  const bus = createEventsBus({ ctx, catalog: baseEventsCatalog, rSlices: [sessionTitleEventsCatalogSlice] })
+  const slice = createSessionTitleEventsCatalogSlice({ expectedContract: MATCHING_CONTRACT, auxiliaryManifest: MATCHING_MANIFEST })
+  const bus = createEventsBus({ ctx, catalog: baseEventsCatalog, rSlices: [slice] })
 
   assert.ok(!('session-title/candidate' in bus.catalog), 'inactive: hidden from the public snapshot')
   const listener = () => {}
@@ -165,42 +162,43 @@ test('the public catalog accessor filters the R slice by guard while subscriptio
   setActive(true)
   const catalog = bus.catalog
   assert.equal(Object.keys(catalog).length, Object.keys(baseEventsCatalog).length + 1)
-  assert.equal(catalog['session-title/candidate'].type, 'R')
+  assert.equal(catalog['session-title/candidate'].feature, 'session-title')
   assert.ok(Object.isFrozen(catalog['session-title/candidate']))
   assert.ok(Object.isFrozen(catalog), 'catalog snapshot must be deeply frozen')
 })
 
-test('R-slice composition keeps duplicate detection fail-loud and composes with compaction', async () => {
+test('replacement-slice composition keeps duplicate detection fail-loud and composes with compaction', async () => {
   const { ctx } = makeBusCtx()
-  const { compactionEventsCatalogSlice } = await import('../lib/compaction-events-catalog.js')
-  const bus = createEventsBus({ ctx, catalog: baseEventsCatalog, rSlices: [compactionEventsCatalogSlice, sessionTitleEventsCatalogSlice] })
-  assert.ok(bus, 'both R slices compose without weakening the catalog')
+  const { createCompactionEventsCatalogSlice } = await import('../lib/compaction-events-catalog.js')
+  const compaction = createCompactionEventsCatalogSlice({ expectedContract: MATCHING_CONTRACT, auxiliaryManifest: MATCHING_MANIFEST })
+  const title = createSessionTitleEventsCatalogSlice({ expectedContract: MATCHING_CONTRACT, auxiliaryManifest: MATCHING_MANIFEST })
+  const bus = createEventsBus({ ctx, catalog: baseEventsCatalog, rSlices: [compaction, title] })
+  assert.ok(bus, 'both replacement slices compose without weakening the catalog')
 
   const dupA = { name: 'a', entries: [{ name: 'session-title/candidate' }], isActive: () => true }
   const dupB = { name: 'b', entries: [{ name: 'session-title/candidate' }], isActive: () => true }
   assert.throws(() => createEventsBus({ ctx, catalog: baseEventsCatalog, rSlices: [dupA, dupB] }), /duplicate catalog entry/)
 })
 
-test('facade waterfall decision and next() are passed through (req 5.1/6.2)', () => {
+test('facade waterfall decision and next() are passed through', () => {
   const { ctx, setActive } = makeBusCtx()
   setActive(true)
-  const bus = createEventsBus({ ctx, catalog: baseEventsCatalog, rSlices: [sessionTitleEventsCatalogSlice] })
+  const slice = createSessionTitleEventsCatalogSlice({ expectedContract: MATCHING_CONTRACT, auxiliaryManifest: MATCHING_MANIFEST })
+  const bus = createEventsBus({ ctx, catalog: baseEventsCatalog, rSlices: [slice] })
 
   bus.on('session-title/candidate', (payload, next) => {
     if (payload?.message?.seq === 1) return { kind: 'exclude', reason: 'synthetic' }
     return next()
   }, { priority: 'high' })
 
-  // a settled decision short-circuits the waterfall
   const decision = ctx.waterfall('session-title/candidate', { agent: undefined, session: 's', message: { seq: 1 } }, () => undefined)
   assert.deepEqual(decision, { kind: 'exclude', reason: 'synthetic' })
 
-  // a no-decision listener calls next() to continue to the built-in behavior
   const passthrough = ctx.waterfall('session-title/candidate', { agent: undefined, session: 's', message: { seq: 9 } }, () => undefined)
   assert.equal(passthrough, undefined)
 })
 
-test('raw ctx.on observation works without the facade (req 6.3)', () => {
+test('raw ctx.on observation works without the facade', () => {
   const ctx = makeDispatchCtx()
   const seen = []
   ctx.on('session-title/candidate', (payload) => {
@@ -219,19 +217,17 @@ test('the main facade does not import the auxiliary replacement package', () => 
   const sliceSource = readFileSync(join(here, '..', 'lib', 'session-title-events-catalog.js'), 'utf8')
   const combined = `${indexSource}\n${sliceSource}`
   assert.ok(!combined.includes("from '@deepseek-ai/dsh-plugin-api-session-title'"),
-    'main facade must not import the auxiliary package (requirements 1.5)')
-  assert.ok(indexSource.includes('rSlices: [compactionEventsCatalogSlice, sessionTitleEventsCatalogSlice]'),
-    'mountEventsFeature must wire the session-title R slice into createEventsBus')
+    'main facade must not import the auxiliary package')
+  assert.ok(indexSource.includes('createSessionTitleEventsCatalogSlice'),
+    'mountEventsFeature must build the replacement slice with the facade contract')
+  assert.ok(indexSource.includes("readPackageManifest('@deepseek-ai/dsh-plugin-api-session-title')"),
+    'main facade must verify the installed auxiliary package version')
 })
 
-// ---------------------------------------------------------------------------
-// SV13 passthrough regression (req 3.7 / task 5.3): the delivered
-// pluginApi.services.sessionTitle seam operates against the replacement service.
-// ---------------------------------------------------------------------------
 function makeReplacementProvider() {
   const calls = []
   const provider = {
-    [CONTRACT_SYMBOL]: true,
+    [SESSION_TITLE_CONTRACT_SYMBOL]: true,
     get() { calls.push('get'); return { title: 'T' } },
     rename() { calls.push('rename'); return 'renamed' },
     refresh() { calls.push('refresh'); return Promise.resolve('refreshed') },
@@ -240,7 +236,7 @@ function makeReplacementProvider() {
   return { provider, calls }
 }
 
-test('pluginApi.services.sessionTitle passthrough resolves to the replacement service (req 3.7/5.3)', () => {
+test('pluginApi.services.sessionTitle passthrough resolves to the replacement service', () => {
   const { provider, calls } = makeReplacementProvider()
   const serviceCtx = { get(name) { return name === 'sessionTitle' ? provider : undefined } }
   const namespace = createServicesNamespace({ ctx: serviceCtx, active: true })

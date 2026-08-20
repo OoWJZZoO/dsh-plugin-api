@@ -5,6 +5,8 @@
 > **Rename/version pointer（`plugin-api-compaction-events-r1`）**：主包现已更名为 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`，Cordis 服务 key 仍为 `pluginApi`），monorepo 工作区见根 `pnpm-workspace.yaml` / `packages/`；唯一 full version 为 `0.1.0-rc.6-0.4` / `dsh.api: 0.4`。本文历史正文保留原始 M0 记录。
 >
 > **权威指针（`plugin-api-session-title-r1`）**：上行为 compaction-events-r1 承接的 boundary；现行 authority 为 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`（由 `plugin-api-session-title-r1` 承接），见 AGENTS.md §8 与 README。
+>
+> **维护修订（包政策推行）**：`lib/guards.js` 的核心 guard 仍只校验主包自身；辅助包各自在 apply 内校验自身全量唯一版本与主包一致，主包在装配 replacement catalog slice 时也按已安装辅助包的 `version`/`dsh.api` 二次校验。任一辅助包不匹配时只排除该 R slice 并记录一次显式诊断，替代行本身降级为官方原接口提供者，主包其余 feature 照常 active。聚合 bundle `packages/full/` 只做确定性 patch 装配，不含任何 API 代码。
 
 ## Overview
 

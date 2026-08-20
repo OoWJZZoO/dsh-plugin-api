@@ -14,7 +14,7 @@ class StubHarnessError extends Error {
 
 const TOOL_ABORTED = 'ABORTED'
 
-// Canonical official composition, built with the same stub (req 2.4).
+// Canonical official composition, built with the same stub.
 function canonicalComposition() {
   const e = new StubHarnessError('tool call aborted', TOOL_ABORTED)
   e.name = 'AbortError'
@@ -23,14 +23,14 @@ function canonicalComposition() {
 
 const identity = (e) => ({ name: e.name, code: e.code, message: e.message })
 
-test('full mode returns an instance of the injected HarnessError class (req 2.1)', () => {
+test('full mode returns an instance of the injected HarnessError class', () => {
   const make = createToolAbortedErrorFactory({ HarnessError: StubHarnessError, TOOL_ABORTED })
   const e = make()
   assert.ok(e instanceof Error)
   assert.ok(e instanceof StubHarnessError)
 })
 
-test('full mode carries the official name/code/message (req 2.2–2.3)', () => {
+test('full mode carries the official name/code/message', () => {
   const make = createToolAbortedErrorFactory({ HarnessError: StubHarnessError, TOOL_ABORTED })
   const e = make()
   assert.equal(e.name, 'AbortError')
@@ -39,18 +39,18 @@ test('full mode carries the official name/code/message (req 2.2–2.3)', () => {
   assert.equal(e.message, 'tool call aborted')
 })
 
-test('full mode {name, code, message} is deep-equal to the canonical official composition (req 2.4)', () => {
+test('full mode {name, code, message} is deep-equal to the canonical official composition', () => {
   const make = createToolAbortedErrorFactory({ HarnessError: StubHarnessError, TOOL_ABORTED })
   assert.deepEqual(identity(make()), identity(canonicalComposition()))
 })
 
-test('full mode materializes error.info-equivalent {name, code} identical to the canonical abort outcome (req 2.5)', () => {
+test('full mode materializes error.info-equivalent {name, code} identical to the canonical abort outcome', () => {
   const make = createToolAbortedErrorFactory({ HarnessError: StubHarnessError, TOOL_ABORTED })
   const e = make()
   assert.deepEqual({ name: e.name, code: e.code }, { name: 'AbortError', code: 'ABORTED' })
 })
 
-test('each call returns a fresh, unfrozen, mutable instance (req 1.3)', () => {
+test('each call returns a fresh, unfrozen, mutable instance', () => {
   const make = createToolAbortedErrorFactory({ HarnessError: StubHarnessError, TOOL_ABORTED })
   const a = make()
   const b = make()
@@ -64,19 +64,19 @@ test('each call returns a fresh, unfrozen, mutable instance (req 1.3)', () => {
   assert.equal(make().message, 'tool call aborted')
 })
 
-test('extra arguments are ignored and the identity is unchanged (req 1.2)', () => {
+test('extra arguments are ignored and the identity is unchanged', () => {
   const make = createToolAbortedErrorFactory({ HarnessError: StubHarnessError, TOOL_ABORTED })
   assert.deepEqual(identity(make('anything', 123)), identity(canonicalComposition()))
 })
 
-test('the returned error is a usable throwable and the call itself never throws (req 1.1)', () => {
+test('the returned error is a usable throwable and the call itself never throws', () => {
   const make = createToolAbortedErrorFactory({ HarnessError: StubHarnessError, TOOL_ABORTED })
   let thrown
   assert.doesNotThrow(() => { thrown = make() })
   assert.throws(() => { throw thrown }, (err) => err === thrown)
 })
 
-test('degraded mode returns a plain Error named AbortError without code (req 3.1)', () => {
+test('degraded mode returns a plain Error named AbortError without code', () => {
   const make = createToolAbortedErrorFactory({})
   const e = make()
   assert.ok(e instanceof Error)
@@ -104,7 +104,7 @@ test('degraded mode triggers on each missing/malformed dependency branch', () =>
   }
 })
 
-test('each factory mode stays stable across calls within the host lifetime (req 3.3)', () => {
+test('each factory mode stays stable across calls within the host lifetime', () => {
   const full = createToolAbortedErrorFactory({ HarnessError: StubHarnessError, TOOL_ABORTED })
   const degraded = createToolAbortedErrorFactory({ HarnessError: StubHarnessError })
   for (let i = 0; i < 3; i += 1) {

@@ -138,7 +138,7 @@ test('apply mounts session after events with a composed events catalog', () => {
   assert.equal(typeof state.pluginApi.session.isSessionEventType, 'function')
 })
 
-test('apply completes every guard pass before pass-2 publication and an early P2 does not stop later mounters', () => {
+test('apply completes every guard pass before pass-2 publication and an early feature-disabled does not stop later mounters', () => {
   const { ctx, state } = createMockCtx({ services: { tools: undefined } })
   let firstPublicationGetCalls
   const originalEffect = ctx.effect

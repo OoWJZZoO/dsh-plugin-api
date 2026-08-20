@@ -1,0 +1,26 @@
+# Full aggregate bundle patch for @deepseek-ai/dsh-plugin-api-full.
+# Deterministic assembly order:
+#   1. main facade row (must precede any third-party plugin row);
+#   2. compaction replacement: disable the official row, insert ours;
+#   3. session-title replacement: disable the official row, insert ours.
+# The bundle adds no API of its own: third-party plugins keep using
+# ctx.pluginApi from @deepseek-ai/dsh-plugin-api-main.
+- insert:
+    - id: plugin-api-main
+      name: '@deepseek-ai/dsh-plugin-api-main'
+      config: {}
+- id: compaction-basic
+  disabled: true
+- insert:
+    - id: plugin-api-compaction-events
+      name: '@deepseek-ai/dsh-plugin-api-compaction-events'
+      config: {}
+- id: session-title
+  disabled: true
+- insert:
+    - id: plugin-api-session-title
+      name: '@deepseek-ai/dsh-plugin-api-session-title'
+      config:
+        fallbackMaxWords: 5
+        fallbackMaxBytes: 40
+        maxTitleBytes: 80

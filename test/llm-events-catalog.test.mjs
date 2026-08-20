@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { llmEventsCatalog } from '../lib/llm-events-catalog.js'
 
-test('llm slice contains exactly the L3/L6 event names', () => {
+test('llm slice contains exactly the llm/stream and llm/adapters-updated event names', () => {
   assert.deepEqual(Object.keys(llmEventsCatalog).sort(), ['llm/adapters-updated', 'llm/stream'])
   assert.ok(Object.isFrozen(llmEventsCatalog), 'catalog must be frozen')
 })
@@ -16,8 +16,8 @@ test('llm/stream entry matches the confirmed waterfall metadata', () => {
   assert.equal(stream.freeze, 'all')
   assert.match(stream.payload, /GenerateOptions/)
   assert.equal(stream.args, '(options, next)')
-  assert.equal(stream.source, 'L3')
-  assert.equal(stream.type, 'A')
+  assert.ok(!('source' in stream), 'governance source ids must not leak')
+  assert.ok(!('type' in stream), 'governance class letters must not leak')
 })
 
 test('llm/adapters-updated entry matches the confirmed emit metadata', () => {
@@ -29,6 +29,6 @@ test('llm/adapters-updated entry matches the confirmed emit metadata', () => {
   assert.equal(updated.freeze, 'all')
   assert.equal(updated.payload, 'none')
   assert.equal(updated.args, '()')
-  assert.equal(updated.source, 'L6')
-  assert.equal(updated.type, 'A')
+  assert.ok(!('source' in updated), 'governance source ids must not leak')
+  assert.ok(!('type' in updated), 'governance class letters must not leak')
 })

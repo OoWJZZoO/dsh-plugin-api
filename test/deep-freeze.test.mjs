@@ -171,7 +171,7 @@ test('freezeByPolicy never throws for circular objects', () => {
   assert.ok(Object.isFrozen(value.messages))
 })
 
-test('freezeByPolicy defaults to deep-freeze when the policy is absent (E9)', () => {
+test('freezeByPolicy defaults to deep-freeze when the policy is absent (original deep-freeze)', () => {
   const value = { a: { b: 1 } }
   const out = freezeByPolicy(value, undefined)
   assert.equal(out, value)

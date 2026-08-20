@@ -219,7 +219,7 @@ test('no official service calls happen before inactive or feature-disabled throw
   assert.throws(() => activeService.llm.admission.register({}), PluginApiFeatureDisabledError)
 })
 
-test('disabled L4 and L2 registration reject before inspecting supplied values', () => {
+test('disabled compat request and image admission registration reject before inspecting supplied values', () => {
   const registry = createFeatureRegistry()
   const inert = instantiate(
     createPluginApiService({ apiVersion: '0.1', registry, coreActive: false }),
@@ -236,14 +236,14 @@ test('disabled L4 and L2 registration reject before inspecting supplied values',
   ]) {
     const inactiveValue = createInspectionTrap()
     assert.throws(() => inert.llm[surface][method](inactiveValue.value), PluginApiInactiveError)
-    assert.equal(inactiveValue.inspections, 0, `${surface}.${method} must not inspect P1 input`)
+    assert.equal(inactiveValue.inspections, 0, `${surface}.${method} must not inspect core-inactive input`)
 
     const disabledValue = createInspectionTrap()
     assert.throws(
       () => active.llm[surface][method](disabledValue.value),
       (error) => error instanceof PluginApiFeatureDisabledError && error.feature === `llm/${surface}`,
     )
-    assert.equal(disabledValue.inspections, 0, `${surface}.${method} must not inspect P2 input`)
+    assert.equal(disabledValue.inspections, 0, `${surface}.${method} must not inspect feature-disabled input`)
   }
 })
 

@@ -155,7 +155,7 @@ test('mountFeature still rejects unknown feature names', () => {
   )
 })
 
-test('tools accessor fail-safe: throwing or vanished official service yields a typed error (task 2.7)', () => {
+test('tools accessor fail-safe: throwing or vanished official service yields a typed error', () => {
   for (const mode of ['throw', 'undefined']) {
     const ServiceClass = createPluginApiService({ apiVersion: '0.1', coreActive: true })
     const ctx = {

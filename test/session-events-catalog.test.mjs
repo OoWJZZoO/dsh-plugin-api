@@ -5,7 +5,7 @@ import {
   sessionLifecycleEventsCatalog,
 } from '../lib/session-events-catalog.js'
 
-test('SESSION_LIFECYCLE_EVENT_NAMES contains exactly the four S1 lifecycle events', () => {
+test('SESSION_LIFECYCLE_EVENT_NAMES contains exactly the four lifecycle events', () => {
   assert.deepEqual([...SESSION_LIFECYCLE_EVENT_NAMES], [
     'session/created',
     'session/disposed',
@@ -35,8 +35,6 @@ test('each session lifecycle catalog entry matches the design matrix', () => {
       freeze: 'all',
       payload: 'Session',
       args: '(session)',
-      source: 'S1',
-      type: 'A',
     },
     'session/disposed': {
       mode: 'emit',
@@ -46,8 +44,6 @@ test('each session lifecycle catalog entry matches the design matrix', () => {
       freeze: 'all',
       payload: 'Session',
       args: '(session)',
-      source: 'S1',
-      type: 'A',
     },
     'session/event': {
       mode: 'emit',
@@ -57,8 +53,6 @@ test('each session lifecycle catalog entry matches the design matrix', () => {
       freeze: 'all',
       payload: 'Session, SessionEvent',
       args: '(session, event)',
-      source: 'S1',
-      type: 'A',
     },
     'session/flush': {
       mode: 'parallel',
@@ -68,27 +62,26 @@ test('each session lifecycle catalog entry matches the design matrix', () => {
       freeze: 'all',
       payload: 'Session',
       args: '(session)',
-      source: 'S1',
-      type: 'A',
     },
   }
 
   for (const [name, entry] of Object.entries(expected)) {
-    assert.equal(sessionLifecycleEventsCatalog[name].name, name)
+    const actual = sessionLifecycleEventsCatalog[name]
+    assert.equal(actual.name, name)
     assert.deepEqual(
       {
-        mode: sessionLifecycleEventsCatalog[name].mode,
-        scopeFiltered: sessionLifecycleEventsCatalog[name].scopeFiltered,
-        scopeKey: sessionLifecycleEventsCatalog[name].scopeKey,
-        fault: sessionLifecycleEventsCatalog[name].fault,
-        freeze: sessionLifecycleEventsCatalog[name].freeze,
-        payload: sessionLifecycleEventsCatalog[name].payload,
-        args: sessionLifecycleEventsCatalog[name].args,
-        source: sessionLifecycleEventsCatalog[name].source,
-        type: sessionLifecycleEventsCatalog[name].type,
+        mode: actual.mode,
+        scopeFiltered: actual.scopeFiltered,
+        scopeKey: actual.scopeKey,
+        fault: actual.fault,
+        freeze: actual.freeze,
+        payload: actual.payload,
+        args: actual.args,
       },
       entry,
     )
-    assert.ok(Object.isFrozen(sessionLifecycleEventsCatalog[name]), `${name} entry must be frozen`)
+    assert.ok(!('source' in actual), `${name}: governance source ids must not leak`)
+    assert.ok(!('type' in actual), `${name}: governance class letters must not leak`)
+    assert.ok(Object.isFrozen(actual), `${name} entry must be frozen`)
   }
 })

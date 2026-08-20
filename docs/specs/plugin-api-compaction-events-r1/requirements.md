@@ -4,6 +4,8 @@
 > 状态：Stage 1 草案（待对抗性审查与用户批准）
 > 上游：Stage 0 Goal（已确认）、`AGENTS.md` §2/§4/§6、`docs/capability-strategy.md`（R1–R9）
 > 类型：R 类（replacement bundle）；host-only，无 client bundle。
+>
+> **维护修订（包政策推行）**：运行时命名已去除 `r1` 治理后缀——源码 `packages/compaction-events/`、row id `plugin-api-compaction-events`、feature `compaction-events`、契约符号 `Symbol.for('dsh-plugin-api.compaction-events.contract')`；本 spec 的历史治理名 `plugin-api-compaction-events-r1` 仅在 `docs/` 与 AGENTS.md 登记中保留。辅助包采用与主包一致的 `<runtime>-<api.protocol>` 版本协商（当前 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`），主包校验辅助包版本一致；不一致时仅停用本 R 类特性（官方原接口仍由替代行/官方等价 fallback 提供），不停用主包。安装经全量聚合 bundle `@deepseek-ai/dsh-plugin-api-full` 或选择性安装主包 + 本辅助包。
 
 ---
 

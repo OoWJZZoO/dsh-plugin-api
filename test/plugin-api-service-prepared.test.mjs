@@ -139,7 +139,7 @@ test('admission and request prepared surfaces roll back to their disabled shapes
   )
 })
 
-test('immediate mountFeature behavior is unchanged for M1 mounters', () => {
+test('immediate mountFeature behavior is unchanged for baseline mounters', () => {
   const service = activeService()
   const eventsApi = { on() {}, catalog: {} }
   service.mountFeature('events', eventsApi)
@@ -153,7 +153,7 @@ test('immediate mountFeature behavior is unchanged for M1 mounters', () => {
   assert.equal(service.llm.stream, llmApi.stream)
 })
 
-test('inactive service keeps P1 precedence on disabled prepared surfaces', () => {
+test('inactive service keeps core-inactive precedence on disabled prepared surfaces', () => {
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: false })
   const service = instantiate(ServiceClass, mockCtx())

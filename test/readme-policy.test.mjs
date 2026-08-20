@@ -16,7 +16,15 @@ test('README documents the unsupported escape hatch boundary', () => {
   assert.match(readme, /不拦截|不 patch|不 block|不保障/)
 })
 
-test('README references the F0.4 authoritative spec and F0.5 chain safety', () => {
+test('README references the facade integrity authoritative spec and chain safety', () => {
   assert.match(readme, /plugin-api-facade-integrity/)
   assert.match(readme, /链安全|包装链/)
+})
+
+test('README documents the two explicit installation modes and the aggregate bundle', () => {
+  assert.match(readme, /dsh plugin --profile <profile> add @deepseek-ai\/dsh-plugin-api-full/)
+  assert.match(readme, /dsh plugin --profile <profile> add @deepseek-ai\/dsh-plugin-api-main/)
+  assert.match(readme, /dsh plugin --profile <profile> add @deepseek-ai\/dsh-plugin-api-compaction-events/)
+  assert.match(readme, /全量聚合 bundle|只做聚合/)
+  assert.match(readme, /ctx\.pluginApi/)
 })

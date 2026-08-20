@@ -19,7 +19,7 @@ function createService({ coreActive = true, logWriter, featureNotice, logger } =
   return { service: new ServiceClass(ctx), getCalls }
 }
 
-test('execRoute P1 and P2 delegates throw before inspecting input or official services', () => {
+test('execRoute core-inactive and feature-disabled delegates throw before inspecting input or official services', () => {
   const hostile = new Proxy({}, { get() { throw new Error('input inspected') } })
   const inert = createService({ coreActive: false })
   const disabled = createService()
@@ -52,7 +52,7 @@ test('agent and tools routeOf share the mounted owner outcome without tools look
   assert.ok(token)
 })
 
-test('execRoute unmount is token-bound, idempotent, and restores P2', () => {
+test('execRoute unmount is token-bound, idempotent, and restores feature-disabled', () => {
   const { service } = createService()
   const first = service.mountFeature('execRoute', { routeOf() { return { provider: 'first', model: 'first' } } })
   const second = service.mountFeature('execRoute', { routeOf() { return { provider: 'second', model: 'second' } } })
@@ -67,7 +67,7 @@ test('execRoute unmount is token-bound, idempotent, and restores P2', () => {
   )
 })
 
-test('execRoute P2 diagnostic ledger deduplicates per key while preserving distinct keys', () => {
+test('execRoute feature-disabled diagnostic ledger deduplicates per key while preserving distinct keys', () => {
   const writes = []
   const notices = []
   const logged = []
@@ -92,7 +92,7 @@ test('execRoute P2 diagnostic ledger deduplicates per key while preserving disti
   assert.deepEqual(logged, ['execRoute:/tmp/guard.log', 'execRoute:/tmp/guard.log'])
 })
 
-test('execRoute P2 diagnostic failures remain inert', () => {
+test('execRoute feature-disabled diagnostic failures remain inert', () => {
   const { service } = createService({
     logWriter() { throw new Error('write failed') },
     featureNotice() { throw new Error('notice failed') },

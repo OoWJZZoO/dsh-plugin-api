@@ -132,11 +132,11 @@ test('owner resolution failures report a redacted diagnostic through host logger
 
   dispatchPreExecute(state, exec)
 
-  assert.ok(state.errors.some((message) => message === 'dsh-plugin-api plugin-api-exec-route-m2 tools/pre-execute resolution-failure'))
+  assert.ok(state.errors.some((message) => message === 'dsh-plugin-api exec-route tools/pre-execute resolution-failure'))
   assert.ok(state.errors.every((message) => !message.includes('credential value')))
 })
 
-test('missing declared dependency disables only execRoute with its P2 delegate', () => {
+test('missing declared dependency disables only execRoute with its feature-disabled delegate', () => {
   const { ctx, state } = createCtx({ services: { sessions: undefined } })
   apply(ctx)
 
@@ -149,7 +149,7 @@ test('missing declared dependency disables only execRoute with its P2 delegate',
   )
 })
 
-test('hook registration and cleanup registration failures roll back to P2 without a hook', () => {
+test('hook registration and cleanup registration failures roll back to feature-disabled without a hook', () => {
   for (const options of [{ onThrows: true }, { effectThrows: true }]) {
     const { ctx, state } = createCtx(options)
     assert.doesNotThrow(() => apply(ctx))
@@ -187,7 +187,7 @@ test('publication and registry failures roll back hook and route delegate', () =
   }
 })
 
-test('P2 diagnostics deduplicate repeated apply failures by lifecycle key', () => {
+test('feature-disabled diagnostics deduplicate repeated apply failures by lifecycle key', () => {
   const { ctx, state, services } = createCtx({ services: { tools: undefined } })
   const keys = []
   const originalPlugin = ctx.plugin

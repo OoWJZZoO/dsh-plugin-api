@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-plugin-api-main",
-  "description": "DeepSeek Harness community plugin API facade: stabilized semantic hooks over official extension points. Full unique version <runtime>-<api.protocol>; 0.5 adds the session-title/candidate R-class catalog slice (dsh-plugin-api-session-title-r1).",
+  "description": "DeepSeek Harness community plugin API facade: stabilized semantic hooks over official extension points. Full unique version <runtime>-<api.protocol>; 0.5 adds the session-title/candidate replacement catalog slice.",
   "version": "0.1.0-rc.6-0.5",
   "type": "module",
   "main": "lib/index.js",

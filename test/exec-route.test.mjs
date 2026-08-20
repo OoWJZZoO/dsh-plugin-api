@@ -112,7 +112,7 @@ test('contains unexpected context access failure once and caches undefined', () 
 
   assert.equal(owner.routeOf(exec), undefined)
   assert.equal(reads, 1)
-  assert.deepEqual(errors, ['dsh-plugin-api plugin-api-exec-route-m2 tools/pre-execute resolution-failure'])
+  assert.deepEqual(errors, ['dsh-plugin-api exec-route tools/pre-execute resolution-failure'])
   assert.doesNotMatch(errors[0], /secret|provider|model/i)
 })
 

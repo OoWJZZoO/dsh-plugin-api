@@ -66,7 +66,7 @@ test('hostile ctx with throwing getter is contained (presence-not-call semantics
 
 test('remote guard checks presence (typeof), not call behavior — a throwing provide is a publish-time/leaf concern', () => {
   // Guard probes test presence via typeof, mirroring settingsRemote; a provide
-  // that throws at call time is contained by the leaf (P2 disabled face), not
+  // that throws at call time is contained by the leaf (feature-disabled disabled face), not
   // by the guard. Assert presence-only semantics.
   const ctx = { get() {}, reflect: { provide: () => { throw new Error('x') } } }
   const result = runFeatureGuard('remote', ctx, healthyDeps)

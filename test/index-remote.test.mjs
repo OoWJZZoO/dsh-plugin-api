@@ -128,7 +128,7 @@ test('a healthy generic publish through the mounted facade registers the service
   disposer()
 })
 
-test('apply stays fail-safe (P2 disabled surface) when the typert protocol is unavailable', () => {
+test('apply stays fail-safe (feature-disabled disabled surface) when the typert protocol is unavailable', () => {
   // A ctx whose typert registry is absent means the `typert` guard fails closed;
   // `remote` depends on `typert` and must not crash apply or break other features.
   const { ctx, state } = createMockCtx({ services: { typert: undefined } })

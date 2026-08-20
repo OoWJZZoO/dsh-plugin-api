@@ -3,6 +3,8 @@
 > 状态：由人类直接指示修订（采纳“方案一 + 方案三”双通道）。
 > 本文与 `AGENTS.md` §2 / §4 共同构成 A/B/C/R 分类与能力上限决策的权威依据；两者冲突时以 `AGENTS.md` 铁律为准。
 > 配套登记：`docs/specs/plugin-api-features/feature-list.md`。
+>
+> **维护修订（包政策推行）**：R 类辅助包与主包采用同一全量唯一版本规则（`<runtime全量版本>-<API协议大版本.迭代小版本>`，`dsh.api` 仅承载协议版本），主包校验辅助包版本一致；不一致时**只停用该辅助包对应的 R 类特性**（替代行仍提供官方原接口，新增事件/策略面不发布），不得停用主包或其他能力。R 类运行时命名不得携带治理后缀（如 `r1`、分类字母、需求编号）：已交付辅助包现行名为 `packages/compaction-events/`（row `plugin-api-compaction-events`）与 `packages/session-title/`（row `plugin-api-session-title`）。安装模式为全量聚合 bundle `@deepseek-ai/dsh-plugin-api-full`（确定性 patch 装配）或选择性安装主包 + 所需辅助包。
 
 ---
 
