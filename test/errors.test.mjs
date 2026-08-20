@@ -5,6 +5,7 @@ import {
   PluginApiEventPriorityError,
   PluginApiFeatureDisabledError,
   PluginApiInactiveError,
+  PluginApiRemoteError,
   PluginApiServiceUnavailableError,
   PluginApiSettingsNamespaceError,
   PluginApiVersionError,
@@ -65,6 +66,20 @@ test('PluginApiEventPriorityError carries the invalid priority value', () => {
   assert.equal(error.priority, 'urgent')
   assert.match(error.message, /urgent/)
   assert.match(error.message, /priority/i)
+})
+
+test('PluginApiRemoteError carries code and optional serviceKey', () => {
+  const error = new PluginApiRemoteError('key conflict', { serviceKey: 'svc' })
+  assert.ok(error instanceof PluginApiError)
+  assert.ok(error instanceof PluginApiRemoteError)
+  assert.equal(error.code, 'PLUGIN_API_REMOTE_INVALID')
+  assert.equal(error.name, 'PluginApiRemoteError')
+  assert.equal(error.serviceKey, 'svc')
+  assert.match(error.message, /svc/)
+  const bare = new PluginApiRemoteError('plain')
+  assert.equal(bare.serviceKey, undefined)
+  const defaulted = new PluginApiRemoteError()
+  assert.match(defaulted.message, /remote/)
 })
 
 test('PluginApiServiceUnavailableError carries the service name', () => {

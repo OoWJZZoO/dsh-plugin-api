@@ -116,6 +116,7 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     { name: 'services', isActive: true },
     { name: 'typert', isActive: true },
     { name: 'settingsRemote', isActive: true },
+    { name: 'remote', isActive: true },
   ])
   assert.equal(state.pluginApi.llm.isActive, true)
   assert.equal(typeof state.pluginApi.llm.request.transform, 'function')
@@ -130,6 +131,8 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
 
   assert.equal(typeof state.pluginApi.systemPrompt.section, 'function')
   assert.equal(state.pluginApi.settings.isActive, true)
+  assert.equal(typeof state.pluginApi.remote.publish, 'function')
+  assert.equal(state.pluginApi.remote.isActive, true)
   assert.ok(state.listeners.some((l) => l.name === 'llm/stream'))
 })
 
@@ -177,7 +180,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-  assert.equal(features.length, 15)
+  assert.equal(features.length, 16)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -195,6 +198,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.deepEqual(features[12], { name: 'services', isActive: true })
   assert.deepEqual(features[13], { name: 'typert', isActive: true })
   assert.deepEqual(features[14], { name: 'settingsRemote', isActive: true })
+  assert.deepEqual(features[15], { name: 'remote', isActive: true })
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),
