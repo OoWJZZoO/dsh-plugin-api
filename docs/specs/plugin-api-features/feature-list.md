@@ -161,7 +161,7 @@
 | S5 会话事件目录 | `sessionEventTypes` / `surfaceEventTypes` 常量与类型守卫 | A | `dsh-session` `known-event-types`（`session/end-seed`、`session/title` 等） | M1 | **delivered** |
 | S6 官方上屏 helper | 官方提供 `session.appendSurface(...)` 级别的高级构造 API | C | 当前 surface 契约靠插件自维护（dsh-pro-ex-ability-anchor） | M4 | planned（proposal，可选） |
 
-### 2.6 `pluginApi.tools` —— 工具注册与执行管线面（M1/M2）
+### 2.6 `pluginApi.tools` —— 工具注册与执行管线面（M1/M2/M4）
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
@@ -175,6 +175,7 @@
 | T8 工具限制与守卫 | `tools.restrict(filter)`、`tools.guard(guard)` 稳定直通 | A | `dsh-tools` `ToolRuntime.restrict/guard` | M1 | **delivered** |
 | T9 工具查询与执行 | `tools.get(name, scope?)`、`tools.schemas(scope?)`、`tools.execute(input)`、`tools.presentAs` 稳定直通 | A | `dsh-tools` `ToolRuntime` 公共方法 | M1 | **delivered** |
 | T10 执行路由查询 | `tools.routeOf(exec)`：与 `agent.routeOf(exec)`、`routing.ofExecution(exec)` 返回同一按 execution 缓存的冻结 route 快照；捕获仅发生在 prepended `tools/pre-execute`，不创建 `exec.route` 或 route event/catalog slice | B | 官方无 `exec.route`；与 A9 同源 | M2 | **delivered** |
+| T11 工具中止错误构造 | `tools.toolAbortedError()`：返回与官方 dsh-tool-bash/pwsh 一致的“工具调用已中止”错误（`HarnessError('tool call aborted', TOOL_ABORTED)` + `name='AbortError'`，typed identity）；官方常量缺失时降级裸 `Error`（`name='AbortError'`） | A | `dsh-tools/lib/index.js:2411`（`TOOL_ABORTED`）；`dsh-llm/lib/types/error.js`（`HarnessError`）；`dsh-tool-bash/lib/index.js:408-409` | M4 | **delivered** |
 
 > 管线顺序（官方已定，门面只稳定化不重排）：`tools/pre-execute` → 单调 `guard()` 检查 → `tools/execute` → `tools/post-execute` → 工具 `finalizeContent` → `tools/result`。定义里的 `timeoutMs` 由 `dsh-tool-call-timeout-policy`（`tools/execute` wrapper）执行，不在门面内复制。
 
@@ -319,6 +320,7 @@
 | `dsh-pro-ex-ability-anchor` | 标题纠偏 hack（`lib/index.js:574-691`：`titleFixed`/`realTitleText`/`titleCitesVirtual`/`fixSessionTitle` + 两处 `session/event` 事后监听） | `pluginApi.events.on('session-title/candidate', ...)` exclude 策略（`source.form === ANCHOR_USER_SOURCE_FORM`） | blocked（迁移在 pro-ex 仓库执行，须其独立获批任务；本仓库 fixture 与配方见 `packages/session-title-r1/MIGRATION_RECIPE.md`） |
 | `dsh-pro-ex-ability-anchor` | `lib/config-remote.js`（95 行手搓 `TypertRemoteService` 桥） | RB1 `pluginApi.remote.publish('extraproAnchorConfig', service)`（wire 参数名 `settings` 保留） | delivered（M4 predicate + 仓库侧 contract-lock；消费者删文件迁移按 AC 7.3 记录 waive，理由见 delivery report） |
 | `dsh-pro-ex-ability-anchor` | Git Bash 工具 `ctx.get('jobs')` / `ctx.get('shellEnv')` 直连 | `pluginApi.services.jobs` / `pluginApi.services.shellEnv`（`isActive` 门控 + typed-error 降级） | delivered（M4 migration；pro-ex 工作树内测试全绿，commit 与 `plugin-api-tools-abort-helper-m4` 共享文件协调） |
+| `dsh-pro-ex-ability-anchor` | 手工组合 `loadAbortedErrorFactory`（`lib/index.js`，`HarnessError(TOOL_ABORTED)` + 裸 `AbortError` 兜底） | `pluginApi.tools.toolAbortedError()`（含裸 `AbortError` 兜底） | delivered（M4；迁移 headless 验收 123/123 通过，dev-boot 待 M4 integration） |
 
 ---
 
