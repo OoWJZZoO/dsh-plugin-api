@@ -12,6 +12,8 @@ import {
   SERVICE_DEFINITION_CONTRACTS,
 } from './official-passthrough-contracts.mjs'
 import {
+  buildActiveFacade,
+  buildDisabledFacade,
   createServicesNamespace,
   SERVICE_DEFINITIONS,
 } from '../lib/services.js'
@@ -26,13 +28,6 @@ function assertFrozenRecursively(value, seen = new WeakSet()) {
 
 function memberCount(contracts) {
   return contracts.reduce((count, contract) => count + contract.members.length, 0)
-}
-
-function cloneDefinitions(definitions) {
-  return definitions.map((definition) => ({
-    ...definition,
-    members: definition.members.map((member) => ({ ...member })),
-  }))
 }
 
 function createCompleteService(definition, calls, values) {
@@ -159,59 +154,44 @@ test('contract fixtures pin exact names, members, and catalog metadata', () => {
   assert.equal(SERVICE_DEFINITION_CONTRACTS.find((definition) => definition.key === 'web').members.length, 4)
 })
 
-test('the existing service table produces the same namespace through the internal definition seam', () => {
+test('the existing service table preserves the shared facade-builder behavior', () => {
   const context = createCompleteContext(SERVICE_DEFINITIONS)
-  const defaultNamespace = createServicesNamespace({
+  const namespace = createServicesNamespace({
     ctx: context.ctx,
     active: true,
     uriHelpers: context.helpers,
-  })
-  const suppliedNamespace = createServicesNamespace({
-    ctx: context.ctx,
-    active: true,
-    uriHelpers: context.helpers,
-    definitions: cloneDefinitions(SERVICE_DEFINITIONS),
   })
 
-  assert.deepEqual(Object.keys(suppliedNamespace), Object.keys(defaultNamespace))
-  assert.ok(Object.isFrozen(defaultNamespace))
-  assert.ok(Object.isFrozen(suppliedNamespace))
+  assert.ok(Object.isFrozen(namespace))
 
   for (const definition of SERVICE_DEFINITIONS) {
-    const fromDefault = defaultNamespace[definition.key]
-    const fromSupplied = suppliedNamespace[definition.key]
-    assert.equal(fromDefault.isActive, true)
-    assert.equal(fromSupplied.isActive, true)
-    assert.deepEqual(Object.keys(fromSupplied), Object.keys(fromDefault))
+    const service = context.ctx.get(definition.ctxService)
+    const direct = buildActiveFacade(definition, service, context.helpers, true)
+    const fromNamespace = namespace[definition.key]
+    assert.equal(fromNamespace.isActive, true)
+    assert.deepEqual(Object.keys(fromNamespace), Object.keys(direct))
 
     for (const member of definition.members) {
       const value = context.values.get(`${definition.key}.${member.name}`)
       if (member.kind === 'getter') {
-        assert.equal(fromDefault[member.name], value)
-        assert.equal(fromSupplied[member.name], value)
+        assert.equal(fromNamespace[member.name], value)
+        assert.equal(direct[member.name], value)
       } else {
         const argument = { member: member.name }
-        assert.equal(fromDefault[member.name](argument), value)
-        assert.equal(fromSupplied[member.name](argument), value)
+        assert.equal(fromNamespace[member.name](argument), value)
+        assert.equal(direct[member.name](argument), value)
       }
     }
   }
   assert.ok(context.calls.length > 0)
 })
 
-test('a supplied static definition fragment receives the existing active and disabled facade behavior', () => {
-  const definitions = [
-    {
-      key: 'example',
-      ctxService: 'example',
-      members: [{ kind: 'method', name: 'run' }, { kind: 'getter', name: 'state' }],
-    },
-    {
-      key: 'companion',
-      ctxService: 'companion',
-      members: [{ kind: 'method', name: 'ping' }],
-    },
-  ]
+test('a static definition fragment receives the existing active and disabled facade behavior', () => {
+  const definition = {
+    key: 'example',
+    ctxService: 'example',
+    members: [{ kind: 'method', name: 'run' }, { kind: 'getter', name: 'state' }],
+  }
   const result = { ok: true }
   const state = { ready: true }
   const service = {
@@ -223,41 +203,34 @@ test('a supplied static definition fragment receives the existing active and dis
       return state
     },
   }
-  const active = createServicesNamespace({
-    ctx: { get: (name) => (name === 'example' ? service : undefined) },
-    active: true,
-    definitions: [definitions[0]],
-  })
-  assert.deepEqual(Object.keys(active), ['example'])
-  assert.equal(active.example.isActive, true)
-  assert.equal(active.example.run(result), result)
-  assert.equal(active.example.state, state)
+  const active = buildActiveFacade(definition, service, {}, true)
+  assert.equal(active.isActive, true)
+  assert.equal(active.run(result), result)
+  assert.equal(active.state, state)
 
-  const companion = { ping() { return 'pong' } }
-  const disabled = createServicesNamespace({
-    ctx: { get: (name) => (name === 'companion' ? companion : undefined) },
-    active: true,
-    definitions,
-  })
-  assert.deepEqual(Object.keys(disabled), ['example', 'companion'])
-  assert.equal(disabled.example.isActive, false)
+  const disabled = buildDisabledFacade(
+    definition,
+    () => true,
+    'official service "example" is unavailable',
+    'services.example',
+  )
+  assert.equal(disabled.isActive, false)
   assert.throws(
-    () => disabled.example.run(),
+    () => disabled.run(),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.example',
   )
   assert.throws(
-    () => disabled.example.state,
+    () => disabled.state,
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.example',
   )
 
   const allDisabled = createServicesNamespace({
     ctx: { get: () => undefined },
     active: true,
-    definitions: [definitions[0]],
   })
-  assert.equal(allDisabled.example.isActive, false)
+  assert.equal(allDisabled.fs.isActive, false)
   assert.throws(
-    () => allDisabled.example.run(),
+    () => allDisabled.fs.readText(),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services',
   )
 })
