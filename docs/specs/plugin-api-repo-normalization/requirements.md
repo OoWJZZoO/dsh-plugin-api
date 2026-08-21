@@ -1,7 +1,7 @@
 # Requirements: plugin-api-repo-normalization
 
 > feature_name: `plugin-api-repo-normalization`
-> 状态：Stage 1 草案（待对抗性审查与用户批准）
+> 状态：已批准（commit 058849e；Stage 2 对抗审查期间 B1.1 一次修订：修复范围扩至私有标识符处置路径，见 B1.1 与 design §2.2）
 > 上游：Stage 0 Goal（用户已确认方向："先把当前仓库规范化、标准化"）；审计基准 = `docs/standards/` 各分册（2026-08-21）与 AGENTS.md §2/§4/§6/§8 及 §3.0.1（纯本地开发窗口）
 > 类型：治理/工程规范化（无第三方可见 API 新增）
 > 审计快照：2026-08-21（M6 治理迁移未合并主分支时的 main 状态）
@@ -55,7 +55,7 @@
 
 ## 3. 背景项：既有规则复核（非主审计）
 
-**B1.1.** GIVEN 实现代码存在治理编号残留 WHEN 审计执行 THEN 系统 SHALL 登记全部位置并纳入修复清单（不改语义，仅改注释/测试名为中立表述；C0/C1 等非治理术语豁免并登记）：lib/settings-remote.js:2,6,8,51,116,146（ST4/D5）、lib/remote-publication.js:6,324（ST4）、lib/llm-input-policy.js:46（L1）、lib/services.js:14（SV15）、lib/client-codec.js:6（W5）、packages/compaction-events/lib/event-contract.js:85（C6）、packages/compaction-events/lib/forked-engine.js:641（C4.7）、packages/session-title/lib/event-contract.js:5（C4/D1）、test/services-definitions.test.mjs:84（SV17 测试名）、test/index-tools-abort.test.mjs:67（T2 注释）；C0/C1 为 ASCII 控制字符术语（packages/session-title/lib/event-contract.js:136、lib context）豁免。
+**B1.1.** GIVEN 实现代码存在治理编号残留 WHEN 审计执行 THEN 系统 SHALL 登记全部位置并纳入修复清单：注释与测试名命中改写为中立语义表述（零行为变化，全量测试为门）；运行时私有标识符命中（如 `runL4Phase`、`_execRouteP2Diagnostics` 等）经人工判定后二选一处置——行为保持的重命名（零行为变化由全量测试验证）或登记为「确认技术债」并附重构窗口建议；C0/C1 等非治理术语豁免并登记；增强扫描在 B1.1 清单之外的新发现命中按同一处置路径分级处理，不得默认豁免。位置清单：lib/settings-remote.js:2,6,8,51,116,146（ST4/D5）、lib/remote-publication.js:6,324（ST4）、lib/llm-input-policy.js:46（L1）、lib/services.js:14（SV15）、lib/client-codec.js:6（W5）、packages/compaction-events/lib/event-contract.js:85（C6）、packages/compaction-events/lib/forked-engine.js:641（C4.7）、packages/session-title/lib/event-contract.js:5（C4/D1）、test/services-definitions.test.mjs:84（SV17 测试名）、test/index-tools-abort.test.mjs:67（T2 注释）；C0/C1 为 ASCII 控制字符术语（packages/session-title/lib/event-contract.js:136 等同型处）豁免。
 **B1.2.** GIVEN 治理迁移尚未合并主分支 WHEN 审计执行 THEN 系统 SHALL 登记 main 上的旧路径/旧指向（`docs/capability-strategy.md` 旧路径 ×9 文件、AGENTS.md §8 登记表旧形态、feature-list.md §7 缺失）为「随迁移合并消失」项，并登记合并边界后复检无残留。
 
 ## 4. 验证（F）
