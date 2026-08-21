@@ -121,5 +121,7 @@ section was byte-identical to the previously delivered copy except for four
 whitespace-only lines inside zod template literals (the current official zod
 file indents those blank lines where the delivered copy had empty lines);
 they were collapsed to the delivered bytes so the vendored zod copy stays
-byte-identical across the milestone boundary. All other zod region bytes
-match, and the new leaf modules plus the join changes are the only additions.
+byte-identical across the milestone boundary. All other zod region code
+bytes match (module path comment banners vary only by relative-path depth,
+a build-root artifact), and the new leaf modules plus the join changes are
+the only additions.

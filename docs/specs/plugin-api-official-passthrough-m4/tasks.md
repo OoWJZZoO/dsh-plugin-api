@@ -397,7 +397,7 @@ integration-owned and follows the confirmation rules in AGENTS.md.
   one fragment-only boundary; obtain blocking Luna(max) review. The task joins
   W2 only after write-set/provenance preflight. Requirements: R1, R8, R11-R13.
 
-- [ ] 5. W1 - implement client leaf adapters in the client worktree.
+- [x] 5. W1 - implement client leaf adapters in the client worktree.
 
   Owner and prerequisite: .worktrees/plugin-api-official-passthrough-m4-client
   on codex/plugin-api-official-passthrough-m4-client, derived directly from
@@ -577,7 +577,7 @@ integration-owned and follows the confirmation rules in AGENTS.md.
   obtain a blocking Luna(max) review before task 9. Requirements: R1, R8,
   R11-R13.
 
-- [ ] 9. W2.4 - join and wire the client leaf batch.
+- [x] 9. W2.4 - join and wire the client leaf batch.
 
   Owner and prerequisite: the integration owner executes this only after task 8
   is committed, clean, and blocking-reviewed. It is a separate top-level join
