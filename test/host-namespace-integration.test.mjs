@@ -1,5 +1,5 @@
 /**
- * W2.1 central integration tests: official host namespace leaves wired into
+ * Central integration tests: official host namespace leaves wired into
  * the mounted pluginApi facades (host namespace leaves: llm, agent, session, tools, systemPrompt, settings).
  *
  * These tests drive the real `apply(ctx)` mount path with faithful official
@@ -232,7 +232,7 @@ test('integrated agent facade exposes initiator/ownership methods and a frozen o
   assert.ok(Object.isFrozen(freshView.options))
 })
 
-test('integrated agent facade keeps the M0-M3 read surface intact when the initiator surface is malformed', () => {
+test('integrated agent facade keeps the established read surface intact when the initiator surface is malformed', () => {
   const { ctx, state } = createMockCtx()
   // Mutate the fake registry so the options snapshot cannot resolve.
   state.pluginApi = undefined

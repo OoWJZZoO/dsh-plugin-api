@@ -151,7 +151,7 @@ integration-owned and follows the confirmation rules in AGENTS.md.
 
 ## Tasks
 
-- [ ] 1. W0 - establish the shared, neutral contract and test-fixture boundary on the integration branch.
+- [x] 1. W0 - establish the shared, neutral contract and test-fixture boundary on the integration branch.
 
   Owner and prerequisite: the integration owner performs this after the approved
   Tasks commit and before any W1 worktree exists. Its source baseline is that
@@ -195,7 +195,7 @@ integration-owned and follows the confirmation rules in AGENTS.md.
   git diff --check; commit one W0 boundary; obtain blocking Luna(max) review.
   W1 may begin only from the reviewed W0 commit. Requirements: R11-R13.
 
-- [ ] 2. W1 - implement the disjoint host namespace leaf factories in the host-namespaces worktree.
+- [x] 2. W1 - implement the disjoint host namespace leaf factories in the host-namespaces worktree.
 
   Owner and prerequisite: .worktrees/plugin-api-official-passthrough-m4-host-namespaces
   on codex/plugin-api-official-passthrough-m4-host-namespaces, derived directly
@@ -471,7 +471,7 @@ integration-owned and follows the confirmation rules in AGENTS.md.
   one leaf-only boundary; obtain blocking Luna(max) review. The task joins W2
   only after write-set/provenance preflight. Requirements: R1, R9, R11-R13.
 
-- [ ] 6. W2.1 - preflight the whole W1 wave and join the host namespace batch.
+- [x] 6. W2.1 - preflight the whole W1 wave and join the host namespace batch.
 
   Owner and prerequisite: the integration owner executes this only after tasks
   2 through 5 each have a clean committed boundary, focused evidence, and
