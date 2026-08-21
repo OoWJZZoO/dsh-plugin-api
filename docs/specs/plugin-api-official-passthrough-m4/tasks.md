@@ -651,7 +651,7 @@ integration-owned and follows the confirmation rules in AGENTS.md.
   clean provenance checks; commit this final W2 boundary and obtain a blocking
   Luna(max) review before task 11. Requirements: R1-R12 and R13.
 
-- [ ] 11. W3 - reconcile the final inventory, record delivery evidence, and close Stage 4 on the integration branch.
+- [x] 11. W3 - reconcile the final inventory, record delivery evidence, and close Stage 4 on the integration branch.
 
   Owner and prerequisite: the integration owner performs this only after task
   10 is committed, clean, and blocking-reviewed. W3 is serial and adds no
