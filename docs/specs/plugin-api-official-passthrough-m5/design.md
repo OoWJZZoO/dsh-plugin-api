@@ -32,6 +32,18 @@ M5 shares only the existing plugin-api foundation with M4. It has no import,
 guard dependency, mount dependency, API alias, or lifecycle dependency on any
 M4 implementation. The M4 assignment and names remain unchanged.
 
+### Parallel-delivery identity exception
+
+The generic parallel-workflow rule that equates a feature name with one public
+`pluginApi` namespace is not applicable to this feature because M5 is a
+compound delivery over two already-owned public namespaces. The internal
+feature identity used by the guard, host mounter, and lifecycle registry is
+`officialPassthrough`; M5 intentionally does not create
+`pluginApi.officialPassthrough`. Its public surfaces remain only the two
+`pluginApi.systemPrompt` helper members and the seven `pluginApi.client` leaves
+listed above. This is a feature-local naming exception, not a second runtime
+alias or an invitation to expose the internal identity.
+
 ### Design decisions
 
 1. Host helpers are two independent slots layered onto the existing
