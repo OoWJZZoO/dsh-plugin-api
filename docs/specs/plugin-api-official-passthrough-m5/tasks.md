@@ -230,28 +230,32 @@ shared files once. The contract must freeze the following details:
 
 ## 4. Bundle, manifest, and integration wiring
 
-- [ ] 4.1 Wire the host and client implementations into the public facade without expanding unrelated APIs.
+- [x] 4.1 Wire the host and client implementations into the public facade without expanding unrelated APIs.
   - Keep M4 implementation names, imports, guards, feature records, and lifecycle owners out of the M5 code path.
   - Keep `client.inject = []`, add no hard optional module injection, and ensure the new client descriptors are reachable only through the client facade.
   - Preserve host/client fail-safe outer boundaries and existing public facade behavior when all new surfaces are disabled.
   - Cover Requirements 3.1-3.5, 5.1-5.3, and 6.1-6.3.
+  - Delivered: batch 2 commit (client root/lease line in `lib/client-runtime.js`, `CLIENT_OFFICIAL_LEAVES`, optional `modules` substrate) and batch 3 commits (descriptors in `lib/client-official-passthrough.js` reachable only through the client facade); host slot wiring landed with batch 1; `client.inject = []` and the no-hard-injection boundary are pinned by `test/client-bundle.test.mjs` and `test/official-passthrough-package-boundary.test.mjs`; absent-loader isolation (all seven leaves disabled, M3 faces alive) covered in batch 3 isolation matrix.
 
-- [ ] 4.2 Regenerate the official `lib/client.js` artifact using the repository's existing bundle workflow.
+- [x] 4.2 Regenerate the official `lib/client.js` artifact using the repository's existing bundle workflow.
   - Regenerate from source rather than hand-editing the artifact; preserve the `window.__ModuleLoader__` handoff and the no-cross-plugin-runtime-import boundary.
   - Verify that the generated artifact contains the finite M5 descriptors, three-argument loader calls, Service root publication, and no governance tokens or official package value imports.
   - Update only generated output required by the source change and keep unrelated bundle churn out of the commit.
   - Cover Requirements 2.1-2.6, 3.1-3.5, 4.1-4.3, and 6.1-6.3.
+  - Delivered: batch 4 commit; regenerated with the repository's esbuild iife invocation (`esbuild 0.28.2`, `--bundle --format=iife --global-name=DSHPluginApiClientBundle`) from the main checkout root, wrapped by the unchanged `window.__ModuleLoader__.load({id:'@deepseek-ai/dsh-plugin-api-main', factory})` shell from the M3 artifact (head/tail byte-identical to baseline). Verified: finite M5 descriptors present, three-argument loader calls (`modules.import(descriptor.moduleId, descriptor.parentURL, {})`), root publication via the client brand symbol and `root.name === 'pluginApi'`, zero `require(` calls, zero governance tokens (`P11`/`C26`-`C32`/`-r1`/`dsh-client-modules`), `git diff --check` clean. The zod section is byte-identical to the M3 baseline; the only non-M5 diff is the 12 entry banner comments carrying the worktree path prefix (comment-only, unavoidable while M5 source lives in the worktree) and a trailing-whitespace normalization of 9 template-literal padding lines inside bundled zod error templates, restored to the historical M3 artifact form (no behavior delta; `node --test` full suite green with the artifact).
 
-- [ ] 4.3 Extend manifest and bundle regression tests.
+- [x] 4.3 Extend manifest and bundle regression tests.
   - Assert the client entry, immediate behavior, `inject = []`, existing M3 feature list, root brand, reapply/dispose identity, and VM loading behavior.
   - Assert no new package peer or hard injection is introduced solely for the optional client module loader.
   - Cover Requirements 2.1-2.6, 3.1-3.5, 5.1-5.3, and 6.1-6.3.
+  - Delivered: batch 4 commit; `test/client-bundle.test.mjs` — existing M3 cases untouched plus new cases for the seven published-but-disabled leaves without a loader, `CLIENT_OFFICIAL_LEAVES` exposure, cross-realm feature-list spreads, and the runtime name/token boundary; `test/official-passthrough-package-boundary.test.mjs` asserts the client entry, `inject` list, and that no auxiliary package adds the module loader as a peer or hardened injection.
 
-- [ ] 4.4 Reconcile package protocol metadata without taking ownership of the integration bump.
+- [x] 4.4 Reconcile package protocol metadata without taking ownership of the integration bump.
   - Read and assert that `package.json`, `packages/compaction-events/package.json`, `packages/session-title/package.json`, and `packages/full/package.json` remain mutually consistent at the current `0.1.0-rc.6-0.5` / `dsh.api 0.5` boundary while M5 is delivered; this task must not edit any package metadata.
   - Do not independently bump or partially bump any package. Record that the nine new public faces are protocol-affecting and that the combined M4/M5 integration boundary owns the next numeric minor decision; if that boundary has already advanced before execution, assert the actual committed boundary consistently instead of hard-coding a stale value.
   - Add a regression test that detects a main/auxiliary/full version or `dsh.api` mismatch and verifies that M5 itself leaves the negotiated package boundary atomic.
   - Cover Requirements 5.1-5.3 and 6.1-6.3.
+  - Delivered: batch 4 commit; `test/official-passthrough-package-boundary.test.mjs` asserts main + three auxiliary packages remain mutually equal at the committed `0.1.0-rc.6-0.5` / `0.5` boundary and that the boundary was not edited by this feature; the nine new faces remain protocol-affecting for the combined M4/M5 integration milestone, which owns the next numeric minor decision.
 
 ## 5. Final reconciliation, governance, and verification
 
