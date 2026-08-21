@@ -24,11 +24,38 @@ const EXPECTED_KEYS = [
   'compaction',
   'jobs',
   'shellEnv',
+  'agentLoop',
+  'agentPresets',
+  'apiProxy',
+  'clientModules',
+  'commands',
+  'credentials',
+  'directoryPicker',
+  'e2b',
+  'goals',
+  'invariants',
+  'lsp',
+  'messageFeedback',
+  'permissionPresets',
+  'planMode',
+  'sandbox',
+  'sandboxPolicy',
+  'sessionPersistence',
+  'sessionProjectionCache',
+  'shell',
+  'spillStore',
+  'storageDomain',
+  'subprocess',
+  'terminals',
+  'timer',
+  'toolResultPruner',
+  'typertGateway',
+  'webServer',
 ]
 
-test('SERVICE_DEFINITIONS declares exactly the 21 capability namespace keys', () => {
+test('SERVICE_DEFINITIONS declares exactly the 48 capability namespace keys', () => {
   assert.deepEqual(SERVICES_NAMESPACE_KEYS, EXPECTED_KEYS)
-  assert.equal(SERVICE_DEFINITIONS.length, 21)
+  assert.equal(SERVICE_DEFINITIONS.length, 48)
 })
 
 test('capability namespace contains only its approved static service definitions', () => {
@@ -72,7 +99,7 @@ test('only sessionTelemetry.flush is marked optional', () => {
   }
 })
 
-test('SV15 sessionReferences exposes service methods and the two forwarded URI helpers', () => {
+test('sessionReferences exposes service methods and the two forwarded URI helpers', () => {
   const def = SERVICE_DEFINITIONS.find((d) => d.key === 'sessionReferences')
   assert.ok(def)
   const methodNames = def.members.filter((m) => m.kind === 'method').map((m) => m.name)
@@ -81,11 +108,11 @@ test('SV15 sessionReferences exposes service methods and the two forwarded URI h
   assert.deepEqual(forwardNames, ['encodeSessionReferenceUri', 'decodeSessionReferenceUri'])
 })
 
-test('SV17 compaction exposes exactly the public abstract operations', () => {
+test('compaction exposes exactly the public abstract operations', () => {
   const def = SERVICE_DEFINITIONS.find((d) => d.key === 'compaction')
   assert.ok(def)
   assert.equal(def.ctxService, 'compaction')
-  assert.equal(def.pkg, 'dsh-compaction')
+  assert.equal('pkg' in def, false)
   assert.deepEqual(def.members, [
     { kind: 'method', name: 'compactIfNeeded' },
     { kind: 'method', name: 'compactNow' },
@@ -93,11 +120,11 @@ test('SV17 compaction exposes exactly the public abstract operations', () => {
   ])
 })
 
-test('SV19 jobs exposes exactly the nine public abstract JobRegistry operations', () => {
+test('jobs exposes exactly the nine public abstract JobRegistry operations', () => {
   const def = SERVICE_DEFINITIONS.find((d) => d.key === 'jobs')
   assert.ok(def)
   assert.equal(def.ctxService, 'jobs')
-  assert.equal(def.pkg, 'dsh-jobs')
+  assert.equal('pkg' in def, false)
   assert.equal(def.members.length, 9)
   const kinds = new Set(def.members.map((m) => m.kind))
   assert.deepEqual([...kinds], ['method'])
@@ -110,11 +137,11 @@ test('SV19 jobs exposes exactly the nine public abstract JobRegistry operations'
   assert.equal(def.members.some((m) => m.kind === 'forward'), false)
 })
 
-test('SV20 shellEnv exposes exactly the three public ShellEnvRegistry operations', () => {
+test('shellEnv exposes exactly the three public ShellEnvRegistry operations', () => {
   const def = SERVICE_DEFINITIONS.find((d) => d.key === 'shellEnv')
   assert.ok(def)
   assert.equal(def.ctxService, 'shellEnv')
-  assert.equal(def.pkg, 'dsh-shell-env')
+  assert.equal('pkg' in def, false)
   assert.equal(def.members.length, 3)
   assert.deepEqual(
     def.members.map((m) => m.name),

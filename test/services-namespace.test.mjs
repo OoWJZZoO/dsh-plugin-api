@@ -28,10 +28,10 @@ const URI_HELPERS = {
   decodeSessionReferenceUri: () => ({}),
 }
 
-test('namespace exposes exactly the 21 keys and nothing else', () => {
+test('namespace exposes exactly the approved keys and nothing else', () => {
   const services = createServicesNamespace({ ctx: fullCtx(), active: true, uriHelpers: URI_HELPERS })
   assert.deepEqual(Object.keys(services), SERVICES_NAMESPACE_KEYS)
-  assert.equal(Object.keys(services).length, 21)
+  assert.equal(Object.keys(services).length, 48)
   assert.ok('compaction' in services)
   assert.ok('jobs' in services)
   assert.ok('shellEnv' in services)

@@ -47,7 +47,7 @@ function createMockCtx(options = {}) {
     sessions: { get() {}, list() {}, fork() {} },
     settings: { register() {}, describe() { return [] }, get() {}, mutate() {} },
     typert: createTypertRegistry(),
-    web: { registerSearchProvider() {}, registerFetchProvider() {} },
+    web: { registerSearchProvider() {}, registerFetchProvider() {}, search() {}, fetch() {} },
     ...(systemPrompt ? { systemPrompt } : {}),
     ...(options.services ?? {}),
   }

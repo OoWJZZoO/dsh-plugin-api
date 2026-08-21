@@ -18,7 +18,7 @@ function createHost(options = {}) {
     sessions: { get() {}, list() {}, fork() {} },
     tools: { register() {}, restrict() {}, guard() {}, get() {}, schemas() {}, execute() {}, presentAs() {} },
     systemPrompt: { section() {}, context() {}, variable() {}, tools() {}, suppressRuntimeContext() {} },
-    web: { registerSearchProvider() {}, registerFetchProvider() {} },
+    web: { registerSearchProvider() {}, registerFetchProvider() {}, search() {}, fetch() {} },
     jobs: {
       start() {}, list() {}, get() {}, read() {}, kill() {}, wait() {},
       onJobDone() {}, onJobsChanged() {}, attachController() {},
@@ -87,7 +87,7 @@ test('combined host publishes additive immutable compat shapes once without synt
     assert.equal(first.events.catalog[excluded], undefined)
   }
   for (const view of views) assert.ok(Object.isFrozen(view))
-  assert.equal(Object.keys(first.services).length, 21)
+  assert.equal(Object.keys(first.services).length, 48)
   assert.equal(first.services.jobs.isActive, true)
   assert.equal(first.services.shellEnv.isActive, true)
 })

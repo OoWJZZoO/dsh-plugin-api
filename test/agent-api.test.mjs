@@ -29,6 +29,8 @@ function createMockCtx() {
     web: {
       registerSearchProvider() {},
       registerFetchProvider() {},
+      search() {},
+      fetch() {},
     },
   }
   const state = { pluginApi: undefined }

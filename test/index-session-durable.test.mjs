@@ -29,7 +29,7 @@ function createMockCtx(options = {}) {
     sessions,
     tools: { register() {}, restrict() {}, guard() {}, get() {}, schemas() {}, execute() {}, presentAs() {} },
     systemPrompt: { section() {}, context() {}, variable() {}, tools() {}, suppressRuntimeContext() {} },
-    web: { registerSearchProvider() {}, registerFetchProvider() {} },
+    web: { registerSearchProvider() {}, registerFetchProvider() {}, search() {}, fetch() {} },
   }
   const state = {
     effects,

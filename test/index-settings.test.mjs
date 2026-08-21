@@ -41,6 +41,8 @@ function createMockCtx(options = {}) {
     web: {
       registerSearchProvider() {},
       registerFetchProvider() {},
+      search() {},
+      fetch() {},
     },
   }
   if (settings !== null) services.settings = settings

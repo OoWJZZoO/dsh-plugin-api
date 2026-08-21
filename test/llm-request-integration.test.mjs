@@ -85,7 +85,7 @@ function createHarness(options = {}) {
     },
     sessions: { get() {}, list() {}, fork() {} },
     systemPrompt: { section() {}, context() {}, variable() {}, tools() {}, suppressRuntimeContext() {} },
-    web: { registerSearchProvider() {}, registerFetchProvider() {} },
+    web: { registerSearchProvider() {}, registerFetchProvider() {}, search() {}, fetch() {} },
   }
   const ctx = {
     logger: { error() {}, warn() {} },

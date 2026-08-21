@@ -94,6 +94,33 @@ const SERVICES_KEYS = [
   'compaction',
   'jobs',
   'shellEnv',
+  'agentLoop',
+  'agentPresets',
+  'apiProxy',
+  'clientModules',
+  'commands',
+  'credentials',
+  'directoryPicker',
+  'e2b',
+  'goals',
+  'invariants',
+  'lsp',
+  'messageFeedback',
+  'permissionPresets',
+  'planMode',
+  'sandbox',
+  'sandboxPolicy',
+  'sessionPersistence',
+  'sessionProjectionCache',
+  'shell',
+  'spillStore',
+  'storageDomain',
+  'subprocess',
+  'terminals',
+  'timer',
+  'toolResultPruner',
+  'typertGateway',
+  'webServer',
 ]
 
 test('baseline Cordis catalog remains the exact 47-name frozen union with no compat synthetic event', () => {
@@ -117,7 +144,7 @@ test('baseline Cordis catalog remains the exact 47-name frozen union with no com
     // baseline intentionally permits either an explicit policy or its documented
     // default (`fault` absent => contain; `freeze` absent => all).
     assert.ok(entry.fault === undefined || ['contain', 'created', 'propagate'].includes(entry.fault), `${entry.name} fault schema`)
-    assert.ok(entry.freeze === undefined || entry.freeze === 'all' || entry.freeze === 'except-signal' || Array.isArray(entry.freeze?.deep), `${entry.name} freeze schema`)
+    assert.ok(entry.freeze === undefined || entry.freeze === 'all' || entry.freeze === 'except-signal' || entry.freeze === 'waterfall' || Array.isArray(entry.freeze?.deep), `${entry.name} freeze schema`)
   }
   for (const nonEvent of [
     'llm/request',
@@ -146,7 +173,7 @@ test('durable observation retains its independent exact five-kind catalog', () =
   assert.deepEqual(Object.keys(DURABLE_EVENT_DESCRIPTORS), DURABLE_KIND_NAMES)
 })
 
-test('services namespace retains its independent exact 21-key static allowlist', () => {
-  assert.equal(SERVICES_NAMESPACE_KEYS.length, 21)
+test('services namespace retains its independent exact 48-key static allowlist', () => {
+  assert.equal(SERVICES_NAMESPACE_KEYS.length, 48)
   assert.deepEqual(SERVICES_NAMESPACE_KEYS, SERVICES_KEYS)
 })

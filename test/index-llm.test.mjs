@@ -20,6 +20,8 @@ function createMockCtx(options = {}) {
     web: {
       registerSearchProvider() {},
       registerFetchProvider() {},
+      search() {},
+      fetch() {},
     },
     ...(options.services ?? {}),
   }
