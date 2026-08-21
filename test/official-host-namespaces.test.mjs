@@ -132,6 +132,62 @@ test('official methods preserve receiver, arguments, falsey values, promises, an
   assert.strictEqual(settings.api.prepareDocument(), disposer)
 })
 
+test('agent, session, and tool operations preserve their official calls', async () => {
+  const agent = createRecorder([
+    'currentInitiator', 'requireInitiator', 'withInitiator', 'withoutInitiator', 'isOwnedBy',
+  ])
+  const agentLeaf = createOfficialAgentLeaf({ registry: agent.source, agentOptions: {} }).api
+  const owner = { id: 'owner' }
+  const initiator = { id: 'initiator' }
+  assert.equal(agentLeaf.currentInitiator(owner), 'currentInitiator-result')
+  assert.equal(agentLeaf.requireInitiator(initiator), 'requireInitiator-result')
+  assert.equal(agentLeaf.withInitiator(initiator, () => 'callback'), 'withInitiator-result')
+  assert.equal(agentLeaf.withoutInitiator(() => 'callback'), 'withoutInitiator-result')
+  assert.equal(agentLeaf.isOwnedBy(owner, initiator), 'isOwnedBy-result')
+  assert.deepEqual(agent.calls.map(({ name, args }) => ({ name, args })), [
+    { name: 'currentInitiator', args: [owner] },
+    { name: 'requireInitiator', args: [initiator] },
+    { name: 'withInitiator', args: [initiator, assert.match] },
+    { name: 'withoutInitiator', args: [assert.match] },
+    { name: 'isOwnedBy', args: [owner, initiator] },
+  ].map((expected, index) => ({
+    name: expected.name,
+    args: expected.args.map((arg, argIndex) => arg === assert.match ? agent.calls[index].args[argIndex] : arg),
+  })))
+  for (const call of agent.calls) assert.strictEqual(call.receiver, agent.source)
+
+  const session = createRecorder(['create', 'prepare', 'enter', 'announce', 'flush'])
+  const sessionLeaf = createOfficialSessionLeaf({ sessions: session.source }).api
+  const sessionArgs = [
+    ['create', 'scope'],
+    ['prepare', 'session', { mode: 'read' }],
+    ['enter', 'session'],
+    ['announce', 'session', 'message'],
+    ['flush', 'session'],
+  ]
+  const sessionResults = [
+    sessionLeaf.create('scope'),
+    sessionLeaf.prepare('session', { mode: 'read' }),
+    sessionLeaf.enter('session'),
+    sessionLeaf.announce('session', 'message'),
+    await sessionLeaf.flush('session'),
+  ]
+  assert.deepEqual(sessionResults.slice(0, 4), ['create-result', 'prepare-result', 'enter-result', 'announce-result'])
+  assert.equal(sessionResults[4], 'flush-result')
+  assert.deepEqual(session.calls.map(({ name, args }) => ({ name, args })), sessionArgs.map(([name, ...args]) => ({ name, args })))
+  for (const call of session.calls) assert.strictEqual(call.receiver, session.source)
+
+  const tools = createRecorder(['executionMode'])
+  const defineTool = function (options) { return options }
+  const toolsLeaf = createOfficialToolsLeaf({ tools: tools.source, publicExports: { defineTool } }).api
+  const execution = { id: 'execution' }
+  const options = { name: 'tool' }
+  assert.equal(toolsLeaf.executionMode(execution), 'executionMode-result')
+  assert.strictEqual(toolsLeaf.defineTool(options), options)
+  assert.deepEqual(tools.calls[0].args, [execution])
+  assert.strictEqual(tools.calls[0].receiver, tools.source)
+})
+
 test('public construction artifacts retain official identity', () => {
   const contentHasImage = () => true
   const createUserMessage = () => ({})
@@ -161,6 +217,18 @@ test('agent options are an exact frozen snapshot including undefined values', ()
   options.model = 'changed'
   assert.deepEqual(leaf.api.options, { provider: 'provider-a', model: 'model-a', maxTokens: undefined })
   assert.equal(leaf.api.options, leaf.api.options)
+})
+
+test('malformed agent options remain locally disabled', () => {
+  const agent = {}
+  Object.defineProperty(agent, 'options', {
+    get() {
+      throw new Error('options unavailable')
+    },
+  })
+  const registry = { currentInitiator() { return agent } }
+  const leaf = createOfficialAgentLeaf({ registry }).api
+  assertFeatureDisabled(() => leaf.options, 'agent')
 })
 
 test('missing members remain local failures while available members stay usable', () => {
@@ -238,6 +306,15 @@ test('settings service lookup failures are distinct from malformed members', () 
   assert.equal(partial.get('x'), 'value')
   assertFeatureDisabled(() => partial.update('x', {}), 'settings')
   assertFeatureDisabled(() => partial.replace('x', {}), 'settings')
+
+  const explicitThrowing = {}
+  Object.defineProperty(explicitThrowing, 'settings', {
+    get() {
+      throw new Error('settings lookup failed')
+    },
+  })
+  const throwingExplicit = createOfficialSettingsLeaf(explicitThrowing).api
+  assertServiceUnavailable(() => throwingExplicit.get('x'))
 })
 
 test('session target methods preserve the target receiver and omit only the explicit target', () => {
