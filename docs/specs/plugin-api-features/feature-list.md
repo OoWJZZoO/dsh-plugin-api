@@ -205,7 +205,7 @@
 | P8 渲染 helper | `systemPrompt.render(assembly)` / `renderContextSections(assembly)` 稳定直通（官方公开导出直通） | A | `dsh-system-prompt` 导出的 `renderPrompt/renderContextSections` | M1 | **delivered** |
 | P9 官方组装入口 | `systemPrompt.assemble(context?)` | A | `dsh-system-prompt/lib/types/index.d.ts:228`；`SystemPrompt.assemble` | M4 | **delivered**（M4 official passthrough 交付） |
 | P10 可写组装瀑布语义 | `system-prompt/assemble` 在 `await next()` 前后允许监听器按官方语义改写 `assembly.sections/contexts/tools/variables`，不被门面冻结策略破坏 | A | `dsh-system-prompt/lib/index.js:267-289`；现有 catalog `freeze: 'all'` 与官方可写 waterfall 不等价 | M4 | **delivered**（M4 official passthrough 交付） |
-| P11 上下文渲染辅助函数 | `systemPrompt.renderContextSnapshot(assembly)`、`joinContextSections(sections)` 稳定直通 | A | `dsh-system-prompt/lib/types/index.d.ts:149-162` | M5 | planned |
+| P11 上下文渲染辅助函数 | `systemPrompt.renderContextSnapshot(assembly)`、`joinContextSections(sections)` 稳定直通 | A | `dsh-system-prompt/lib/types/index.d.ts:149-162` | M5 | **delivered** |
 
 ### 2.8 `pluginApi.settings` —— 设置与可视化配置桥（M1/M3/M4/M-final）
 
@@ -251,13 +251,13 @@
 | C23 连接重置事件 | `events.on('connection/reset', listener)` 类型化 | A | `dsh-client-runtime/lib/client.js`；`lib/types/client/index.d.ts` | M4 | **delivered**（M4 official passthrough 交付） |
 | C24 命令执行确认事件 | `events.on('command/executed', (sessionId, commandName, result) => {})` 类型化 | A | `dsh-client-ui-commands/lib/types/client/service.d.ts` 事件契约；`lib/client.js` 派发点 | M4 | **delivered**（M4 official passthrough 交付） |
 | C25 客户端 LLM catalog API | `client.connection.api.llm.providers/models/discoverModels` 稳定读面，并保留官方 RPC payload、signal 与返回语义 | A | `dsh-client-connection/lib/client.js:6349-6353`；官方 `connection.api.llm` | M4 | **delivered**（M4 official passthrough 交付） |
-| C26 输入触发器服务 | `client.inputTriggers` 官方输入触发器注册与触发面直通 | A | `dsh-client-ui-input-trigger/lib/client.js:589` | M5 | planned |
-| C27 命令 UI 服务 | `client.commandUi` 官方命令 UI 注册与状态面直通 | A | `dsh-client-ui-commands/lib/client.js:508` | M5 | planned |
-| C28 模型目录服务 | `client.modelDirectories` 官方模型目录与选择面直通 | A | `dsh-client-ui-model-selection/lib/client.js:170` | M5 | planned |
-| C29 会话服务 | `client.conversation` 官方会话 UI 服务面直通 | A | `dsh-client-ui-conversation/lib/client.js:98` | M5 | planned |
-| C30 会话事件服务 | `client.conversationEvents` 官方会话事件服务面直通 | A | `dsh-client-runtime/lib/client.js:10161` | M5 | planned |
-| C31 会话视图服务 | `client.conversationViews` 官方会话视图服务面直通 | A | `dsh-client-runtime/lib/client.js:10211` | M5 | planned |
-| C32 客户端计时器服务 | `client.timer` 官方计时器服务面直通 | A | `dsh-cordis-client-runner/lib/client.js:3738` | M5 | planned |
+| C26 输入触发器服务 | `client.inputTriggers` 官方输入触发器注册与触发面直通 | A | `dsh-client-ui-input-trigger/lib/client.js:589` | M5 | **delivered** |
+| C27 命令 UI 服务 | `client.commandUi` 官方命令 UI 注册与状态面直通 | A | `dsh-client-ui-commands/lib/client.js:508` | M5 | **delivered** |
+| C28 模型目录服务 | `client.modelDirectories` 官方模型目录与选择面直通 | A | `dsh-client-ui-model-selection/lib/client.js:170` | M5 | **delivered** |
+| C29 会话服务 | `client.conversation` 官方会话 UI 服务面直通 | A | `dsh-client-ui-conversation/lib/client.js:98` | M5 | **delivered** |
+| C30 会话事件服务 | `client.conversationEvents` 官方会话事件服务面直通 | A | `dsh-client-runtime/lib/client.js:10161` | M5 | **delivered** |
+| C31 会话视图服务 | `client.conversationViews` 官方会话视图服务面直通 | A | `dsh-client-runtime/lib/client.js:10211` | M5 | **delivered** |
+| C32 客户端计时器服务 | `client.timer` 官方计时器服务面直通 | A | `dsh-cordis-client-runner/lib/client.js:3738` | M5 | **delivered** |
 
 ### 2.10 其他宿主事件稳定化（统一走 `pluginApi.events`，M1/M2/M4）
 

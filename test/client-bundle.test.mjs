@@ -77,17 +77,61 @@ test('official client artifact registers, composes all client leaves, and suppor
     'clientRemoteContribution', 'clientSettingsRemote', 'clientSettingsScope',
     'clientSlots', 'clientSlotEvents', 'clientRemoteEvents',
   ])
+  assert.deepEqual([...artifact.inject], [])
   const ctx = createCtx()
   const dispose = artifact.apply(ctx)
   assert.equal(typeof dispose, 'function')
   const api = ctx.get('pluginApi')
   assert.ok(api?.client)
+  assert.equal(api[Symbol.for('@deepseek-ai/dsh-plugin-api/client-pluginApi')], true,
+    'the published root carries the client brand symbol')
   assert.equal(api.client.codec.zod, api.client.codec.zod, 'one zod value is shared by the public bundle')
   assert.equal(api.client.connection.isActive, true)
   assert.equal(typeof api.client.slots.on, 'function')
   assert.equal(artifact.apply(ctx), dispose, 'reapply reuses the active client facade')
   assert.equal(await dispose(), true)
   assert.equal(ctx.get('pluginApi'), undefined)
+})
+
+test('bundle publishes the seven official passthrough leaves, disabled without a module loader', async () => {
+  const artifact = loadClientBundle()
+  assert.deepEqual([...artifact.CLIENT_OFFICIAL_LEAVES], [
+    'clientInputTriggers', 'clientCommandUi', 'clientModelDirectories', 'clientConversation',
+    'clientConversationEvents', 'clientConversationViews', 'clientTimer',
+  ])
+  const ctx = createCtx()
+  const dispose = artifact.apply(ctx)
+  const api = ctx.get('pluginApi')
+  assert.ok(api?.client)
+  const features = api.client.features
+  assert.equal(features.length, 17, 'the existing ten client features plus the seven passthrough leaves')
+  assert.deepEqual([...features].slice(0, 10).map((f) => f.name), [
+    'clientManifest', 'clientConnection', 'clientCodec', 'clientOfficialServices',
+    'clientRemoteContribution', 'clientSettingsRemote', 'clientSettingsScope',
+    'clientSlots', 'clientSlotEvents', 'clientRemoteEvents',
+  ])
+  const leaves = ['inputTriggers', 'commandUi', 'modelDirectories', 'conversation', 'conversationEvents', 'conversationViews', 'timer']
+  for (const leaf of leaves) {
+    assert.ok(api.client[leaf], `client.${leaf} must be published`)
+  }
+  for (const feature of features.slice(10)) {
+    assert.equal(feature.isActive, false, `${feature.name} is unavailable without the module loader`)
+  }
+  // A fake-context call still reports the typed surface-keyed error.
+  const call = () => api.client.timer.setTimeout(() => {}, 1)
+  assert.throws(call, (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.timer')
+  await dispose()
+})
+
+test('bundle text stays free of governance tokens and cross-plugin runtime imports', () => {
+  const artifact = loadClientBundle()
+  void artifact
+  // Word-boundary matching avoids false hits inside unicode escapes such as
+  // the bundled zod locale message `\uBC30` (배수).
+  assert.equal(/\bP11\b/.test(bundle), false, 'no P11 token in the artifact')
+  assert.equal(/\bC(2[6-9]|3[0-2])\b/.test(bundle), false, 'no C26-C32 token in the artifact')
+  assert.equal(/-r1\b/.test(bundle), false, 'no auxiliary suffix token in the artifact')
+  assert.equal(bundle.includes('dsh-client-modules'), false, 'the optional module loader is not value-imported')
 })
 
 test('bundle mountRemote mounts through gateway-style dynamic namespace publication', async () => {
