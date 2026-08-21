@@ -164,14 +164,21 @@ stale disposer 不得移除更新的注册；事件仅允许官方 dispatch，�
 
 | 检查 | 结果 | 证据类别 |
 |---|---|---|
-| 全量测试 `node --test test/*.test.mjs` | 926/926 通过（含 47 基线目录 cardinality、durable 五类、19/21 服务 seam、replacement 合约等既有回归） | unit |
+| 全量测试 `node --test test/*.test.mjs` | 926/926 通过（2026-08-21 分支 tip 复核复现；含 47 基线目录 cardinality、durable 五类、既有服务 seam 与 replacement 合约回归）；`node --test`（无参，含 `packages/*/test`）1050/1050 通过 | unit |
 | 中性 cardinality | catalog 8 字段 × 9 host 行；服务 48 keys / 220 members（D6 实测；W0 28 输入 / 113 成员）；client 11 services / 70 members / 4 events / 3 connection members | unit+integration |
 | host/chrome boot 检查 | `integration-surface`：host `apply`（全 capability stub）与 VM 打包 client bundle `apply`（忠实浏览器 service 形状）各装配断言全绿 | integration（headless） |
 | lifecycle / stale-cleanup / fail-safe | client 叶子 P4 隔离、stale disposer、reapply 幂等、remote owner disposer、feature guard 失败路径（既有测试全绿） | unit |
 | provenance | 合并历史逐 join 记录；本报告前 merge `main`（b0c2fdc 基线 + 3cad40e/518e861）无冲突；worktree 干净 | 治理 |
 | immutability | `/usr/lib/node_modules/@deepseek-ai/dsh/**` 自 2026-08-20 起零修改（`find -newermt` 为空） | 治理 |
 | `git diff --check` | 干净 | 治理 |
-| 治理 token 审计 | lib/、test/、package 产物零命中（含 fixture 文件名检查） | 治理 |
+| 治理 token 审计 | 自动化审计 `test/governance-token-audit.test.mjs`（AGENTS.md 示例清单 + catalog `type`/`source` 字段模式，扫描 lib/、test/、packages/*、package.json、cordis.patch.yml）零命中；M4 新增文件（lib/official-*.js、lib/client-official-*.js 及其测试、fixture）无任何治理标识 | 治理 |
+
+> **已知负债登记（2026-08-21，W3 复核补录）**：宽口径人工扫描发现，本 feature
+> 之前的既有文件注释中残留历史治理编号引用（`lib/settings-remote.js`、`lib/remote-publication.js`
+> 的 ST4，`lib/services.js` 的 SV15，`lib/client-codec.js` 的 W5，`test/package.test.mjs`
+> 测试名 SV15 等），均不在自动化审计清单内，亦非本 feature 新增。按 AGENTS.md「治理魔法
+> 字母不进入实现代码」规则，此类既有泄漏须在后续获批维护任务中清理，不得继续新增；
+> 本交付不扩大写集，仅在此登记。
 
 浏览器 / dev-boot / deployed-runtime 证据：**未执行**。本交付仅含 unit 与 headless
 integration 证据；不对真实 harness dev-boot、浏览器渲染或部署态行为作任何结论
