@@ -47,6 +47,7 @@ package file was modified.
 - Final staged write-set audit - passed; the staged name list contains exactly
   the three declared write-set paths.
 - Implementation repair commit: `2e693323dc4752374094489cb79d5a732d58790e`.
+- Test-evidence repair commit: `e0262de895498c83a4dd9036bf8dcb60eade5d48`.
 - Final report commit is created after this verification record update; the
   coordinator will confirm the final worktree cleanliness audit.
 
@@ -63,7 +64,7 @@ lookup getter failures now map to service-unavailable; an agent options getter
 failure now remains a locally disabled malformed surface rather than becoming
 an all-undefined snapshot; and focused tests now exercise all five agent
 operations, all five session-store operations, and both tool operations with
-argument and receiver assertions. The changes remain within the assigned
-three-file write set and do not alter the approved Requirements or Design
-boundary. One test-only naming typo was corrected before the final `12 passed`
-run.
+argument, receiver, Promise, error, and disposer identity assertions. The
+changes remain within the assigned three-file write set and do not alter the
+approved Requirements or Design boundary. One test-only naming typo was
+corrected before the final `12 passed` run.
