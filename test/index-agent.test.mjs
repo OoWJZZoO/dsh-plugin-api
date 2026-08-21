@@ -442,13 +442,19 @@ test('stale agent extension cleanup cannot remove a later extension instance', (
   const firstToken = state.pluginApi.mountFeature('agentExtension', {
     name: 'first',
     compose(_consumerCtx, base) {
-      return { ...base, marker: 'first' }
+      return Object.defineProperties(Object.create(null), {
+        ...Object.getOwnPropertyDescriptors(base),
+        marker: { enumerable: true, value: 'first' },
+      })
     },
   })
   const secondToken = state.pluginApi.mountFeature('agentExtension', {
     name: 'second',
     compose(_consumerCtx, base) {
-      return { ...base, marker: 'second' }
+      return Object.defineProperties(Object.create(null), {
+        ...Object.getOwnPropertyDescriptors(base),
+        marker: { enumerable: true, value: 'second' },
+      })
     },
   })
   assert.equal(state.pluginApi.agent.marker, 'second')
