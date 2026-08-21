@@ -38,7 +38,8 @@
 | **M1** | 事件总线稳定化 + A 类事件/服务 catalog 的类型化直通 |
 | **M2** | B 类语义钩子转译：同步 `llm/request`、`exec.route`、session 上屏 helper 等 |
 | **M3** | settings 可视化配置桥 + client bundle（remote / codec / slot） |
-| **M4** | 全部剩余未实现的 A 类官方透传接口（host service seam、核心 namespace API、client service/event API） |
+| **M4** | 当前已冻结的剩余 A 类官方透传接口（host service seam、核心 namespace API、client service/event API） |
+| **M5** | M4 冻结后审计发现的新增 A 类官方透传接口 |
 | **M-final** | C 类上游提案、迁移验收（dsh-read-image / dsh-pro-ex-ability-anchor）与治理收尾 |
 
 ### 1.3.1 M2 共同契约状态（非公开 API）
@@ -190,7 +191,7 @@
 
 > 管线顺序（官方已定，门面只稳定化不重排）：`tools/pre-execute` → 单调 `guard()` 检查 → `tools/execute` → `tools/post-execute` → 工具 `finalizeContent` → `tools/result`。定义里的 `timeoutMs` 由 `dsh-tool-call-timeout-policy`（`tools/execute` wrapper）执行，不在门面内复制。
 
-### 2.7 `pluginApi.systemPrompt` —— 系统提示组装面（M1/M4）
+### 2.7 `pluginApi.systemPrompt` —— 系统提示组装面（M1/M4/M5）
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
@@ -204,6 +205,7 @@
 | P8 渲染 helper | `systemPrompt.render(assembly)` / `renderContextSections(assembly)` 稳定直通（官方公开导出直通） | A | `dsh-system-prompt` 导出的 `renderPrompt/renderContextSections` | M1 | **delivered** |
 | P9 官方组装入口 | `systemPrompt.assemble(context?)` | A | `dsh-system-prompt/lib/types/index.d.ts:228`；`SystemPrompt.assemble` | M4 | planned |
 | P10 可写组装瀑布语义 | `system-prompt/assemble` 在 `await next()` 前后允许监听器按官方语义改写 `assembly.sections/contexts/tools/variables`，不被门面冻结策略破坏 | A | `dsh-system-prompt/lib/index.js:267-289`；现有 catalog `freeze: 'all'` 与官方可写 waterfall 不等价 | M4 | planned |
+| P11 上下文渲染辅助函数 | `systemPrompt.renderContextSnapshot(assembly)`、`joinContextSections(sections)` 稳定直通 | A | `dsh-system-prompt/lib/types/index.d.ts:149-162` | M5 | planned |
 
 ### 2.8 `pluginApi.settings` —— 设置与可视化配置桥（M1/M3/M4/M-final）
 
@@ -220,7 +222,7 @@
 | RB1 通用 Typert Remote host 发布 | `remote.publish(serviceKey, service)`：任意 JSON-safe 配置/状态服务经官方 `bindTypertRemote` + `Remote` marker + `ctx.reflect.provide` 发布为 web 可消费的 Typert remote，返回 owner 作用域 disposer；`service` 自有可调用成员即 endpoint，方法参数名即 wire 名 | B | `dsh-typert-protocol`（`bindTypertRemote`/`Remote`/`remoteMethods`/`isTypertRemoteSegment`）；`dsh-api-gateway` source-mode 自动发现（`dsh-api-gateway/lib/index.js:75-88,143-156`）；pro-ex `lib/config-remote.js`（95 行手搓桥，迁移目标） | M4 | **delivered**（旧 M4 已交付，现归入新 M4） |
 | ST9 设置文档与可写能力 | `settings.writable`、`prepareDocument()`、`get()`、`update(patch)`、`replace(section)`、`mutate(ops)` | A | `dsh-settings/lib/types/index.d.ts:187-203`、`SettingsScope` 公共方法 | M4 | planned |
 
-### 2.9 `pluginApi.client` —— 客户端 bundle / slot / remote（M3/M4/M-final）
+### 2.9 `pluginApi.client` —— 客户端 bundle / slot / remote（M3/M4/M5/M-final）
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
@@ -249,6 +251,13 @@
 | C23 连接重置事件 | `events.on('connection/reset', listener)` 类型化 | A | `dsh-client-runtime/lib/client.js`；`lib/types/client/index.d.ts` | M4 | planned |
 | C24 命令执行确认事件 | `events.on('command/executed', (sessionId, commandName, result) => {})` 类型化 | A | `dsh-client-ui-commands/lib/types/client/service.d.ts` 事件契约；`lib/client.js` 派发点 | M4 | planned |
 | C25 客户端 LLM catalog API | `client.connection.api.llm.providers/models/discoverModels` 稳定读面，并保留官方 RPC payload、signal 与返回语义 | A | `dsh-client-connection/lib/client.js:6349-6353`；官方 `connection.api.llm` | M4 | planned |
+| C26 输入触发器服务 | `client.inputTriggers` 官方输入触发器注册与触发面直通 | A | `dsh-client-ui-input-trigger/lib/client.js:589` | M5 | planned |
+| C27 命令 UI 服务 | `client.commandUi` 官方命令 UI 注册与状态面直通 | A | `dsh-client-ui-commands/lib/client.js:508` | M5 | planned |
+| C28 模型目录服务 | `client.modelDirectories` 官方模型目录与选择面直通 | A | `dsh-client-ui-model-selection/lib/client.js:170` | M5 | planned |
+| C29 会话服务 | `client.conversation` 官方会话 UI 服务面直通 | A | `dsh-client-ui-conversation/lib/client.js:98` | M5 | planned |
+| C30 会话事件服务 | `client.conversationEvents` 官方会话事件服务面直通 | A | `dsh-client-runtime/lib/client.js:10161` | M5 | planned |
+| C31 会话视图服务 | `client.conversationViews` 官方会话视图服务面直通 | A | `dsh-client-runtime/lib/client.js:10211` | M5 | planned |
+| C32 客户端计时器服务 | `client.timer` 官方计时器服务面直通 | A | `dsh-cordis-client-runner/lib/client.js:3738` | M5 | planned |
 
 ### 2.10 其他宿主事件稳定化（统一走 `pluginApi.events`，M1/M2/M4）
 
@@ -403,5 +412,5 @@
 ## 6. 下一步建议
 
 1. 用户确认本文清单的范围与分组。
-2. 先按 M4 的 A 类直通范围建立独立 spec：核心 namespace 补面、host service catalog 和 client service/event catalog；`T11`、`RB1`、`SV19`、`SV20` 只做已交付状态核验，不重命名或重做。
-3. M4 完成后进入 M-final：仅处理 C 类上游提案、迁移验收与治理收尾，不把 C 类事项混入 A 类直通实现。
+2. 先按 M4 的冻结 A 类直通范围建立独立 spec：核心 namespace 补面、host service catalog 和 client service/event catalog；`T11`、`RB1`、`SV19`、`SV20` 只做已交付状态核验，不重命名或重做。
+3. M4 完成后按 M5 清单补齐冻结后发现的 A 类接口，再进入 M-final：仅处理 C 类上游提案、迁移验收与治理收尾，不把 C 类事项混入 A 类直通实现。
