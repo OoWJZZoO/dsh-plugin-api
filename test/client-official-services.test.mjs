@@ -179,9 +179,18 @@ test('reapplying a leaf supersedes the old owner and protects the new owner from
   assert.equal(first.api.modules.isActive, false)
   assert.equal(second.api.modules.isActive, true)
   assert.throws(() => first.api.modules.loadCache(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED')
-  assert.equal(first.dispose(), true)
+  assert.equal(first.dispose(), false)
   assert.equal(second.api.modules.loadCache, secondFixture.values.get('loadCache'))
   assert.equal(second.api.modules.isActive, true)
+})
+
+test('stale aggregate cleanup reports no-op while active aggregate cleanup reports success', () => {
+  const ownerScope = {}
+  const first = createClientOfficialServices({ ownerScope, providers: { modules: makeProvider('modules').provider } })
+  const second = createClientOfficialServices({ ownerScope, providers: { modules: makeProvider('modules').provider } })
+
+  assert.equal(first.dispose(), false)
+  assert.equal(second.dispose(), true)
 })
 
 test('publication and cleanup failures remain local and cleanup can be awaited', async () => {

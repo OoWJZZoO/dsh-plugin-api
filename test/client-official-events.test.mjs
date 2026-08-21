@@ -4,6 +4,7 @@ import {
   CLIENT_EVENT_NAMES,
   createClientOfficialEvent,
   createClientOfficialEvents,
+  createDisabledClientOfficialEvents,
 } from '../lib/client-official-events.js'
 
 const EVENT_KEYS = {
@@ -229,6 +230,16 @@ test('reapplying an event leaf invalidates the old listener and keeps the new ow
   assert.deepEqual(secondReceived, [payload, payload])
 })
 
+test('stale aggregate cleanup reports no-op while active aggregate cleanup reports success', () => {
+  const source = createSource()
+  const ownerScope = {}
+  const first = createClientOfficialEvents({ ownerScope, eventSource: source })
+  const second = createClientOfficialEvents({ ownerScope, eventSource: source })
+
+  assert.equal(first.dispose(), false)
+  assert.equal(second.dispose(), true)
+})
+
 test('root inactivity wins before a source resolver is touched', () => {
   let reads = 0
   const result = createClientOfficialEvents({
@@ -294,4 +305,19 @@ test('EventTarget-style sources are removed on disposal', () => {
   source.emit('locale/change', {})
   assert.equal(received, 1)
   assert.equal(removed.length, 1)
+})
+
+test('disabled event leaves report their own feature through direct and named access', () => {
+  const disabled = createDisabledClientOfficialEvents()
+  for (const name of CLIENT_EVENT_NAMES) {
+    const key = EVENT_KEYS[name]
+    assert.throws(
+      () => disabled.api[key].on(() => {}),
+      (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === `client.${key}`,
+    )
+    assert.throws(
+      () => disabled.api.on(name, () => {}),
+      (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === `client.${key}`,
+    )
+  }
 })

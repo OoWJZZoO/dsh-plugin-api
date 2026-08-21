@@ -73,8 +73,11 @@ Additional checks:
 - Luna(max) review found two local fail-safe gaps: native event disposer failures
   were silently swallowed, and method accessors were not validated at the call
   boundary. The repeat review found four additional accessor/lifecycle gaps;
-  all six findings were corrected with focused regression tests. The corrected
-  batch is pending the required repeat review.
+  all six findings were corrected with focused regression tests. The next
+  repeat review found two lifecycle/fallback gaps: stale aggregate disposal
+  reported success instead of a no-op, and disabled event leaves reported a
+  shared feature name. Both were corrected with focused regression tests; the
+  corrected batch is pending the required repeat review.
 - Official client declarations and implementations were inspected for the
   approved provider member shapes and connection LLM methods.
 - The official DSH installation under `/usr/lib/node_modules/@deepseek-ai/dsh`
