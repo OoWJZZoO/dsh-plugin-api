@@ -260,7 +260,7 @@ integration-owned and follows the confirmation rules in AGENTS.md.
   leaf-only boundary; obtain blocking Luna(max) review. The task joins W2 only
   after write-set/provenance preflight. Requirements: R2-R6, R11-R13.
 
-- [ ] 3. W1 - implement catalog-only host event slices in the host-events worktree.
+- [x] 3. W1 - implement catalog-only host event slices in the host-events worktree.
 
   Owner and prerequisite: .worktrees/plugin-api-official-passthrough-m4-host-events
   on codex/plugin-api-official-passthrough-m4-host-events, derived directly
@@ -515,7 +515,7 @@ integration-owned and follows the confirmation rules in AGENTS.md.
   and obtain a blocking Luna(max) review before task 7. Requirements: R1-R6,
   R11-R13.
 
-- [ ] 7. W2.2 - join and compose the host event catalog batch.
+- [x] 7. W2.2 - join and compose the host event catalog batch.
 
   Owner and prerequisite: the integration owner executes this only after task 6
   is committed, clean, and blocking-reviewed. It is a separate top-level join
