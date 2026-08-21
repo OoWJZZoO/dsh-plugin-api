@@ -120,6 +120,37 @@ test('listener failures and rejected thenables are contained while later listene
   assert.equal(logs[1][1], rejected)
 })
 
+test('native event disposer failures are contained and logged', async () => {
+  const syncError = new Error('native sync cleanup failure')
+  const asyncError = new Error('native async cleanup failure')
+  const logs = []
+  const makeSource = (disposer) => ({
+    on() {
+      return disposer
+    },
+  })
+  const logger = { error(message, error) { logs.push([message, error]) } }
+
+  const syncLeaf = createClientOfficialEvent({
+    name: 'locale/change',
+    source: makeSource(() => { throw syncError }),
+    logger,
+  })
+  syncLeaf.api.on(() => {})
+  assert.equal(syncLeaf.api.dispose(), true)
+
+  const asyncLeaf = createClientOfficialEvent({
+    name: 'theme/change',
+    source: makeSource(() => Promise.reject(asyncError)),
+    logger,
+  })
+  asyncLeaf.api.on(() => {})
+  assert.equal(asyncLeaf.api.dispose(), true)
+  await new Promise((resolve) => setImmediate(resolve))
+
+  assert.deepEqual(logs.map(([, error]) => error), [syncError, asyncError])
+})
+
 test('official event source adapters preserve receiver for on, $on, addEventListener, and function forms', () => {
   const forms = [
     {

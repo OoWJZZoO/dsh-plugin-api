@@ -104,6 +104,31 @@ test('missing or malformed client providers disable only their own leaf', () => 
   )
 })
 
+test('method accessors that throw or return non-functions degrade at call time', () => {
+  const throwing = {}
+  Object.defineProperty(throwing, 'forClosing', {
+    get() {
+      throw new Error('method getter failed')
+    },
+  })
+  const nonFunction = {}
+  Object.defineProperty(nonFunction, 'forClosing', {
+    get() {
+      return { not: 'callable' }
+    },
+  })
+
+  for (const provider of [throwing, nonFunction]) {
+    const leaf = createClientOfficialService({ name: 'chatFileMentions', provider })
+    assert.equal(leaf.api.isActive, true)
+    assert.throws(
+      () => leaf.api.forClosing(),
+      (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.chatFileMentions',
+    )
+    assert.equal(leaf.api.isActive, false)
+  }
+})
+
 test('root inactivity wins without resolving an official provider', () => {
   let reads = 0
   const fixture = makeProvider('modules')

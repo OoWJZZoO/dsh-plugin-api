@@ -63,11 +63,16 @@ Focused command:
 node --test test/client-official-services.test.mjs test/client-official-events.test.mjs test/client-official-connection.test.mjs
 ```
 
-Result: 19 passed, 0 failed.
+Result: 21 passed, 0 failed, including regression coverage for native event
+disposer failures and malformed method accessors.
 
 Additional checks:
 
 - `git diff --check`: passed before commit.
+- Luna(max) review found two local fail-safe gaps: native event disposer failures
+  were silently swallowed, and method accessors were not validated at the call
+  boundary. Both were corrected with focused regression tests; the corrected
+  batch is pending the required repeat review.
 - Official client declarations and implementations were inspected for the
   approved provider member shapes and connection LLM methods.
 - The official DSH installation under `/usr/lib/node_modules/@deepseek-ai/dsh`
