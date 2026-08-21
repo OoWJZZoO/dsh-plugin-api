@@ -48,6 +48,9 @@ more issues: availability probing read a provider `then` getter, and the
 focused suite did not prove composition-layer omission for a missing producer.
 The implementation and tests were revised only within the allowed three-file
 write set. No Requirements or Design acceptance boundary changed.
+The second follow-up review identified only execution-evidence gaps in the
+report; those gaps are corrected below, and a new blocking review is required
+for this evidence-only revision.
 
 Requirements revision note: no deviation from the approved nine event rows,
 five slices, eight-field schema, optional-producer isolation, or catalog-only
@@ -70,9 +73,7 @@ Focused command:
 node --test test/official-host-events-catalog.test.mjs
 ```
 
-Actual result after first review repair: 8 tests passed, 0 failed. The
-follow-up repair adds two tests; the final result is recorded by the coordinator
-after the required verification. The suite covered
+Actual result after final repair: 10 tests passed, 0 failed. The suite covered
 exact five-slice/nine-row grouping, exact metadata and field order, recursive
 immutability, provider-missing isolation, malformed provider rejection,
 direct official dispatch with payload/argument identity, contained listener
@@ -85,8 +86,11 @@ Additional required command:
 git diff --check
 ```
 
-Actual result after review repair: passed with no whitespace errors. No
+Actual result after final repair: passed with no whitespace errors. No
 Requirements or Design acceptance boundary was changed; the minimal export
 shape is a frozen `officialHostEventCatalogSlices` array whose five records
-expose `name`, `catalog`, and `isAvailable` for the integration owner. The
-review-repair commit SHA is reported by the coordinator handoff.
+expose `name`, `catalog`, and `isAvailable` for the integration owner.
+
+Final leaf commit SHA: `3efe8940c0639998f841814a9c74d42003ad4d8b`.
+The next blocking Luna(max) review must verify this evidence-only revision
+before the leaf is accepted.
