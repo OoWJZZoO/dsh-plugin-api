@@ -82,6 +82,8 @@ test('official client artifact registers, composes all client leaves, and suppor
   assert.equal(typeof dispose, 'function')
   const api = ctx.get('pluginApi')
   assert.ok(api?.client)
+  assert.equal(api[Symbol.for('@deepseek-ai/dsh-plugin-api/client-pluginApi')], true,
+    'the published root carries the client brand symbol')
   assert.equal(api.client.codec.zod, api.client.codec.zod, 'one zod value is shared by the public bundle')
   assert.equal(api.client.connection.isActive, true)
   assert.equal(typeof api.client.slots.on, 'function')
