@@ -2,7 +2,7 @@
 
 > feature_name: `plugin-api-session-title-r1`
 > 状态：Stage 1 已批准（R-5.11 于 Stage 2 设计批准时同步修订，见文末修订记录）
-> 上游：Stage 0 Goal（已批准）、`AGENTS.md` §2/§4/§6、`docs/capability-strategy.md`（R1–R9）
+> 上游：Stage 0 Goal（已批准）、`AGENTS.md` §2/§4/§6、`docs/standards/capability-strategy.md`（R1–R9）
 > 类型：R 类（replacement bundle）；host-only，无 client bundle。
 >
 > **维护修订（包政策推行）**：运行时命名已去除 `r1` 治理后缀——源码 `packages/session-title/`、row id `plugin-api-session-title`、feature `session-title`、契约符号 `Symbol.for('dsh-plugin-api.session-title.contract')`；本 spec 的历史治理名 `plugin-api-session-title-r1` 仅在 `docs/` 与 AGENTS.md 登记中保留。辅助包采用与主包一致的 `<runtime>-<api.protocol>` 版本协商（当前 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`），主包校验辅助包版本一致；不一致时仅停用本 R 类特性（官方原接口仍由替代行/官方等价 fallback 提供），不停用主包。安装经全量聚合 bundle `@deepseek-ai/dsh-plugin-api-full` 或选择性安装主包 + 本辅助包。
@@ -62,7 +62,7 @@
 
 1.3. WHEN the monorepo workspace is introduced THEN the main package and the replacement package SHALL each remain independently installable without forcing the other。（Governance）
 
-1.4. WHEN this feature's delivery changes a subject already covered by an older delivered spec, or by `AGENTS.md` / `README.md` / `docs/capability-strategy.md` (for example package naming, row id, catalog schema, R 类登记, or upstream proposal table) THEN the affected document SHALL be appended or revised in place so that it stays fresh and current, while preserving its delivery history。（Governance）
+1.4. WHEN this feature's delivery changes a subject already covered by an older delivered spec, or by `AGENTS.md` / `README.md` / `docs/standards/capability-strategy.md` (for example package naming, row id, catalog schema, R 类登记, or upstream proposal table) THEN the affected document SHALL be appended or revised in place so that it stays fresh and current, while preserving its delivery history。（Governance）
 
 1.5. GIVEN an old spec or governance document is intentionally kept as a historical snapshot IF it is not revised THEN it SHALL carry a top-level note pointing to the newer authority, so that no stale document remains without a pointer。（Governance）
 
@@ -100,7 +100,7 @@
 
 3.5. WHERE the official row dispatches Cordis events as part of its service or event face IF the replacement row is active THEN the replacement SHALL dispatch the same events with the same timing and payload shape as the official row。（R）
 
-3.6. WHERE the official package exposes module-level imports (including any companion subpath) IF third-party code imports `@deepseek-ai/dsh-session-title` directly THEN that import SHALL continue to resolve to the official package; the replacement row SHALL only replace the `ctx` service and event face, per R3 of `docs/capability-strategy.md`。（R）
+3.6. WHERE the official package exposes module-level imports (including any companion subpath) IF third-party code imports `@deepseek-ai/dsh-session-title` directly THEN that import SHALL continue to resolve to the official package; the replacement row SHALL only replace the `ctx` service and event face, per R3 of `docs/standards/capability-strategy.md`。（R）
 
 3.7. WHEN the replacement is active THEN the delivered `pluginApi.services.sessionTitle` seam (SV13) SHALL continue to resolve, and its passthrough methods SHALL operate against the replacement service without change。（R）
 
@@ -209,7 +209,7 @@
 
 8.2. WHEN an official seam with equivalent candidate eligibility semantics (for example an official `session-title/candidate` event or official synthetic-message exclusion) becomes available THEN the replacement package SHALL be deprecated, its retirement condition SHALL be recorded, and consumers SHALL be offered a migration path to the official seam。（Upstream）
 
-8.3. WHEN this feature is delivered THEN `docs/specs/plugin-api-features/feature-list.md` 的 U9 状态与 R 类类型标注、`AGENTS.md` §8 登记与 §2/§4 同步、`docs/capability-strategy.md` §5 矩阵 SHALL be updated in the same change set, per `docs/capability-strategy.md`。（Governance）
+8.3. WHEN this feature is delivered THEN `docs/specs/plugin-api-features/feature-list.md` 的 U9 状态与 R 类类型标注、`AGENTS.md` §8 登记与 §2/§4 同步、`docs/standards/capability-strategy.md` §5 矩阵 SHALL be updated in the same change set, per `docs/standards/capability-strategy.md`。（Governance）
 
 ---
 
@@ -245,7 +245,7 @@
 
 - **外部可实现 vs 必须上游**：候选资格策略与事件词汇由 R 类 replacement 实现；官方原生 seam 为 U9 上游提案；boot 级故障隔离为 U4，不在本 feature 范围。
 - **零策略等价**：§5.2 明确零监听器时与官方行为等价，§5.4 明确 no-decision 时行为等价。
-- **文档新鲜度**：§1.4–1.5 要求本次交付触及的旧 spec、`AGENTS.md`、`README.md`、`docs/capability-strategy.md` 必须追加/修订或加注权威指针。
+- **文档新鲜度**：§1.4–1.5 要求本次交付触及的旧 spec、`AGENTS.md`、`README.md`、`docs/standards/capability-strategy.md` 必须追加/修订或加注权威指针。
 
 ---
 

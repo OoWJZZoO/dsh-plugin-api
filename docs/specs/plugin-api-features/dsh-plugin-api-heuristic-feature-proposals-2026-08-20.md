@@ -471,6 +471,8 @@ R 类共有的推进条件：
 
 ## Stage 0 前需要共同确认的问题
 
+> 权威版 2026-08-21 起迁移至 `docs/standards/stage0-common-questions.md`（口径回填以该文件为准）；本节保留为历史快照。
+
 这些问题影响多个候选，应在正式 Goal 阶段之前统一口径：
 
 1. `executionId` 是否由 plugin-api 生成，还是必须等待官方提供稳定 execution identity？

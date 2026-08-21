@@ -99,7 +99,7 @@
 - [ ] 8.1 登记
   - `docs/specs/plugin-api-features/feature-list.md`：U9（官方 session-title 候选资格 / 合成消息排除）入上游提案表，并记录**退役条件**（官方等价 seam 落地后辅助包 deprecate/退役，replacement 为 current workaround，req 8.2）；本 feature 对应行/类型标注补 R 类登记。
   - `AGENTS.md` §8 表尾追加 `plugin-api-session-title-r1` 条目（范围、状态、spec 目录、关键约束）；§2/§4 仅在与能力边界相关处同步（本 feature 不改变 A/B/C/R 边界，故主要核对而非改写）。
-  - `docs/capability-strategy.md` §5 矩阵补 session-title 行（R 类，U9 workaround）。
+  - `docs/standards/capability-strategy.md` §5 矩阵补 session-title 行（R 类，U9 workaround）。
 - [ ] 8.2 旧文档新鲜度终扫
   - grep 盘点受影响引用：catalog 条目总数（如 README/旧 spec 中 47/48 条等计数）、`0.1.0-rc.6-0.4`/`0.4` 的现行权威版本指向、主包/辅助包命名；就地追加/修订或对历史快照加权威指针（1.4/1.5）。
 - [ ] 8.3 交付审计与 Stage 4 提交

@@ -2,7 +2,7 @@
 
 > feature_name: `plugin-api-compaction-events-r1`
 > 状态：Stage 2 草案（待用户批准；按用户指示不再调用子代理审查）
-> 上游：`requirements.md`（Stage 1 已批准并按其最新指示修订：49 条编号 AC）、`AGENTS.md` §2.7/§4.6、`docs/capability-strategy.md` R1–R9
+> 上游：`requirements.md`（Stage 1 已批准并按其最新指示修订：49 条编号 AC）、`AGENTS.md` §2.7/§4.6、`docs/standards/capability-strategy.md` R1–R9
 > 类型：R 类 replacement bundle；host-only。
 >
 > **维护修订（包政策推行）**：实现已按本 spec 的命名规范收敛到不含 `r1` 的运行时名（源码 `packages/compaction-events/`、row id `plugin-api-compaction-events`、feature `compaction-events`、契约符号 `dsh-plugin-api.compaction-events.contract`）。辅助包 `package.json` 与主包统一 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`，apply 内校验自身与主包的全量唯一版本；不一致时进入官方等价 fallback（replacement events 停用）并显式诊断。主包 catalog slice 用工厂 `createCompactionEventsCatalogSlice({expectedContract, auxiliaryManifest, logger})` 做二次校验，只排除本 R slice。聚合 bundle `packages/full/` 以确定顺序装配主包与本替代行。

@@ -2,7 +2,7 @@
 
 > feature_name: `plugin-api-compaction-events-r1`
 > 状态：Stage 1 草案（待对抗性审查与用户批准）
-> 上游：Stage 0 Goal（已确认）、`AGENTS.md` §2/§4/§6、`docs/capability-strategy.md`（R1–R9）
+> 上游：Stage 0 Goal（已确认）、`AGENTS.md` §2/§4/§6、`docs/standards/capability-strategy.md`（R1–R9）
 > 类型：R 类（replacement bundle）；host-only，无 client bundle。
 >
 > **维护修订（包政策推行）**：运行时命名已去除 `r1` 治理后缀——源码 `packages/compaction-events/`、row id `plugin-api-compaction-events`、feature `compaction-events`、契约符号 `Symbol.for('dsh-plugin-api.compaction-events.contract')`；本 spec 的历史治理名 `plugin-api-compaction-events-r1` 仅在 `docs/` 与 AGENTS.md 登记中保留。辅助包采用与主包一致的 `<runtime>-<api.protocol>` 版本协商（当前 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`），主包校验辅助包版本一致；不一致时仅停用本 R 类特性（官方原接口仍由替代行/官方等价 fallback 提供），不停用主包。安装经全量聚合 bundle `@deepseek-ai/dsh-plugin-api-full` 或选择性安装主包 + 本辅助包。
@@ -45,7 +45,7 @@
 
 1.6. WHEN this feature's refactor changes a subject already covered by an older delivered spec, or by `AGENTS.md` / `README.md` (for example facade package naming, row id, package layout, catalog schema, or A/B/C/R classification) THEN the affected document SHALL be appended or revised in place so that it stays fresh and current, while preserving its delivery history。（Governance）
 
-1.7. GIVEN an old spec or a governance document (`AGENTS.md` / `README.md`) is intentionally kept as a historical snapshot IF it is not revised THEN it SHALL carry a top-level note pointing to the newer authority (for example `docs/capability-strategy.md` or the current integration boundary), so that no stale document remains without a pointer。（Governance）
+1.7. GIVEN an old spec or a governance document (`AGENTS.md` / `README.md`) is intentionally kept as a historical snapshot IF it is not revised THEN it SHALL carry a top-level note pointing to the newer authority (for example `docs/standards/capability-strategy.md` or the current integration boundary), so that no stale document remains without a pointer。（Governance）
 
 ---
 
@@ -81,7 +81,7 @@
 
 3.5. WHEN `compactNow` fails with `ManualCompactionError` codes `busy` or `cancelled` THEN the replacement SHALL preserve the same error class, code, and message semantics as the official implementation。（R）
 
-3.6. WHERE the official package exposes module-level imports (for example its `./invariant` companion) IF third-party code imports `@deepseek-ai/dsh-compaction-basic` directly THEN that import SHALL continue to resolve to the official package; the replacement row SHALL only replace the `ctx` service and event face, per R3 of `docs/capability-strategy.md`。（R）
+3.6. WHERE the official package exposes module-level imports (for example its `./invariant` companion) IF third-party code imports `@deepseek-ai/dsh-compaction-basic` directly THEN that import SHALL continue to resolve to the official package; the replacement row SHALL only replace the `ctx` service and event face, per R3 of `docs/standards/capability-strategy.md`。（R）
 
 3.7. WHEN the replacement is active THEN the delivered `pluginApi.services.compaction` seam (SV17) SHALL continue to resolve, and its `compactIfNeeded`/`compactNow`/`compactRegion` passthrough SHALL operate against the replacement service without change。（R）
 
@@ -188,7 +188,7 @@
 
 8.2. WHEN an official `compaction/*` event vocabulary with equivalent observe and policy semantics becomes available THEN the auxiliary package SHALL be deprecated, its retirement condition SHALL be recorded, and consumers SHALL be offered a migration path to the official seam。（Upstream）
 
-8.3. WHEN this feature is delivered THEN `docs/specs/plugin-api-features/feature-list.md` 的 U8 状态与 `AGENTS.md` §8 登记 SHALL be updated in the same change set, per `docs/capability-strategy.md` §8。（Governance）
+8.3. WHEN this feature is delivered THEN `docs/specs/plugin-api-features/feature-list.md` 的 U8 状态与 `AGENTS.md` §8 登记 SHALL be updated in the same change set, per `docs/standards/capability-strategy.md` §8。（Governance）
 
 ---
 
