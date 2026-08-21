@@ -125,3 +125,51 @@ byte-identical across the milestone boundary. All other zod region code
 bytes match (module path comment banners vary only by relative-path depth,
 a build-root artifact), and the new leaf modules plus the join changes are
 the only additions.
+
+## D8 — W2.5 shared semantics, delivered regressions, neutral integration surface
+
+D8.1 — Waterfall freeze policy (shared semantic unit). The approved
+`system-prompt/assemble` writable waterfall is expressed as one new neutral
+catalog freeze value: `freeze: 'waterfall'` means the events bus leaves the
+dispatch arguments unfrozen (`freezeByPolicy` returns the payload untouched).
+The catalog entry moves from `fault: 'contain'` to `fault: 'propagate'` to
+match the official Cordis waterfall while `monitor`-priority listeners keep
+containment. `events-bus.js` now recognizes the trailing `next` callback
+before freezing: when present, only the leading arguments are candidates for
+freezing; when absent (emit/serial/parallel/bail) the pre-existing behavior
+is byte-identical. Unrelated entries keep their exact freeze/fault policies;
+the legacy cardinality test's schema whitelist now accepts `'waterfall'`
+alongside `'all' | 'except-signal' | deep-array`.
+
+D8.2 — Delivered-regression tests. `test/delivered-regression.test.mjs`
+re-proves, through the integrated facade, the tool aborted-error contract
+(typed identity, degraded factory, feature-disabled isolation), the generic
+host remote publication (publication through the official boundary, wire
+parameter validation, idempotent/owner-isolated disposer, same-key conflict,
+missing-prerequisite degradation), and the jobs / shellEnv seams (exact
+member lists, official receiver identity through `apply`, per-service
+degradation with `services.<key>` feature codes). The fixture parameter is
+named `services` (matching the reviewed `index-remote` fixture); recording
+methods are regular functions so receiver identity is observable.
+
+D8.3 — Neutral integration surface. `test/integration-surface.test.mjs`
+asserts, from the reviewed contract fixtures only: the nine host event
+contracts with exact `catalogFields` values in the mounted facade catalog
+(plus the 47-name baseline union intact), the 48-key service table with the
+reviewed member-kind/name order for all 28 fragment inputs, the mounted
+namespace surface (all 48 seams active with exact member keys, getter value
+forwarding, method receiver identity), and the bundled client public faces
+(exact 11-service namespace and per-service member surfaces — 70 members —
+the four event faces with slim `isActive`/`on`, and the nested connection
+llm face with its three approved members). The mounted `pluginApi.services`
+surface composes the 48-key namespace with the pre-existing `typert` seam,
+so the runtime `Object.keys` total is 49 while the passthrough table stays
+48; tests slice the first 48 keys.
+
+Evidence (labeled): unit `node --test` full suite 926/926 pass; focused host
+and client boot checks within `integration-surface.test.mjs` (host `apply`
+with all capability stubs + VM-bundled client `apply` with faithful browser
+service shapes); `git diff --check` clean; official-package immutability
+re-check clean (no file under the official install modified since the
+previous boundary); governance-token audit on every changed file clean
+(no inventory IDs or classifications in implementation or test code).

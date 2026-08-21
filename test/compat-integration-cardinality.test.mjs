@@ -144,7 +144,7 @@ test('baseline Cordis catalog remains the exact 47-name frozen union with no com
     // baseline intentionally permits either an explicit policy or its documented
     // default (`fault` absent => contain; `freeze` absent => all).
     assert.ok(entry.fault === undefined || ['contain', 'created', 'propagate'].includes(entry.fault), `${entry.name} fault schema`)
-    assert.ok(entry.freeze === undefined || entry.freeze === 'all' || entry.freeze === 'except-signal' || Array.isArray(entry.freeze?.deep), `${entry.name} freeze schema`)
+    assert.ok(entry.freeze === undefined || entry.freeze === 'all' || entry.freeze === 'except-signal' || entry.freeze === 'waterfall' || Array.isArray(entry.freeze?.deep), `${entry.name} freeze schema`)
   }
   for (const nonEvent of [
     'llm/request',

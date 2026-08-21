@@ -609,7 +609,7 @@ integration-owned and follows the confirmation rules in AGENTS.md.
   obtain a blocking Luna(max) review before task 10. Requirements: R1, R9,
   R11-R13.
 
-- [ ] 10. W2.5 - complete shared semantics, delivered regressions, and neutral integration verification.
+- [x] 10. W2.5 - complete shared semantics, delivered regressions, and neutral integration verification.
 
   Owner and prerequisite: the integration owner executes this only after tasks
   6 through 9 are committed, clean, and blocking-reviewed. This is the final
