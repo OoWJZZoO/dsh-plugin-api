@@ -56,6 +56,27 @@ test('connection preserves official throws and rejected Promise identity', async
   await assert.rejects(rejected, (error) => error.message === 'official connection rejection')
 })
 
+test('connection method accessors are validated again at call time', () => {
+  let reads = 0
+  const llm = {}
+  Object.defineProperty(llm, 'providers', {
+    get() {
+      reads += 1
+      return reads === 1 ? function () {} : undefined
+    },
+  })
+  llm.models = function () {}
+  llm.discoverModels = function () {}
+  const facade = createClientOfficialConnection({ connection: { api: { llm } } })
+
+  assert.equal(facade.api.isActive, true)
+  assert.throws(
+    () => facade.api.api.llm.providers(),
+    (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.connection',
+  )
+  assert.equal(facade.api.isActive, false)
+})
+
 test('connection resolution is lazy and malformed providers disable only the connection leaf', () => {
   const calls = []
   const connection = makeConnection(calls)

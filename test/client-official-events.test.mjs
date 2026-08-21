@@ -185,6 +185,7 @@ test('official event source adapters preserve receiver for on, $on, addEventList
             calls.push([name, listener])
             return () => {}
           },
+          removeEventListener() {},
         }
         return source
       },
@@ -240,4 +241,57 @@ test('root inactivity wins before a source resolver is touched', () => {
   assert.equal(result.api.localeChange.isActive, false)
   assert.equal(reads, 0)
   assert.throws(() => result.api.localeChange.on(() => {}), (error) => error.code === 'PLUGIN_API_INACTIVE')
+})
+
+test('event source getter failures degrade locally', () => {
+  const sourceError = new Error('event source getter failed')
+  const source = {}
+  Object.defineProperty(source, 'on', {
+    get() {
+      throw sourceError
+    },
+  })
+  const logs = []
+  const leaf = createClientOfficialEvent({
+    name: 'locale/change',
+    source,
+    logger: { error(message, error) { logs.push([message, error]) } },
+  })
+
+  assert.equal(leaf.api.isActive, false)
+  assert.throws(
+    () => leaf.api.on(() => {}),
+    (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.localeChange',
+  )
+  assert.equal(logs[0][1], sourceError)
+})
+
+test('EventTarget-style sources are removed on disposal', () => {
+  const listeners = new Map()
+  const removed = []
+  const source = {
+    addEventListener(name, listener) {
+      const current = listeners.get(name) ?? []
+      current.push(listener)
+      listeners.set(name, current)
+    },
+    removeEventListener(name, listener) {
+      removed.push([name, listener])
+      const current = listeners.get(name) ?? []
+      const index = current.indexOf(listener)
+      if (index !== -1) current.splice(index, 1)
+    },
+    emit(name, ...args) {
+      for (const listener of [...(listeners.get(name) ?? [])]) listener(...args)
+    },
+  }
+  const leaf = createClientOfficialEvent({ name: 'locale/change', source })
+  let received = 0
+  leaf.api.on(() => { received += 1 })
+  source.emit('locale/change', {})
+  assert.equal(received, 1)
+  assert.equal(leaf.api.dispose(), true)
+  source.emit('locale/change', {})
+  assert.equal(received, 1)
+  assert.equal(removed.length, 1)
 })

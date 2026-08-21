@@ -129,6 +129,30 @@ test('method accessors that throw or return non-functions degrade at call time',
   }
 })
 
+test('value accessors that throw degrade at read time', () => {
+  const provider = {}
+  Object.defineProperty(provider, 'version', {
+    get() {
+      throw new Error('value getter failed')
+    },
+  })
+  Object.defineProperty(provider, 'loadCache', {
+    value() {},
+  })
+  Object.defineProperty(provider, 'import', { value() {} })
+  Object.defineProperty(provider, 'registerStatic', { value() {} })
+  Object.defineProperty(provider, 'prefetch', { value() {} })
+  Object.defineProperty(provider, 'invalidate', { value() {} })
+
+  const leaf = createClientOfficialService({ name: 'modules', provider })
+  assert.equal(leaf.api.isActive, true)
+  assert.throws(
+    () => leaf.api.version,
+    (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.modules',
+  )
+  assert.equal(leaf.api.isActive, false)
+})
+
 test('root inactivity wins without resolving an official provider', () => {
   let reads = 0
   const fixture = makeProvider('modules')
