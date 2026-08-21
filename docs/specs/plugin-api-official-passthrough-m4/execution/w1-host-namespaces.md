@@ -68,3 +68,13 @@ argument, receiver, Promise, error, and disposer identity assertions. The
 changes remain within the assigned three-file write set and do not alter the
 approved Requirements or Design boundary. One test-only naming typo was
 corrected before the final `12 passed` run.
+
+The final blocking Luna(max) review found three further substantive gaps. S8 no
+longer interprets the first call argument as an arbitrary receiver; `append`
+and `deriveEventMessage` now forward the approved arguments to the configured
+official session source only. A13 input-object getter failures are contained
+by the malformed-dependency boundary and surface as agent P2. A stale disposer
+now invalidates its retained facade and returns the existing false/no-op
+outcome without invoking the current owner's cleanup. The focused tests cover
+each corrected negative boundary. This repair remains within the same three
+allowed files and introduces no P10 behavior.

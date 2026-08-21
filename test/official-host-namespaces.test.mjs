@@ -318,6 +318,15 @@ test('malformed agent options remain locally disabled', () => {
   const registry = { currentInitiator() { return agent } }
   const leaf = createOfficialAgentLeaf({ registry }).api
   assertFeatureDisabled(() => leaf.options, 'agent')
+
+  const throwingInput = {}
+  Object.defineProperty(throwingInput, 'agentOptions', {
+    get() {
+      throw new Error('agent options input unavailable')
+    },
+  })
+  const malformedInput = createOfficialAgentLeaf(throwingInput).api
+  assertFeatureDisabled(() => malformedInput.options, 'agent')
 })
 
 test('missing members remain local failures while available members stay usable', () => {
@@ -371,7 +380,7 @@ test('retained references invalidate and stale cleanup cannot remove a newer lea
     onDispose: (token) => cleanups.push(token),
   })
   current = secondToken
-  assert.equal(first.dispose(), true)
+  assert.equal(first.dispose(), false)
   assert.deepEqual(cleanups, [])
   assertFeatureDisabled(() => first.api.listProviders(), 'llm')
   assert.equal(second.api.listProviders().length, 0)
@@ -418,13 +427,16 @@ test('session target methods preserve the target receiver and omit only the expl
       return null
     },
   }
-  const api = createOfficialSessionLeaf({ sessions: {}, }).api
-  assert.equal(api.append(target, 'kind', { value: 1 }), false)
-  assert.equal(api.deriveEventMessage(target, { seq: 1 }), null)
+  const api = createOfficialSessionLeaf({ sessions: {}, session: target }).api
+  assert.equal(api.append('kind', { value: 1 }), false)
+  assert.equal(api.deriveEventMessage({ seq: 1 }), null)
   assert.strictEqual(calls[0].receiver, target)
   assert.deepEqual(calls[0].args, ['kind', { value: 1 }])
   assert.strictEqual(calls[1].receiver, target)
   assert.deepEqual(calls[1].args, [{ seq: 1 }])
+
+  const withoutSource = createOfficialSessionLeaf({ sessions: {} }).api
+  assertFeatureDisabled(() => withoutSource.append(target, 'kind', { value: 1 }), 'session')
 })
 
 test('the leaf stays a direct passthrough and does not import shared dispatch semantics', () => {
