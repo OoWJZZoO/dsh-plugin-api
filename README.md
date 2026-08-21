@@ -111,5 +111,6 @@ pluginApi.routing.availability // { execution: boolean, session: boolean }
 ## 测试
 
 ```bash
-node --test
+# 默认只跑 test/ 下的测试（temp/ 等临时目录永不参与扫描）
+npm test
 ```
