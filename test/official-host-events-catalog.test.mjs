@@ -9,6 +9,7 @@ import {
   HOST_EVENT_SLICES,
 } from './official-passthrough-contracts.mjs'
 import { officialHostEventCatalogSlices } from '../lib/official-host-events-catalog.js'
+import { createEventsBus } from '../lib/events-bus.js'
 
 const PROVIDER_NAMES = [
   'agentLoop',
@@ -23,6 +24,39 @@ function assertFrozenRecursively(value, seen = new WeakSet()) {
   seen.add(value)
   assert.ok(Object.isFrozen(value))
   for (const child of Object.values(value)) assertFrozenRecursively(child, seen)
+}
+
+function createMockCordisCtx() {
+  const hooks = new Map()
+  const hooksOf = (name) => {
+    let list = hooks.get(name)
+    if (!list) {
+      list = []
+      hooks.set(name, list)
+    }
+    return list
+  }
+
+  return {
+    hooksOf,
+    on(name, listener) {
+      const list = hooksOf(name)
+      const record = { listener }
+      list.push(record)
+      let active = true
+      return () => {
+        if (!active) return false
+        active = false
+        const index = list.indexOf(record)
+        if (index < 0) return false
+        list.splice(index, 1)
+        return true
+      }
+    },
+    emit(name, ...args) {
+      for (const { listener } of [...hooksOf(name)]) listener(...args)
+    },
+  }
 }
 
 test('the host event leaves contain exactly five groups and nine names', () => {
@@ -82,7 +116,7 @@ test('availability probes isolate missing, malformed, and throwing providers', (
     const ctx = {
       get(name) {
         calls.push(name)
-        return name === PROVIDER_NAMES[index] ? Object.create(null) : undefined
+        return name === PROVIDER_NAMES[index] ? Object.create({ marker: true }) : undefined
       },
     }
     assert.equal(slice.isAvailable(ctx), true)
@@ -94,7 +128,7 @@ test('availability probes isolate missing, malformed, and throwing providers', (
     return slice.isAvailable({
       get(name) {
         if (name === absentProvider) return undefined
-        return index === 0 ? undefined : {}
+        return { marker: true }
       },
     })
   })
@@ -105,10 +139,71 @@ test('availability probes isolate missing, malformed, and throwing providers', (
     false,
   )
   assert.equal(
+    officialHostEventCatalogSlices[0].isAvailable({ get() { return {} } }),
+    false,
+  )
+  assert.equal(
+    officialHostEventCatalogSlices[0].isAvailable({ get() { return Promise.resolve({}) } }),
+    false,
+  )
+  assert.equal(
     officialHostEventCatalogSlices[1].isAvailable({ get() { throw new Error('provider lookup failed') } }),
     false,
   )
   assert.equal(officialHostEventCatalogSlices[2].isAvailable({}), false)
+})
+
+test('an official emit reaches one facade listener with the original payload identity', () => {
+  const ctx = createMockCordisCtx()
+  const catalog = Object.assign({}, ...officialHostEventCatalogSlices.map((slice) => slice.catalog))
+  const events = createEventsBus({ ctx, catalog })
+  const seen = []
+  events.on('domain/changed', (payload) => seen.push(payload))
+
+  const change = { domain: 'session', revision: 3 }
+  ctx.emit('domain/changed', change)
+
+  assert.deepEqual(seen, [change])
+  assert.equal(seen[0], change)
+  events.dispose()
+})
+
+test('emit listener failures are contained and later listeners still receive the same dispatch', () => {
+  const ctx = createMockCordisCtx()
+  const catalog = Object.assign({}, ...officialHostEventCatalogSlices.map((slice) => slice.catalog))
+  const events = createEventsBus({ ctx, catalog, logger: { warn() {} } })
+  const seen = []
+  events.on('agent-preset/selected', () => {
+    throw new Error('observer failed')
+  })
+  events.on('agent-preset/selected', (...args) => seen.push(args))
+
+  const sessionId = { id: 'session-1' }
+  const preset = { name: 'default' }
+  assert.doesNotThrow(() => ctx.emit('agent-preset/selected', sessionId, preset))
+  assert.deepEqual(seen, [[sessionId, preset]])
+  assert.equal(seen[0][0], sessionId)
+  assert.equal(seen[0][1], preset)
+  events.dispose()
+})
+
+test('disposing an older bus does not remove a newer native hook', () => {
+  const ctx = createMockCordisCtx()
+  const catalog = Object.assign({}, ...officialHostEventCatalogSlices.map((slice) => slice.catalog))
+  const first = createEventsBus({ ctx, catalog })
+  const second = createEventsBus({ ctx, catalog })
+  const seen = []
+
+  first.on('cordis/request-run', () => seen.push('first'))
+  second.on('cordis/request-run', () => seen.push('second'))
+  first.dispose()
+
+  const request = { id: 'request-1' }
+  ctx.emit('cordis/request-run', request)
+  assert.deepEqual(seen, ['second'])
+  assert.equal(ctx.hooksOf('cordis/request-run').length, 1)
+  second.dispose()
+  assert.equal(ctx.hooksOf('cordis/request-run').length, 0)
 })
 
 test('the leaf module contains no producer or central composition wiring', () => {
