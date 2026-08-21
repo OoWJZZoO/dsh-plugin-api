@@ -106,6 +106,17 @@ shared files once. The contract must freeze the following details:
   statuses, and feature order, resolve shared metadata at integration, and
   reject any M5 change that imports or calls an M4-specific symbol.
 
+- **Stage 4 review gate:** complete one top-level batch (1 through 5) as a
+  whole, then stop before starting the next batch and obtain one blocking
+  adversarial review from Luna at max reasoning strength. The review must
+  compare that batch's implementation and tests with the approved
+  Requirements, Design, and this Tasks file; it must not use Terra or spawn
+  descendants. If the review finds a deviation, revise only the current
+  batch, rerun its focused verification, and obtain a new blocking Luna
+  review before proceeding. A clean review is the only authorization to begin
+  the next top-level batch; no additional overall Stage 4 review is required
+  after batch 5.
+
 ## 1. Host helper owner and system-prompt integration
 
 - [ ] 1.1 Add a pure host helper descriptor/slot module for the two context-rendering exports.
@@ -146,6 +157,7 @@ shared files once. The contract must freeze the following details:
 
 - [ ] 2.3 Add loader bootstrap, caller-scoped resolution, and lease race tests before wiring all leaves.
   - Use deferred `modules.import(specifier, parentURL, attrs)` fakes and assert synchronous root visibility, pending-shell behavior, per-leaf rejection containment, and no unhandled rejection.
+  - For every descriptor, assert the exact bare module ID and descriptor `parentURL`, exactly three import arguments, and a fresh empty attributes object for every call; the test must fail if any implementation uses a two-argument import or reuses an attributes object.
   - Use Cordis service tracing with a child consumer context to verify each getter binds to the consuming context, calls `callerCtx.get()` directly, preserves the official receiver, and does not cache a caller composition.
   - Exercise cache invalidation without an invalidation event, disposal/reapply races, old-generation references, and no silent namespace rebinding.
   - Build the independence fixture with a raw `modules` service, seven valid RC.6 namespaces, and matching `modules.loadCache` identities, while deliberately omitting any M4-specific `client.modules` facade; assert all seven M5 leaves become active and forward real values.
@@ -174,8 +186,8 @@ shared files once. The contract must freeze the following details:
 
 - [ ] 3.4 Add cross-leaf contract and isolation tests.
   - Verify every listed member of all seven leaves and that unlisted provider members are not surfaced.
-  - For each leaf, cover absent loader, rejected import, malformed namespace, missing/invalid constructor, missing/invalid provider, and missing/invalid required member.
-  - Assert atomic disabling, typed surface-keyed errors, allowed safe reasons only, and continued availability of the other six leaves plus M3 faces.
+  - Cover the shared-loader failure separately: when the optional `modules` service is absent, all seven M5 leaves are disabled with `missing-service` while M3 faces remain available. For each leaf, independently cover rejected import, malformed namespace, missing/invalid constructor, missing/invalid provider, and missing/invalid required member; each such leaf failure must disable only that leaf while the other six leaves and M3 faces remain available.
+  - Assert atomic disabling, typed surface-keyed errors, and the fixed diagnostic mapping for each failure class; do not accept an arbitrary allowed reason.
   - Assert every excluded concrete member remains absent from the outward face, including `commandUi.bindComposerFocus`, and verify the fixed diagnostic mapping for each malformed condition rather than accepting an arbitrary allowed reason.
   - Cover Requirements 2.1-2.6, 3.1-3.6, 4.1-4.3, and 5.1-5.3.
 
