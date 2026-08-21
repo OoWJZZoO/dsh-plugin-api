@@ -132,60 +132,149 @@ test('official methods preserve receiver, arguments, falsey values, promises, an
   assert.strictEqual(settings.api.prepareDocument(), disposer)
 })
 
-test('agent, session, and tool operations preserve their official calls', async () => {
-  const agent = createRecorder([
-    'currentInitiator', 'requireInitiator', 'withInitiator', 'withoutInitiator', 'isOwnedBy',
-  ])
-  const agentLeaf = createOfficialAgentLeaf({ registry: agent.source, agentOptions: {} }).api
+test('agent, session, and tool operations preserve identity and call contracts', async () => {
+  const agentCalls = []
   const owner = { id: 'owner' }
   const initiator = { id: 'initiator' }
-  assert.equal(agentLeaf.currentInitiator(owner), 'currentInitiator-result')
-  assert.equal(agentLeaf.requireInitiator(initiator), 'requireInitiator-result')
-  assert.equal(agentLeaf.withInitiator(initiator, () => 'callback'), 'withInitiator-result')
-  assert.equal(agentLeaf.withoutInitiator(() => 'callback'), 'withoutInitiator-result')
-  assert.equal(agentLeaf.isOwnedBy(owner, initiator), 'isOwnedBy-result')
-  assert.deepEqual(agent.calls.map(({ name, args }) => ({ name, args })), [
+  const callback = () => 'callback'
+  const callbackWithout = () => 'callback-without'
+  const currentResult = { kind: 'current' }
+  const requireResult = { kind: 'required' }
+  const withResult = { kind: 'with' }
+  const disposer = () => 'disposed'
+  const ownedResult = false
+  const agentError = new Error('agent failure')
+  const agentSource = {
+    currentInitiator(...args) {
+      agentCalls.push({ name: 'currentInitiator', receiver: this, args })
+      return currentResult
+    },
+    requireInitiator(...args) {
+      agentCalls.push({ name: 'requireInitiator', receiver: this, args })
+      return requireResult
+    },
+    withInitiator(...args) {
+      agentCalls.push({ name: 'withInitiator', receiver: this, args })
+      return withResult
+    },
+    withoutInitiator(...args) {
+      agentCalls.push({ name: 'withoutInitiator', receiver: this, args })
+      return disposer
+    },
+    isOwnedBy(...args) {
+      agentCalls.push({ name: 'isOwnedBy', receiver: this, args })
+      return ownedResult
+    },
+  }
+  const agentLeaf = createOfficialAgentLeaf({ registry: agentSource, agentOptions: {} }).api
+  assert.strictEqual(agentLeaf.currentInitiator(owner), currentResult)
+  assert.strictEqual(agentLeaf.requireInitiator(initiator), requireResult)
+  assert.strictEqual(agentLeaf.withInitiator(initiator, callback), withResult)
+  assert.strictEqual(agentLeaf.withoutInitiator(callbackWithout), disposer)
+  assert.strictEqual(agentLeaf.isOwnedBy(owner, initiator), ownedResult)
+  assert.deepEqual(agentCalls.map(({ name, args }) => ({ name, args })), [
     { name: 'currentInitiator', args: [owner] },
     { name: 'requireInitiator', args: [initiator] },
-    { name: 'withInitiator', args: [initiator, assert.match] },
-    { name: 'withoutInitiator', args: [assert.match] },
+    { name: 'withInitiator', args: [initiator, callback] },
+    { name: 'withoutInitiator', args: [callbackWithout] },
     { name: 'isOwnedBy', args: [owner, initiator] },
-  ].map((expected, index) => ({
-    name: expected.name,
-    args: expected.args.map((arg, argIndex) => arg === assert.match ? agent.calls[index].args[argIndex] : arg),
-  })))
-  for (const call of agent.calls) assert.strictEqual(call.receiver, agent.source)
+  ])
+  for (const call of agentCalls) assert.strictEqual(call.receiver, agentSource)
 
-  const session = createRecorder(['create', 'prepare', 'enter', 'announce', 'flush'])
-  const sessionLeaf = createOfficialSessionLeaf({ sessions: session.source }).api
-  const sessionArgs = [
-    ['create', 'scope'],
-    ['prepare', 'session', { mode: 'read' }],
-    ['enter', 'session'],
-    ['announce', 'session', 'message'],
-    ['flush', 'session'],
-  ]
-  const sessionResults = [
-    sessionLeaf.create('scope'),
-    sessionLeaf.prepare('session', { mode: 'read' }),
-    sessionLeaf.enter('session'),
-    sessionLeaf.announce('session', 'message'),
-    await sessionLeaf.flush('session'),
-  ]
-  assert.deepEqual(sessionResults.slice(0, 4), ['create-result', 'prepare-result', 'enter-result', 'announce-result'])
-  assert.equal(sessionResults[4], 'flush-result')
-  assert.deepEqual(session.calls.map(({ name, args }) => ({ name, args })), sessionArgs.map(([name, ...args]) => ({ name, args })))
-  for (const call of session.calls) assert.strictEqual(call.receiver, session.source)
+  const failingAgentLeaf = createOfficialAgentLeaf({
+    registry: {
+      requireInitiator() {
+        throw agentError
+      },
+    },
+    agentOptions: {},
+  }).api
+  assert.throws(() => failingAgentLeaf.requireInitiator(initiator), (error) => error === agentError)
 
-  const tools = createRecorder(['executionMode'])
-  const defineTool = function (options) { return options }
-  const toolsLeaf = createOfficialToolsLeaf({ tools: tools.source, publicExports: { defineTool } }).api
+  const sessionCalls = []
+  const sessionResults = {
+    create: { kind: 'created' },
+    prepare: { kind: 'prepared' },
+    enter: { kind: 'entered' },
+    announce: { kind: 'announced' },
+  }
+  const flushPromise = Promise.resolve({ kind: 'flushed' })
+  const sessionSource = {
+    create(...args) {
+      sessionCalls.push({ name: 'create', receiver: this, args })
+      return sessionResults.create
+    },
+    prepare(...args) {
+      sessionCalls.push({ name: 'prepare', receiver: this, args })
+      return sessionResults.prepare
+    },
+    enter(...args) {
+      sessionCalls.push({ name: 'enter', receiver: this, args })
+      return sessionResults.enter
+    },
+    announce(...args) {
+      sessionCalls.push({ name: 'announce', receiver: this, args })
+      return sessionResults.announce
+    },
+    flush(...args) {
+      sessionCalls.push({ name: 'flush', receiver: this, args })
+      return flushPromise
+    },
+  }
+  const sessionLeaf = createOfficialSessionLeaf({ sessions: sessionSource }).api
+  const session = { id: 'session' }
+  const scope = { id: 'scope' }
+  const announcement = { id: 'announcement' }
+  assert.strictEqual(sessionLeaf.create(scope), sessionResults.create)
+  assert.strictEqual(sessionLeaf.prepare(session, { mode: 'read' }), sessionResults.prepare)
+  assert.strictEqual(sessionLeaf.enter(session), sessionResults.enter)
+  assert.strictEqual(sessionLeaf.announce(session, announcement), sessionResults.announce)
+  assert.strictEqual(sessionLeaf.flush(session), flushPromise)
+  assert.deepEqual(sessionCalls.map(({ name, args }) => ({ name, args })), [
+    { name: 'create', args: [scope] },
+    { name: 'prepare', args: [session, { mode: 'read' }] },
+    { name: 'enter', args: [session] },
+    { name: 'announce', args: [session, announcement] },
+    { name: 'flush', args: [session] },
+  ])
+  for (const call of sessionCalls) assert.strictEqual(call.receiver, sessionSource)
+
+  const sessionError = new Error('session failure')
+  const failingSessionLeaf = createOfficialSessionLeaf({
+    sessions: { create() { throw sessionError } },
+  }).api
+  assert.throws(() => failingSessionLeaf.create(scope), (error) => error === sessionError)
+
+  const toolCalls = []
   const execution = { id: 'execution' }
   const options = { name: 'tool' }
-  assert.equal(toolsLeaf.executionMode(execution), 'executionMode-result')
-  assert.strictEqual(toolsLeaf.defineTool(options), options)
-  assert.deepEqual(tools.calls[0].args, [execution])
-  assert.strictEqual(tools.calls[0].receiver, tools.source)
+  const modeResult = false
+  const definitionResult = { kind: 'definition' }
+  const toolSource = {
+    executionMode(...args) {
+      toolCalls.push({ name: 'executionMode', receiver: this, args })
+      return modeResult
+    },
+  }
+  const publicTools = {
+    defineTool(...args) {
+      toolCalls.push({ name: 'defineTool', receiver: this, args })
+      return definitionResult
+    },
+  }
+  const toolsLeaf = createOfficialToolsLeaf({ tools: toolSource, publicExports: publicTools }).api
+  assert.strictEqual(toolsLeaf.executionMode(execution), modeResult)
+  assert.strictEqual(toolsLeaf.defineTool(options), definitionResult)
+  assert.deepEqual(toolCalls.map(({ name, receiver, args }) => ({ name, receiver, args })), [
+    { name: 'executionMode', receiver: toolSource, args: [execution] },
+    { name: 'defineTool', receiver: publicTools, args: [options] },
+  ])
+  const toolError = new Error('tool failure')
+  const failingToolsLeaf = createOfficialToolsLeaf({
+    tools: { executionMode() { throw toolError } },
+    publicExports: { defineTool() { return definitionResult } },
+  }).api
+  assert.throws(() => failingToolsLeaf.executionMode(execution), (error) => error === toolError)
 })
 
 test('public construction artifacts retain official identity', () => {
