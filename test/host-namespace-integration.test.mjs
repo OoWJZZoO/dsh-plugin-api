@@ -141,7 +141,7 @@ function createMockCtx(options = {}) {
     },
     ...(agents ? { agents } : {}),
     apiProxy: { sessions: { prompt() {}, selectModel() {} } },
-    web: { registerSearchProvider() {}, registerFetchProvider() {} },
+    web: { registerSearchProvider() {}, registerFetchProvider() {}, search() {}, fetch() {} },
     settings,
     ...(options.services ?? {}),
   }
@@ -244,7 +244,7 @@ test('integrated agent facade keeps the established read surface intact when the
     reflect: { provide(name, value) { if (name === 'pluginApi') state.pluginApi = value } },
     get(name) {
       if (name === 'pluginApi') return state.pluginApi
-      const map = { llm: services.llm ?? { resolveModelInfo() {}, prepareCall() {}, stream() {}, registerAdapter() {}, registerConfigurableProviders() {}, registerModelDiscovery() {} }, tools: { register() {}, restrict() {}, guard() {}, get() {}, schemas() {}, execute() {}, presentAs() {} }, sessions: { get() {}, list() {}, fork() {} }, systemPrompt: { section() {}, context() {}, variable() {}, tools() {}, suppressRuntimeContext() {} }, apiProxy: { sessions: { prompt() {}, selectModel() {} } }, web: { registerSearchProvider() {}, registerFetchProvider() {} }, agents: bareAgents }
+      const map = { llm: services.llm ?? { resolveModelInfo() {}, prepareCall() {}, stream() {}, registerAdapter() {}, registerConfigurableProviders() {}, registerModelDiscovery() {} }, tools: { register() {}, restrict() {}, guard() {}, get() {}, schemas() {}, execute() {}, presentAs() {} }, sessions: { get() {}, list() {}, fork() {} }, systemPrompt: { section() {}, context() {}, variable() {}, tools() {}, suppressRuntimeContext() {} }, apiProxy: { sessions: { prompt() {}, selectModel() {} } }, web: { registerSearchProvider() {}, registerFetchProvider() {}, search() {}, fetch() {} }, agents: bareAgents }
       return map[name]
     },
     plugin(Class) { new Class(bareCtx) },

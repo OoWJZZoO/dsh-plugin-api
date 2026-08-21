@@ -247,13 +247,13 @@ test('disabled compat request and image admission registration reject before ins
   }
 })
 
-test('default services namespace exposes the 21 disabled facades before mount', () => {
+test('default services namespace exposes the approved disabled facades before mount', () => {
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
   const service = instantiate(ServiceClass, mockCtx())
 
   assert.equal(typeof service.services, 'object')
-  assert.equal(Object.keys(service.services).length, 21)
+  assert.equal(Object.keys(service.services).length, 48)
   assert.ok(Object.isFrozen(service.services))
   assert.equal(service.services.compaction.isActive, false)
   assert.equal(service.services.jobs.isActive, false)

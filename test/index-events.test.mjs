@@ -27,6 +27,8 @@ function createMockCtx(options = {}) {
           web.fetchProviderCalls.push(provider)
           return web.fetchDisposer
         },
+        search() {},
+        fetch() {},
         searchProviderCalls: [],
         fetchProviderCalls: [],
         searchDisposer: () => {},
@@ -194,7 +196,7 @@ test('events guard failure disables only events and keeps facade active', () => 
   assert.equal(typeof state.pluginApi.services.web.registerSearchProvider, 'function')
 })
 
-test('web service absence disables the services feature when no other capability seam is present', () => {
+test('web service absence keeps the services feature active while disabling only the web facade', () => {
   const { ctx, state } = createMockCtx({ web: false })
   assert.doesNotThrow(() => apply(ctx))
 
@@ -216,8 +218,12 @@ test('web service absence disables the services feature when no other capability
   assert.deepEqual(features[10], { name: 'settings', isActive: true })
   assert.deepEqual(features[11], { name: 'systemPrompt', isActive: true })
   assert.equal(features[12].name, 'services')
-  assert.equal(features[12].isActive, false)
-  assert.match(features[12].reason, /capability services/)
+  assert.equal(features[12].isActive, true)
+  assert.equal(state.pluginApi.services.web.isActive, false)
+  assert.throws(
+    () => state.pluginApi.services.web.registerSearchProvider({}),
+    (error) => error.feature === 'services.web',
+  )
   assert.equal(features[13].name, 'typert')
   assert.equal(features[13].isActive, false)
   assert.equal(features[14].name, 'settingsRemote')
@@ -230,7 +236,7 @@ test('web service absence disables the services feature when no other capability
     () => state.pluginApi.services.web.registerSearchProvider({}),
     (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'services')
+      assert.equal(error.feature, 'services.web')
       return true
     },
   )

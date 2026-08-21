@@ -94,6 +94,33 @@ const SERVICES_KEYS = [
   'compaction',
   'jobs',
   'shellEnv',
+  'agentLoop',
+  'agentPresets',
+  'apiProxy',
+  'clientModules',
+  'commands',
+  'credentials',
+  'directoryPicker',
+  'e2b',
+  'goals',
+  'invariants',
+  'lsp',
+  'messageFeedback',
+  'permissionPresets',
+  'planMode',
+  'sandbox',
+  'sandboxPolicy',
+  'sessionPersistence',
+  'sessionProjectionCache',
+  'shell',
+  'spillStore',
+  'storageDomain',
+  'subprocess',
+  'terminals',
+  'timer',
+  'toolResultPruner',
+  'typertGateway',
+  'webServer',
 ]
 
 test('baseline Cordis catalog remains the exact 47-name frozen union with no compat synthetic event', () => {
@@ -146,7 +173,7 @@ test('durable observation retains its independent exact five-kind catalog', () =
   assert.deepEqual(Object.keys(DURABLE_EVENT_DESCRIPTORS), DURABLE_KIND_NAMES)
 })
 
-test('services namespace retains its independent exact 21-key static allowlist', () => {
-  assert.equal(SERVICES_NAMESPACE_KEYS.length, 21)
+test('services namespace retains its independent exact 48-key static allowlist', () => {
+  assert.equal(SERVICES_NAMESPACE_KEYS.length, 48)
   assert.deepEqual(SERVICES_NAMESPACE_KEYS, SERVICES_KEYS)
 })

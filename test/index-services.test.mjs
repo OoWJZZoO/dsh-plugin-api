@@ -64,7 +64,7 @@ function createMockCtx(options = {}) {
   return { ctx, state, services }
 }
 
-test('apply mounts an active frozen services namespace when all 21 official services are present', () => {
+test('apply mounts an active frozen services namespace when all 48 official services are present', () => {
   const allServices = {}
   for (const def of SERVICE_DEFINITIONS) {
     const svc = {}
@@ -82,10 +82,11 @@ test('apply mounts an active frozen services namespace when all 21 official serv
       ...allServices,
       llm: { resolveModelInfo() {} },
       agents: { get() {} },
-      apiProxy: { sessions: { prompt() {}, selectModel() {} } },
       web: {
         registerSearchProvider() {},
         registerFetchProvider() {},
+        search() {},
+        fetch() {},
       },
     },
   })
@@ -96,7 +97,7 @@ test('apply mounts an active frozen services namespace when all 21 official serv
   assert.equal(state.pluginApi.isActive, true)
   assert.equal(state.pluginApi.services[servicesNamespaceBrand], true)
   assert.ok(Object.isFrozen(state.pluginApi.services))
-  assert.equal(Object.keys(state.pluginApi.services).length, 21)
+  assert.equal(Object.keys(state.pluginApi.services).length, 48)
   assert.equal(state.pluginApi.services.fs.isActive, true)
   assert.equal(state.pluginApi.services.compaction.isActive, true)
   assert.equal(state.pluginApi.services.jobs.isActive, true)
@@ -204,10 +205,11 @@ test('apply degrades a missing capability service per-service while keeping the 
       ...allServices,
       llm: { resolveModelInfo() {} },
       agents: { get() {} },
-      apiProxy: { sessions: { prompt() {}, selectModel() {} } },
       web: {
         registerSearchProvider() {},
         registerFetchProvider() {},
+        search() {},
+        fetch() {},
       },
     },
   })
@@ -245,12 +247,12 @@ test('apply degrades hostile compaction construction while another capability re
   )
 })
 
-test('apply keeps the facade active and disables services when none of the 21 services is present', () => {
+test('apply keeps the facade active and disables services when none of the services is present', () => {
   const { ctx, state } = createMockCtx({
     services: {
       llm: { resolveModelInfo() {} },
       agents: { get() {} },
-      apiProxy: { sessions: { prompt() {}, selectModel() {} } },
+      apiProxy: undefined,
     },
   })
 
@@ -293,6 +295,8 @@ test('apply never throws when services mount throws and disables the services fe
       web: {
         registerSearchProvider() {},
         registerFetchProvider() {},
+        search() {},
+        fetch() {},
       },
     },
   })

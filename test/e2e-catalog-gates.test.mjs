@@ -43,7 +43,7 @@ function createFullCtx({ withCompactionReplacement = false } = {}) {
     sessions: { get() {}, list() {}, fork() {} },
     systemPrompt: { section() {}, context() {}, variable() {}, tools() {}, suppressRuntimeContext() {} },
     apiProxy: { sessions: { prompt() {}, selectModel() {} } },
-    web: { registerSearchProvider() {}, registerFetchProvider() {} },
+    web: { registerSearchProvider() {}, registerFetchProvider() {}, search() {}, fetch() {} },
   }
 
   let compactionRows = []

@@ -121,7 +121,7 @@ const FULL_SERVICES_EXCEPT_SETTINGS = {
   sessions: { get() {}, list() {}, fork() {} },
   systemPrompt: { section() {}, context() {}, variable() {}, tools() {}, suppressRuntimeContext() {} },
   apiProxy: { sessions: { prompt() {}, selectModel() {} } },
-  web: { registerSearchProvider() {}, registerFetchProvider() {} },
+  web: { registerSearchProvider() {}, registerFetchProvider() {}, search() {}, fetch() {} },
 }
 
 test('settings guard failure excludes the settings slice from the composed catalog', () => {

@@ -67,3 +67,16 @@ W2.1 does not touch the `system-prompt/assemble` writable waterfall. The
 `assemble` namespace member added by the host-namespaces leaf is a plain
 service passthrough; P10's `fault`/`freeze` event-catalog semantics are owned
 exclusively by W2.5 (tasks item 10).
+## D6. Services table integration (W2.3)
+
+The reviewed fragment is imported into `lib/services.js` as the static union:
+delivered definitions keep their order with provenance (`pkg`) metadata
+removed, `web` uses the fragment's complete four-member version
+(`registerSearchProvider`/`registerFetchProvider`/`search`/`fetch` — the
+latter two are confirmed official `ctx.web` members), and the remaining 27
+fragment keys append in fragment order. The runtime table retains exactly
+`key`/`ctxService`/`members` (48 unique keys, 413 members). Existing tests
+that hard-coded the 21-key allowlist, the default disabled-namespace count,
+fixture `web` shapes, or the "web absence disables services" assumption are
+updated to the 48-key surface; the per-service P4 degradation behavior is
+unchanged (a missing declared member still disables only its own facade).
