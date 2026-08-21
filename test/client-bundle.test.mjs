@@ -73,8 +73,9 @@ function createCtx({ omit = [], throwGet = [] } = {}) {
 test('official client artifact registers, composes all client leaves, and supports reapply cleanup', async () => {
   const artifact = loadClientBundle()
   assert.deepEqual([...artifact.CLIENT_MOUNTERS], [
-    'clientManifest', 'clientConnection', 'clientCodec', 'clientRemoteContribution',
-    'clientSettingsRemote', 'clientSettingsScope', 'clientSlots', 'clientSlotEvents', 'clientRemoteEvents',
+    'clientManifest', 'clientConnection', 'clientCodec', 'clientOfficialServices',
+    'clientRemoteContribution', 'clientSettingsRemote', 'clientSettingsScope',
+    'clientSlots', 'clientSlotEvents', 'clientRemoteEvents',
   ])
   const ctx = createCtx()
   const dispose = artifact.apply(ctx)
@@ -112,6 +113,7 @@ test('bundle mountRemote mounts through gateway-style dynamic namespace publicat
 
 const FEATURE_TO_LEAF = {
   clientConnection: 'connection',
+  clientOfficialServices: 'services',
   clientRemoteContribution: 'remoteContribution',
   clientSettingsRemote: 'settingsRemote',
   clientSettingsScope: 'settingsScope',

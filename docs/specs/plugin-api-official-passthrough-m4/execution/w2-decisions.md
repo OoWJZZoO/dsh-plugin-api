@@ -80,3 +80,46 @@ that hard-coded the 21-key allowlist, the default disabled-namespace count,
 fixture `web` shapes, or the "web absence disables services" assumption are
 updated to the 48-key surface; the per-service P4 degradation behavior is
 unchanged (a missing declared member still disables only its own facade).
+
+## D7. Client official leaves join surface (W2.4)
+
+The reviewed client-leaf results expose aggregate namespaces and disposers
+already (`api`/`leaves`/`dispose` per result, per-leaf record with owner-table
+supersede), so the join mounts them directly instead of routing through each
+leaf's optional `publish` callback. The leaf-level `publish` contract remains
+tested by the W1 batch; the central join is epoch-scoped (a fresh apply builds
+a fresh outer client), so no surface mutation registry is needed and stale
+owners are unreachable by construction.
+
+Public surface additions on the frozen outer client:
+
+- `services`: the official services namespace `{ isActive, modules, locale,
+  sessions, workspaces, chatFileMentions, layout, theme, appShell,
+  sessionLogDownload, cordisInspect, dynamicCordisRunner }`; key order is
+  `CLIENT_SERVICE_NAMES` order, which matches the approved design order.
+- `events`: `{ isActive, localeChange, themeChange, connectionReset,
+  commandExecuted, on }`; per-event public faces expose only `isActive` and
+  `on` (dispose stays leaf-internal, matching the slots precedent).
+- `connection`: the existing connection face plus `api.llm`
+  (`providers`, `models`, `discoverModels`) mounted from the official
+  connection leaf; an unavailable official `api.llm` keeps the llm face
+  present in its failing (leaf-disabled) shape, so `api.settings` semantics
+  and `connection.isActive` from the existing face are unchanged.
+
+`CLIENT_MOUNTERS` gains exactly one entry, `clientOfficialServices`, between
+`clientCodec` and `clientRemoteContribution` (design join order). Client
+events and the connection face are not separate mounters; they ride the
+existing outer lifecycle. Dispose order is LIFO relative to construction:
+the three official leaves dispose after `remoteContribution` and before the
+existing connection face. No manifest, codec, remote-contribution, slot, or
+settings-remote semantics change.
+
+D7 note (bundle regeneration): `lib/client.js` is a checked-in esbuild
+artifact rebuilt from `lib/client-runtime.js` (esbuild 0.28.2, iife bundle,
+`DSHPluginApiClientBundle` global, manual loader wrapper). The rebuilt zod
+section was byte-identical to the previously delivered copy except for four
+whitespace-only lines inside zod template literals (the current official zod
+file indents those blank lines where the delivered copy had empty lines);
+they were collapsed to the delivered bytes so the vendored zod copy stays
+byte-identical across the milestone boundary. All other zod region bytes
+match, and the new leaf modules plus the join changes are the only additions.
