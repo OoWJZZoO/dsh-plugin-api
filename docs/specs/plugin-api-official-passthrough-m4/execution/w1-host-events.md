@@ -43,19 +43,24 @@ did not demonstrate native dispatch identity, contained listener failure, or
 stale native-hook cleanup; the availability predicate accepted malformed empty
 objects and thenables; a runtime comment exposed an internal coordination
 marker; and this report lacked separate Requirements/Design revision notes and
-accurate export-shape wording. The implementation and tests were revised only
-within the allowed three-file write set. No Requirements or Design acceptance
-boundary changed.
+accurate export-shape wording. The follow-up blocking review identified two
+more issues: availability probing read a provider `then` getter, and the
+focused suite did not prove composition-layer omission for a missing producer.
+The implementation and tests were revised only within the allowed three-file
+write set. No Requirements or Design acceptance boundary changed.
 
 Requirements revision note: no deviation from the approved nine event rows,
 five slices, eight-field schema, optional-producer isolation, or catalog-only
 boundary. The added tests now exercise the approved direct-dispatch identity,
 contained failure, and stale-cleanup behavior through the existing bus seam.
+The follow-up tests also verify getter-free thenable detection and composition
+of only available slices through the existing catalog composer.
 
 Design revision note: no producer bridge, replay, re-emission, synthetic
 payload, or central composition path was added. The guard now treats an empty
 provider object and a thenable as malformed and therefore unavailable, while
-remaining fail-open for the affected slice.
+remaining fail-open for the affected slice. Thenable shape is inspected through
+property descriptors so availability checks do not invoke provider getters.
 
 ## Verification
 
@@ -65,7 +70,9 @@ Focused command:
 node --test test/official-host-events-catalog.test.mjs
 ```
 
-Actual result after review repair: 8 tests passed, 0 failed. The suite covered
+Actual result after first review repair: 8 tests passed, 0 failed. The
+follow-up repair adds two tests; the final result is recorded by the coordinator
+after the required verification. The suite covered
 exact five-slice/nine-row grouping, exact metadata and field order, recursive
 immutability, provider-missing isolation, malformed provider rejection,
 direct official dispatch with payload/argument identity, contained listener

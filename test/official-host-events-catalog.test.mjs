@@ -10,6 +10,7 @@ import {
 } from './official-passthrough-contracts.mjs'
 import { officialHostEventCatalogSlices } from '../lib/official-host-events-catalog.js'
 import { createEventsBus } from '../lib/events-bus.js'
+import { composeCatalogs } from '../lib/catalog-compose.js'
 
 const PROVIDER_NAMES = [
   'agentLoop',
@@ -151,6 +152,42 @@ test('availability probes isolate missing, malformed, and throwing providers', (
     false,
   )
   assert.equal(officialHostEventCatalogSlices[2].isAvailable({}), false)
+})
+
+test('composing available slices omits only the slice with a missing producer', () => {
+  const absentProvider = PROVIDER_NAMES[0]
+  const ctx = {
+    get(name) {
+      if (name === absentProvider) return undefined
+      return { marker: true }
+    },
+  }
+  const catalog = composeCatalogs(
+    ...officialHostEventCatalogSlices
+      .filter((slice) => slice.isAvailable(ctx))
+      .map((slice) => slice.catalog),
+  )
+
+  assert.equal(catalog['agent-loop/config-start-failed'], undefined)
+  assert.ok(catalog['agent-preset/selected'])
+  assert.ok(catalog['cordis/dynamic-package'])
+  assert.ok(catalog['cordis/inspect-query'])
+  assert.ok(catalog['domain/changed'])
+})
+
+test('availability probes inspect thenable shape without invoking a getter', () => {
+  let reads = 0
+  const provider = {}
+  Object.defineProperty(provider, 'then', {
+    configurable: true,
+    get() {
+      reads += 1
+      throw new Error('getter must not run')
+    },
+  })
+
+  assert.equal(officialHostEventCatalogSlices[0].isAvailable({ get() { return provider } }), false)
+  assert.equal(reads, 0)
 })
 
 test('an official emit reaches one facade listener with the original payload identity', () => {
