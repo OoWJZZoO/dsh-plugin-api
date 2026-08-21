@@ -269,17 +269,19 @@ shared files once. The contract must freeze the following details:
   - Cover Requirements 4.1-4.3, 5.1-5.3, and 6.1-6.3.
   - Delivered: batch 5 commit; `test/official-passthrough-independence.test.mjs` — no-M4 + M5 run (bootFixture raw `modules` substrate + seven valid namespaces/loadCache, no `client.modules` facade, 16 features with seven active, genuine forwarding through `loader.calls.length === 7` and provider calls); client regression runs (a)/(b) comparing the archived boundary artifact (`3cad40e:lib/client.js`, M4-era) with the current artifact on the identical fixture — M3 face vectors, reapply identity, disposer behavior, cleanup, and a degraded-foundation fallback comparison all equal (vm-realm-normalized); host regression runs comparing the archived boundary host (reconstructed via `git show` of the six evolved lib files plus manifest copies) with the current host — 16 feature names/activity, member/abort/remote-publish/service observations, reapply/dispose/cleanup equal, with the two context-rendering helpers present only on the current host; source/artifact audit asserting the four implementation artifacts stay free of M4 implementation markers, governance tokens, and `require(` paths, and that the implemented surface-key union is exactly the nine approved keys.
 
-- [ ] 5.2 Run the complete verification matrix and resolve only in-scope failures.
+- [x] 5.2 Run the complete verification matrix and resolve only in-scope failures.
   - Run focused M5 tests, the full `node --test` suite, `git diff --check`, generated-bundle checks, and official-package immutability checks.
   - Re-run lifecycle race tests after any integration fix and confirm no unhandled rejection or apply-time throw remains.
   - Record residual unsupported boundaries, including physically missing statically imported host peers, in the final delivery report rather than broadening scope.
   - Cover Requirements 1.1-6.3.
+  - Delivered: batch 5 commit; focused M5 suite 123/123, full `node --test` 1065/1065 with zero failures and no unhandled-rejection diagnostics (all 17 "rejection" matches are deliberate test titles), `git diff --check` clean, `node --check` clean on the four implementation artifacts, generated-bundle checks green (VM load, module-loader handoff, token/`require(` audits), and the official package tree `/usr/lib/node_modules/@deepseek-ai/dsh` (identity `0.1.0-rc.6`) shows zero files modified during the M5 window. Residual boundaries, none emerging inside this feature's scope, are recorded in the final delivery report (no physically missing host peers in this environment; all peer resolution green).
 
-- [ ] 5.3 Update the approved feature registrations and commit the complete Stage 4 delivery.
+- [x] 5.3 Update the approved feature registrations and commit the complete Stage 4 delivery.
   - Mark P11 and C26-C32 delivered in `docs/specs/plugin-api-features/feature-list.md` without changing M4 rows or their historical delivered notes.
   - Add the M5 feature to `AGENTS.md` Section 8 with its spec directory, scope, independent client lease/root constraints, and fail-safe boundary.
   - Update this task file and any required spec reconciliation notes, stage only task-relevant files, pass `git diff --check`, and create the final Stage 4 commit.
   - Cover Requirements 5.1-5.3 and 6.1-6.3.
+  - Delivered: batch 5 commit; `feature-list.md` eight M5 rows (P11 plus C26-C32) flipped to `**delivered**` with zero edits to M4 rows or their notes; `AGENTS.md` Section 8 gained the M5 registration row; this task file closed with the full verification record; final Stage 4 commit created as the complete deliverable boundary.
 
 ## Requirements traceability
 
