@@ -259,7 +259,7 @@ shared files once. The contract must freeze the following details:
 
 ## 5. Final reconciliation, governance, and verification
 
-- [ ] 5.1 Add focused M5 independence and governance tests.
+- [x] 5.1 Add focused M5 independence and governance tests.
   - Mount valid M5 providers with the shared foundation while omitting M4-specific services and assert all available M5 surfaces operate.
   - The no-M4 fixture must provide the raw `modules` service, all seven valid RC.6 namespaces, and matching `loadCache` entries; it must omit M4's `client.modules` facade and assert all seven M5 leaves are active and truly forwarding, not merely that M3 remains alive.
   - Establish two separate M4 regression runs: (a) shared foundation + representative valid M4 implementation, with M5 absent; and (b) the identical foundation and M4 implementation with M5 present. Compare only these two runs for M4 `isActive` values, member and return identities, fallback behavior, reapply identity, disposer behavior, and lifecycle cleanup. M5 must not alter those observations.
@@ -267,6 +267,7 @@ shared files once. The contract must freeze the following details:
   - Add source/artifact audits proving no M4-specific import, alias, feature dependency, package-file modification, dynamic undocumented member forwarding, or governance token leakage into implementation artifacts.
   - Assert only P11 and C26-C32 are implemented and no M4 feature-list assignment is renamed, duplicated, moved, or changed.
   - Cover Requirements 4.1-4.3, 5.1-5.3, and 6.1-6.3.
+  - Delivered: batch 5 commit; `test/official-passthrough-independence.test.mjs` — no-M4 + M5 run (bootFixture raw `modules` substrate + seven valid namespaces/loadCache, no `client.modules` facade, 16 features with seven active, genuine forwarding through `loader.calls.length === 7` and provider calls); client regression runs (a)/(b) comparing the archived boundary artifact (`3cad40e:lib/client.js`, M4-era) with the current artifact on the identical fixture — M3 face vectors, reapply identity, disposer behavior, cleanup, and a degraded-foundation fallback comparison all equal (vm-realm-normalized); host regression runs comparing the archived boundary host (reconstructed via `git show` of the six evolved lib files plus manifest copies) with the current host — 16 feature names/activity, member/abort/remote-publish/service observations, reapply/dispose/cleanup equal, with the two context-rendering helpers present only on the current host; source/artifact audit asserting the four implementation artifacts stay free of M4 implementation markers, governance tokens, and `require(` paths, and that the implemented surface-key union is exactly the nine approved keys.
 
 - [ ] 5.2 Run the complete verification matrix and resolve only in-scope failures.
   - Run focused M5 tests, the full `node --test` suite, `git diff --check`, generated-bundle checks, and official-package immutability checks.
