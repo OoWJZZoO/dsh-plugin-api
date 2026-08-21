@@ -153,6 +153,40 @@ test('value accessors that throw degrade at read time', () => {
   assert.equal(leaf.api.isActive, false)
 })
 
+test('sessionLogDownload store is a value member with the official snapshot-store shape', () => {
+  const store = Object.freeze({
+    getSnapshot() {},
+    subscribe() {},
+    update() {},
+    set() {},
+  })
+  const provider = {
+    store,
+    download() {},
+    dismiss() {},
+    dispose() {},
+  }
+  const calls = new Map()
+  for (const member of ['download', 'dismiss', 'dispose']) {
+    const original = provider[member]
+    provider[member] = function (...args) {
+      assert.equal(this, provider)
+      calls.set(member, args)
+      return original.apply(this, args)
+    }
+  }
+
+  const leaf = createClientOfficialService({ name: 'sessionLogDownload', provider })
+  assert.equal(leaf.api.isActive, true)
+  assert.equal(leaf.api.store, store)
+  assert.equal(typeof leaf.api.store, 'object')
+  const args = ['entry']
+  leaf.api.download(...args)
+  assert.deepEqual(calls.get('download'), args)
+  assert.equal(typeof leaf.api.dismiss, 'function')
+  assert.equal(typeof leaf.api.dispose, 'function')
+})
+
 test('root inactivity wins without resolving an official provider', () => {
   let reads = 0
   const fixture = makeProvider('modules')

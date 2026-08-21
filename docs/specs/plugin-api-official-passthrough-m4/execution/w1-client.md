@@ -63,9 +63,10 @@ Focused command:
 node --test test/client-official-services.test.mjs test/client-official-events.test.mjs test/client-official-connection.test.mjs
 ```
 
-Result: 25 passed, 0 failed, including regression coverage for native event
-disposer failures, malformed method/value accessors, EventTarget cleanup, and
-connection method revalidation.
+Result: 29 passed, 0 failed, including regression coverage for native event
+disposer failures, malformed method/value accessors, EventTarget cleanup,
+connection method revalidation, and the official snapshot-store shape of
+`sessionLogDownload.store`.
 
 Additional checks:
 
@@ -76,10 +77,23 @@ Additional checks:
   all six findings were corrected with focused regression tests. The next
   repeat review found two lifecycle/fallback gaps: stale aggregate disposal
   reported success instead of a no-op, and disabled event leaves reported a
-  shared feature name. Both were corrected with focused regression tests; the
-  corrected batch is pending the required repeat review.
+  shared feature name. Both were corrected with focused regression tests.
+- The final blocking review found one substantive gap: `sessionLogDownload.store`
+  is an official snapshot-store **value** (the controller's `createSnapshotStore`
+  object consumed by value in the official hooks), but the leaf classified it as
+  a callable member. Under a healthy official provider the leaf therefore
+  degraded to P4 and exposed a wrapper function instead of the store value.
+  The value-member list now includes `store`, and a focused regression test
+  builds the official snapshot-store shape (`getSnapshot/subscribe/update/set`)
+  and asserts exact object identity, leaf activation under a healthy provider,
+  and the callable behavior of the remaining three members. The suite is now
+  29 passed and this review outcome is recorded as the closing of the previous
+  "pending the required repeat review" state.
 - Official client declarations and implementations were inspected for the
-  approved provider member shapes and connection LLM methods.
+  approved provider member shapes and connection LLM methods; the
+  `sessionLogDownload.store` classification follows the official
+  `dsh-session-log-export` controller value shape confirmed during that
+  inspection.
 - The official DSH installation under `/usr/lib/node_modules/@deepseek-ai/dsh`
   was read-only during this batch.
 
