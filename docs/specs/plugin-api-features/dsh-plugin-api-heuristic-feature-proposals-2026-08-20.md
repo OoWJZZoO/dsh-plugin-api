@@ -471,7 +471,7 @@ R 类共有的推进条件：
 
 ## Stage 0 前需要共同确认的问题
 
-> 权威版 2026-08-21 起迁移至 `docs/standards/stage0-common-questions.md`（口径回填以该文件为准）；本节保留为历史快照。
+> 权威版 2026-08-21 起按领域分册至 `docs/standards/`（见其 `README.md` 索引；`stage0-common-questions.md` 已弃用，仅作溯源）；本节保留为历史快照。
 
 这些问题影响多个候选，应在正式 Goal 阶段之前统一口径：
 

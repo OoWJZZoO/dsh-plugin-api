@@ -194,4 +194,4 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 ## 8. 交付登记与规范目录（防过期）
 
 > 已交付 feature 的逐项登记表（范围、状态、Spec 目录、关键约束/设计）自 2026-08-21 起迁至 `docs/specs/plugin-api-features/feature-list.md` §7，本文不再保留登记表，避免双源漂移。规则不变：每个 feature 在 Stage 4 交付后，必须在该节追加条目并同步对应状态；公开 API 形状或里程碑状态变化时同步更新，防止文档过期过时（§3.0.1 中"登记为 delivered"即指该登记表）。
-> 全局 feature 设计规范统一收于 `docs/standards/`（`README.md` 为索引；含 `capability-strategy.md` 能力策略、`stage0-common-questions.md` Stage 0 共同问题等）；新增全局规范落盘该目录并在 §6 登记。
+> 全局 feature 设计规范统一收于 `docs/standards/`（`README.md` 为索引；分册：`capability-strategy.md` 能力策略、`api-shape.md` API 形状、`identity-and-lifecycle.md` 身份与生命周期、`durable-state-and-scope.md` 持久状态与作用域、`visibility-and-redaction.md` 可见性；`stage0-common-questions.md` 已弃用作溯源）；新增全局规范落盘该目录并在 §6 登记。
