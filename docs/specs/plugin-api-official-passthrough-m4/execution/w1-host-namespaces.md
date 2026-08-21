@@ -41,15 +41,29 @@ package file was modified.
 
 ## Verification
 
-- `node --test test/official-host-namespaces.test.mjs` - 10 passed.
-- `git diff --check` - passed.
+- `node --test test/official-host-namespaces.test.mjs` - 12 passed, 0 failed
+  after review repair.
+- `git diff --check` - passed after review repair.
 - Final staged write-set audit - passed; the staged name list contains exactly
   the three declared write-set paths.
-- Final worktree cleanliness audit - passed after commit; `git status --short
-  --untracked-files=all` is empty.
+- Implementation repair commit: `2e693323dc4752374094489cb79d5a732d58790e`.
+- Final report commit is created after this verification record update; the
+  coordinator will confirm the final worktree cleanliness audit.
 
 ## Requirements and Design Revision Note
 
 No Requirements or Design deviation is known. Dynamic settings lookup and
 owner-token lifecycle checks follow the approved failure and cleanup boundary;
 integration into existing M0-M3 namespace wiring remains assigned to W2.
+
+## Review Repair Note
+
+The blocking Luna(max) review found three substantive gaps. Explicit settings
+lookup getter failures now map to service-unavailable; an agent options getter
+failure now remains a locally disabled malformed surface rather than becoming
+an all-undefined snapshot; and focused tests now exercise all five agent
+operations, all five session-store operations, and both tool operations with
+argument and receiver assertions. The changes remain within the assigned
+three-file write set and do not alter the approved Requirements or Design
+boundary. One test-only naming typo was corrected before the final `12 passed`
+run.
