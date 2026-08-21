@@ -2,7 +2,7 @@
 
 > feature_name: `plugin-api-session-title-r1`
 > 状态：Stage 2 已批准（用户已批准；含 R-5.11 收窄修订的明示同意，见「Requirements 修订注记」）
-> 上游：`requirements.md`（Stage 1 已批准，含一次已记录的头注小修订）、`AGENTS.md` §2.7/§4.6、`docs/capability-strategy.md` R1–R9、compaction-events-r1 的 design/tasks（R 类先例）
+> 上游：`requirements.md`（Stage 1 已批准，含一次已记录的头注小修订）、`AGENTS.md` §2.7/§4.6、`docs/standards/capability-strategy.md` R1–R9、compaction-events-r1 的 design/tasks（R 类先例）
 > 类型：R 类 replacement bundle；host-only。
 >
 > **维护修订（包政策推行）**：实现已收敛到不含 `r1` 的运行时名（源码 `packages/session-title/`、row id `plugin-api-session-title`、feature `session-title`、契约符号 `dsh-plugin-api.session-title.contract`）。辅助包 `package.json` 与主包统一 `0.1.0-rc.6-0.5` / `dsh.api: 0.5`，apply 内校验自身与主包的全量唯一版本；不一致时进入官方等价 fallback（replacement 特性停用）并显式诊断。主包 catalog slice 用工厂 `createSessionTitleEventsCatalogSlice({expectedContract, auxiliaryManifest, logger})` 做二次校验，只排除本 R slice。聚合 bundle `packages/full/` 以确定顺序装配主包与本替代行。
@@ -225,7 +225,7 @@ else:
 - 辅助包运行时锁：`@deepseek-ai/dsh-llm@0.1.0-rc.6`（runtime identity，与主包 F0.3 同源）+ `@deepseek-ai/dsh-session-title@0.1.0-rc.6`（fork 基底 identity）；不匹配按 C3 矩阵安全停用/降级。
 - 主包：`0.1.0-rc.6-0.5` / `dsh.api 0.5`（C1）。
 - U9 上游提案继续登记（requirements 8.1）；官方提供等价的 `session-title/candidate` 或内置合成消息排除 seam 后，辅助包发布 deprecation 版本：保留 provider 但把内部 dispatch 切换为官方事件（或直接退役 fork），并给出消费者迁移路径（requirements 8.2）。
-- 交付治理（requirements 8.3、1.4/1.5）：Stage 4 完成时，`docs/specs/plugin-api-features/feature-list.md` 的 U9 登记与 R 类类型标注、`AGENTS.md` §8 登记与 §2/§4 同步、`docs/capability-strategy.md` §5 矩阵，以及本次交付触及的旧 spec 与治理文档（包命名/行 id/catalog 类型）SHALL 在同一 change set 就地追加/修订；确属历史快照的加权威指针。
+- 交付治理（requirements 8.3、1.4/1.5）：Stage 4 完成时，`docs/specs/plugin-api-features/feature-list.md` 的 U9 登记与 R 类类型标注、`AGENTS.md` §8 登记与 §2/§4 同步、`docs/standards/capability-strategy.md` §5 矩阵，以及本次交付触及的旧 spec 与治理文档（包命名/行 id/catalog 类型）SHALL 在同一 change set 就地追加/修订；确属历史快照的加权威指针。
 
 ### C7. pro-ex 迁移映射（requirements §7，证据非目的）
 

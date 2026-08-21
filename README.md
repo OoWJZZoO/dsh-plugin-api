@@ -95,7 +95,7 @@ pluginApi.routing.availability // { execution: boolean, session: boolean }
 
 ## 替换行通道（replacement bundle）
 
-当缺失语义天然属于某个官方 loader 行、且经 `docs/capability-strategy.md` 批准登记时，可发布独立 replacement bundle：用官方 patch 机制（`- id: <官方行>; disabled: true` + `- insert:` 替代行）禁用该官方行，由替代行完整提供原行的 ctx 服务/事件契约并增加接口。replacement 绝不修改官方安装文件；它只替换 ctx 服务/事件面，**不替换** `@deepseek-ai/dsh-*` 包 import 面。
+当缺失语义天然属于某个官方 loader 行、且经 `docs/standards/capability-strategy.md` 批准登记时，可发布独立 replacement bundle：用官方 patch 机制（`- id: <官方行>; disabled: true` + `- insert:` 替代行）禁用该官方行，由替代行完整提供原行的 ctx 服务/事件契约并增加接口。replacement 绝不修改官方安装文件；它只替换 ctx 服务/事件面，**不替换** `@deepseek-ai/dsh-*` 包 import 面。
 
 **已交付示例：`@deepseek-ai/dsh-plugin-api-compaction-events`**（源码 `packages/compaction-events/`，row id `plugin-api-compaction-events`）fork 官方 `compaction-basic` 行，在完整保留 `ctx.compaction` 契约的前提下新增 `compaction/*` 事件词汇（`request/started/completed/failed/skipped`）；**`@deepseek-ai/dsh-plugin-api-session-title`**（源码 `packages/session-title/`，row id `plugin-api-session-title`）fork 官方 `session-title` 行并提供 `session-title/candidate` 候选资格策略瀑布。主包 `pluginApi.events.catalog` 以动态 replacement slice 呈现（仅替代行 active 且版本一致时列出）。专项规格见 `docs/specs/` 下对应制品。
 

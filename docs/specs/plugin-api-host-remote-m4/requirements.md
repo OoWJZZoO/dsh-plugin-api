@@ -2,7 +2,7 @@
 
 > feature_name: `plugin-api-host-remote-m4`
 > 状态：Stage 1 草案（待对抗性审查与用户批准）
-> 上游：Stage 0 Goal（已批准）、`AGENTS.md` §2/§4/§6、`docs/specs/plugin-api-features/feature-list.md` §2.8（ST4 `settings.remote`）与 §3.1（`typert-gateway` R 类观察项）、`docs/capability-strategy.md`（R 类登记与观察项）、`docs/specs/plugin-api-settings-remote-m3/`（ST4 既有绑定/回滚实现）、`dsh-pro-ex-ability-anchor/lib/config-remote.js` 与 `lib/index.js`（当前手工桥接路径）
+> 上游：Stage 0 Goal（已批准）、`AGENTS.md` §2/§4/§6、`docs/specs/plugin-api-features/feature-list.md` §2.8（ST4 `settings.remote`）与 §3.1（`typert-gateway` R 类观察项）、`docs/standards/capability-strategy.md`（R 类登记与观察项）、`docs/specs/plugin-api-settings-remote-m3/`（ST4 既有绑定/回滚实现）、`dsh-pro-ex-ability-anchor/lib/config-remote.js` 与 `lib/index.js`（当前手工桥接路径）
 > 类型：B 类（门面转译；官方 `bindTypertRemote` / `ctx.reflect.provide` 为公开原语，门面负责稳定封装）；host-only，无 client bundle。
 
 ---
@@ -135,7 +135,7 @@ ctx.plugin(createExtraproAnchorConfigBridge(typertProtocol, store, { platform, g
 
 5.2. WHEN this feature is delivered THEN it SHALL NOT implement client-side native `remote.<namespace>` dynamic discovery（U6/C7 仍为上游提案，不改 `dsh-api-remotes` 硬编码）. （非目标）
 
-5.3. WHEN this feature is delivered THEN it SHALL NOT register any R-class replacement：the `typert-gateway`（396 行）and typert-related official rows SHALL remain R-class **observation items** in `docs/capability-strategy.md`（ST4 观察项状态保持不变）; B 类门面转译 SHALL remain the delivery channel. （硬约束）
+5.3. WHEN this feature is delivered THEN it SHALL NOT register any R-class replacement：the `typert-gateway`（396 行）and typert-related official rows SHALL remain R-class **observation items** in `docs/standards/capability-strategy.md`（ST4 观察项状态保持不变）; B 类门面转译 SHALL remain the delivery channel. （硬约束）
 
 5.4. WHEN this feature is delivered THEN it SHALL NOT override, shadow, or extend `pluginApi.settings.remote`（ST4）; the settings namespace remains the settings-specific owner, and this feature adds the generic `pluginApi.remote` sibling. （硬约束）
 

@@ -116,3 +116,25 @@ R9. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 - 新增/变更 R 类：同步 `AGENTS.md` §2/§4、`docs/specs/plugin-api-features/feature-list.md` 类型标注与 U-series 登记、本文 §5 矩阵。
 - 上游提案落地：从本文移除对应 R 类候选，并在 feature-list 标记退役。
 - 本文的任何实质修订须经人类确认（与 AGENTS.md 同级治理）。
+
+---
+
+## 9. R 辅助包边界（每替换一个官方行 = 一个独立辅助包）
+
+> 综合 Stage 0 共同问题 NO.6（2026-08-21 确认）。
+
+- **每个 R 能力一个独立辅助包**：每替换一个官方包/行就对应一个独立辅助包，命名 `@deepseek-ai/dsh-plugin-api-<domain>`（如 MCP → `@deepseek-ai/dsh-plugin-api-mcp`、session branch → `@deepseek-ai/dsh-plugin-api-session-branch`、attachments → `@deepseek-ai/dsh-plugin-api-attachments`）；不得把一个辅助包塞进多个替换行。
+- 沿用现有 full/selection install 模式与统一版本协商（见文首"维护修订"条）；辅助包与主包版本不一致时只停用该 R 特性。
+
+## 10. 客户端半面判定（host-only 或完整 client 复制）
+
+> 综合 Stage 0 共同问题 NO.7（2026-08-21 确认）。按序逐项判定，**任何一项命中即要求完整复制其客户端能力**：
+
+1. 被替换的官方行是否声明 client manifest？
+2. 是否注册 remote namespace？
+3. 是否提供 slot 或 settings bridge？
+4. 是否有 client 与 host 之间的版本协商？
+5. 是否有 browser-side state 或 reconnect 语义？
+6. 官方行是否拥有 client-facing event/service？
+
+全部为否则 host-only。判定结果必须在 R 类 requirements 中记录，逐项给出证据；命中的客户端能力依 R8（client 面自建构建）落地。

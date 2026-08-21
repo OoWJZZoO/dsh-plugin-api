@@ -1,0 +1,38 @@
+# Stage 0 共同问题（已弃用 → 分册标准）
+
+> 状态：**deprecated**（2026-08-21 弃用）。本文件不再作为权威；标准已按领域分册综合为 `docs/standards/` 各开发指南（权威入口见 [`README.md`](./README.md)）。
+> 本文保留全部问答作为**决议溯源**（历史快照，不再修订）；要改口径时直接修订对应分册，并在该分册注明变更。
+
+## 溯源映射（NO. → 现行权威位置）
+
+| NO. | 领域 | 现行权威位置 |
+|---|---|---|
+| 1 | execution 身份 | `identity-and-lifecycle.md` §1 |
+| 2 | 存储作用域分层 | `durable-state-and-scope.md` §1 |
+| 3 | generation 语义 | `identity-and-lifecycle.md` §2 |
+| 4 | 终态词汇 | `identity-and-lifecycle.md` §3 |
+| 5 | 可见性与脱敏 | `visibility-and-redaction.md` |
+| 6 | R 辅助包边界 | `capability-strategy.md` §9 |
+| 7 | 客户端半面判定 | `capability-strategy.md` §10 |
+| 8 | 操作能力声明与 retry | `durable-state-and-scope.md` §3/§4 |
+| 9 | 三面边界与 API 形状 | `api-shape.md` |
+| 10 | 纯本地开发窗口 | AGENTS.md §3.0.1（过程声明，无独立分册） |
+
+---
+
+## 历史问答快照（2026-08-21，不再作为权威）
+
+> 来源：提取自 `docs/specs/plugin-api-features/dsh-plugin-api-heuristic-feature-proposals-2026-08-20.md`「Stage 0 前需要共同确认的问题」（2026-08-20 启发式候选调研），该表单保留为历史快照。
+
+| # | 问题 | 当时的回答 |
+|---|---|---|
+| 1 | `executionId` 是否由 plugin-api 生成，还是必须等待官方提供稳定 execution identity？ | **由 plugin-api 自己生成**（不等待官方提供）。 |
+| 2 | durable record 的最小存储 contract 是 session、workspace 还是 profile-scoped storage？ | **明确分层**（scope 即存储契约）：session = 对话、turn、execution observation、session branch、prompt provenance；workspace = 文件 lease、项目任务、checkpoint、跨 session coordination；profile = 插件配置、能力状态、用户预算、profile 安装状态。持久化记录必须归属且只归属其中一档。 |
+| 3 | 所有 generation 是否都采用单调整数，还是使用 owner-specific opaque token？ | **owner-specific opaque token**；若某个 owner 确实需要排序，再额外提供 **owner-local revision**（不全局统一单调序号）。 |
+| 4 | `settled`、`committed`、`closed`、`disposed` 是否需要严格区分，避免把生命周期词混用？ | **不同对象仍使用不同字段，但提供统一的 terminal outcome 词汇**：`success` / `error` / `aborted` / `denied` / `superseded`。执行可以有 outcome；mutation 可以有 commitState；resource 可以有 lifecycleState；任务可复用统一 terminal outcome（语义统一，字段不合并）。 |
+| 5 | 哪些语义需要模型可见，哪些只允许 UI/diagnostic 可见，哪些必须 redacted？ | **默认最小暴露，显式提升可见性**。默认：模型看不到 execution 内部诊断、UI 看不到 secret、日志只保留摘要。只有经过 policy：某些 route reason 可进入模型、某些 attachment metadata 可进入 UI、某些 error detail 可进入 debug mode。 |
+| 6 | R bundle 是否按现有 full/selection install 模式作为独立辅助包发布？ | **每个 R 能力一个独立辅助包**（每个被替换的官方包对应一个独立辅助包），例如 `@deepseek-ai/dsh-plugin-api-mcp`、`@deepseek-ai/dsh-plugin-api-session-branch`、`@deepseek-ai/dsh-plugin-api-attachments`；沿用现有 full/selection install 模式与版本协商。 |
+| 7 | replacement 是否需要提供官方行的完整 client half，还是只替 host 行？必须按具体 owner 的原始契约决定，不能一概而论。 | **按序判定，任何一项命中即要求完整复制其客户端能力**：① 被替换的官方行是否声明 client manifest？② 是否注册 remote namespace？③ 是否提供 slot 或 settings bridge？④ 是否有 client 与 host 之间的版本协商？⑤ 是否有 browser-side state 或 reconnect 语义？⑥ 官方行是否拥有 client-facing event/service？全部为否则 host-only。 |
+| 8 | 所有恢复和 retry 是否默认 fail-closed；对 non-idempotent tool 是否强制要求 capability declaration？ | **按 operation 声明能力，未知默认禁止**。未声明时默认不自动 retry。retry ≠ 重新执行同一 execution：必须区分「execution-1 的 attempt-1 → error、attempt-2 → success」与「execution-1 内部一次 operation 的重试」，否则 usage、budget、route、audit 会混乱。失败分类：**transient**（暂时网络断开、provider 503、MCP server 临时不可用）允许 retry 但必须有边界；**permanent**（参数错误、权限不足、schema 不匹配、文件不存在）通常不应自动 retry；**aborted**（用户取消或 AbortSignal 触发）不能当 transient failure；**denied**（approval 拒绝）不能自动绕过；**superseded**（旧 generation 或旧 attempt 已被新操作取代）通常不能继续补写结果。 |
+| 9 | 纯 projection、policy registry、durable mutation 的边界在哪里，避免把每个候选都做成一个万能 service？ | **三面分离 + 一面原则 + 底座私有**：见 `api-shape.md`（硬契约、数据流单向、一面原则、底座分离、三条 smell 判据）。 |
+| 10 | 当前仓库仍处于纯本地开发窗口，合理的 API 形状重构应尽早纳入，而不能用"已 delivered"作为拒绝理由；但仍必须遵守每个 feature 的 Stage 0–4 gate。 | **确认成立**：AGENTS.md §3.0.1 已明文此规则，本条不构成问题。 |
