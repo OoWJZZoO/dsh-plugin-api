@@ -144,27 +144,45 @@ shared files once. The contract must freeze the following details:
 
 ## 2. Client root, module leases, and M3 compatibility
 
-- [ ] 2.1 Add the finite client contract inventory and lease/diagnostic primitives.
+> Reconciliation note (batch 2): the browser artifact cannot value-import the
+> Cordis kernel (the generated bundle must keep the no-cross-plugin-import
+> boundary, and `lib/client.js` runs with a `require` that throws in the VM
+> guard). The root therefore obtains the Cordis service-tracing contract
+> through the published `Symbol.for('cordis.tracker')` mechanism with a
+> `{ associate: 'pluginApi', property: 'ctx' }` tracker — the exact mechanism
+> `Service` subclasses use — instead of subclassing `Service`. Observable
+> behavior is identical (caller-bound `this.ctx`, per-context tracing,
+> registration through `ctx.reflect.provide`, removed on dispose). Root
+> `ctx` stays a writable own property because the tracing proxy invariant only
+> holds for configurable/writable target properties. The pre-publication
+> fallback collapses into the existing fail-safe catch: root-object
+> construction is inert and the only fallible step is `reflect.provide`, which
+> the existing `apply()` boundary contains.
+
+- [x] 2.1 Add the finite client contract inventory and lease/diagnostic primitives.
   - Define the seven client descriptors with bare module ID, named constructor export, registered service name, exact direct-member kinds, `parentURL`, and three-argument import attributes.
   - Define each authoritative outward face from its public contract interface. For `commandUi`, the supported inventory is exactly `register`, `decorate`, and `popupFor`; concrete-class helpers such as `bindComposerFocus` are explicitly excluded and must have negative coverage. Apply the same negative-boundary rule to every leaf's non-contract concrete member.
   - Implement safe reason normalization, constructor identity validation, complete static member validation, cache-identity lease checks, and typed unavailable accessors without dynamic member discovery.
   - Freeze the client diagnostic mapping: absent `modules` loader -> `missing-service`; rejected import or non-object namespace -> `invalid-export`; absent constructor/member -> `missing-member`; wrong constructor/member kind -> `invalid-member`; absent provider -> `missing-service`; wrong provider identity -> `invalid-provider`.
   - Keep all governance labels out of runtime identifiers, messages, package metadata, and generated artifacts.
   - Cover Requirements 2.1-2.6, 3.1-3.6, and 4.1-4.3.
+  - Delivered: batch 2 commit (flagged below); delivered file `lib/client-official-passthrough.js`.
 
-- [ ] 2.2 Refactor client publication to a Cordis `Service` root while preserving the delivered M3 contract.
+- [x] 2.2 Refactor client publication to a Cordis `Service` root while preserving the delivered M3 contract.
   - Publish the root and all seven pending shells synchronously with `inject = []`; do not make root publication wait on `modules` or any optional import.
   - Preserve the existing M3 root brand, feature list names/order and `isActive` values, member identities, exact reapply disposer, cleanup ordering, connection/codec/remote/settings/slot fallback behavior, and VM bundle handoff.
   - Implement the pre-publication fallback and post-publication containment paths from Design without registering a competing provider.
   - Cover Requirements 2.1-2.5, 3.1-3.5, 5.1-5.3, and 6.1-6.3.
+  - Delivered: batch 2 commit; `lib/client-runtime.js` rewritten around the traced root (`createClientApiRoot`), per-read caller-bound composition, and seven leaf records settled `missing-service` when no loader exists. Reapply identity is preserved through a symbol-keyed disposer (string members are wrapped by the tracing layer). See reconciliation note above for the Service-subclass deviation.
 
-- [ ] 2.3 Add loader bootstrap, caller-scoped resolution, and lease race tests before wiring all leaves.
+- [x] 2.3 Add loader bootstrap, caller-scoped resolution, and lease race tests before wiring all leaves.
   - Use deferred `modules.import(specifier, parentURL, attrs)` fakes and assert synchronous root visibility, pending-shell behavior, per-leaf rejection containment, and no unhandled rejection.
   - For every descriptor, assert the exact bare module ID and descriptor `parentURL`, exactly three import arguments, and a fresh empty attributes object for every call; the test must fail if any implementation uses a two-argument import or reuses an attributes object.
   - Use Cordis service tracing with a child consumer context to verify each getter binds to the consuming context, calls `callerCtx.get()` directly, preserves the official receiver, and does not cache a caller composition.
   - Exercise cache invalidation without an invalidation event, disposal/reapply races, old-generation references, and no silent namespace rebinding.
   - Build the independence fixture with a raw `modules` service, seven valid RC.6 namespaces, and matching `modules.loadCache` identities, while deliberately omitting any M4-specific `client.modules` facade; assert all seven M5 leaves become active and forward real values.
   - Cover Requirements 2.3-2.6, 3.1-3.6, 5.1-5.3, and 6.1-6.3.
+  - Delivered: batch 2 commit; tests `test/official-passthrough-client-root.test.mjs` (12 cases) and `test/official-passthrough-client-contract.test.mjs` (8 cases). The loader fixture groups namespaces by bare module id (one cache entry per module; `@deepseek-ai/dsh-client-runtime` hosts both registry constructors), and the independence fixture asserts all seven leaves active with real forwarded values. Caller-scope coverage uses a tracker-bearing scope-sensitive fake whose method sees `=== child` for a child consumer.
 
 ## 3. Seven client official service faces
 
