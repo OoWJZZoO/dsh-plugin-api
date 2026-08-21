@@ -75,7 +75,7 @@ removed, `web` uses the fragment's complete four-member version
 (`registerSearchProvider`/`registerFetchProvider`/`search`/`fetch` — the
 latter two are confirmed official `ctx.web` members), and the remaining 27
 fragment keys append in fragment order. The runtime table retains exactly
-`key`/`ctxService`/`members` (48 unique keys, 413 members). Existing tests
+`key`/`ctxService`/`members` (48 unique keys, 220 members). Existing tests
 that hard-coded the 21-key allowlist, the default disabled-namespace count,
 fixture `web` shapes, or the "web absence disables services" assumption are
 updated to the 48-key surface; the per-service P4 degradation behavior is

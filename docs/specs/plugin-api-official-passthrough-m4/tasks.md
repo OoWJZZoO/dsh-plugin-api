@@ -317,7 +317,7 @@ integration-owned and follows the confirmation rules in AGENTS.md.
   slice-only boundary; obtain blocking Luna(max) review. The task joins W2 only
   after write-set/provenance preflight. Requirements: R1, R7, R11-R13.
 
-- [ ] 4. W1 - create the neutral static service-definition fragment in the services worktree.
+- [x] 4. W1 - create the neutral static service-definition fragment in the services worktree.
 
   Owner and prerequisite: .worktrees/plugin-api-official-passthrough-m4-services
   on codex/plugin-api-official-passthrough-m4-services, derived directly from
@@ -546,7 +546,7 @@ integration-owned and follows the confirmation rules in AGENTS.md.
   obtain a blocking Luna(max) review before task 8. Requirements: R1, R7,
   R11-R13.
 
-- [ ] 8. W2.3 - join the service fragment and integrate the central service table.
+- [x] 8. W2.3 - join the service fragment and integrate the central service table.
 
   Owner and prerequisite: the integration owner executes this only after task 7
   is committed, clean, and blocking-reviewed. It is a separate top-level join
