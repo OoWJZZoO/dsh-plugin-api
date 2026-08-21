@@ -186,31 +186,47 @@ shared files once. The contract must freeze the following details:
 
 ## 3. Seven client official service faces
 
-- [ ] 3.1 Implement the input-trigger, command-UI, and model-directory leaves.
+> Reconciliation note (batch 3): the shared test substrate moved to
+> `test/official-passthrough-fixture.mjs` (not a test file), the fixture
+> namespaces are grouped by bare module id with one cache entry per module,
+> and the deferred loader resolves/rejects by queue index so the shared
+> `@deepseek-ai/dsh-client-runtime` module can be faulted per leaf. Batch-2
+> review observations closed here: governance tokens removed from lib/test
+> wording, accept-time provider/member validation wrapped so any continuation
+> settles atomically to `active` or `disabled` (throwing member ->
+> `invalid-member`), stale-namespace acceptance branch directly tested, and a
+> caller-scope local-failure probe added (see isolation matrix locality
+> assertions).
+
+- [x] 3.1 Implement the input-trigger, command-UI, and model-directory leaves.
   - Expose only the inventory members for `inputTriggers`, `commandUi`, and `modelDirectories`, including live opaque controller/directory results and exact registration disposers.
   - Validate the exact named constructors and all required members atomically before activation; preserve caller scope, receiver, arguments, return values, and errors.
   - Add table-driven forwarding and malformed-provider/member tests for these three leaves, including sibling continuity.
   - Cover Requirements 2.1-2.5, 3.1-3.6, and 4.1-4.3.
+  - Delivered: batch 3 commit; `test/official-passthrough-client-leaves.test.mjs` input/command/model cases plus isolation-matrix rows.
 
-- [ ] 3.2 Implement the conversation, conversation-events, and conversation-views leaves.
+- [x] 3.2 Implement the conversation, conversation-events, and conversation-views leaves.
   - Expose conversation `input`/`blocks` live properties and the four Promise-returning methods with their official scope-addressed behavior.
   - Expose registry inherited `entries`/`subscribe` plus event registry `register`/`registerFallback`/`fallbackEntry` and view registry `register`, preserving ordered live entries and exact disposers.
   - Treat definitions, nodes, snapshots, listeners, and registry return values as official opaque/live values; do not recursively clone or freeze them.
   - Add forwarding, live-read, subscription, Promise/rejection, malformed-member, and sibling-continuity tests.
   - Cover Requirements 2.1-2.6, 3.1-3.6, and 4.1-4.3.
+  - Delivered: batch 3 commit; conversation/events/views cases with Promise and rejection identity, live property re-reads, ordered subscriptions, and disposer identity.
 
-- [ ] 3.3 Implement the timer leaf with the complete RC.6 overload contract.
+- [x] 3.3 Implement the timer leaf with the complete RC.6 overload contract.
   - Forward callback `setTimeout`/`setInterval`, callback and Promise `timeout`, callback and async-iterator `interval`, and `throttle`/`debounce` with their exact returned disposer or `.dispose()` identity.
   - Preserve Fiber-owned cancellation semantics and explicitly avoid inventing a service-level `dispose()` member.
   - Add tests for callback cancellation, Promise completion/rejection behavior, iterator identity, wrapper disposal, receiver/argument forwarding, and absence of an undocumented service disposer.
   - Cover Requirements 2.1-2.6, 3.1-3.6, and 4.1-4.3.
+  - Delivered: batch 3 commit; timer overload matrix with exact disposer/Promise/iterator identity and negative `dispose` absence.
 
-- [ ] 3.4 Add cross-leaf contract and isolation tests.
+- [x] 3.4 Add cross-leaf contract and isolation tests.
   - Verify every listed member of all seven leaves and that unlisted provider members are not surfaced.
   - Cover the shared-loader failure separately: when the optional `modules` service is absent, all seven M5 leaves are disabled with `missing-service` while M3 faces remain available. For each leaf, independently cover rejected import, malformed namespace, missing/invalid constructor, missing/invalid provider, and missing/invalid required member; each such leaf failure must disable only that leaf while the other six leaves and M3 faces remain available.
   - Assert atomic disabling, typed surface-keyed errors, and the fixed diagnostic mapping for each failure class; do not accept an arbitrary allowed reason.
   - Assert every excluded concrete member remains absent from the outward face, including `commandUi.bindComposerFocus`, and verify the fixed diagnostic mapping for each malformed condition rather than accepting an arbitrary allowed reason.
   - Cover Requirements 2.1-2.6, 3.1-3.6, 4.1-4.3, and 5.1-5.3.
+  - Delivered: batch 3 commit; `test/official-passthrough-client-isolation.test.mjs` — 71 cases (10 fault kinds x 7 leaves plus inventory/exclusion audit), each asserting the single-leaf disability, six active siblings, typed surface key, fixed reason, and no provider-content leakage in diagnostics.
 
 ## 4. Bundle, manifest, and integration wiring
 

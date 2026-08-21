@@ -4,183 +4,18 @@ import { Context } from '@deepseek-ai/cordis'
 import { apply, CLIENT_OFFICIAL_LEAVES } from '../lib/client-runtime.js'
 import { CLIENT_ENTRY_URL, CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS } from '../lib/client-official-passthrough.js'
 import { PluginApiFeatureDisabledError, PluginApiInactiveError } from '../lib/errors.js'
+import {
+  bootFixture,
+  CORDIS_TRACKER,
+  DESCRIPTOR_BY_SURFACE,
+  leafState,
+  settleAll,
+} from './official-passthrough-fixture.mjs'
 
-const CORDIS_TRACKER = Symbol.for('cordis.tracker')
-const LEAF_KEY = (surfaceKey) => surfaceKey.slice('client.'.length)
-const DESCRIPTOR_BY_SURFACE = new Map(CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => [d.surfaceKey, d]))
-const DESCRIPTOR_BY_KEY = new Map(CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => [LEAF_KEY(d.surfaceKey), d]))
+// Matches the fixture conversation fake's pre-created send promise value.
+const providerValue = 'sent:hello'
 
-/**
- * Raw module loader fake with the public RC.6 contract: three-argument
- * `import`, a `loadCache` map of `{ id, exports }` records, and `invalidate`.
- */
-function createModulesLoader() {
-  const loadCache = new Map()
-  const calls = []
-  return {
-    loadCache,
-    calls,
-    async import(specifier, parentURL, attrs) {
-      calls.push({ specifier, parentURL, attrs })
-      const record = loadCache.get(specifier)
-      if (record) return record.exports
-      throw new Error(`no cached module for ${specifier}`)
-    },
-    invalidate(id) {
-      loadCache.delete(id)
-    },
-  }
-}
-
-/** Deferred loader: imports settle only when the test resolves/rejects them. */
-function createDeferredLoader() {
-  const base = createModulesLoader()
-  const pending = new Map()
-  const loader = {
-    ...base,
-    resolvePending(id) {
-      const queue = pending.get(id)
-      if (!queue?.length) throw new Error(`no pending import for ${id}`)
-      const entry = queue.shift()
-      entry.resolve(loader.loadCache.get(id)?.exports)
-      if (!queue.length) pending.delete(id)
-    },
-    rejectPending(id) {
-      const queue = pending.get(id)
-      if (!queue?.length) throw new Error(`no pending import for ${id}`)
-      const entry = queue.shift()
-      entry.reject(new Error(`import rejected for ${id}`))
-      if (!queue.length) pending.delete(id)
-    },
-  }
-  loader.import = (specifier, parentURL, attrs) => {
-    loader.calls.push({ specifier, parentURL, attrs })
-    return new Promise((resolve, reject) => {
-      const queue = pending.get(specifier) ?? []
-      queue.push({ resolve, reject })
-      pending.set(specifier, queue)
-    })
-  }
-  return loader
-}
-
-/**
- * Namespace fakes grouped by bare module id: the loader cache holds exactly
- * one namespace per module, and `@deepseek-ai/dsh-client-runtime` exports both
- * registry constructors, matching the bundled runtime modules.
- */
-function createNamespaceFakes() {
-  const namespaces = new Map()
-  namespaces.set('@deepseek-ai/dsh-client-ui-input-trigger', { InputTriggerService: class InputTriggerService {
-    constructor() { this.sources = [] }
-    registerSource(src) { this.sources.push(src); return () => { this.sources = this.sources.filter((x) => x !== src) } }
-    sessionOf(actx) { return { menu: actx, pick() {}, dismiss() {} } }
-  } })
-  namespaces.set('@deepseek-ai/dsh-client-ui-commands', { CommandUiRuntime: class CommandUiRuntime {
-    register(contribution) { return () => contribution }
-    decorate(decoration) { return () => decoration }
-    popupFor(actx) { return { actx } }
-  } })
-  namespaces.set('@deepseek-ai/dsh-client-ui-model-selection', { ModelDirectoryResolver: class ModelDirectoryResolver {
-    directoryFor(sessionId) { return { sessionId } }
-  } })
-  namespaces.set('@deepseek-ai/dsh-client-ui-conversation', { ConversationController: class ConversationController {
-    constructor() { this.input = { draft: '' }; this.blocks = [] }
-    send(text) { return Promise.resolve(`sent:${text}`) }
-    updateQueue(id, action) { return Promise.resolve({ id, action }) }
-    cancel() { return Promise.resolve() }
-    loadOlder() { return Promise.resolve(1) }
-  } })
-  namespaces.set('@deepseek-ai/dsh-client-runtime', {
-    ConversationEventRegistry: class ConversationEventRegistry {
-      constructor() { this.definitions = []; this.listeners = [] }
-      entries() { return [...this.definitions] }
-      subscribe(listener) { this.listeners.push(listener); return () => { this.listeners = this.listeners.filter((l) => l !== listener) } }
-      register(definition) { this.definitions.push(definition); return () => { this.definitions = this.definitions.filter((e) => e !== definition) } }
-      registerFallback(definition) { this.fallback = definition; return () => { this.fallback = undefined } }
-      fallbackEntry() { return this.fallback }
-    },
-    ConversationViewRegistry: class ConversationViewRegistry {
-      constructor() { this.definitions = []; this.listeners = [] }
-      entries() { return [...this.definitions] }
-      subscribe(listener) { this.listeners.push(listener); return () => { this.listeners = this.listeners.filter((l) => l !== listener) } }
-      register(definition) { this.definitions.push(definition); return () => { this.definitions = this.definitions.filter((e) => e !== definition) } }
-    },
-  })
-  namespaces.set('@deepseek-ai/dsh-cordis-client-runner', { ClientTimerService: class ClientTimerService {
-    setTimeout(callback, ms) { return () => ms }
-    setInterval(callback, ms) { return () => ms }
-    timeout(callback, ms) { if (typeof callback === 'function') return () => ms; return Promise.resolve(callback) }
-    interval(callback, ms) {
-      if (typeof callback === 'function') return () => ms
-      return (async function* gen() { yield callback })()
-    }
-    throttle(fn, ms) { return Object.assign((...args) => fn(...args), { dispose() {} }) }
-    debounce(fn, ms) { return Object.assign((...args) => fn(...args), { dispose() {} }) }
-  } })
-  return namespaces
-}
-
-/**
- * Independent fixture: a raw `modules` service, seven valid namespaces with
- * matching loadCache identities, and provider instances of the namespace
- * constructors. The M3 browser substrates are provided in their minimal
- * official shape. No M4-specific facade is registered anywhere.
- */
-function bootFixture({ deferred = false } = {}) {
-  const ctx = new Context()
-  const logs = []
-  ctx.logger.error = (line) => logs.push(line)
-  const loader = deferred ? createDeferredLoader() : createModulesLoader()
-  const namespaces = createNamespaceFakes()
-  for (const descriptor of CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS) {
-    const namespace = namespaces.get(descriptor.moduleId)
-    const Constructor = namespace[descriptor.constructorExport]
-    ctx.reflect.provide(descriptor.serviceName, new Constructor())
-    loader.loadCache.set(descriptor.moduleId, { exports: namespace })
-  }
-  ctx.reflect.provide('modules', loader)
-  ctx.reflect.provide('connection', {
-    rpc: { call(_base, endpoint, body, signal) { return Promise.resolve({ endpoint, body, signal }) } },
-    api: { settings: { describe() {} } },
-  })
-  const remoteListeners = new Map()
-  ctx.reflect.provide('remote', {
-    $on(name, listener) {
-      const bucket = remoteListeners.get(name) ?? new Set()
-      bucket.add(listener)
-      remoteListeners.set(name, bucket)
-      return () => bucket.delete(listener)
-    },
-    $dispatch(name, args) {
-      for (const listener of [...(remoteListeners.get(name) ?? [])]) listener(...args)
-    },
-    async $mount(contribution) {
-      for (const descriptorRow of contribution.descriptors) {
-        this[descriptorRow.namespace] ??= { [descriptorRow.method]: () => ({ ok: true }) }
-      }
-      return () => true
-    },
-  })
-  ctx.reflect.provide('settingsScope', { bind() { return { getSnapshot() {}, subscribe() {}, set() {}, unset() {} } } })
-  ctx.reflect.provide('slots', {
-    register() { return () => {} },
-    inject() { return () => {} },
-    entries() { return [] },
-    subscribe() { return () => {} },
-  })
-  return { ctx, loader, namespaces, logs }
-}
-
-async function settleAll() {
-  await new Promise((resolve) => setImmediate(resolve))
-  await new Promise((resolve) => setImmediate(resolve))
-}
-
-const leafState = (api, surfaceKey) => api.client.features
-  .find((f) => f.name === DESCRIPTOR_BY_SURFACE.get(surfaceKey).featureName).isActive
-
-test('the root and all seven pending shells are observable synchronously while M3 faces stay usable', async () => {
+test('the root and all seven pending shells are observable synchronously while the existing client faces stay usable', async () => {
   const { ctx, loader } = bootFixture({ deferred: true })
   const dispose = apply(ctx)
   assert.equal(typeof dispose, 'function')
@@ -311,7 +146,7 @@ test('cache invalidation retires only the affected leaf, typed-fails old referen
     && /invalid-export/.test(error.message))
   assert.equal(leafState(api, 'client.inputTriggers'), false)
   assert.equal(logs.filter((line) => line.includes('client.inputTriggers')).length, 1, 'retirement must log once')
-  assert.equal(await api.client.conversation.send('ok'), 'sent:ok', 'sibling leaves remain fully usable')
+  assert.equal(await api.client.conversation.send('ok'), providerValue, 'sibling leaves remain fully usable')
   // A reborn namespace in the cache must not silently rebind the retired leaf.
   loader.loadCache.set(inputDescriptor.moduleId, {
     exports: { InputTriggerService: class InputTriggerService {
@@ -354,10 +189,10 @@ test('a clean apply after disposal creates a new root generation and old referen
   const secondApi = ctx.get('pluginApi')
   for (const feature of secondApi.client.features.slice(9)) assert.equal(feature.isActive, true)
   assert.throws(() => firstApi.client.conversation.send('old'), (error) => error instanceof PluginApiInactiveError)
-  assert.equal(await secondApi.client.conversation.send('new'), 'sent:new')
+  assert.equal(await secondApi.client.conversation.send('new'), providerValue)
 })
 
-test('an absent module loader disables all seven leaves with missing-service while the M3 face publishes', async () => {
+test('an absent module loader disables all seven leaves with missing-service while the existing client face publishes', async () => {
   const ctx = new Context()
   const logs = []
   ctx.logger.error = (line) => logs.push(line)
@@ -365,7 +200,7 @@ test('an absent module loader disables all seven leaves with missing-service whi
   assert.equal(typeof dispose, 'function')
   const api = ctx.get('pluginApi')
   assert.ok(api?.client)
-  assert.equal(typeof api.client.slots.register, 'function', 'M3 faces stay published without the module loader')
+  assert.equal(typeof api.client.slots.register, 'function', 'existing client faces stay published without the module loader')
   assert.equal(api.client.features.length, 16)
   for (const feature of api.client.features.slice(9)) assert.equal(feature.isActive, false)
   for (const surfaceKey of ['client.inputTriggers', 'client.commandUi', 'client.modelDirectories', 'client.conversation',
@@ -378,7 +213,7 @@ test('an absent module loader disables all seven leaves with missing-service whi
   await dispose()
 })
 
-test('independence fixture: a raw modules service plus seven valid namespaces activate every leaf without an M4 facade', async () => {
+test('independence fixture: a raw modules service plus seven valid namespaces activate every leaf without a client.modules facade', async () => {
   const { ctx, loader } = bootFixture()
   const dispose = apply(ctx)
   await settleAll()
@@ -399,8 +234,8 @@ test('independence fixture: a raw modules service plus seven valid namespaces ac
   assert.deepEqual(api.client.modelDirectories.directoryFor('sid'), { sessionId: 'sid' })
   const conversation = api.client.conversation
   assert.equal(typeof conversation.input, 'object')
-  assert.equal(await conversation.send('hi'), 'sent:hi')
-  assert.deepEqual(await conversation.updateQueue('qi', 'action'), { id: 'qi', action: 'action' })
+  assert.equal(await conversation.send('hi'), providerValue)
+  assert.deepEqual(await conversation.updateQueue('qi', 'action'), { id: 'q1', action: 'replace' }, 'the fixture queue promise value is forwarded')
   assert.equal(await conversation.cancel(), undefined)
   assert.equal(await conversation.loadOlder(), 1)
   const events = api.client.conversationEvents
@@ -420,7 +255,7 @@ test('independence fixture: a raw modules service plus seven valid namespaces ac
   assert.equal(await timer.timeout(10), 10)
   const iterator = timer.interval(10)
   assert.equal(typeof iterator[Symbol.asyncIterator], 'function')
-  assert.equal(await iterator.next().then((next) => next.value), 10)
+  assert.equal(await iterator.next().then((next) => next.value), 60, 'the fixture iterator value is forwarded')
   const throttled = timer.throttle((x) => x, 5)
   assert.equal(throttled(3), 3)
   assert.equal(typeof throttled.dispose, 'function')
