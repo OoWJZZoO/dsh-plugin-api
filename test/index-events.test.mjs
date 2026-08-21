@@ -236,3 +236,70 @@ test('web service absence disables the services feature when no other capability
   )
   assert.equal(typeof state.pluginApi.events.on, 'function')
 })
+
+const HOST_EVENT_LEAF_NAMES = [
+  'agent-loop/config-start-failed',
+  'agent-preset/selected',
+  'cordis/dynamic-package',
+  'cordis/dynamic-retract',
+  'cordis/request-run',
+  'cordis/request-run-resolved',
+  'cordis/inspect-query',
+  'cordis/inspect-query-resolved',
+  'domain/changed',
+]
+
+function createHostEventProducers() {
+  const producer = () => ({ marker: true })
+  return {
+    agentLoop: producer(),
+    agentPresets: producer(),
+    dynamicCordisRunner: producer(),
+    cordisInspect: producer(),
+    storageDomain: producer(),
+  }
+}
+
+test('available host event producers contribute exactly nine catalog rows with the fixed schema', () => {
+  const { ctx, state } = createMockCtx({ services: createHostEventProducers() })
+  apply(ctx)
+  const catalog = state.pluginApi.events.catalog
+  assert.equal(Object.keys(catalog).length, 47 + HOST_EVENT_LEAF_NAMES.length)
+  for (const name of HOST_EVENT_LEAF_NAMES) {
+    const entry = catalog[name]
+    assert.ok(entry, `${name} is cataloged`)
+    assert.equal(entry.mode, 'emit')
+    assert.equal(entry.scopeFiltered, false)
+    assert.equal(entry.scopeKey, undefined)
+    assert.equal(entry.fault, 'contain')
+    assert.equal(entry.freeze, 'all')
+    assert.ok(Object.isFrozen(entry), `${name} entry stays frozen`)
+  }
+})
+
+test('missing host event producers keep the catalog at the baseline 47 rows', () => {
+  const { ctx, state } = createMockCtx()
+  apply(ctx)
+  const catalog = state.pluginApi.events.catalog
+  assert.equal(Object.keys(catalog).length, 47)
+  for (const name of HOST_EVENT_LEAF_NAMES) {
+    assert.equal(catalog[name], undefined, `${name} stays omitted when its producer is absent`)
+  }
+})
+
+test('malformed host event producers omit only their own rows', () => {
+  const { ctx, state } = createMockCtx({
+    services: {
+      ...createHostEventProducers(),
+      storageDomain: undefined,
+      agentLoop: null,
+    },
+  })
+  apply(ctx)
+  const catalog = state.pluginApi.events.catalog
+  assert.equal(catalog['domain/changed'], undefined)
+  assert.equal(catalog['agent-loop/config-start-failed'], undefined)
+  assert.equal(catalog['agent-preset/selected'] !== undefined, true)
+  assert.equal(catalog['cordis/request-run'] !== undefined, true)
+  assert.equal(Object.keys(catalog).length, 47 + 7)
+})
