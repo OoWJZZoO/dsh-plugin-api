@@ -84,12 +84,19 @@ export function createNamespaceFakes() {
       return this.sourcesDisposer
     }
     sessionOf(actx) { this.lastController = { menu: actx, pick() {}, dismiss() {} }; return this.lastController }
+    // Real non-contract concrete member of the audited runtime.
+    sessions() { return this.sources }
   } })
   namespaces.set('@deepseek-ai/dsh-client-ui-commands', { CommandUiRuntime: class CommandUiRuntime {
-    constructor() { this.lastDisposer = null; this.lastPopup = null }
+    constructor() { this.lastDisposer = null; this.lastPopup = null; this.focusHooks = new Map() }
     register(contribution) { this.lastDisposer = () => contribution; return this.lastDisposer }
     decorate(decoration) { this.lastDisposer = () => decoration; return this.lastDisposer }
     popupFor(actx) { this.lastPopup = { actx }; return this.lastPopup }
+    // Real non-contract concrete members of the audited runtime.
+    bindComposerFocus(id, focus) { this.focusHooks.set(id, focus); return () => { this.focusHooks.delete(id) } }
+    execute() {}
+    candidates() { return [] }
+    sessions() { return [] }
   } })
   namespaces.set('@deepseek-ai/dsh-client-ui-model-selection', { ModelDirectoryResolver: class ModelDirectoryResolver {
     constructor() { this.lastDirectory = null }
@@ -99,6 +106,7 @@ export function createNamespaceFakes() {
     constructor() {
       this.input = { draft: '' }
       this.blocks = []
+      this.draftAttachments = []
       this.rejectionReason = new Error('conversation rejects')
       this.sendPromise = Promise.resolve('sent:hello')
       this.queuePromise = Promise.resolve({ id: 'q1', action: 'replace' })
@@ -109,6 +117,12 @@ export function createNamespaceFakes() {
     updateQueue(id, action) { return this.queuePromise }
     cancel() { return this.cancelPromise }
     loadOlder() { return this.loadOlderPromise }
+    // Real non-contract concrete members of the audited runtime.
+    scopeId() { return null }
+    sendSession() { return this.sendPromise }
+    createDraftImages() {}
+    releaseDraftImage() {}
+    serializeImages() {}
   } })
   namespaces.set('@deepseek-ai/dsh-client-runtime', {
     ConversationEventRegistry: class ConversationEventRegistry {
@@ -166,6 +180,9 @@ export function createNamespaceFakes() {
     }
     throttle(fn, ms) { return Object.assign((...args) => fn(...args), { dispose: this.throttleDisposer }) }
     debounce(fn, ms) { return Object.assign((...args) => fn(...args), { dispose: this.debounceDisposer }) }
+    // Real non-contract concrete member of the audited runtime; the service
+    // itself declares no public dispose member.
+    schedule() { return null }
   } })
   return namespaces
 }
