@@ -119,25 +119,28 @@ shared files once. The contract must freeze the following details:
 
 ## 1. Host helper owner and system-prompt integration
 
-- [ ] 1.1 Add a pure host helper descriptor/slot module for the two context-rendering exports.
+- [x] 1.1 Add a pure host helper descriptor/slot module for the two context-rendering exports.
   - Freeze the two surface descriptors with the official package identity, public export name, one-argument contract, and safe diagnostic reasons from the Design inventory.
   - Treat the host record states as exactly `active`, `disabled`, and `retired`; use generation/token checks and do not invent an asynchronous `pending` host state.
   - Freeze the authoritative helper contracts as the two named public namespace exports, not concrete class members; forward the complete original argument list with the official namespace as receiver.
   - Keep the helper owner independent from the existing base `systemPrompt` owner and from the generic feature metadata schema.
   - Cover Requirements 1.1-1.4, 3.1-3.3, and 4.1-4.3.
+  - Delivered: `7cb3ff4`; blocking adversarial review 2026-08-21: 无偏差 (4 non-blocking observations, no rework required).
 
-- [ ] 1.2 Integrate both helper slots into the host `systemPrompt` composition without changing existing members.
+- [x] 1.2 Integrate both helper slots into the host `systemPrompt` composition without changing existing members.
   - Preserve the existing base face, reapply identity, feature registry behavior, and fail-safe `apply()` boundary.
   - Mount and clean up each helper independently; make stale cleanup identity-safe across reapply and disposal.
   - Treat a statically missing required host peer as the documented module-evaluation boundary; contain installed-but-malformed exports locally.
   - Cover Requirements 3.1-3.4 and 5.1-5.3.
+  - Delivered: `7cb3ff4`; review gate same as 1.1.
 
-- [ ] 1.3 Add host helper contract and lifecycle tests.
+- [x] 1.3 Add host helper contract and lifecycle tests.
   - Test exact argument identity/order, receiver, result identity, synchronous throws, and rejected Promise preservation for both helpers.
   - Test missing and invalid exports, missing base service, independent sibling availability, stale references, reapply, disposal, safe diagnostics, and no sensitive values in diagnostics.
   - Run the tests against pure fakes and the installed public `@deepseek-ai/dsh-system-prompt` namespace without modifying the official package.
   - Freeze and test the unique host diagnostic mapping: absent export -> `missing-export`; non-callable export -> `invalid-export`; no other reason is accepted for these helper guards.
   - Cover Requirements 1.1-1.4, 3.1-3.6, and 4.1-4.3.
+  - Delivered: `7cb3ff4`; review gate same as 1.1.
 
 ## 2. Client root, module leases, and M3 compatibility
 
