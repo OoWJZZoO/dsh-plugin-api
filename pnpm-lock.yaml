@@ -111,6 +111,9 @@ importers:
       '@deepseek-ai/dsh-plugin-api-main':
         specifier: workspace:*
         version: link:../..
+      '@deepseek-ai/dsh-plugin-api-mcp':
+        specifier: workspace:*
+        version: link:../mcp
       '@deepseek-ai/dsh-plugin-api-session-title':
         specifier: workspace:*
         version: link:../session-title

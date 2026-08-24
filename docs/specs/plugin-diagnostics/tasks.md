@@ -167,3 +167,12 @@ Stage 3 Tasks 已通过阻塞式对抗性审查（0 blocking / 3 advisory，均�
   - 测试文件 `PD-*` 小节注释改为中性命名（audit 本就 0 命中，进一步对齐 AGENTS §6 文字；`grep` 确认 test/ 下无 `PD-[0-9]` token）。
 - **apply 级 diagnostics 自身 guard 失败无法在隔离下构造（覆盖口径）**：`runFeatureGuard('diagnostics')` 的唯一探针是 `ctx.get`（facade 通用基座），任何可正常运作的 mock/facade 都必然具备 `ctx.get`，故“仅 diagnostics guard 失败而其他 feature 保持 active”在 apply 级不可单独构造，也非真实运行场景。该路径的覆盖由三处组成：① 单元 `runFeatureGuard('diagnostics', {})` 失败测试（`diagnostics-guard.test.mjs`）；② 共享 index 测试已证的通用 guard-loop → `featureRegistry.disable` + `featureFailNotice`（P2 路径，非本 feature 引入）；③ apply 级 fail-safe 由 `effectThrows`（挂载/cleanup 失败 inert）与新增隔离测试（他 feature 失败不波及 diagnostics）证明。若 integration 后续希望显式覆盖，可在 Wave C 调整 diagnostics guard 探针面后再补。
 - 偏离义务（契约 §5）：以上偏差与修订均已在 tasks.md + 交付报告显式上报；未上报的偏离预检打回。
+
+## Wave C 整合注记（integration owner，2026-08-25）
+
+- 契约 §5 Wave C 合入顺序 `EO → PD → MCP → UB`，join 2 全量 `npm test` 1137/1137 绿后进入 join 3；最终全量 1241/1241（含 join 4 与 `pluginApi.mcp` 条件投影）。
+- **B2 关闭**：共享 features 数量/顺序断言由 Wave C 统一维护（16→19，`remote → execution → diagnostics → usage`）；`features.length`/`remote`-last 断言更新、host-boundary `BRANCH_ADDED_FEATURES` 含 `diagnostics`。
+- **B3 决议（integration 决策点）**：真实 host↔client 出版通道在本批**不接线**——把 diagnostics 出版接入 `pluginApi.remote`（Typert Remote）会在无任何已批准 client 契约的情况下发明新的 wire 协议（method 面/codec/回传路径均未过确认门），且本批 client 面无消费者；接口保持设计 §4 的可选 seam（injected harness 可驱动），缺省呈现显式 `client-unavailable`、host 保持 active（PD 需求 "if a supported publication path exists" 条件性满足）。若未来批准 client diagnostics 消费者，按新 spec 接线。本决议属 B3 登记的整合议题落地，非本 feature 验收边界变更。
+- 其余无偏离。
+
+- **Wave C 全局终审（2026-08-25）**：integration 整体终审返回「无偏差」（本 leaf 交付逐项核对 Tasks/Design/Requirements 一致；B1/B2/B3 处置与 Wave C 注记一致）。本行补记四本 task book 终审留痕口径一致（advisory #2 关闭）。

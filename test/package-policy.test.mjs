@@ -10,10 +10,11 @@ const readPackage = (...parts) => JSON.parse(readFileSync(join(here, ...parts), 
 const main = readPackage('..', 'package.json')
 const compaction = readPackage('..', 'packages', 'compaction-events', 'package.json')
 const sessionTitle = readPackage('..', 'packages', 'session-title', 'package.json')
+const mcp = readPackage('..', 'packages', 'mcp', 'package.json')
 const full = readPackage('..', 'packages', 'full', 'package.json')
 
 test('main, auxiliary, and full packages all share the unified full-version + dsh.api policy', () => {
-  for (const pkg of [main, compaction, sessionTitle, full]) {
+  for (const pkg of [main, compaction, sessionTitle, mcp, full]) {
     assert.match(pkg.version, /^(.+)-(\d+\.\d+)$/, `${pkg.name}: full unique version shape`)
     assert.equal(pkg.version.match(/^(.+)-(\d+\.\d+)$/)[2], pkg.dsh.api, `${pkg.name}: version suffix must equal dsh.api`)
     assert.equal(pkg.dsh.api, main.dsh.api, `${pkg.name}: API protocol must equal the main package`)
@@ -24,7 +25,7 @@ test('main, auxiliary, and full packages all share the unified full-version + ds
 })
 
 test('the auxiliary packages do not declare the main package as a runtime dependency', () => {
-  for (const pkg of [compaction, sessionTitle]) {
+  for (const pkg of [compaction, sessionTitle, mcp]) {
     assert.ok(!pkg.dependencies?.['@deepseek-ai/dsh-plugin-api-main'], pkg.name)
     assert.ok(!pkg.peerDependencies?.['@deepseek-ai/dsh-plugin-api-main'], `${pkg.name}: version consistency is enforced by apply-time metadata check`)
   }
@@ -35,6 +36,7 @@ test('the full aggregate bundle depends on main and every auxiliary package at w
     '@deepseek-ai/dsh-plugin-api-main': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-compaction-events': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-session-title': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-mcp': 'workspace:*',
   })
   assert.equal(full.dsh.bundle.patch, './cordis.patch.yml')
 })

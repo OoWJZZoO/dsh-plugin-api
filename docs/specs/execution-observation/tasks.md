@@ -263,3 +263,9 @@
 8. Task 8 joins the feature to the host apply path.
 9. Task 9 reconciles non-frozen registry assertions and runs the full suite.
 10. Task 10 runs the single global final review, registers the feature, and creates the mandatory Stage 4 commit.
+
+## Wave C 整合注记（integration owner，2026-08-25）
+
+- 契约 `temp/m6-parallel-contract.md` §5 Wave C：按 `EO → PD → MCP → UB` 顺序合入 `feat/m6-integration`，每次 join 全量 `npm test` 绿（join 1：1089/1089；join 2：1137/1137；join 3：1137/1137 + MCP 包内 99/99；join 4：1235/1235；最终全量 1241/1241 含 `pluginApi.mcp` 条件投影）。
+- integration-owned 断言维护（本 leaf 任务书 9.2/10.1 声明）：冻结文件 `test/index.test.mjs` / `test/index-events.test.mjs` 与共享 `index-*.test.mjs` 的 features 数量/顺序断言按最终挂载序 `remote → execution → diagnostics → usage` 统一维护（16→19）；`llm/stream`/`tools/pre-execute` 监听计数按 execution/usage 各自 adapter 实际注册数更新（2→3）；`official-passthrough-independence` host-boundary `BRANCH_ADDED_FEATURES` 扩至 `['execution','diagnostics','usage']`，并修复 featureNames/featureActivity 独立排序导致的按名索引错配（改为按名对齐的 pairs 派生）。
+- 无偏离上报；本 feature 无修订。

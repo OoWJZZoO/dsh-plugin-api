@@ -131,3 +131,11 @@ Stage 3 Tasks 草案，待用户确认。Stage 4 在 Tasks 获批后由代理自
 - 终审修订：全局终审 P2（组件唯一 owner 冲突检测）已按意见补 `Symbol.for('dsh-plugin-api.mcp.contract')` owner marker + 跨包冲突 fail-safe + 两条针对测试，复核无偏差。
 - 上报的偏离：无（`pluginApi.mcp` 主门面条件投影明确不在本 worktree 交付、属 integration 归属，Scope 已声明，非未上报偏离；辅助包版本 `0.1.0-rc.6-0.5` 为占位，最终由 integration owner 对齐）。
 - 契约：MCP 不设 guard 分支/不进 FEATURE_MOUNTERS；冻结文件（`lib/events-bus.js`、`lib/events-catalog.js`、`test/index*.mjs`）零改动；不新增 events catalog slice；`mcp/catalog-changed` 由 replacement 自身 emit。
+
+## Wave C 整合注记（integration owner，2026-08-25）
+
+- 合同 §3/design Component 3/5 的 "may" 授权落地：主门面 `pluginApi.mcp` 条件投影由 Wave C 交付（`lib/plugin-api-service.js` fixed conditional surface + `lib/index.js` `resolveMarkedMcpCatalog`，仅 `ctx.root[Symbol.for('dsh-plugin-api.mcp.contract')]` marker 激活且 `ctx.mcpCatalog` 服务在位时逐调用惰性投影只读查询面；主 facade 不维护第二份 catalog、不 emit、不新增 events catalog slice、不进 FEATURE_MOUNTERS）。覆盖：`test/index-mcp.test.mjs` 6 项（无 marker fail-closed / 有 catalog 无 marker fail-closed / 有 marker 无 catalog fail-closed / 激活委托 / 挂载后注册的惰性解析 / core-inactive typed error）。
+- 全量 bundle `@deepseek-ai/dsh-plugin-api-full` 装配 mcp 行（disable `mcp-client` + insert `plugin-api-mcp`，`packages/full/cordis.patch.yml` + dependencies + 组合测试 5/5）。
+- 辅助包版本 `0.1.0-rc.6-0.5` 与主包对齐（integration owner 终裁，无需 bump）。
+- U-series 编号：本 leaf 初登 U10 与第二批 design 批准注册冲突（第二批契约 §3 保留 U10–U15），Wave C 统一改排为 **U16**（feature-list §3/§3.1/§7 与本文档已同步）。
+- 包内 `node --test "test/*.mjs"` 99/99（integration 树上重验）；官方 `@deepseek-ai/dsh-mcp-client` 零修改（mtime 审计 2026-08-14 安装后无任何文件变更）。
