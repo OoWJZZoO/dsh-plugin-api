@@ -1,0 +1,14 @@
+# dsh bundle patch for @deepseek-ai/dsh-plugin-api-mcp.
+# Replacement boundary: we replace the `mcp-client` loader row's ctx
+# service/event and plugin behavior face ONLY; the optional
+# `@deepseek-ai/dsh-mcp-client` package import face stays official.
+#
+# The replacement row accepts the same per-server config shape as the official
+# row (serverName / transport / reconnect ...); add one row per MCP server,
+# exactly like the official plugin.
+- id: mcp-client
+  disabled: true
+- insert:
+    - id: plugin-api-mcp
+      name: '@deepseek-ai/dsh-plugin-api-mcp'
+      config: {}
