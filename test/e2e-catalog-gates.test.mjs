@@ -8,7 +8,7 @@ import { scopeTarget } from '@deepseek-ai/dsh-scope'
  * REAL facade treatment through pluginApi.events after apply() — priority
  * ordering, freeze policy, fault policy, and scope gating — not raw ctx.on
  * passthrough. This file is the regression gate for the session session lifecycle defect
- * fixed by the m1-integration bus unification.
+ * fixed by the earlier bus unification.
  */
 
 function createFullCtx({ withCompactionReplacement = false } = {}) {

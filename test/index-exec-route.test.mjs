@@ -193,8 +193,8 @@ test('feature-disabled diagnostics deduplicate repeated apply failures by lifecy
   const originalPlugin = ctx.plugin
   ctx.plugin = (Class) => {
     originalPlugin(Class)
-    const original = state.pluginApi.reportExecRouteP2Once.bind(state.pluginApi)
-    state.pluginApi.reportExecRouteP2Once = (phase, category, problems) => {
+    const original = state.pluginApi.reportExecRouteDiagnosticsOnce.bind(state.pluginApi)
+    state.pluginApi.reportExecRouteDiagnosticsOnce = (phase, category, problems) => {
       const reported = original(phase, category, problems)
       if (reported) keys.push(`${phase}:${category}`)
       return reported

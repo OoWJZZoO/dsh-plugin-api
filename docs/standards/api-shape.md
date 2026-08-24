@@ -24,6 +24,7 @@ decision point（系统内）→ 调 policy → mutation（可能发生）→ �
 ## 3. 一面原则（one primary face per feature）
 
 - 每个候选 feature **只有一个主公开面**：读 → projection；收策略 → policy；写状态 → mutation。
+- 一个 feature 可以同时包含 facade translation 与一个 R capability slice；这不改变一面原则，二者必须有独立 owner 和清晰的组件归属。
 - 自然多面的候选：拆成多个 feature，或同一 feature 内拆为**独立 owner 的面**（先例：llm 命名空间内 modelInfo 投影 / admission 策略 / stream 直通并存，不共享私有状态，各自 feature guard）。
 - 跨 feature 共享原语（durable record、epoch、lease/CAS、transaction 骨架）放**内部共享模块**，不进公开 namespace 当万能 root（先例：H2 `DurableObservationHub` 为底座；`lib/remote-publication.js` 共享核心被多 owner 参数化复用）。
 
@@ -36,4 +37,5 @@ decision point（系统内）→ 调 policy → mutation（可能发生）→ �
 ## 5. 与既有规则衔接
 
 - 顶层命名空间只保留给核心域与基础设施；二线纯直通 seam 一律收敛 `pluginApi.services.*`；带门面附加语义的 feature 自建顶层命名空间（feature-list.md 安置规则）。
-- B 类迁移判据（低/中工作量且高价值 → R 候选）与 R 类硬性规则见 `capability-strategy.md`；三面模型不改变该判据，只约束 R 与 B 的公开 API 形状。
+- B 类是否转 R 按官方组件边界、契约保留、风险与维护成本判断；R 类硬性规则见 `capability-strategy.md`。三面模型不改变该判断，只约束 R 与 B 的公开 API 形状。
+- facade 可以组合多个官方组件的公开能力；但一个 R capability slice 不得跨组件，且不能依赖跨组件 replacement 才能成立。

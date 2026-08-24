@@ -84,9 +84,9 @@ test('execRoute feature-disabled diagnostic ledger deduplicates per key while pr
   })
   const problems = [{ name: 'ctx.on', detail: 'missing' }]
 
-  assert.equal(service.reportExecRouteP2Once('guard', 'mandatory-substrate', problems), true)
-  assert.equal(service.reportExecRouteP2Once('guard', 'mandatory-substrate', problems), false)
-  assert.equal(service.reportExecRouteP2Once('mount', 'dependency-or-registration', problems), true)
+  assert.equal(service.reportExecRouteDiagnosticsOnce('guard', 'mandatory-substrate', problems), true)
+  assert.equal(service.reportExecRouteDiagnosticsOnce('guard', 'mandatory-substrate', problems), false)
+  assert.equal(service.reportExecRouteDiagnosticsOnce('mount', 'dependency-or-registration', problems), true)
   assert.equal(writes.length, 2)
   assert.equal(notices.length, 2)
   assert.deepEqual(logged, ['execRoute:/tmp/guard.log', 'execRoute:/tmp/guard.log'])
@@ -99,8 +99,8 @@ test('execRoute feature-disabled diagnostic failures remain inert', () => {
     logger: { error() { throw new Error('logger failed') } },
   })
 
-  assert.doesNotThrow(() => service.reportExecRouteP2Once('activation', 'publication', []))
-  assert.equal(service.reportExecRouteP2Once('activation', 'publication', []), false)
+  assert.doesNotThrow(() => service.reportExecRouteDiagnosticsOnce('activation', 'publication', []))
+  assert.equal(service.reportExecRouteDiagnosticsOnce('activation', 'publication', []), false)
 })
 
 test('existing agent and tools forwarding remains available after execRoute additions', () => {

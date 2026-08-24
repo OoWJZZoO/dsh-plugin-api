@@ -294,7 +294,7 @@ test('publication failure (reflect.provide throws) rolls back and does not throw
   assert.equal(owner.size, 0, 'no owner record committed')
 })
 
-test('D2b recovery: re-publish after mid-publication failure recovers methods from dedicated proto', () => {
+test('recovery: re-publish after mid-publication failure recovers methods from dedicated proto', () => {
   const calls = []
   const { provided, ctx } = makeHost()
   ctx.reflect.provide = (name, value) => {

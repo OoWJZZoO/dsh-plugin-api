@@ -208,3 +208,7 @@
 - Client 面：本 feature 无 client bundle（明确非目标）。
 - 外部可实现 vs 必须上游：事件词汇与策略钩子由 R 类 replacement 实现；官方原生 seam 为 U8 上游提案；boot 级故障隔离为 U4，不在本 feature 范围。
 - 文档新鲜度：§1.6–1.7 要求本次重构触及的旧 spec、`AGENTS.md` 与 `README.md` 必须追加/修订或加注权威指针。
+
+### 10.1 客户端半面六步判定证据回填（repo-normalization 审计，2026-08-24）
+
+capability-strategy §10 六步判定已按**当前实际安装路径**（`/usr/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-compaction-basic`）重跑，结论 **host-only**（六步全阴）：被替换官方行无 `dsh.client` manifest、无 remote namespace、无 slot/settings bridge、无 client-host 版本协商、无 browser-side state/reconnect、无 client-facing event/service；`exports` 无 `./client`。逐项证据、package metadata 与文件 SHA-256 见 `docs/specs/plugin-api-repo-normalization/execution/audit-report.md` §6.2；本 spec 的 host-only 声明以该登记为准。

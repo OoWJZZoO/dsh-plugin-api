@@ -606,8 +606,8 @@ var SessionTitleService = class extends Service {
 		if (candidate.automatic !== "first-prompt" && candidate.automatic !== "all-prompts") throw new Error("session-title provider automatic mode is invalid");
 		if (typeof candidate.generate !== "function") throw new Error(`session-title provider "${candidate.id}" requires generate()`);
 	}
-	// replacement patch: policy-aware candidate collection (requirements 5.2-5.13,
-	// design C4). Collects the official eligible user messages, then emits one
+	// replacement patch: policy-aware candidate collection. Collects the official
+	// eligible user messages, then emits one
 	// `session-title/candidate` waterfall per candidate and applies the first
 	// decision in listener order. Returns the official provider face `{seq,text}`.
 	collectEligible(session, events, throughSeq) {

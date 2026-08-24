@@ -4,7 +4,7 @@ import { SessionTitleService, fallbackSessionTitle } from '../lib/forked-service
 
 // ---------------------------------------------------------------------------
 // Migration fixture for the pro-ex title-correction use case (tasks 7.1-7.3,
-// design C7, requirements 7.1-7.3 — evidence, not the feature's purpose).
+// migration design and requirements — evidence, not the feature's purpose).
 //
 // The pro-ex ability anchor injects a VIRTUAL user message stamped
 // `source.form === 'extrapro-anchor'` (official ANCHOR_USER_SOURCE_FORM) so the
@@ -21,7 +21,7 @@ const CONFIG = { fallbackMaxWords: 5, fallbackMaxBytes: 40, maxTitleBytes: 80 }
 
 const flush = () => new Promise((resolve) => setImmediate(resolve))
 
-// The design C7 migration listener verbatim.
+// The migration listener used by the consumer fixture.
 const anchorExcludeListener = (payload, next) => {
   if (payload?.message?.source?.form === ANCHOR_USER_SOURCE_FORM) {
     return { kind: 'exclude', reason: 'trajectory anchor virtual request' }

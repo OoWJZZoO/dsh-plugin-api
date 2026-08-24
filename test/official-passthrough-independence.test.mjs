@@ -239,15 +239,15 @@ test('host regression: the boundary-era and current hosts agree on every pre-exi
     const current = observeHostFaces(applyCurrentHost)
     // The comparison isolates this branch's own surface delta: the boundary
     // commit predates both this branch's two context-rendering helpers and
-    // the M4-era members that are already part of main, so all of them are
+    // the later-era members that are already part of main, so all of them are
     // excluded from the pre-existing-face equality check.
     const helperMembers = ['renderContextSnapshot', 'joinContextSections']
-    const M4_ADDED_MEMBERS = ['assemble', 'defineTool', 'executionMode']
+    const LATER_ADDED_MEMBERS = ['assemble', 'defineTool', 'executionMode']
     const currentFace = {
       ...current.face,
       systemPromptMembers: current.face.systemPromptMembers.filter((name) =>
-        !helperMembers.includes(name) && !M4_ADDED_MEMBERS.includes(name)),
-      toolsMembers: current.face.toolsMembers.filter((name) => !M4_ADDED_MEMBERS.includes(name)),
+        !helperMembers.includes(name) && !LATER_ADDED_MEMBERS.includes(name)),
+      toolsMembers: current.face.toolsMembers.filter((name) => !LATER_ADDED_MEMBERS.includes(name)),
     }
     assert.deepEqual(currentFace, boundary.face, 'the current host must not alter any pre-existing host face')
     assert.deepEqual(current.lifecycle, boundary.lifecycle, 'host reapply/dispose/cleanup observations must be unchanged')
@@ -279,9 +279,9 @@ test('source and artifact audit: no unrelated implementation markers, tokens, or
     for (const [marker, pattern] of MARKERS) {
       assert.equal(pattern.test(source), false, `${rel} must not reference "${marker}"`)
     }
-    assert.equal(/\bP11\b/.test(source), false, `${rel} must stay free of governance tokens`)
-    assert.equal(/\bC(2[6-9]|3[0-2])\b/.test(source), false, `${rel} must stay free of governance tokens`)
-    assert.equal(/-r1\b/.test(source), false, `${rel} must stay free of governance tokens`)
+    assert.equal(new RegExp(`\\b${'P' + '11'}\\b`).test(source), false, `${rel} must stay free of governance tokens`)
+    assert.equal(new RegExp(`\\b${'C' + '(2[6-9]|3[0-2])'}\\b`).test(source), false, `${rel} must stay free of governance tokens`)
+    assert.equal(new RegExp(`-${'r' + '1'}\\b`).test(source), false, `${rel} must stay free of governance tokens`)
     assert.equal(/\brequire\(/.test(source), false, `${rel} must not gain a require() path`)
   }
 

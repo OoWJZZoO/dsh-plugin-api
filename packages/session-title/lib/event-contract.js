@@ -2,8 +2,8 @@
  * Pure event-contract helpers for the `@deepseek-ai/dsh-plugin-api-session-title`
  * replacement replacement bundle. Zero harness dependencies: no Cordis, no DSH
  * service, no import from the main facade package, and no import from the
- * vendored fork, so this module stays independently testable (design C4/D1,
- * tasks 2.1-2.2).
+ * vendored fork, so this module stays independently testable as an independent
+ * event contract.
  *
  * Responsibilities:
  * - the canonical `session-title/candidate` event name;

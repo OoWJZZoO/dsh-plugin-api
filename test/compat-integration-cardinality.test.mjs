@@ -14,7 +14,7 @@ import { SERVICES_NAMESPACE_KEYS } from '../lib/services.js'
 // These are deliberately separate approved sets. Their counts must never be
 // inferred from each other: Cordis events (47), durable records (5), and
 // services namespace keys (21) have distinct ownership and boundaries.
-const M1_CORDIS_EVENT_NAMES = [
+const CORDIS_EVENT_NAMES = [
   'agent/created',
   'agent/disposed',
   'agent/error',
@@ -135,7 +135,7 @@ test('baseline Cordis catalog remains the exact 47-name frozen union with no com
   )
 
   assert.equal(Object.keys(catalog).length, 47)
-  assert.deepEqual(Object.keys(catalog).sort(), M1_CORDIS_EVENT_NAMES)
+  assert.deepEqual(Object.keys(catalog).sort(), CORDIS_EVENT_NAMES)
   assert.ok(Object.isFrozen(catalog))
   for (const entry of Object.values(catalog)) {
     assert.ok(Object.isFrozen(entry), `${entry.name} stays frozen`)

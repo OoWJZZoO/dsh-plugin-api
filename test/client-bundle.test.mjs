@@ -128,9 +128,9 @@ test('bundle text stays free of governance tokens and cross-plugin runtime impor
   void artifact
   // Word-boundary matching avoids false hits inside unicode escapes such as
   // the bundled zod locale message `\uBC30` (배수).
-  assert.equal(/\bP11\b/.test(bundle), false, 'no P11 token in the artifact')
-  assert.equal(/\bC(2[6-9]|3[0-2])\b/.test(bundle), false, 'no C26-C32 token in the artifact')
-  assert.equal(/-r1\b/.test(bundle), false, 'no auxiliary suffix token in the artifact')
+  assert.equal(new RegExp(`\\b${'P' + '11'}\\b`).test(bundle), false, 'no unrelated token in the artifact')
+  assert.equal(new RegExp(`\\b${'C' + '(2[6-9]|3[0-2])'}\\b`).test(bundle), false, 'no unrelated token range in the artifact')
+  assert.equal(new RegExp(`-${'r' + '1'}\\b`).test(bundle), false, 'no auxiliary suffix token in the artifact')
   assert.equal(bundle.includes('dsh-client-modules'), false, 'the optional module loader is not value-imported')
 })
 

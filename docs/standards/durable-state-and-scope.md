@@ -2,7 +2,7 @@
 
 > 适用范围：所有写持久/半持久状态的 feature（durable observation、lease/coordination、checkpoint、workspace mutation transaction、附件处理记录等）。
 > 权威性：Stage 0 共同问题 NO.2 / NO.8 的综合落地（2026-08-21 确认）。
-> 关联：终态词汇见 `identity-and-lifecycle.md` §3；durable mutation 面在 API 形状中的位置见 `api-shape.md` §1；fail-safe 底线见 AGENTS.md。
+> 关联：终态词汇见 `identity-and-lifecycle.md` §3；并发取消、提交资格与 retry 传播见 `concurrency-and-cancellation.md`；durable mutation 面在 API 形状中的位置见 `api-shape.md` §1；fail-safe 底线见 AGENTS.md。
 
 ## 1. 存储作用域分层（scope 即存储契约）
 
@@ -27,7 +27,8 @@
 - **按 operation 声明能力**（幂等？可自动重试？fail-closed？）；未知或未声明时**默认不自动 retry**。
 - **retry ≠ 重新执行同一 execution**，必须显式区分：
   - execution-1 内 attempt-1 → error、attempt-2 → success：同一 execution identity，重试在 attempt 层级；
-  - execution-1 内一次 operation 的自动重试：operation 层级行为，不产生新 attempt/execution 身份。
+  - provider、tool 或其他内部驱动的自动重试仍属于同一 execution，但每次重试都必须增加一个 attempt；不得用“operation 层重试”绕过 attempt 身份与审计。
+  - 内部驱动的 tool/provider 自动重试通常复用 execution；由模型、用户或其他外部调用再次发起的相同操作创建新的 execution，并应记录 parent/cause（如可用）。
   - 区分不清会导致 usage、budget、route、audit 全部混乱；feature design 必须声明其 retry 属于哪一层。
 
 ## 4. 失败分类（决定可否自动重试）

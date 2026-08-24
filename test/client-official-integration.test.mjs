@@ -5,7 +5,7 @@
  * These tests drive the real bundled `apply(ctx)` mount path with faithful
  * official browser service shapes and assert exact surface keys, member
  * identity and forwarding, event subscription through the live event source,
- * per-leaf P4 degradation, fail-open optional providers, reapply, and
+ * per-leaf degradation, fail-open optional providers, reapply, and
  * disposal. The joined facade stays publishable when a leaf is absent or
  * malformed.
  */

@@ -4,7 +4,7 @@
 
 规则：
 
-- 新增全局规范按领域落盘为独立分册，并在 AGENTS.md §8 登记指针；AGENTS.md 只承载 constitution 与指针，不承载规范正文。
+- 新增全局规范按领域落盘为独立分册，并在 AGENTS.md §6/§8 的规范目录指针中登记；AGENTS.md 只承载 constitution 与指针，不承载规范正文。
 - 规范修订影响能力边界时，必须同步 AGENTS.md §2/§4 与 `docs/specs/plugin-api-features/feature-list.md`（AGENTS.md §6 既有规则）。
 - 分册之间按领域正交；条文冲突时以 `capability-strategy.md`（能力上限）与 AGENTS.md 铁律为准。
 
@@ -15,4 +15,7 @@
 | `identity-and-lifecycle.md` | 身份与生命周期 | executionId 自生成、owner-specific generation token + owner-local revision、统一终态词汇 |
 | `durable-state-and-scope.md` | 持久状态与作用域 | session / workspace / profile 分层、durable mutation 契约、operation 能力声明、失败分类与 retry 边界 |
 | `visibility-and-redaction.md` | 可见性 | 默认最小暴露、policy 显式提升、脱敏覆盖边界 |
-| `stage0-common-questions.md` | （已弃用） | 溯源映射 + 历史问答快照，不再作为权威 |
+| `concurrency-and-cancellation.md` | 并发与取消 | AbortSignal 传播、终态裁决、stale result 隔离、disposer 所有权、并发策略与 retry 边界 |
+| `stage0-common-questions.md` | 历史溯源（已弃用） | 溯源映射 + 历史问答快照，不再作为 feature 设计入口或权威 |
+
+现行权威分册为前六项；`stage0-common-questions.md` 仅供追溯历史决议。

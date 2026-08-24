@@ -1,19 +1,18 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { dirname, join, relative, sep } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = join(here, '..')
-const auditSelf = relative(root, fileURLToPath(import.meta.url)).split(sep).join('/')
 
 /**
  * Governance magic tokens. Built by concatenation so this audit source itself
  * does not contain any literal banned token.
  */
 const BANNED_TOKENS = [
-  'A11',
+  'A' + '11',
   'compaction-events-' + 'r1',
   'session-title-' + 'r1',
   'plugin-api-compaction-events-' + 'r1',
@@ -27,6 +26,17 @@ const BANNED_TOKENS = [
   'R' + '-class',
 ]
 
+/** Labels used by the governance documents, not by runtime contracts. */
+const GOVERNANCE_LABEL_PATTERN = /\b(?:ST|SV|AC|[ABCRMDLTWFSUP])\d+(?:\.\d+)?[a-z]?\b|\b[ABCR]-class\b/g
+
+/** The only implementation labels intentionally retained for control syntax. */
+const CONTROL_LABEL_EXEMPTIONS = new Set([
+  `packages/session-title/lib/event-contract.js:136:${'C' + '0'}`,
+  `packages/session-title/lib/event-contract.js:136:${'C' + '1'}`,
+  `packages/session-title/lib/forked-service.js:29:${'C' + '0'}`,
+  `packages/session-title/lib/forked-service.js:29:${'C' + '1'}`,
+])
+
 /** Fields that used to carry governance classification into the public catalog. */
 const GOVERNANCE_FIELD_PATTERNS = [
   /^\s*type:\s*['"]?[ABR]['"]?,?\s*$/m,
@@ -37,6 +47,7 @@ const GOVERNANCE_FIELD_PATTERNS = [
 function walk(dir, out = []) {
   if (!statSync(dir, { throwIfNoEntry: false })?.isDirectory()) return out
   for (const entry of readdirSync(dir)) {
+    if (entry === 'node_modules') continue
     const full = join(dir, entry)
     if (statSync(full).isDirectory()) walk(full, out)
     else out.push(full)
@@ -49,29 +60,63 @@ function implementationFiles() {
     join(root, 'package.json'),
     join(root, 'cordis.patch.yml'),
   ]
-  for (const dir of ['lib', 'test']) files.push(...walk(join(root, dir)))
-  for (const pkg of ['compaction-events', 'session-title', 'full']) {
-    const base = join(root, 'packages', pkg)
-    files.push(join(base, 'package.json'))
-    files.push(join(base, 'cordis.patch.yml'))
-    files.push(...walk(join(base, 'lib')))
-    files.push(...walk(join(base, 'test')))
-  }
-  return files.filter((file) => file.endsWith('.js') || file.endsWith('.mjs') || file.endsWith('.json') || file.endsWith('.yml'))
+  for (const dir of ['lib', 'packages', 'test', 'scripts']) files.push(...walk(join(root, dir)))
+  return files.filter((file) => {
+    const rel = relativePath(file)
+    return rel.startsWith('scripts/') || /\.(?:js|mjs|json|yml|yaml)$/.test(file)
+  })
 }
 
-test('implementation artifacts contain no governance magic tokens or catalog fields', () => {
+function relativePath(file) {
+  const prefix = `${root}/`
+  return (file.startsWith(prefix) ? file.slice(prefix.length) : file).replaceAll('\\', '/')
+}
+
+function governanceLabels(source, rel) {
+  const violations = []
+  for (const [lineIndex, line] of source.split('\n').entries()) {
+    const lineNumber = lineIndex + 1
+    const identifiers = []
+    for (const match of line.matchAll(/[A-Za-z_$][A-Za-z0-9_$]*/g)) {
+      const start = match.index ?? 0
+      if (start > 0 && /[A-Za-z0-9_$]/.test(line[start - 1])) continue
+      if (start > 0 && line[start - 1] === '\\') continue
+      identifiers.push(match[0]
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+        .replace(/[_$]/g, ' '))
+    }
+    const labels = new Set([
+      ...line.matchAll(GOVERNANCE_LABEL_PATTERN),
+      ...identifiers.flatMap((value) => [...value.matchAll(GOVERNANCE_LABEL_PATTERN)]),
+    ].map((match) => match[0]))
+    for (const label of labels) {
+      if (CONTROL_LABEL_EXEMPTIONS.has(`${rel}:${lineNumber}:${label}`)) continue
+      violations.push(`${rel}:${lineNumber}: governance label ${JSON.stringify(label)}`)
+    }
+  }
+  return violations
+}
+
+function scanArtifact(source, rel) {
+  const violations = []
+  for (const token of BANNED_TOKENS) {
+    if (source.includes(token)) violations.push(`${rel}: banned token ${JSON.stringify(token)}`)
+  }
+  violations.push(...governanceLabels(source, rel))
+  for (const pattern of GOVERNANCE_FIELD_PATTERNS) {
+    if (pattern.test(source)) violations.push(`${rel}: governance catalog field ${pattern}`)
+  }
+  return violations
+}
+
+test('implementation artifacts contain no governance magic tokens, labels, or catalog fields', () => {
   const violations = []
   for (const file of implementationFiles()) {
-    const rel = relative(root, file).split(sep).join('/')
-    if (rel === auditSelf) continue
+    const rel = relativePath(file)
     const source = readFileSync(file, 'utf8')
-    for (const token of BANNED_TOKENS) {
-      if (source.includes(token)) violations.push(`${rel}: banned token ${JSON.stringify(token)}`)
-    }
-    for (const pattern of GOVERNANCE_FIELD_PATTERNS) {
-      if (pattern.test(source)) violations.push(`${rel}: governance catalog field ${pattern}`)
-    }
+    violations.push(...scanArtifact(rel, `${rel} [path]`))
+    violations.push(...scanArtifact(source, rel))
   }
   assert.deepEqual(violations, [])
 })

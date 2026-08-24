@@ -4,7 +4,7 @@
  *
  * These tests drive the real `apply(ctx)` mount path with faithful official
  * service shapes and assert member presence, receiver/argument/return
- * identity, P1/P2/P3 fallback behavior, repeated apply idempotence, and
+ * identity, per-member fallback behavior, repeated apply idempotence, and
  * re-created view freshness.
  */
 import test from 'node:test'
@@ -271,7 +271,7 @@ test('integrated session facade exposes store lifecycle and derive/append member
   // deriveEventMessage delegates to the official public export.
   const derived = session.deriveEventMessage({ type: 'test', data: {} })
   assert.deepEqual(derived, null)
-  // append has no official public source in this runtime: P2 'session'.
+  // append has no official public source in this runtime.
   assert.throws(() => session.append('kind', { value: 1 }), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'session')
 })
 
@@ -323,7 +323,7 @@ test('integrated settings facade exposes document and writable members', () => {
   assert.equal(typeof settings.register, 'function')
 })
 
-test('settings document members report P3 when the settings service is absent', () => {
+test('settings document members report unavailable when the settings service is absent', () => {
   const { ctx, state, services } = createMockCtx()
   delete services.settings
   apply(ctx)
@@ -350,6 +350,6 @@ test('repeated apply does not duplicate the leaf members and keeps identity stab
   assert.deepEqual(second.discoverModels('ns', {}), ['model-a'])
 })
 
-// Leaf P1 (inactive root facade) is covered by the existing core-guard
+// An inactive root facade is covered by the existing core guard
 // suites and by the leaf-level negative-boundary tests; the integration
 // boundary for inactive-root behavior is exercised there.

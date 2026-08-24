@@ -247,6 +247,10 @@
 - **零策略等价**：§5.2 明确零监听器时与官方行为等价，§5.4 明确 no-decision 时行为等价。
 - **文档新鲜度**：§1.4–1.5 要求本次交付触及的旧 spec、`AGENTS.md`、`README.md`、`docs/standards/capability-strategy.md` 必须追加/修订或加注权威指针。
 
+### 10.1 客户端半面六步判定证据回填（repo-normalization 审计，2026-08-24）
+
+capability-strategy §10 六步判定已按**当前实际安装路径**（`/usr/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-session-title`）重跑，结论 **host-only**（六步全阴）：被替换官方行无 `dsh.client` manifest、无 remote namespace、无 slot/settings bridge、无 client-host 版本协商、无 browser-side state/reconnect、无 client-facing event/service；`./client` 子路径仅为类型出口空桩 `lib/types/client.js`（`export {}`，无运行逻辑），登记为类型桥存在但不构成客户端运行时能力。逐项证据、package metadata 与文件 SHA-256 见 `docs/specs/plugin-api-repo-normalization/execution/audit-report.md` §6.2；本 spec 的 host-only 声明以该登记为准。
+
 ---
 
 ## 修订记录

@@ -638,7 +638,7 @@ async function compactSurfaceRegion(dependencies, session, start, end, agent, tr
 		throw failure.error;
 	}
 	// replacement patch: flush/durability-checkpoint failure after a successful
-	// commit emits completed then failed (dual-event semantics, C4.7 / 5.10).
+	// commit emits completed then failed (dual-event semantics).
 	if (flushFailure !== void 0) {
 		if (startedEmitted && !failedEmitted) {
 			failedEmitted = true;

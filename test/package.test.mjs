@@ -42,7 +42,7 @@ test('peerDependencies keep shared host instances for the facade base', () => {
   assert.equal(typeof pkg.peerDependencies['@deepseek-ai/dsh-settings'], 'string')
 })
 
-test('peerDependencies include the SV15 session-reference public export host package', () => {
+test('peerDependencies include the session-reference public export host package', () => {
   assert.equal(typeof pkg.peerDependencies['@deepseek-ai/dsh-session-reference'], 'string')
 })
 

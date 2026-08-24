@@ -82,7 +82,7 @@ function freezeDeep(value) {
  * Freeze one immutable event payload snapshot. The payload object itself is
  * frozen; every value listed in `staticKeys` is deep-frozen. Keys not listed
  * (notably the live official `agent` and `session` references) are left as
- * live references per design C6 and requirements 5.13.
+ * live references required by the event contract.
  *
  * @param {Record<string, unknown>} payload
  * @param {string[]} [staticKeys]

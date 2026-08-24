@@ -102,7 +102,7 @@ test('apply mounts the remote feature as the last entry and exposes pluginApi.re
 test('pluginApi.remote and pluginApi.settings.remote coexist without overriding each other', () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
-  // ST4 surface intact.
+  // Settings remote surface intact.
   assert.equal(typeof state.pluginApi.settings.remote, 'function')
   // Generic top-level surface intact (its own owner semantics, AC 5.4).
   assert.equal(typeof state.pluginApi.remote.publish, 'function')

@@ -7,7 +7,7 @@
 
 ## 1. 这个仓库是什么
 
-`dsh-plugin-api` 是 DeepSeek Harness 的**社区兼容层 / 插件 API 门面**：在不修改官方 DSH 包文件的前提下，把官方已有的 Cordis 扩展点稳定化，并用现有底层钩子把缺失的语义钩子尽量“转译”出来，给第三方插件一个统一的 import/inject 面。经批准登记的 **R 类 replacement bundle**（见 §2 第 7 条与 `docs/standards/capability-strategy.md`）可另经官方 patch 机制替代官方插件行；任何情况下都不 patch 官方包文件。
+`dsh-plugin-api` 是 DeepSeek Harness 的**社区兼容层 / 插件 API 门面**：在不修改官方 DSH 包文件的前提下，把官方已有的 Cordis 扩展点稳定化，并用现有底层钩子把缺失的语义钩子尽量“转译”出来，给第三方插件一个统一的 import/inject 面。经批准登记的 **R 类 replacement bundle**（见 §2 第 7 条与 `docs/standards/capability-strategy.md`）可另经官方 patch 机制替代官方组件插件包中的行；任何情况下都不 patch 官方包文件。
 
 计划形态（与 `agent/dsh-read-image` 同构的**双面 Cordis 插件**）：
 
@@ -34,14 +34,14 @@ agent/dsh-plugin-api/
    - **A 类：官方已 dispatch，只需稳定化**（如 `agent/*`、`tools/*`、`session/*`、`llm/stream`）。
    - **B 类：官方没有 dispatch 点，只能用底层钩子模拟**（如同步 `llm/request` 用 `llm/stream` 重入模拟）。
    - **C 类：不改官方做不到**，只能写 proposal / 等上游（如异步完整请求改写、boot 故障隔离、`WEB_SETTINGS_NAMESPACES` 动态化、客户端 `remote.<ns>` 原生动态发现）。
-   - **R 类（替换类）：官方没有 dispatch 点，且缺失语义天然属于某个官方 loader 行**。经 `docs/standards/capability-strategy.md` 批准登记后，用官方 patch 机制（`disabled: true` + 插入替代行）禁用该官方行并以替代行提供“官方原接口 + 扩展接口”。R 类不 patch 官方包文件，也不再是普通门面转译。
+   - **R 类（替换类）：官方没有 dispatch 点，且缺失语义天然属于某个官方组件插件包**。经 `docs/standards/capability-strategy.md` 批准登记后，由该组件的唯一 replacement owner 用官方 patch 机制（`disabled: true` + 插入替代行）禁用一个或多个该组件行，并以替代行提供“官方原接口 + 扩展接口”。R 类不 patch 官方包文件，也不再是普通门面转译；R 实现不得跨多个官方组件包。
 6. 任何插件 apply 抛错当前会杀死整个 harness boot，因此本仓库所有入口必须遵循 **fail-safe**：失败只记录日志并安静停用，绝不抛穿 apply（dsh-read-image 的 G1 模式）。
 7. **R 类 replacement bundle 硬约束（权威细则见 `docs/standards/capability-strategy.md`）**：
-   - 替代单位是**整行/整包**：必须完整复刻被替代行的 ctx 服务面与事件面契约，之后才可增加接口；只替换 ctx 服务/事件面，**不覆盖** `@deepseek-ai/dsh-*` 包 import 面。
+   - 替代单位是整行，管理单位是官方组件插件包：必须完整复刻每个被替代行的 ctx 服务面与事件面契约，之后才可增加接口；一个 replacement 包可承载同一组件内多个相关 feature，但不得跨组件；只替换 ctx 服务/事件面，**不覆盖** `@deepseek-ai/dsh-*` 包 import 面。
    - 只走官方 patch 机制：`- id: <官方行>; disabled: true` + `- insert:` 替代行；绝不修改 `/usr/lib/node_modules/@deepseek-ai/dsh/**`。
    - 替代包 apply 内必须做 boot 自检（官方行已 disabled、替代行已 active、关键契约可用）；失败 = fail-safe 提示 + 正常 return，绝不静默双跑。
-   - 版本锁定 runtime 全量版本与被替代官方包 identity，不匹配时安全停用；同行唯一 owner，必须检测冲突。
-   - 每个 R 类必须登记一条 U-series 上游提案与明确退役条件；新增 R 类必须走 spec coding Stage 0–4。
+   - 版本锁定 runtime 全量版本与被替代官方组件包 identity，不匹配时安全停用；组件唯一 owner，必须检测冲突。
+   - 每个 replacement 包至少登记一条覆盖其承载能力的 U-series 上游提案与明确退役条件；新增 R 类必须走 spec coding Stage 0–4。
    - 横切派发语义（priority / deepFreeze / fault containment）与 boot 胶水**永不走 R 类**。
 
 ## 3. Kiro spec coding 工作流规范（本仓库铁律）
@@ -86,6 +86,21 @@ agent/dsh-plugin-api/
   - 若执行中发现 spec 错误：实现细节/设计矛盾由代理先修订对应 spec 文档（requirements/design/tasks）保持一致，并在最终报告中列出修订；若错误动摇已确认的 Goal 或 Requirements 验收标准，则暂停并请求人类裁决。
   - 代理仍需遵守 fail-safe、测试、不夹带 spec 外功能等全部约束；全部任务完成后向用户交付完整结果报告。
 
+#### 3.2.1 Codex 协作运行时隔离（仅适用于 OpenAI Codex，硬性规则）
+
+以下条款只约束 OpenAI Codex desktop/API 的协作运行时；其他 agent harness、普通人工流程和 DSH 运行时不因本节改变权限模型或工作流。
+
+已获批任务书/设计文档中出现的「Luna(max) 审查」字样（如 `plugin-api-repo-normalization` 的整体审查约定）是 Codex 协作运行时的审查规格，不代表仓库对非 Codex harness 的模型要求。非 Codex harness（如 DSH）执行同一审查门时，按 §3.2 通用规则派发**阻塞式只读对抗性审查**（`run_in_background: false`），使用该 harness 可用的最强审查能力；不得因为没有 Luna 模型而阻塞或中断该门，不得编造/代答 Luna 审查结论，不得尝试设置 Codex 专属参数。
+
+- Codex 调用任何子 agent 时，必须显式传入 `model: gpt-5.6-luna` 与 `reasoning_effort: max`；不得省略 `model`、依赖主 agent 继承值，或选择 `gpt-5.6-sol` / 其他模型。为使模型覆盖生效，`fork_turns` 必须显式使用 `none` 或有界的正整数，不能使用会继承主 agent 模型且不接受覆盖的全量 fork。若 Luna 不可用，必须停止派发并报告阻塞，不得自动回退到其他模型。
+- 创建子 agent 的首条提示必须以明确的角色栏开始，并把以下内容标记为不可因上下文压缩、省略或改写的约束：`[COMPRESSION-CRITICAL] ROLE=READ-ONLY-SUBAGENT`、本 agent 不是主 agent、不得修改任何文件或 worktree、不得提交、不得调用写工具、不得派生/唤起子 agent、只能返回审查结论。该角色栏还必须写明审查范围、对应的顶层任务和预期输出；不得只写“请审查”之类的短提示。
+- Codex 派出的对抗审查 agent 是**只读审查员**：不得调用写文件工具、不得提交、不得修改 worktree、不得派生或唤起任何子 agent。审查提示词中的“只读”必须视为硬性验收条件，而不是建议。
+- 子 agent 派出后，主 agent 必须使用协作运行时提供的阻塞等待原语等待其最终结论；等待期间不得循环轮询其状态。
+- Codex 审查 agent 不得同时承担修复任务。修复只能由主 agent 在收到最终审查结论后执行；实质修复后必须重新派出独立只读审查。
+- Codex 协作树不得层层外包审查。主 agent 必须直接指定审查模型和审查范围；任何子 agent 的再次委派都视为审查越权并使该轮审查失败。
+- 上述模型、角色和等待规则属于 Codex 的执行前检查清单，不是可由 agent 自行权衡的建议。任一项无法满足时，主 agent 必须不派发、不继续该轮审查，并向用户报告具体缺口。
+- 本节不把模型名称、协作 API 或 Codex 工具 token 写入项目实现代码；这些约束只属于 Codex 的开发编排行为。
+
 ### 3.3 EARS 需求写法
 
 需求必须写成 EARS（Easy Approach to Requirements Syntax）形式：
@@ -125,7 +140,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
    - settings 可视化配置桥（`TypertRemoteService` + 客户端 `ctx.remote.$mount`）
    - session 上屏事件构造 helper（封装 `surfaceOp` / `sourceEventSeqs`）
 5. client bundle 允许打包一份 zod，用于生成满足 `dsh-api-remotes` 校验的真 codec；其余依赖尽量保持 peerDependencies 以共享宿主实例。
-6. **能力上限策略（权威细则 `docs/standards/capability-strategy.md`）**：采用方案一（门面转译）+ 方案三（replacement bundle）双通道。B 类迁移判据——低/中工作量且高价值 → R 类；高工作量 → 维持门面转译；横切派发语义（priority / deepFreeze / fault containment）永不 R。方案二（修改运行时源码）不作为插件分发通道，仅 boot 胶水级 C 类（如 U4）可作部署/运维例外，且必须人工批准、可逆、升级重放、不受 `dsh.api` 版本承诺。任何新增 R 类都须走 spec coding Stage 0–4。
+6. **能力上限策略（权威细则 `docs/standards/capability-strategy.md`）**：采用方案一（门面转译）+ 方案三（replacement bundle）双通道。B 类是否转 R 按组件边界、契约可保留性、风险和维护成本判断，不采用统一量化门槛；高风险或无法证明官方契约保留时维持门面转译；横切派发语义（priority / deepFreeze / fault containment）永不 R。方案二（修改运行时源码）不作为插件分发通道，仅 boot 胶水级 C 类（如 U4）可作部署/运维例外，且必须人工批准、可逆、升级重放、不受 `dsh.api` 版本承诺。任何新增 R 类都须走 spec coding Stage 0–4。
 7. **包策略与安装模式（constitution 级）**：
    - 辅助包拥有与主包一致的版本协商规则（官方 runtime 全量版本 + `dsh.api` API 协议版本），且主包要求辅助包版本一致（见第 2 条）；辅助包与主包版本不一致时，仅停用该辅助包相关的 R 类特性，不波及主包门面与其他能力。
    - 只提供两种明确的安装模式：
@@ -138,7 +153,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
      dsh plugin --profile <profile> add @deepseek-ai/dsh-plugin-api-compaction-events
      ```
    - `@deepseek-ai/dsh-plugin-api-full` 是**全量聚合 bundle**：依赖主包与全部辅助包，并拥有一份按确定顺序装配主包及所有替代行的 patch。它不新增任何 API；第三方 API 仍完全由主包的 `ctx.pluginApi` 提供。全量安装必须与选择性安装（main + 全部辅助包）装配出同一组主包行与替代行、同一行为，不得双跑或改变替代行语义。
-   - 选择性安装的最小组合是仅 `@deepseek-ai/dsh-plugin-api-main`；需要哪个 R 类能力就显式添加对应辅助包。辅助包只作为替代行参与装配，不提供第三方直接 import 的 API 面；其替代行约束仍遵守 §2 第 7 条。
+   - 选择性安装的最小组合是仅 `@deepseek-ai/dsh-plugin-api-main`；需要哪个官方组件的 R 类能力就显式添加该组件对应的 replacement 包。辅助包只作为替代行参与装配，不提供第三方直接 import 的 API 面；其替代行约束仍遵守 §2 第 7 条。
    - 全量聚合 bundle 与全部辅助包同样遵循全量唯一版本号规则，且其 `version`/`dsh.api` 与主包完全一致；版本不一致时同样只停用相关 R 类特性。
 
 ## 5. 验收对象（spec 需求的现实来源）
@@ -153,6 +168,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 - **对于尚未走完 Stage 0–3 确认门的新 feature**，只允许写该 feature 的 `AGENTS.md` 变更与 `docs/specs/**` 制品；不得提前写实现代码。该 feature 的 Stage 4（Execute）获批后，才允许创建或修改 `lib/`、`package.json`、`test/`、`scripts/` 等实现产物；已交付 feature 的维护也必须有对应获批 Tasks 或治理变更作为依据。
 - 制品目录：`docs/specs/<feature_name>/requirements.md`、`design.md`、`tasks.md`。
 - 测试（进入 execute 阶段后）：统一 `npm test`（即 `node --test "test/**/*.mjs"`）。**不要用裸 `node --test`**：它会递归扫描全仓库，把 `temp/`（gitignored 研究/临时目录）里的外来测试也收进来并导致失败/挂起；显式 glob 只覆盖 `test/`。纯函数模块保持零 harness 依赖。
+- **测试内存护栏（默认开启）**：`npm test` 通过 `systemd-run --user --scope -p MemoryMax=4G` 在 4G cgroup 内运行，超限由内核 OOM-killer 只击杀测试进程（`run-u*.scope: Failed with result 'oom-kill'`），保护宿主（尤其 8G 内存的 WSL）不被测试拖入全局 OOM。**不要绕过护栏直接跑 `node --test`**；确需原始命令时用 `npm run test:raw`（与旧 `test` 脚本等价）。护栏依赖 systemd 用户实例，脚本已内联默认 `DBUS_SESSION_BUS_ADDRESS`。背景：本套件曾在失败断言大量累积 diff（数万条）时单进程吃到 15G+，触发整机 OOM。因此遇到 `oom-kill` 应先修测试本身（如失控的失败断言、挂起用例），而不是调大阈值或绕过护栏。
 - 不引入与门面无关的运行时依赖；需要宿主共享实例的包一律 `peerDependencies`。
 - **治理魔法字母不进入实现代码**：`lib/`、`packages/`、`test/` 等实现与测试代码，以及 `package.json`、bundle patch 等实现产物中，不得出现从治理文档（AGENTS.md、`docs/standards/capability-strategy.md`、`docs/specs/**`）泄漏出的分类字母、需求/feature 编号或带治理代号的魔法标识。治理编号只允许存在于 `docs/` 治理/规格制品与本文件的登记溯源文字中。例如以下 token（含等价字符串字面量、行 id、feature 名、Symbol 键、错误文案、包描述、目录/文件名）禁止出现在实现代码里（清单不穷尽，凡属治理编号/后缀/代号同型者一律禁止）：
   ```text
@@ -194,4 +210,4 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 ## 8. 交付登记与规范目录（防过期）
 
 > 已交付 feature 的逐项登记表（范围、状态、Spec 目录、关键约束/设计）自 2026-08-21 起迁至 `docs/specs/plugin-api-features/feature-list.md` §7，本文不再保留登记表，避免双源漂移。规则不变：每个 feature 在 Stage 4 交付后，必须在该节追加条目并同步对应状态；公开 API 形状或里程碑状态变化时同步更新，防止文档过期过时（§3.0.1 中"登记为 delivered"即指该登记表）。
-> 全局 feature 设计规范统一收于 `docs/standards/`（`README.md` 为索引；分册：`capability-strategy.md` 能力策略、`api-shape.md` API 形状、`identity-and-lifecycle.md` 身份与生命周期、`durable-state-and-scope.md` 持久状态与作用域、`visibility-and-redaction.md` 可见性；`stage0-common-questions.md` 已弃用作溯源）；新增全局规范落盘该目录并在 §6 登记。
+> 全局 feature 设计规范统一收于 `docs/standards/`（`README.md` 为索引；分册：`capability-strategy.md` 能力策略、`api-shape.md` API 形状、`identity-and-lifecycle.md` 身份与生命周期、`durable-state-and-scope.md` 持久状态与作用域、`visibility-and-redaction.md` 可见性、`concurrency-and-cancellation.md` 并发与取消；`stage0-common-questions.md` 已弃用作溯源）；新增全局规范落盘该目录并在 §6 登记。

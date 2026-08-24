@@ -148,7 +148,7 @@ test('conflict: same key already published by another instance (shared owner map
 })
 
 test('conflict: live official-registry owner with no owner record throws', () => {
-  // A service occupies the key in the official registry (as ST4 settings.remote
+  // A service occupies the key in the official registry (as the settings remote
   // or another plugin would) with NO record in our owner map; the read-only
   // registry probe must reject the publication without touching it.
   const { ctx, provided } = makeHost()
@@ -164,7 +164,7 @@ test('core-inactive: inactive api throws PluginApiInactiveError on publish', () 
   const { ctx } = makeHost()
   const api = createHostRemoteApi({ ctx, protocol, active: false })
   // The active leaf is the mounted variant (isActive:true); runtime core-inactive gating
-  // happens inside publish() via the supplied active() predicate (ST4 precedent).
+  // happens inside publish() via the supplied active() predicate.
   assert.equal(api.isActive, true)
   assert.throws(() => api.publish('k', makeService()), PluginApiInactiveError)
 })

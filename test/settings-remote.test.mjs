@@ -67,7 +67,7 @@ test('settings remote publishes official binding and stable descriptors', async 
   const service = host.calls[0].value
   assert.deepEqual(service.typertRemote, { service, serviceKey: 'readImage', namespace: 'readImage' })
   assert.deepEqual(protocol.remoteMethods(service).map((entry) => entry.method), ['get', 'set'])
-  assert.deepEqual(protocol.remoteMethods({}), [], 'ST4 markers must not leak onto Object.prototype')
+  assert.deepEqual(protocol.remoteMethods({}), [], 'remote markers must not leak onto Object.prototype')
   assert.deepEqual(service.get(), { value: { enabled: true, count: 1 } })
   const snapshot = service.get()
   snapshot.value.enabled = false

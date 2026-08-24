@@ -64,7 +64,7 @@ test('active tools: toolAbortedError returns the AbortError identity without tou
 
   // When the real dsh-tools package resolves in the test environment, the
   // full typed identity holds; otherwise only the degraded
-  // shape is asserted (mirrors the lazy-import/skip strategy of T2).
+  // shape is asserted (mirrors the lazy-import/skip strategy).
   let TOOL_ABORTED
   try {
     const dshTools = await import('@deepseek-ai/dsh-tools')
