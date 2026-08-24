@@ -11,10 +11,10 @@
 
 | Feature | 状态 | 当前阶段 | Spec 制品 |
 |---|---|---|---|
-| `execution-observation` | 已立项，推进中 | SPEC1 Stage 1：Requirements 草案待用户确认 | `docs/specs/execution-observation/goal.md`；`docs/specs/execution-observation/requirements.md` |
-| `plugin-diagnostics` | 已立项，推进中 | SPEC1 Stage 1：Requirements 草案待用户确认 | `docs/specs/plugin-diagnostics/goal.md`；`docs/specs/plugin-diagnostics/requirements.md` |
-| `usage-budget-telemetry` | 已立项，推进中 | SPEC1 Stage 1：Requirements 草案待用户确认 | `docs/specs/usage-budget-telemetry/goal.md`；`docs/specs/usage-budget-telemetry/requirements.md` |
-| `mcp-catalog-lifecycle` | 已立项，推进中（R 类） | SPEC1 Stage 1：Requirements 草案待用户确认 | `docs/specs/mcp-catalog-lifecycle/goal.md`；`docs/specs/mcp-catalog-lifecycle/requirements.md` |
+| `execution-observation` | 已立项，推进中 | SPEC1 Stage 2：Design 草案待用户确认 | `docs/specs/execution-observation/goal.md`；`docs/specs/execution-observation/requirements.md`；`docs/specs/execution-observation/design.md` |
+| `plugin-diagnostics` | 已立项，推进中 | SPEC1 Stage 2：Design 草案待用户确认 | `docs/specs/plugin-diagnostics/goal.md`；`docs/specs/plugin-diagnostics/requirements.md`；`docs/specs/plugin-diagnostics/design.md` |
+| `usage-budget-telemetry` | 已立项，推进中 | SPEC1 Stage 2：Design 草案待用户确认 | `docs/specs/usage-budget-telemetry/goal.md`；`docs/specs/usage-budget-telemetry/requirements.md`；`docs/specs/usage-budget-telemetry/design.md` |
+| `mcp-catalog-lifecycle` | 已立项，推进中（R 类） | SPEC1 Stage 2：Design 草案待用户确认 | `docs/specs/mcp-catalog-lifecycle/goal.md`；`docs/specs/mcp-catalog-lifecycle/requirements.md`；`docs/specs/mcp-catalog-lifecycle/design.md` |
 
 其余候选仍处于候选池，未进入 Stage 0。
 
