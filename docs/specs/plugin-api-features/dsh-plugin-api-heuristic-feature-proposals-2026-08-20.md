@@ -15,10 +15,10 @@
 | `plugin-diagnostics` | 已立项，推进中 | SPEC1 Stage 2：Design 草案待用户确认 | `docs/specs/plugin-diagnostics/goal.md`；`docs/specs/plugin-diagnostics/requirements.md`；`docs/specs/plugin-diagnostics/design.md` |
 | `usage-budget-telemetry` | 已立项，推进中 | SPEC1 Stage 2：Design 草案待用户确认 | `docs/specs/usage-budget-telemetry/goal.md`；`docs/specs/usage-budget-telemetry/requirements.md`；`docs/specs/usage-budget-telemetry/design.md` |
 | `mcp-catalog-lifecycle` | 已立项，推进中（R 类） | SPEC1 Stage 2：Design 草案待用户确认 | `docs/specs/mcp-catalog-lifecycle/goal.md`；`docs/specs/mcp-catalog-lifecycle/requirements.md`；`docs/specs/mcp-catalog-lifecycle/design.md` |
-| `model-route-policy` | 已立项，推进中（R 类；owner `@deepseek-ai/dsh-agent-loop`） | SPEC1 Stage 0：Goal 已确认 | `docs/specs/model-route-policy/goal.md` |
-| `attachment-pipeline` | 已立项，推进中（R 类；owner `@deepseek-ai/dsh-attachment-local`） | SPEC1 Stage 0：Goal 已确认 | `docs/specs/attachment-pipeline/goal.md` |
-| `recovery-policy` | 已立项，推进中 | SPEC1 Stage 0：Goal 已确认 | `docs/specs/recovery-policy/goal.md` |
-| `client-generation-rebind` | 已立项，推进中 | SPEC1 Stage 0：Goal 已确认 | `docs/specs/client-generation-rebind/goal.md` |
+| `model-route-policy` | 已立项，暂停（R 类；owner `@deepseek-ai/dsh-agent-loop`） | SPEC1 Stage 1：Requirements 已确认；Design 未启动 | `docs/specs/model-route-policy/goal.md`；`docs/specs/model-route-policy/requirements.md` |
+| `attachment-pipeline` | 已立项，暂停（R 类；owner `@deepseek-ai/dsh-attachment-local`） | SPEC1 Stage 1：Requirements 已确认；Design 未启动 | `docs/specs/attachment-pipeline/goal.md`；`docs/specs/attachment-pipeline/requirements.md` |
+| `recovery-policy` | 已立项，暂停（B/C policy-first） | SPEC1 Stage 1：Requirements 已确认；Design 未启动 | `docs/specs/recovery-policy/goal.md`；`docs/specs/recovery-policy/requirements.md` |
+| `client-generation-rebind` | 已立项，暂停（B 类；R 待未来单一 owner 证据） | SPEC1 Stage 1：Requirements 已确认；Design 未启动 | `docs/specs/client-generation-rebind/goal.md`；`docs/specs/client-generation-rebind/requirements.md` |
 
 其余候选仍处于候选池，未进入 Stage 0。
 
