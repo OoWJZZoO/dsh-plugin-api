@@ -1,7 +1,7 @@
 # Tasks: execution-observation
 
 > feature_name: `execution-observation`
-> 状态：Stage 3 Tasks 已批准（Stage 3 边界已提交，进入 Stage 4）。
+> 状态：Stage 3 Tasks 已批准（Stage 3 边界已提交）。Stage 4 已全部完成：Task 1–10 完成并验证，SPEC3 全局终审通过，Stage 4 完成提交已创建。
 > 上游：`requirements.md`（Stage 1 已批准）、`design.md`（Stage 2 已批准，本批由用户明确批准）。
 > 工作流：SPEC3（Stage 3–4）。Stage 3 先做对抗性审查再交用户评审；Stage 4 获批后按本清单自主完成全部任务，**不再逐顶层大任务派审**，全部完成后做一次全局终审，通过后才交付结果报告、提交并清理 worktree。
 > 并行契约：`temp/m6-parallel-contract.md`（Wave A `execution-observation`，worktree `.worktrees/m6-execution`，分支 `feat/m6-execution`）。
@@ -30,7 +30,7 @@
 
 ---
 
-## 1. Build the pure identity/lifecycle reducer core
+## 1. Build the pure identity/lifecycle reducer core — **implemented**
 
 **Files**
 
@@ -57,7 +57,7 @@
 
 **Requirements covered:** EO-1 AC all; EO-2 AC 1–5; EO-3 AC 3; EO-4 AC 3; EO-5 AC 2.
 
-## 2. Build the four source adapters over native official events
+## 2. Build the four source adapters over native official events — **implemented**
 
 **Files**
 
@@ -82,7 +82,7 @@
 
 **Requirements covered:** EO-3 AC 1–2, 4; EO-5 AC 1; EO-8 AC 1–2.
 
-## 3. Build session-scoped history, observer epoch and stale guard
+## 3. Build session-scoped history, observer epoch and stale guard — **implemented**
 
 **Files**
 
@@ -105,7 +105,7 @@
 
 **Requirements covered:** EO-4 AC 1–4; EO-5 AC 3–4.
 
-## 4. Build visibility policy registry and audience-specific redaction
+## 4. Build visibility policy registry and audience-specific redaction — **implemented**
 
 **Files**
 
@@ -128,7 +128,7 @@
 
 **Requirements covered:** EO-7 AC 1–3; EO-8 AC 1.
 
-## 5. Assemble the `pluginApi.execution` projection face
+## 5. Assemble the `pluginApi.execution` projection face — **implemented**
 
 **Files**
 
@@ -151,7 +151,7 @@
 
 **Requirements covered:** EO-1..EO-6; EO-8 AC 1–2.
 
-## 6. Add the `execution` feature guard
+## 6. Add the `execution` feature guard — **implemented**
 
 **Files**
 
@@ -172,7 +172,7 @@
 
 **Requirements covered:** EO-3 AC 2; EO-8 AC 1, 3.
 
-## 7. Add the disabled service surface and reversible mount/unmount
+## 7. Add the disabled service surface and reversible mount/unmount — **implemented**
 
 **Files**
 
@@ -193,7 +193,7 @@
 
 **Requirements covered:** EO-6 AC 3; EO-8 AC 1–2.
 
-## 8. Integrate the host apply path
+## 8. Integrate the host apply path — **implemented**
 
 **Files**
 
@@ -216,7 +216,7 @@
 
 **Requirements covered:** EO-6 AC 2–3; EO-8 AC 1–3.
 
-## 9. Update cross-feature registry assertions and run the full suite
+## 9. Update cross-feature registry assertions and run the full suite — **implemented**（完整 `npm test` 1084/1089 通过，5 个失败全部为冻结顺序断言，见 9.2 记录）
 
 **Files**
 
@@ -232,7 +232,7 @@
 
 **Requirements covered:** verification gate §7 of `temp/m6-parallel-contract.md`; AGENTS §6; EO coverage already in Tasks 1–8.
 
-## 10. Final verification, registration and Stage 4 completion commit
+## 10. Final verification, registration and Stage 4 completion commit — **implemented**
 
 **Files**
 
