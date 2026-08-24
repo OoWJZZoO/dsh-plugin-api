@@ -2,7 +2,7 @@
 
 ## Status
 
-Stage 2 Design 草案，待用户确认。Stage 1 Requirements（`requirements.md`）已由用户确认；此前按用户要求暂停，现按用户指示接续 SPEC1 产出本设计。本设计不包含实现代码，不进入 Stage 3。
+Stage 2 Design 已批准，Stage 2 已完成。Stage 1 Requirements（`requirements.md`）已由用户确认；本设计不包含实现代码，可进入 Stage 3。
 
 ## Overview
 
