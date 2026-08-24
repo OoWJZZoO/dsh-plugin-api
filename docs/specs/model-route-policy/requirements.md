@@ -2,7 +2,7 @@
 
 ## Status
 
-Stage 1 Requirements 已由用户确认；按用户要求暂停，不进入 Design。
+Stage 1 Requirements: approved / completed（已由用户确认）；基于该批准的 Design 已进入并完成 Stage 2。
 
 ## Introduction
 
