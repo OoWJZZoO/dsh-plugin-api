@@ -2,13 +2,13 @@
 
 ## Status
 
-Stage 1 Requirements 草案，待用户确认。
+Stage 1 Requirements 已获用户批准（e8d4e3c）；Stage 2 Design 落地（3278b5c），Stage 3 Tasks 获批（d24f7f8）；Stage 4 已交付（1c9d23d）并合入 M6 Wave C（merge 8ff0b67 / 12c6ce0）。
 
 ## Introduction
 
 `usage-budget-telemetry` 为插件提供统一的 usage sample、execution settle、成本查询和预算阈值通知。它消费 `execution-observation` 的 execution/attempt correlation，但不重新定义 execution 生命周期，也不把本地估算冒充 provider 账单事实。
 
-本 feature 明确分离三类 owner：usage ledger 的 `durable mutation` 负责幂等写入和结算；查询与阈值通知是只读 `projection`；任何 deny、route、retry 或自动降级动作都不属于本需求的 policy registry。为遵守 `docs/standards/durable-state-and-scope.md`，一条 durable record 只能属于一个 scope；跨 scope 查询通过投影组合，不把 session、workspace、profile 混在同一条记录中。
+本 feature 明确分离三类 owner：usage ledger 的 `durable mutation` 负责幂等写入和结算；查询 `projection` 与阈值通知 `projection` 均只读；任何 deny、route、retry 或自动降级动作都不属于本需求的 policy registry。为遵守 `docs/standards/durable-state-and-scope.md`，一条 durable record 只能属于一个 scope；跨 scope 查询通过投影组合，不把 session、workspace、profile 混在同一条记录中。
 
 主公开面是 usage ledger 的受约束写入/查询组合，但 mutation、projection、通知各自拥有独立状态和 disposer。首版为 B 类 host-first facade；client 只消费经过 redaction 的快照和通知。
 

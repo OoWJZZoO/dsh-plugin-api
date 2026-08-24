@@ -6,7 +6,7 @@
 
 ## Status
 
-Stage 0 Goal 已确认，进入 Stage 1 Requirements。
+Stage 0 Goal 与 Stage 1 Requirements 随 M6 四 feature 批次确认（e8d4e3c）；Stage 2 Design 落地（3278b5c），Stage 3 Tasks 获批（d24f7f8）；Stage 4 已交付（1c9d23d）并合入 M6 Wave C（merge 8ff0b67 / 12c6ce0）；当前为 delivered 状态。
 
 ## Goal
 

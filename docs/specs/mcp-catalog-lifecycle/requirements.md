@@ -2,7 +2,7 @@
 
 ## Status
 
-Stage 1 Requirements 草案，待用户确认。
+Stage 1 Requirements 已获用户批准（e8d4e3c）；Stage 2 Design 落地（3278b5c），Stage 3 Tasks 获批（13199a0）；Stage 4 已交付（2294008）并合入 M6 Wave C（merge 4123ab9 / 12c6ce0）。
 
 ## Introduction
 
@@ -10,7 +10,7 @@ Stage 1 Requirements 草案，待用户确认。
 
 当前安装的官方基线是 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6`，package identity 为 `@deepseek-ai/dsh-mcp-client`，source repository directory 为 `packages/mcp/mcp-client`。当前 host 实现已经包含部分目标语义：分页 `tools/list`、工具同步与 generation replacement、public/raw name 双名映射、DeepSeek function-name 规范化与 hash、`callTool` 的 timeout/AbortSignal、reconnect/generation、disconnect/dispose/reconnect exhaustion 时移除工具 generation，以及 `serverName` 唯一性校验。Requirements 因此要求“完整复刻官方现有 host 契约，再增加公共 catalog/lifecycle 语义”，不把这些现有行为误写成全部新建能力。
 
-R replacement 只替换官方 row 的 **ctx 服务/事件与插件行为面**，不替换 package import 面；第三方对 `@deepseek-ai/dsh-mcp-client` 的直接 import 仍解析官方包。具体 disabled row、replacement row、runtime identity matrix 和源码组件划分留到获批 Requirements 后的 Design。
+R replacement 只替换官方 row 的 **ctx 服务/事件与插件行为面**，不替换 package import 面；第三方对 `@deepseek-ai/dsh-mcp-client` 的直接 import 仍解析官方包。具体 disabled row（`mcp-client`）、replacement row（`plugin-api-mcp`）、runtime identity matrix 和源码组件划分已由获批 Design（`design.md` §1）与 Stage 4 交付确定（见 feature-list §7 登记）。
 
 ## Definitions, Evidence, and Classification
 
@@ -19,7 +19,7 @@ R replacement 只替换官方 row 的 **ctx 服务/事件与插件行为面**，
 - **Generation**：某个 server connection 与其完整 tool set 的 owner-specific opaque token。新 generation 取代旧 generation 后，旧结果失去提交资格。
 - **Lifecycle state**：server/tool 的 `available`、`pending`、`unavailable`、`disposed` 等资源状态；execution outcome 仍使用 `success`、`error`、`aborted`、`denied`、`superseded`，不得混用。
 - **主类型**：R 类 replacement，唯一官方组件 owner 为 `@deepseek-ai/dsh-mcp-client`。扩展 catalog/lifecycle 的公开面可作为 replacement 行提供的 MCP capability slice；不跨组件。
-- **Host/client evidence**：当前包文件仅包含 `lib/index.js`、`lib/invariant.js`、types 和 package metadata；无 `dsh.client` manifest、`lib/client.js`、remote、slot 或 settings bridge。
+- **Host/client evidence**（六步审计全部为负，见 MC-8）：① 无 `dsh.client` manifest；② 无 remote namespace；③ 无 slot 或 settings bridge；④ 无 client/host 版本协商；⑤ 无 browser-side state/reconnect 面（现有 reconnect supervisor 是 host 侧）；⑥ 无 client-facing event/service。当前包文件仅包含 `lib/index.js`、`lib/invariant.js`、types 与 package metadata，无 `lib/client.js`。
 
 ### Current Official Host Contract Baseline
 
@@ -47,7 +47,7 @@ The replacement requirements SHALL preserve, at minimum, the following observed 
 - **WHEN** the replacement row is loaded for a supported runtime **THEN** it SHALL preserve the official row's accepted transport/configuration shape, server name validation, uniqueness behavior, reconnect policy, startup failure option, disposal/HMR behavior, logger/error boundary, and all observed `ctx` side effects before exposing the added catalog surface.
 - **WHEN** an official behavior is absent, malformed, or not provable from the locked runtime/package identity **THEN** the replacement SHALL fail its boot self-check and SHALL not silently approximate that behavior.
 - **WHEN** the replacement synchronizes tools **THEN** it SHALL retain paginated `tools/list`, fetch-before-swap atomicity, public/raw name separation, schema fallback, tool result/error mapping, and `tools/call` timeout/AbortSignal behavior.
-- **THEN** the replacement SHALL provide the complete ctx service/event face and lifecycle effects of every disabled official row before adding new MCP catalog/lifecycle members; no extension member may remove or change an official member's timing, payload, return, disposer, or error identity.
+- **WHEN** the replacement row is loaded **THEN** it SHALL provide the complete ctx service/event face and lifecycle effects of every disabled official row before adding new MCP catalog/lifecycle members; no extension member SHALL remove or change an official member's timing, payload, return, disposer, or error identity.
 
 Classification: R. Host: required. Client: none in the current official contract.
 
@@ -59,7 +59,7 @@ Classification: R. Host: required. Client: none in the current official contract
 
 - **WHEN** a server is configured or its connection state changes **THEN** the catalog SHALL expose a read-only server record containing server identity, lifecycle state, connection generation, observed timestamps, transport kind without secrets, and availability reason/provenance.
 - **WHEN** a complete tool generation is current **THEN** the catalog SHALL expose each tool's `(serverName, rawName)` identity, public name, description, input/output schema availability, generation, and provenance.
-- **WHEN** a server is pending, disconnected, exhausted, disposed, or has a failed synchronization **THEN** the catalog SHALL represent the affected server/tool set as explicitly unavailable or superseded and SHALL not continue advertising an old generation as current.
+- **WHEN** a server is pending, disconnected, exhausted, disposed, or has a failed synchronization **THEN** the catalog SHALL represent the affected server/tool set as explicitly unavailable (superseded only as a reason/provenance code, never as `lifecycleState`; see Definitions) and SHALL not continue advertising an old generation as current.
 - **GIVEN** a catalog view is returned **THEN** it SHALL be deeply read-only and SHALL not allow a caller to register, unregister, or mutate MCP tools through the projection.
 
 Classification: R capability slice, with projection semantics. Host: required. Client: no current client surface.
@@ -112,7 +112,7 @@ Classification: R capability slice. Host: required. Client: no current client su
 - **WHEN** the replacement is installed **THEN** assembly SHALL use only the official patch mechanism: disable the targeted official row by id and insert one replacement row; it SHALL not modify any file under `/usr/lib/node_modules/@deepseek-ai/dsh/**`.
 - **WHEN** the replacement row applies **THEN** its boot self-check SHALL verify that the targeted official row is disabled, the replacement row is active, the required official contract is available, and no competing MCP replacement owner or duplicate insertion is active.
 - **WHEN** any self-check fails **THEN** the replacement SHALL log a structured fail-safe diagnostic, return normally from apply, and SHALL not run a partial replacement or allow silent official/replacement double-running.
-- **THEN** replacement logic SHALL not replace `dsh-app-boot`, launcher, Cordis dispatch semantics, or other framework-level behavior outside the `dsh-mcp-client` component boundary.
+- **WHEN** the replacement is assembled **THEN** it SHALL not replace `dsh-app-boot`, launcher, Cordis dispatch semantics, or other framework-level behavior outside the `dsh-mcp-client` component boundary.
 
 Classification: R. Host: required. Client: no current client assembly.
 
@@ -138,7 +138,7 @@ Classification: R. Host: required. Client: no current client negotiation.
 - **WHEN** the current official package is audited **THEN** the requirements evidence SHALL record all six client checks as negative: no `dsh.client` manifest, no remote namespace, no slot or settings bridge, no host/client version negotiation, no browser-side state/reconnect surface, and no client-facing event/service.
 - **WHEN** all six checks remain negative for the locked official identity **THEN** the replacement SHALL be classified host-only, SHALL not create a client bundle, and SHALL state that host reconnect is not browser-side client reconnect.
 - **WHEN** a future supported official identity introduces any one of the six client capabilities **THEN** a later Design/Requirements revision SHALL re-run the six-step audit and SHALL apply R8 client build and `window.__DSH_BOOT__`/HMR verification before enabling client replacement behavior.
-- **THEN** host-only classification SHALL not prevent a separate, non-R client consumer from reading a future redacted catalog snapshot through an independently approved facade feature.
+- **WHEN** host-only classification applies **THEN** it SHALL not prevent a separate, non-R client consumer from reading a future redacted catalog snapshot through an independently approved facade feature.
 
 Classification: R, host-only under current evidence. Host: authoritative. Client: none.
 
@@ -163,7 +163,7 @@ Classification: R/upstream governance. Host: component owner. Client: not applic
 - **WHERE** no visibility policy exists **THEN** model-facing catalog data SHALL include only public tool identity/schema availability and bounded lifecycle reasons; UI/debug output SHALL omit transport headers, credentials, raw environment secrets, and private command arguments; logs SHALL use bounded summaries.
 - **WHEN** a server, transport, schema, list response, or tool call fails **THEN** the replacement SHALL isolate the failure to that server/generation, publish an explicit unavailable/degraded state where possible, and SHALL not throw through harness boot unless the preserved official `failOnStartupError` contract explicitly requires that configured outcome.
 - **WHEN** an MCP consumer requests route policy, budget decision, generic tools exposure policy, or Web UI mutation through this capability slice **THEN** the replacement SHALL reject the request as outside its component boundary and SHALL not mutate another feature's state.
-- **THEN** an MCP durable record, if introduced in a later Design, SHALL declare exactly one `session`, `workspace`, or `profile` scope and SHALL use identity, owner-specific generation, commit state, and stale-result guards.
+- **WHEN** a later Design introduces an MCP durable record **THEN** it SHALL declare exactly one `session`, `workspace`, or `profile` scope and SHALL use identity, owner-specific generation, commit state, and stale-result guards.
 
 Classification: R capability slice plus shared standards boundary. Host: required. Client: no current client publication.
 
@@ -173,7 +173,7 @@ Classification: R capability slice plus shared standards boundary. Host: require
 |---|---|
 | R1 official patch only | MC-6 |
 | R2 complete official row contract before extension | MC-1 |
-| R3 import face remains official | Introduction, MC-1 |
+| R3 import face remains official | Introduction |
 | R4 boot self-check and fail-safe | MC-6 |
 | R5 runtime/package identity lock | MC-7 |
 | R6 component-level unique owner | MC-6, MC-7 |
@@ -201,5 +201,5 @@ Classification: R capability slice plus shared standards boundary. Host: require
 | Patch/self-check | MC-6 | Yes | N/A | R |
 | Version/owner | MC-7 | Yes | N/A | R |
 | Six-step client audit | MC-8 | Host-only | No current face | R |
-| Upstream retirement | MC-9 | Yes | N/A | R/C |
+| Upstream retirement | MC-9 | Yes | N/A | R/upstream governance |
 | Redaction/fail-safe/boundary | MC-10 | Yes | N/A | R |

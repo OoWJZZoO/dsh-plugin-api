@@ -6,11 +6,11 @@
 
 ## Status
 
-Stage 0 Goal 已确认，进入 Stage 1 Requirements。
+Stage 0 Goal 与 Stage 1 Requirements 随 M6 四 feature 批次确认（e8d4e3c）；Stage 2 Design 落地（3278b5c），Stage 3 Tasks 获批（663e7ec）；Stage 4 已交付（b7626af）并合入 M6 Wave C（merge dc1a7cd / 12c6ce0）；当前为 delivered 状态。
 
 ## Goal
 
-为第三方插件提供统一、只读、可恢复的执行生命周期观察能力，把 agent、tool、LLM、session、workflow 和 job 相关的现有事件关联到同一份稳定 execution projection。插件应能识别一次执行的身份、父子关系、阶段变化和唯一终态，从而在并发工具、重入流、取消、重试和重连场景中可靠地关联日志、usage、诊断和业务任务，而不必各自从碎片事件推断执行状态。
+为第三方插件提供统一、只读、可恢复的执行生命周期观察能力，把 agent、tool、LLM、session 等现有公开 seam 的相关事件关联到同一份稳定 execution projection。插件应能识别一次执行的身份、父子关系、阶段变化和唯一终态，从而在并发工具、重入流、取消、重试和重连场景中可靠地关联日志、usage、诊断和业务任务，而不必各自从碎片事件推断执行状态。
 
 首版目标是公共观察契约，不重新定义官方 agent loop，不把所有内部阶段扩展为新事件，也不在观察层自动执行 retry、fallback 或恢复策略。
 

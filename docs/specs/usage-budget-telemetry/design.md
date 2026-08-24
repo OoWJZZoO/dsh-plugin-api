@@ -2,7 +2,7 @@
 
 ## Status
 
-Stage 2 Design 草案，待用户确认。
+Stage 2 Design 已获批并落地（3278b5c），进入 Stage 3 Tasks；Stage 3 Tasks 已获批（d24f7f8）；Stage 4 已完成（1c9d23d）并合入 M6 Wave C（merge 8ff0b67 / 12c6ce0）。
 
 ## Overview
 
@@ -29,7 +29,7 @@ flowchart LR
 
 | Semantic area | Mechanism | Classification |
 |---|---|---|
-| provider usage chunks | 直接绑定公开 `llm/stream` payload | B facade |
+| provider usage chunks | 绑定公开 `llm/stream` seam 提取 usage payload，非侵入 pass-through（不消费/不替换返回流） | B facade |
 | local estimates | 组合既有 `tokenMeter`，标记 estimated | B facade |
 | execution correlation | 读取 `execution-observation` projection | B dependency |
 | ledger/settle/pricing/threshold | facade 内部 durable mutation + projection | B |
@@ -65,9 +65,12 @@ Each record belongs to exactly one `session`, `workspace`, or `profile` scope. C
 ```js
 pluginApi.usage.query({ executionId?, sessionId?, workspaceId?, profileId?, day?, provider?, model? })
 pluginApi.usage.budget.observe({ scope, thresholdId, limit, unit, generation }, listener)
+pluginApi.usage.availability   // 只读报告面：llm-stream / tokenMeter / execution-correlation 来源与 ledger/query/threshold owner 状态；来源缺失仅降级标记，不触发 guard 失败
 ```
 
-Queries identify each record's scope and provisional/truncated state. Threshold projection emits one deterministic crossing notification per threshold generation; it never calls policy, route, retry or approval code.
+`availability` 是只读状态面，不写入 ledger、不参与记账（UB-9）。
+
+Queries identify each record's scope and provisional/truncated/unavailable (missing) state, and SHALL not present an incomplete total as final (UB-4 AC4). Threshold projection emits one deterministic crossing notification per threshold generation; it never calls policy, route, retry or approval code.
 
 ### 4. Client boundary
 
@@ -119,7 +122,7 @@ Missing price leaves usage intact and cost `unknown`; a pricing revision is immu
 
 ## Visibility and Redaction
 
-Default model/tool output excludes internal usage diagnostics; UI excludes secrets; logs contain bounded totals, certainty and pricing revision, never prompts, raw tool arguments, credentials or provider authorization data. Audience policy may expose non-secret metrics while preserving scope, source, timestamp and certainty. Redaction or classification failure fails closed before ledger projection, threshold notification, log or client publication.
+Default model/tool output excludes internal usage diagnostics; UI excludes secrets; logs contain bounded totals, certainty and pricing revision, never prompts, raw tool arguments, credentials or provider authorization data. Audience policy may expose non-secret metrics while preserving scope, source, timestamp and certainty; the audience-visibility channel is this feature's own usage visibility/redaction owner (single pure-function policy register + identity-bound disposer per `api-shape.md` §1 policy face, applied at query/notification redaction decision points). Redaction or classification failure fails closed before ledger projection, threshold notification, log or client publication.
 
 ## Error Handling and Fail-Safe
 
@@ -132,7 +135,7 @@ Focused tests SHALL cover:
 1. normalized confirmed/estimated/mixed samples, the confirmed-first precedence/aggregation rule for coexisting values, missing identities, tokenMeter boundary and execution/attempt correlation;
 2. duplicate equivalent sample replay, conflicting replay, atomic settle, rollback/fail-closed partial commit, commitState/outcome separation and scope ownership;
 3. pricing revisions, unknown price, historical immutability, provisional partial stream, abort/timeout/reconnect replay and stale generation guards;
-4. session/workspace/profile queries, cross-scope composition, truncation/provisional flags and deterministic threshold crossing deduplication;
+4. session/workspace/profile queries, cross-scope composition, truncation/provisional/unavailable flags and deterministic threshold crossing deduplication;
 5. redaction for nested provider metadata and raw content, client publication degradation and policy-action rejection;
 6. normalization/ledger/query/apply failures isolated from execution and unrelated feature state.
 

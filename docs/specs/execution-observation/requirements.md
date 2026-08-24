@@ -2,13 +2,13 @@
 
 ## Status
 
-Stage 1 Requirements 草案，待用户确认。
+Stage 1 Requirements 已获用户批准（e8d4e3c）；Stage 2 Design 落地（3278b5c），Stage 3 Tasks 获批（663e7ec）；Stage 4 已交付（b7626af）并合入 M6 Wave C（merge dc1a7cd / 12c6ce0）。
 
 ## Introduction
 
-`execution-observation` 为第三方插件提供一个统一、只读的执行生命周期投影。它把现有 agent、tool、LLM、session 和相关工作流事件关联到独立的 execution identity，使 telemetry、diagnostics、usage 和业务插件可以在并发、取消、重试、重连和迟到事件下使用同一套关联语义。
+`execution-observation` 为第三方插件提供一个统一、只读的执行生命周期投影。它把现有 agent、tool、LLM、session 等公开 seam 事件关联到独立的 execution identity，使 telemetry、diagnostics、usage 和业务插件可以在并发、取消、重试、重连和迟到事件下使用同一套关联语义。
 
-本需求文档只定义可观察行为和验收边界，不定义实现模块、具体事件转译算法或新的官方事件。主公开面是 `projection`：它可以订阅和查询冻结只读视图，不注册策略，也不写 durable 状态。需求中的 source adapter 是内部 provider enrollment，不构成对第三方开放的 mutation 面。
+本需求文档只定义可观察行为和验收边界，不定义实现模块、具体事件转译算法或新的官方事件。主公开面是 `projection`：它可以订阅和查询冻结只读视图，不注册策略，也不写 durable 状态；EO-7 的可见性 policy 面（`visibility.register`）与 projection 是独立 owner，不改变 projection 的只读边界。需求中的 source adapter 是内部 provider enrollment，不构成对第三方开放的 mutation 面。
 
 ## Definitions and Classification
 
@@ -58,7 +58,7 @@ Classification: B facade projection. Host: required. Client: read-only terminal 
 - **WHEN** the host receives compatible `agent/*`, `tools/*`, `llm/stream`, or `session/*` observations **THEN** the adapter SHALL associate them with the best available execution projection and SHALL record the contributing source kind.
 - **WHERE** a source is missing, disabled, or only partially available **IF** the remaining sources can still form a projection **THEN** the feature SHALL publish a degraded projection with explicit source availability rather than disabling unrelated observations.
 - **WHEN** two source observations describe the same execution **THEN** the projection SHALL merge only fields with a valid identity/generation match and SHALL preserve source provenance for each merged fact.
-- **THEN** the feature SHALL not require importing private variables or modifying files in an official DSH package.
+- **WHEN** the projection is composed from official source observations **THEN** the feature SHALL not require importing private variables or modifying files in an official DSH package.
 
 Classification: B facade projection. Host: required. Client: no direct source binding.
 
@@ -96,7 +96,7 @@ Classification: B facade projection. Host: required. Client: receives only commi
 
 - **WHEN** a supported client publication path is available **THEN** the client SHALL consume a versioned, read-only, redacted execution snapshot and SHALL receive lifecycle notifications using the host's identity and outcome vocabulary.
 - **WHEN** the client publication path is unavailable, stale, or incompatible **THEN** the host observation feature SHALL remain usable and the client surface SHALL report an explicit unavailable/degraded state without claiming authoritative local execution state.
-- **THEN** client code SHALL not create, settle, retry, or mutate a host execution through this feature's projection surface.
+- Client code SHALL not create, settle, retry, or mutate a host execution through this feature's projection surface.
 
 Classification: B facade projection with a bounded client consumer. Host: authoritative. Client: optional consumer; no client-owned lifecycle.
 
@@ -120,7 +120,7 @@ Classification: B facade projection. Host and client: both, with audience-specif
 
 - **WHEN** an adapter, observer, or projection reducer throws or rejects **THEN** the feature SHALL contain the failure, report the affected source/projection as degraded or unavailable, and SHALL not throw through plugin apply or stop unrelated event dispatch.
 - **WHEN** a projection consumer requests retry, route change, checkpoint restore, or task mutation **THEN** the observation surface SHALL reject that operation as outside its contract and SHALL not perform the side effect.
-- **THEN** any session-scoped durable history record SHALL belong only to the `session` scope; the feature SHALL not store one record that simultaneously claims `session`, `workspace`, and `profile` ownership.
+- **GIVEN** a durable history record is written **THEN** it SHALL belong only to the `session` scope and SHALL not simultaneously claim `session`, `workspace`, and `profile` ownership.
 
 Classification: B facade projection; any official execution-identity guarantee not reachable through public seams remains C/upstream. Host: required. Client: inert on failure.
 

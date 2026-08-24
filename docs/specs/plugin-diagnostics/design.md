@@ -2,7 +2,7 @@
 
 ## Status
 
-Stage 2 Design 已获用户批准（M6 Wave A），进入 Stage 3 Tasks。Stage 4 已完成（M6 Wave A，`feat/m6-diagnostics`）。
+Stage 2 Design 已获批（8693a54），进入 Stage 3 Tasks；Stage 3 Tasks 已获批（9f0f9d8）；Stage 4 已完成（5498aed）并合入 M6 Wave C（merge 7a1d1e9 / 12c6ce0）。
 
 ## Overview
 
@@ -32,7 +32,7 @@ flowchart LR
 | official loader health API not currently exposed | 仅记录为 source unavailable/upstream limitation | C proposal if needed |
 | replacement、boot/framework dispatch | 不采用 | 无 R；不改变官方 loader |
 
-Host owns checks and snapshots. Client may contribute a client-scope check through the existing supported publication path, but cannot register host checks or mutate host status.
+Host owns checks and snapshots. Client may contribute only its own client-side availability through the existing supported publication path (not via the host `register` API, so it has no direct check ownership); it cannot register host checks or mutate host status.
 
 ## Components and Interfaces
 
@@ -62,7 +62,7 @@ The index stores check snapshots by diagnostic scope and owner. Query filters by
 
 ### 4. Client publication
 
-If an existing remote/slot publication is available, host sends a versioned redacted snapshot and change notifications. A client-side check may report only its own client availability. Missing/incompatible publication yields explicit client unavailable state while host diagnostics remain active. No new client reconnect or UI component is designed here.
+If an existing remote/slot publication is available, host sends a versioned redacted snapshot and change notifications, with the client payload assembled by the client payload builder (delivery implementation: `buildClientPayload`); clients consume only host snapshots and may report only their own client availability. Missing/incompatible publication yields explicit client unavailable state while host diagnostics remain active. No new client reconnect or UI component is designed here.
 
 ## Data Models
 

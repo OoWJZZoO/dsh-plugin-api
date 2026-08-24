@@ -2,7 +2,7 @@
 
 ## Status
 
-Stage 1 Requirements 草案，待用户确认。
+Stage 1 Requirements 已获用户批准（e8d4e3c）；Stage 2 Design 获批（8693a54），Stage 3 Tasks 获批（9f0f9d8）；Stage 4 已交付（5498aed）并合入 M6 Wave C（merge 7a1d1e9 / 12c6ce0）。
 
 ## Introduction
 
@@ -13,8 +13,8 @@ Stage 1 Requirements 草案，待用户确认。
 ## Definitions and Classification
 
 - **Diagnostic check**：有稳定 owner id 的检查贡献，描述一个能力或依赖是否可用。
-- **Health**：能力当前是否按预期工作，例如 `healthy`、`degraded`、`failed`、`pending`。
-- **Availability**：调用者现在是否可以使用该能力，例如 `active`、`inactive`、`unavailable`、`unknown`；health 与 availability 不可互相替代。
+- **Health**：能力当前是否按预期工作，例如 `healthy`、`degraded`、`failed`、`pending`、`unknown`。
+- **Availability**：调用者现在是否可以使用该能力，例如 `active`、`degraded-active`、`inactive`、`unavailable`、`unknown`；health 与 availability 不可互相替代。
 - **Scope**：`boot`、`host`、`client` 或 `plugin` 四种诊断快照范围；scope 不等同于 durable storage scope。
 - **Generation**：owner-specific opaque token，用于丢弃旧检查回调和旧快照重建结果。
 - **主类型**：B 类门面 projection，组合已有 feature guard、版本协商和官方公开服务；无新的官方 loader replacement。
@@ -68,7 +68,7 @@ Classification: B facade projection. Host: required. Client: client scope is opt
 **Acceptance Criteria:**
 
 - **WHEN** a check evaluates a runtime/package/API mismatch, missing peer service, invalid schema, or duplicate owner **THEN** the report SHALL identify the failed prerequisite, observed identity/version evidence, and the affected capability.
-- **WHEN** health is degraded but a fallback remains callable **THEN** availability SHALL remain `active` or `degraded-active` according to the declared vocabulary, and the report SHALL state the fallback boundary.
+- **WHEN** health is degraded but a fallback remains callable **THEN** availability SHALL remain `active` or `degraded-active`, and the report SHALL state the fallback boundary.
 - **WHEN** a capability is unavailable for use **THEN** the report SHALL not mark it healthy merely because its plugin row loaded.
 - **THEN** version evidence SHALL be bounded metadata and SHALL not include secrets, full environment dumps, or arbitrary file contents.
 
@@ -81,7 +81,7 @@ Classification: B facade projection using existing version guards. Host and clie
 **Acceptance Criteria:**
 
 - **WHEN** a committed diagnostic snapshot changes health, availability, severity, reason, or generation **THEN** the feature SHALL emit one contained change notification for the affected check/scope with the new immutable snapshot or a stable reference to it.
-- **WHEN** a snapshot observer is mounted, rebuilt, or reconnected **THEN** the feature SHALL associate it with an observer epoch and SHALL discard stale rebuild results that no longer match the current owner and generation.
+- **WHEN** a snapshot observer is mounted, rebuilt, or reconnected **THEN** the feature SHALL associate it with an observer epoch and SHALL discard stale rebuild results that no longer match the current owner, generation, or observer epoch.
 - **WHEN** multiple equivalent source signals arrive in one update window **THEN** the feature SHALL coalesce them deterministically and SHALL not emit an unbounded notification loop.
 - **WHEN** a notification listener throws or rejects **THEN** the feature SHALL contain the listener failure and SHALL continue updating other consumers.
 

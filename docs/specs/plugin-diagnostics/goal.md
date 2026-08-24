@@ -6,11 +6,11 @@
 
 ## Status
 
-Stage 0 Goal 已确认，进入 Stage 1 Requirements。
+Stage 0 Goal 与 Stage 1 Requirements 随 M6 四 feature 批次确认（e8d4e3c）；Stage 2 Design 获批（8693a54），Stage 3 Tasks 获批（9f0f9d8）；Stage 4 已交付（5498aed）并合入 M6 Wave C（merge 7a1d1e9 / 12c6ce0）；当前为 delivered 状态。
 
 ## Goal
 
-为插件作者、宿主运维者和 Web/TUI/CLI 消费者提供统一的插件健康与可用性诊断契约。插件可以报告自身或依赖能力为何处于 active、degraded、inactive 或 pending 状态，宿主可以读取结构化快照并订阅变更，从而把版本不匹配、依赖缺失、重复注册、schema 不兼容和 client/host 不可用从散落日志转为可查询、可解释、可脱敏的公共状态。
+为插件作者、宿主运维者和 Web/TUI/CLI 消费者提供统一的插件健康与可用性诊断契约。插件可以报告自身或依赖能力为何处于某种 health 状态（healthy/degraded/failed/pending/unknown）或 availability 状态（active/degraded-active/inactive/unavailable/unknown），宿主可以读取结构化快照并订阅变更，从而把版本不匹配、依赖缺失、重复注册、schema 不兼容和 client/host 不可用从散落日志转为可查询、可解释、可脱敏的公共状态。
 
 该 feature 只负责诊断和可见性，不改变现有 fail-safe 行为：apply 失败仍必须安静停用，健康检查失败也不自动卸载、重启或修复能力。
 

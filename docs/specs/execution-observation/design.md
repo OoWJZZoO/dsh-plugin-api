@@ -2,7 +2,7 @@
 
 ## Status
 
-Stage 2 Design 草案，待用户确认。
+Stage 2 Design 已获批并落地（3278b5c），进入 Stage 3 Tasks；Stage 3 Tasks 已获批（663e7ec）；Stage 4 已完成（b7626af）并合入 M6 Wave C（merge dc1a7cd / 12c6ce0）。
 
 ## Overview
 
@@ -53,13 +53,15 @@ pluginApi.execution.observe({ sessionId?, since?, signal? }) // disposer + commi
 pluginApi.execution.get(executionId)
 pluginApi.execution.history(sessionId, { limit, cursor? })
 pluginApi.execution.onChange(listener) // read-only notification disposer
+pluginApi.execution.availability           // read-only availability snapshot (EO-3 source availability)
+pluginApi.execution.visibility.register(policy) // api-shape.md §1 policy face (EO-7); returns disposer
 ```
 
 这些入口只返回深冻结快照。`observe` 的 disposer 只撤销本 observer 自己的 listener/epoch；不得清理其他 observer 或新 owner 的资源。
 
 ### 3. Lifecycle reducer
 
-Reducer 按明确的 source precedence 合并 phase、attempt 和 terminal candidate。终态字段固定为 `outcome`，取 `success | error | aborted | denied | superseded`；`settled`、`closed`、`disposed` 只作为生命周期 metadata。单个 execution 的终态原子提交后，迟到事件只进入 bounded provenance/diagnostic，不可改写 outcome、phase 或 terminal timestamp。timeout 观察映射为 `outcome: 'error'` 并写入 `outcomeReason`，不引入独立 timeout outcome。
+Reducer 按明确的 source precedence 合并 phase、attempt 和 terminal candidate。终态字段固定为 `outcome`，取 `success | error | aborted | denied | superseded`；`settled`、`closed`、`disposed` 只作为生命周期 metadata。单个 execution 的终态原子提交后，迟到事件只进入 bounded provenance/diagnostic，不可改写 outcome、phase 或 terminal timestamp。timeout 观察映射为 `outcome: 'error'` 并写入 `outcomeReason`，不引入独立 timeout outcome。最新有效观察时间（EO-2 AC1）取合并后各 source 已提交 observedAt 的最大值，随 projection 的 provenance 条目承载，不为此新增独立字段。
 
 ### 4. Host/client publication
 
@@ -110,7 +112,7 @@ History is session-scoped only. It is bounded and may return `truncated: true`, 
 
 Default projection is audience-specific: model/tool output excludes internal diagnostics; UI excludes secrets; logs contain bounded summaries. Non-secret fields may be exposed only through an explicit visibility policy and retain source, timestamp, scope and certainty. Prompt text, tool arguments, provider credentials, authorization material and raw error bodies are never included in the base projection. If classification or redaction fails, the field is omitted and the projection becomes `redacted/unavailable`.
 
-The visibility policy face follows the `api-shape.md` §1 policy-registry contract: a single register entry, the policy is a pure function (inputs passed explicitly, no private state reads, no side effects), registration returns a disposer, and the policy carries an owner id + generation token; a policy throw only degrades that decision point to the default denial and never throws through apply. The policy face and the projection surface are independent owners and share no private state.
+The visibility policy face follows the `api-shape.md` §1 policy-registry contract: a single `visibility.register(policy)` entry, the policy is a pure function (inputs passed explicitly, no private state reads, no side effects), registration returns a disposer, and the policy carries an owner id + generation token; a policy throw only degrades that decision point to the default denial and never throws through apply. The policy face and the projection surface are independent owners and share no private state.
 
 ## Error Handling and Fail-Safe
 

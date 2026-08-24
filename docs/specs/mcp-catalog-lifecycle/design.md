@@ -2,7 +2,7 @@
 
 ## Status
 
-Stage 2 Design 草案，待用户确认。
+Stage 2 Design 已获批并落地（3278b5c），进入 Stage 3 Tasks；Stage 3 Tasks 已获批（13199a0）；Stage 4 已完成（2294008）并合入 M6 Wave C（merge 4123ab9 / 12c6ce0）。
 
 ## Overview
 
@@ -27,7 +27,7 @@ flowchart LR
 
 The audited package provides stdio and streamable HTTP transports, unique `serverName`, paginated `tools/list`, fetch-before-swap synchronization, public/raw name mapping and deterministic hash, raw-name `tools/call`, timeout/AbortSignal, reconnect/generation and old-tool cleanup on disconnect/dispose/exhaustion. These are preserved by direct vendored replication of the locked official host implementation (R2), not reimplemented as a second facade.
 
-The added catalog/lifecycle events and immutable projection are replacement-owned host behavior (R capability slice). No current client evidence exists: no `dsh.client` manifest, remote namespace, slot/settings bridge, host/client negotiation, browser state/reconnect or client-facing event/service. Therefore the current design is host-only. Any future official identity that turns one of those six checks positive requires a new Requirements/Design audit and R8 client build/HMR verification before client replacement is enabled.
+The added catalog/lifecycle events and immutable projection are replacement-owned host behavior (R capability slice). No current client evidence exists: no `dsh.client` manifest, remote namespace, slot/settings bridge, host/client negotiation, browser state/reconnect or client-facing event/service. Therefore the current design is host-only. Any future official identity that turns one of those six checks positive requires a new Requirements/Design audit and R8 client build with `window.__DSH_BOOT__`/HMR verification before client replacement is enabled.
 
 ## Components and Interfaces
 
@@ -43,7 +43,7 @@ The auxiliary package supplies a patch equivalent to:
       name: '@deepseek-ai/dsh-plugin-api-mcp'
 ```
 
-Apply inspects loader composition, target disabled state, replacement active state, duplicate insertion, component owner marker, runtime full identity, official package identity/version and replacement manifest version. On mismatch it logs a bounded diagnostic and returns normally; it never silently runs both rows. The replacement only publishes its added catalog when self-check and post-registration contract probes pass. Direct imports of `@deepseek-ai/dsh-mcp-client` still resolve to the official package.
+Apply inspects loader composition, target disabled state, replacement active state, duplicate insertion, component owner marker, runtime full identity, official package identity/version and replacement package identity/version. On mismatch it logs a bounded diagnostic and returns normally; it never silently runs both rows. The replacement only publishes its added catalog when self-check and post-registration contract probes pass. Direct imports of `@deepseek-ai/dsh-mcp-client` still resolve to the official package.
 
 ### 2. Faithful official service owner
 
@@ -62,7 +62,9 @@ ctx.mcpCatalog.onChange(listener) // immutable server/tool snapshots
 
 Records are projection-only: callers cannot register/unregister tools through this surface. Query parameters (`includeUnavailable?`, `generation?`) are read-only filters and never trigger registration, unregistration, resync or any other side effect. Server records expose identity, lifecycle state, connection generation, timestamps, transport kind without secrets, availability reason and provenance. Tool records expose `(serverName, rawName)`, public name, description, schema availability/fallback, generation and provenance.
 
-The main facade may expose the same read-only projection as `pluginApi.mcp` when the replacement marker is active. The replacement-owned `ctx.mcpCatalog` service and its `mcp/catalog-changed` notification are the authoritative host owner; the facade does not maintain a second catalog.
+装配后每个 server 一个 replacement 实例（官方 per-server config shape 不变，R2）；catalog 按 `ctx.root` 共享——首个实例注册 `ctx.mcpCatalog` 服务，其余实例复用同一服务。`onChange(listener)` 返回 identity-bound disposer（projection 面契约，见 `docs/standards/api-shape.md` §1）。
+
+The main facade exposes the same read-only projection as `pluginApi.mcp` only while the replacement marker is active (delivered via Wave C integration; see feature-list §7). The replacement-owned `ctx.mcpCatalog` service and its `mcp/catalog-changed` notification are the authoritative host owner; the facade does not maintain a second catalog.
 
 ### 4. Synchronization and invocation guard
 
@@ -70,7 +72,7 @@ Per-server synchronization is serialized or guarded by `latest-wins`. Pagination
 
 ### 5. Catalog slice and upstream retirement
 
-The main facade may expose a catalog metadata slice only while this replacement marker and loader state prove the replacement is active. The slice uses existing events-bus freeze/fault containment and does not fork that cross-cutting implementation. Governance registers a U-series proposal for official MCP catalog/lifecycle events. Retirement begins when the official component offers equivalent generation, list-change, availability, identity and stale-cleanup semantics; consumers then migrate to the official seam and the replacement stops publishing duplicate semantics after deprecation.
+As in §3, the main facade's `pluginApi.mcp` conditional projection appears only while the replacement marker and loader state prove the replacement is active; the projection uses existing events-bus freeze/fault containment and does not fork that cross-cutting implementation. Governance registers a U-series proposal for official MCP catalog/lifecycle events. Retirement begins when the official component offers equivalent generation, list-change, availability, identity and stale-cleanup semantics; consumers then migrate to the official seam and the replacement stops publishing duplicate semantics after deprecation.
 
 ## Data Models
 
