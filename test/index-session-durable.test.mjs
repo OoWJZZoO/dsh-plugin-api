@@ -125,6 +125,7 @@ test('apply mounts sessionDurable immediately after session without extending th
     'remote',
     'execution',
     'diagnostics',
+    'usage',
   ])
   assert.equal(feature(state, 'session').isActive, true)
   assert.equal(feature(state, 'sessionDurable').isActive, true)
