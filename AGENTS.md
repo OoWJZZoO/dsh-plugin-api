@@ -46,7 +46,7 @@ agent/dsh-plugin-api/
 
 ## 3. Kiro spec coding 工作流规范（本仓库铁律）
 
-采用 [kevinlin/spec-coding-mcp](https://github.com/kevinlin/spec-coding-mcp) 的 spec-driven 五阶段流程。**Stage 0–3（Goal / Requirements / Design / Tasks）必须得到人类明确确认，才能进入下一阶段；Stage 4（Execute）在 Tasks 获批后由代理自主完成，不再逐任务等待人类确认（见 3.2）。**
+采用 [kevinlin/spec-coding-mcp](https://github.com/kevinlin/spec-coding-mcp) 的 spec-driven 五阶段流程。**Stage 0–3（Goal / Requirements / Design / Tasks）必须得到人类明确确认，才能进入下一阶段；Stage 4（Execute）在 Tasks 获批后由代理自主完成，不再逐任务等待人类确认。** 谁来做、要不要审查，按 §3.0.2 的四种工作流模式（SPEC1 / SPEC2 / SPEC3 / ANY）分配可用 Agent 资源；设计取舍服从 §3.0.3 的克制设计原则；审查、提交与工作区纪律见 §3.2。
 
 运行时工作流由本仓库 skill `spec-coding` 驱动（`.dsh/skills/spec-coding/SKILL.md`）；AGENTS.md 是 constitution，两者冲突时以本文件铁律为准。
 
@@ -63,34 +63,57 @@ agent/dsh-plugin-api/
 - 本窗口同样约束代理的行为：发现 API 形状负债时（含预检、审计、迁移验收中发现的），必须主动上报并建议纳入当前重构窗口，而不是留给未来。
 - 当本仓库进入发布阶段（首个第三方插件实质依赖本仓库，或本仓库进入公开 profile 分发）时，必须更新本节为兼容性声明，届时 API 变更改走 `dsh.api` 版本协商轨道（F0.3）。
 
+### 3.0.2 工作流模式（按可用 Agent 资源选择）
+
+新 feature 与维护工作按以下四种模式之一执行。开工前先判定属于哪种模式；判定存疑时，默认按 SPEC1→SPEC3 主线处理，并在动手前向用户确认。本节的模式分配只约束“谁来做、要不要审查”，不改变 §3.2 的人类确认门与提交义务。
+
+- **SPEC1（上层文档，Stage 0–2）**：由高质模型直接产出 Goal、Requirements、Design 三个制品，逐阶段交用户确认。**该模式 Stage 0–2 不派发对抗性审查**，确认门只有“用户明确批准”。SPEC1 不产出 Tasks，也不写任何实现代码。
+- **SPEC2（审查纠偏，Stage 0–2）**：专门用于审查与纠偏 SPEC1 已产出的 Goal/Requirements/Design 制品。SPEC2 不是 SPEC1 之后的强制步骤，而是**按需启用**（用户指出文档问题或要求复审优化时）。它只核对当前阶段制品与已确认上游文档的一致性、不向上溯源，并就地修订当前阶段文档；不得借纠偏推进到下一阶段或写实现代码。
+- **SPEC3（执行，Stage 3–4）**：承接已获批 Design 之后的全部工作：先按现有流程产出并确认 Tasks（Stage 3），再自主完成执行与交付（Stage 4）。Stage 3 仍按 §3.2 做对抗性审查；Stage 4 **不再逐顶层大任务审查，改为全部顶层任务完成并验证后做一次全局终审**（见 §3.2）。
+- **ANY（疑难杂症）**：任务范围不限、模型质量不限，用于修正代码逻辑、修复缺陷、更新文档等维护性工作；**通常不用于新增 feature**。ANY 不得改变任何 feature 已获批的 Goal/Requirements 验收边界，也不得夹带 spec 外功能；一旦实际工作触及新增能力或已获批验收边界，必须停下并转回 SPEC1→SPEC3 工作流。
+- SPEC1/SPEC2/SPEC3/ANY 是治理编排代号，只允许出现在本文件等治理文档中，不得写入实现代码、包名、行 id 或运行时可见字符串（与 §6 治理魔法字母规则一致）。
+
+### 3.0.3 克制设计（反过度设计）
+
+- **核心功能优先**：设计只为已确认需求直接覆盖的行为服务；不做针对“假想敌”或臆想风险的预防性设计。“以防万一”“将来可能”“可能被滥用”都不构成增加设计复杂度的充分理由。
+- **禁止无意义加固**：不要为未经证实的风险做费力而无意义的工作——例如记录仓库文件的 SHA1 以防文件被改动：本仓库由人类维护者作为唯一写者控制，这类“防止文件被悄悄改动”的风险不属于需要设计应对的对象。设计应对的是真实、可复现、有据可查的问题。
+- **边缘情况从简**：边缘情况采用最小可用策略。**凡需要对边缘情况做大量设计的，必须先把方案报人类请示并获得批准**，不得自行铺开。这条对 SPEC1 尤其重要：最上层的 Goal/Requirements/Design 由它产出，过度设计最容易从那里被放大并向下传导。
+- 是否属于过度设计存疑时，默认从简，并把取舍作为决策点提交人类裁决。
+
 ### 3.1 五阶段
 
 | 阶段 | 制品 | 说明 |
 |---|---|---|
-| 1. Goal | 本阶段产出一个 `feature_name` 与目标摘要 | 用自然语言确认“做什么、为什么” |
-| 2. Requirements | `docs/specs/<feature_name>/requirements.md` | **EARS 语法**，可测试 |
-| 3. Design | `docs/specs/<feature_name>/design.md` | 技术架构、host/client 分工、钩子引出机制 |
-| 4. Tasks | `docs/specs/<feature_name>/tasks.md` | 依赖有序的任务清单 |
-| 5. Execute | 实现代码 + 测试 | 严格按 tasks 执行，不夹带 spec 外功能 |
+| 0. Goal | 本阶段产出一个 `feature_name` 与目标摘要 | 用自然语言确认“做什么、为什么”（SPEC1） |
+| 1. Requirements | `docs/specs/<feature_name>/requirements.md` | **EARS 语法**，可测试（SPEC1） |
+| 2. Design | `docs/specs/<feature_name>/design.md` | 技术架构、host/client 分工、钩子引出机制（SPEC1） |
+| 3. Tasks | `docs/specs/<feature_name>/tasks.md` | 依赖有序的任务清单（SPEC3） |
+| 4. Execute | 实现代码 + 测试 | 严格按 tasks 执行，不夹带 spec 外功能；全部完成后全局终审（SPEC3，见 §3.2） |
 
 ### 3.2 确认门（gate）
 
 - **Stage 0–3（Goal / Requirements / Design / Tasks）**：每个阶段完成后，把文档交给用户评审；**用户明确批准后才进入下一阶段**。未批准时，只能修订当前阶段文档，禁止提前写下一阶段文档，更禁止写实现代码。
 - **阶段提交（强制）**：每个大于 `0` 的 Stage 确认门获批后，代理**必须**在承载该阶段成果的主/集成分支或工作分支创建提交，随后才能进入下一 Stage、派生或更新任何 worktree，或交付该阶段成果。提交只可包含已获批的本阶段制品及必要附带改动，且必须先通过 `git diff --check`；若提交失败或存在无法归属的变更，该阶段不得推进，必须先处理并向用户说明。
-- **Stage 4 完成提交（强制）**：Stage 4 的代码工作（或仅文档交付任务）及所需验证完成后，代理**必须**在最终交付、清理 worktree 或启动后续工作前，提交本 Stage 的实现、测试、规格与必要登记。不得把已完成成果只留在未提交的 worktree；任何新 worktree 必须从已提交的阶段边界派生。
-- **每个阶段（除 Stage 0）结束时**：Stage 1–3 在把该阶段文档交给用户评审前，必须先调用一个子 agent 做对抗性审查，并**阻塞性等待其完成**（在 DSH 工具中必须使用 `run_in_background: false`；禁止以后台/异步方式派审后继续主线）。**仅小修改（如一两处文字或单点修正）无需再对抗性审查**。审查只核对当前阶段制品与已确认上游文档的一致性，不向上溯源。**一旦对某制品调用该审查，代理必须暂停对同一制品的自行审查、编辑和重复派审；在收到该次审查的最终结论前，不得推进主线工作。** 收到结果后，代理才可集中处理意见：返回“无偏差”即可提交用户评审；有意见则先修订，实质修订后再调用下一轮、同样阻塞且串行的审查，直至通过。Stage 4 全部顶层大任务完成后直接交付结果报告，**无需再额外进行一次总体审查**。
-- **Stage 4（Execute）**：Tasks 获批后由代理**自主完成全部任务**，不再逐任务等待人类确认。
-  - Stage 4 的对抗性审查单位是 `tasks.md` 的**顶层大任务/批次**（例如 `1.x`、`2.x` 或明确声明的一个完整阶段），不是其中的每个小条目、文件或子步骤。代理按顶层任务顺序一次完成一个大批次；一个大批次内的所有子项、实现文件和测试必须作为整体交付。每完成一个顶层大任务，必须调用**一次**子 agent 做对抗性审查，并**阻塞性等待其完成**（在 DSH 工具中必须使用 `run_in_background: false`；禁止以后台/异步方式派审后开始下一顶层任务或处理其他主线）。因此，子项不再逐项触发审查，但不得借任务合并掩盖未完成的验收标准。
-  - 审查只核对该顶层大任务的实现/测试与当前 Tasks、Design、Requirements 一致性，不向上溯源。调用审查后，代理必须暂停自行编辑该批次、重复派审或开始下一顶层任务；在收到最终结论前不得推进主线。返回“无偏差”后才继续；有意见则在同一批次内集中修订，实质修订后再调用下一轮、同样阻塞且串行的审查并等待通过。
-  - 大批次中的一两处文字或单点修正不另行触发审查；若独立的小修改改变了已批准验收边界，必须纳入下一个顶层大任务或重新形成一个可审查批次。Stage 4 全部顶层大任务完成后无需再额外进行一次总体审查，但每个顶层大任务的审查是最低要求。
+- **工作区清洁（阶段边界）**：阶段开工时若工作区已有脏改动，**不得默认“保留现状、绕着走”**。这些脏改动通常是上一阶段/上一工作流遗忘的提交；先 `git status`/`git diff` 查明归属——属于上一阶段已获批成果的，与当前阶段成果一并提交；属于当前工作的，纳入本阶段交付一并提交；确实无法归属或与当前工作无关的，立即停下向用户说明，不得擅自丢弃或静默携带。每个阶段完工（含阶段提交）后，工作区必须回到干净状态；不得把未提交成果留在 worktree 里等待下一阶段。
+- **Stage 4 完成提交（强制）**：Stage 4 的代码工作（或仅文档交付任务）、所需验证与全局终审完成后，代理**必须**在最终交付、清理 worktree 或启动后续工作前，提交本 Stage 的实现、测试、规格与必要登记。不得把已完成成果只留在未提交的 worktree；任何新 worktree 必须从已提交的阶段边界派生。
+- **对抗性审查（按工作流模式执行，模式定义见 §3.0.2）**：
+  - **SPEC1（Stage 0–2）**：不派发对抗性审查。高质模型产出后直接交用户评审，用户明确批准即过门。
+  - **SPEC2（Stage 0–2 审查纠偏）**：SPEC2 本身就是审查纠偏工作流；审查只核对当前阶段制品与已确认上游文档的一致性、不向上溯源，并就地修订当前文档，修订后交用户评审。无需对 SPEC2 再叠一层对抗性审查。
+  - **SPEC3（Stage 3）**：把 Tasks 交给用户评审前，必须先调用一个子 agent 做对抗性审查，并**阻塞性等待其完成**（在 DSH 工具中必须使用 `run_in_background: false`；禁止以后台/异步方式派审后继续主线）。**仅小修改（如一两处文字或单点修正）无需再对抗性审查**。审查只核对 tasks 与已确认 Goal/Requirements/Design 的一致性，不向上溯源。返回“无偏差”才可提交用户评审；有意见则集中修订，实质修订后再次派审，同样阻塞且串行，直至通过。
+  - **SPEC3（Stage 4）**：Tasks 获批后由代理**自主完成全部任务**，不再逐任务等待人类确认，也**不再逐顶层大任务派审**。代理按 `tasks.md` 顺序完成全部顶层任务、验证与必要登记后，在交付结果报告前，必须对**整个 Stage 4 交付**（全部实现、测试、spec 修订与登记）调用**一次全局终审**：阻塞等待其完成（DSH 工具中必须使用 `run_in_background: false`），只核对交付物与 Tasks/Design/Requirements 的一致性，不向上溯源。全局终审返回“无偏差”后，代理才可交付结果报告、执行 Stage 4 完成提交并清理 worktree；有意见则在整个交付范围内集中修订，实质修订后再次派发全局终审（仍只审整体、不退回逐任务审查），直至通过。
+  - **ANY**：不设固定审查门，但代码修改仍须满足 §6 的测试、fail-safe 与不夹带 spec 外功能等约束，且不得越出获批边界（§3.0.2）。
+  - **通用审查纪律（凡存在审查门的模式）**：一旦对某制品/交付调用审查，代理必须暂停对同一对象的自行审查、编辑和重复派审；在收到该轮最终结论前不得推进主线。返回“无偏差”才能继续；实质修订后必须再次派审。
+- **Stage 4（Execute）通用规则**：
+  - 按 `tasks.md` 的顶层大任务/批次顺序执行，一个大批次内的所有子项、实现文件和测试作为整体交付；不得借任务合并掩盖未完成的验收标准。
   - 若执行中发现 spec 错误：实现细节/设计矛盾由代理先修订对应 spec 文档（requirements/design/tasks）保持一致，并在最终报告中列出修订；若错误动摇已确认的 Goal 或 Requirements 验收标准，则暂停并请求人类裁决。
-  - 代理仍需遵守 fail-safe、测试、不夹带 spec 外功能等全部约束；全部任务完成后向用户交付完整结果报告。
+  - 代理仍需遵守 fail-safe、测试、不夹带 spec 外功能等全部约束；全部任务完成并验证后，先完成全局终审，通过后向用户交付完整结果报告。
+- **历史/在途制品衔接**：本次修订前写入在途 spec 制品（tasks 等）的“逐顶层大任务审查”旧约定一律失效，与本节冲突时以本节为准；代理在推进在途制品前，应先把其执行注同步为本节规则。
 
 #### 3.2.1 Codex 协作运行时隔离（仅适用于 OpenAI Codex，硬性规则）
 
 以下条款只约束 OpenAI Codex desktop/API 的协作运行时；其他 agent harness、普通人工流程和 DSH 运行时不因本节改变权限模型或工作流。
 
-已获批任务书/设计文档中出现的「Luna(max) 审查」字样（如 `plugin-api-repo-normalization` 的整体审查约定）是 Codex 协作运行时的审查规格，不代表仓库对非 Codex harness 的模型要求。非 Codex harness（如 DSH）执行同一审查门时，按 §3.2 通用规则派发**阻塞式只读对抗性审查**（`run_in_background: false`），使用该 harness 可用的最强审查能力；不得因为没有 Luna 模型而阻塞或中断该门，不得编造/代答 Luna 审查结论，不得尝试设置 Codex 专属参数。
+已获批任务书/设计文档中出现的「Luna(max) 审查」字样（如 `plugin-api-repo-normalization` 的整体审查约定）是 Codex 协作运行时的审查规格，不代表仓库对非 Codex harness 的模型要求。非 Codex harness（如 DSH）执行同一审查门时，按 §3.2 相应模式的规则派发**阻塞式只读对抗性审查**（`run_in_background: false`），使用该 harness 可用的最强审查能力；不得因为没有 Luna 模型而阻塞或中断该门，不得编造/代答 Luna 审查结论，不得尝试设置 Codex 专属参数。SPEC1 的 Stage 0–2 不设审查门，Codex 在该模式不派发任何审查子代理；SPEC3 的 Stage 4 全局终审属于本节所称审查门，同样必须按上述 Luna(max) 只读子代理规则阻塞执行。
 
 - Codex 调用任何子 agent 时，必须显式传入 `model: gpt-5.6-luna` 与 `reasoning_effort: max`；不得省略 `model`、依赖主 agent 继承值，或选择 `gpt-5.6-sol` / 其他模型。为使模型覆盖生效，`fork_turns` 必须显式使用 `none` 或有界的正整数，不能使用会继承主 agent 模型且不接受覆盖的全量 fork。若 Luna 不可用，必须停止派发并报告阻塞，不得自动回退到其他模型。
 - 创建子 agent 的首条提示必须以明确的角色栏开始，并把以下内容标记为不可因上下文压缩、省略或改写的约束：`[COMPRESSION-CRITICAL] ROLE=READ-ONLY-SUBAGENT`、本 agent 不是主 agent、不得修改任何文件或 worktree、不得提交、不得调用写工具、不得派生/唤起子 agent、只能返回审查结论。该角色栏还必须写明审查范围、对应的顶层任务和预期输出；不得只写“请审查”之类的短提示。
@@ -165,7 +188,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 
 ## 6. 仓库规则
 
-- **对于尚未走完 Stage 0–3 确认门的新 feature**，只允许写该 feature 的 `AGENTS.md` 变更与 `docs/specs/**` 制品；不得提前写实现代码。该 feature 的 Stage 4（Execute）获批后，才允许创建或修改 `lib/`、`package.json`、`test/`、`scripts/` 等实现产物；已交付 feature 的维护也必须有对应获批 Tasks 或治理变更作为依据。
+- **对于尚未走完 Stage 0–3 确认门的新 feature**，只允许写该 feature 的 `AGENTS.md` 变更与 `docs/specs/**` 制品；不得提前写实现代码。该 feature 的 Stage 4（Execute）获批后，才允许创建或修改 `lib/`、`package.json`、`test/`、`scripts/` 等实现产物；已交付 feature 的维护必须有对应获批 Tasks、治理变更或 ANY 工作流的明确人类指示作为依据，且不得借维护新增 feature（§3.0.2）。
 - 制品目录：`docs/specs/<feature_name>/requirements.md`、`design.md`、`tasks.md`。
 - 测试（进入 execute 阶段后）：统一 `npm test`（即 `node --test "test/**/*.mjs"`）。**不要用裸 `node --test`**：它会递归扫描全仓库，把 `temp/`（gitignored 研究/临时目录）里的外来测试也收进来并导致失败/挂起；显式 glob 只覆盖 `test/`。纯函数模块保持零 harness 依赖。
 - **测试内存护栏（默认开启）**：`npm test` 通过 `systemd-run --user --scope -p MemoryMax=4G` 在 4G cgroup 内运行，超限由内核 OOM-killer 只击杀测试进程（`run-u*.scope: Failed with result 'oom-kill'`），保护宿主（尤其 8G 内存的 WSL）不被测试拖入全局 OOM。**不要绕过护栏直接跑 `node --test`**；确需原始命令时用 `npm run test:raw`（与旧 `test` 脚本等价）。护栏依赖 systemd 用户实例，脚本已内联默认 `DBUS_SESSION_BUS_ADDRESS`。背景：本套件曾在失败断言大量累积 diff（数万条）时单进程吃到 15G+，触发整机 OOM。因此遇到 `oom-kill` 应先修测试本身（如失控的失败断言、挂起用例），而不是调大阈值或绕过护栏。
@@ -179,6 +202,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
   A-class
   A11
   dsh-plugin-api.compaction-events-r1.active
+  SPEC1 / SPEC2 / SPEC3 / ANY（工作流编排代号）
   ```
   运行时可见的名字必须使用中立、面向能力/语义的命名（例如包名 `@deepseek-ai/dsh-plugin-api-compaction-events`，行/feature 名只表达能力、不带 `r1` 之类治理后缀）；既有实现若违反本规则，必须在后续获批维护任务中清理，不得继续新增此类泄漏。
 - 临时验证脚本放 `temp/`，用完即删。
