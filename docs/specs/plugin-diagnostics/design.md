@@ -2,7 +2,7 @@
 
 ## Status
 
-Stage 2 Design 草案，待用户确认。
+Stage 2 Design 已获用户批准（M6 Wave A），进入 Stage 3 Tasks。Stage 4 已完成（M6 Wave A，`feat/m6-diagnostics`）。
 
 ## Overview
 

@@ -118,6 +118,7 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     { name: 'settingsRemote', isActive: true },
     { name: 'remote', isActive: true },
     { name: 'execution', isActive: true },
+    { name: 'diagnostics', isActive: true },
   ])
   assert.equal(state.pluginApi.llm.isActive, true)
   assert.equal(typeof state.pluginApi.llm.request.transform, 'function')
@@ -181,7 +182,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-  assert.equal(features.length, 17)
+  assert.equal(features.length, 18)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -201,6 +202,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.deepEqual(features[14], { name: 'settingsRemote', isActive: true })
   assert.deepEqual(features[15], { name: 'remote', isActive: true })
   assert.deepEqual(features[16], { name: 'execution', isActive: true })
+  assert.deepEqual(features[17], { name: 'diagnostics', isActive: true })
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),
