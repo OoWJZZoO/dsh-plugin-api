@@ -87,13 +87,16 @@ function createMockCtx(options = {}) {
   return { ctx, state, services }
 }
 
-test('apply mounts the remote feature as the last entry and exposes pluginApi.remote', () => {
+test('apply mounts remote then the observation faces (execution, diagnostics) and exposes pluginApi.remote', () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
   const names = state.pluginApi.features.map((f) => f.name)
   assert.ok(names.includes('remote'), 'remote feature listed')
   assert.equal(names.indexOf('remote'), names.indexOf('settingsRemote') + 1, 'remote mounts after settingsRemote')
-  assert.equal(names[names.length - 1], 'remote', 'remote is the last FEATURE_MOUNTERS entry')
+  assert.equal(names[names.length - 4], 'remote', 'remote stays directly before execution')
+  assert.equal(names[names.length - 3], 'execution', 'execution stays directly before diagnostics')
+  assert.equal(names[names.length - 2], 'diagnostics', 'diagnostics stays directly before usage')
+  assert.equal(names[names.length - 1], 'usage', 'usage is the last FEATURE_MOUNTERS entry')
   assert.equal(state.pluginApi.remote.isActive, true)
   assert.equal(typeof state.pluginApi.remote.publish, 'function')
   assert.equal(typeof state.pluginApi.remote.dispose, 'function')

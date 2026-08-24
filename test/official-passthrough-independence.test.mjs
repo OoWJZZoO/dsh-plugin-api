@@ -199,10 +199,16 @@ function observeHostFaces(applyFn) {
   const abortShape = typeof abortError === 'function'
     ? safe(() => { const error = abortError(); return { name: error?.name, code: error?.code ?? undefined, cause: error?.cause ?? undefined } })
     : abortError
+  // Keep name/activity pairs aligned (both sorted by feature name) so the
+  // regression comparison can filter branch-added features by name without
+  // mispairing the independently sorted activity values.
+  const featurePairs = api?.features
+    ?.map((feature) => [feature.name, feature.isActive])
+    .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
   const face = {
     applyOutcome,
-    featureNames: api?.features?.map((feature) => feature.name).sort(),
-    featureActivity: api?.features?.map((feature) => feature.isActive).sort(),
+    featureNames: featurePairs?.map(([name]) => name) ?? api?.features?.map((feature) => feature.name).sort(),
+    featureActivity: featurePairs?.map(([, active]) => active) ?? api?.features?.map((feature) => feature.isActive).sort(),
     systemPromptMembers: safe(() => Object.keys(api.systemPrompt).sort()),
     toolsMembers: safe(() => Object.keys(api.tools).sort()),
     abortShape,
@@ -243,8 +249,14 @@ test('host regression: the boundary-era and current hosts agree on every pre-exi
     // excluded from the pre-existing-face equality check.
     const helperMembers = ['renderContextSnapshot', 'joinContextSections']
     const LATER_ADDED_MEMBERS = ['assemble', 'defineTool', 'executionMode']
+    const BRANCH_ADDED_FEATURES = ['execution', 'diagnostics', 'usage']
+    const currentFeatureNames = current.face.featureNames.filter((name) => !BRANCH_ADDED_FEATURES.includes(name))
+    const currentFeatureActivity = current.face.featureActivity.filter((_, index) =>
+      !BRANCH_ADDED_FEATURES.includes(current.face.featureNames[index]))
     const currentFace = {
       ...current.face,
+      featureNames: currentFeatureNames,
+      featureActivity: currentFeatureActivity,
       systemPromptMembers: current.face.systemPromptMembers.filter((name) =>
         !helperMembers.includes(name) && !LATER_ADDED_MEMBERS.includes(name)),
       toolsMembers: current.face.toolsMembers.filter((name) => !LATER_ADDED_MEMBERS.includes(name)),

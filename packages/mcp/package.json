@@ -1,0 +1,35 @@
+{
+  "name": "@deepseek-ai/dsh-plugin-api-mcp",
+  "description": "Replacement bundle for @deepseek-ai/dsh-mcp-client: faithful official host contract plus a read-only MCP server/tool catalog and lifecycle projection.",
+  "version": "0.1.0-rc.6-0.5",
+  "type": "module",
+  "main": "lib/apply.js",
+  "exports": {
+    ".": "./lib/apply.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "api": "0.5",
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test \"test/*.mjs\""
+  },
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-mcp-client": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-llm": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-invariants": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-subprocess": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-timeout": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^4.4.3",
+    "@deepseek-ai/schemastery": "^3.18.1"
+  }
+}

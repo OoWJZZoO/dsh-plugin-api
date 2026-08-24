@@ -118,7 +118,7 @@ function createHarness(options = {}) {
   }
   apply(ctx)
   const streamListeners = state.listeners.filter((l) => l.name === 'llm/stream')
-  assert.equal(streamListeners.length, 1, 'the request owner installs exactly one raw llm/stream listener')
+  assert.equal(streamListeners.length, 3, 'the request owner installs exactly one raw llm/stream listener beside the execution observation listener and the usage intake observer')
   const streamListener = streamListeners[0].listener
 
   function streamEntry(request, finalNext) {

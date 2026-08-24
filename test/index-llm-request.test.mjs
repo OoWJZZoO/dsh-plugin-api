@@ -167,8 +167,8 @@ test('private compat request/image admission prepare failure leaves no owner res
     assert.equal(services.llm.resolveModelInfo, originalResolve, 'an unpublished image admission gateway must not retain its resolver wrapper')
     assert.equal(
       state.listeners.filter((entry) => entry.name === 'llm/stream').length,
-      featureName === 'llm/request' ? 0 : 1,
-      'only a committed compat request owner may retain the raw listener',
+      featureName === 'llm/request' ? 2 : 3,
+      'only a committed compat request owner adds its raw listener beside the execution observation listener and the usage intake observer',
     )
   }
 })
@@ -188,7 +188,7 @@ test('request guard failure disables both llm/request and llm/admission without 
   )
   assert.equal(services.llm.resolveModelInfo, originalResolve)
   assert.equal(services.apiProxy.sessions.prompt, originalPrompt)
-  assert.equal(state.listeners.filter((l) => l.name === 'llm/stream').length, 0)
+  assert.equal(state.listeners.filter((l) => l.name === 'llm/stream').length, 2)
 })
 
 test('reapply is idempotent: one stream listener and one gateway wrapper', () => {

@@ -72,7 +72,7 @@ test('healthy apply activates execRoute after dependencies and installs one prep
 
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
   const hooks = state.listeners.filter((entry) => entry.name === 'tools/pre-execute')
-  assert.equal(hooks.length, 1)
+  assert.equal(hooks.length, 2, 'execRoute capture hook plus the execution observation listener')
   assert.equal(hooks[0].eventOptions.prepend, true)
   assert.equal(typeof state.pluginApi.agent.routeOf, 'function')
   assert.equal(typeof state.pluginApi.tools.routeOf, 'function')
@@ -83,7 +83,7 @@ test('sessionRoute registration failure disables only sessionRoute while execRou
   apply(ctx)
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'sessionRoute')?.isActive, false)
-  assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 1)
+  assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 2)
   assert.throws(() => state.pluginApi.routing.current({}), (error) => {
     return error instanceof PluginApiFeatureDisabledError && error.feature === 'sessionRoute'
   })
@@ -103,12 +103,12 @@ test('repeated apply retains the active execRoute hook and captured authority ou
 
   apply(ctx)
 
-  assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 1)
+  assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 2)
   assert.equal(state.effects.filter((effect) => effect.label === 'dsh-plugin-api: execRoute cleanup').length, effectsBefore)
   assert.ok(Object.isFrozen(state.pluginApi.agent))
   assert.equal(state.pluginApi.agent.routeOf(exec), captured)
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
-  assert.equal(before.length, 1)
+  assert.equal(before.length, 2)
 })
 
 test('repeated apply preserves active execRoute when cleanup registration later disappears', () => {
@@ -122,7 +122,7 @@ test('repeated apply preserves active execRoute when cleanup registration later 
   assert.doesNotThrow(() => apply(ctx))
   assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
   assert.equal(state.pluginApi.agent.routeOf(exec), captured)
-  assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 1)
+  assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 2)
 })
 
 test('owner resolution failures report a redacted diagnostic through host logger', () => {
@@ -182,7 +182,9 @@ test('publication and registry failures roll back hook and route delegate', () =
 
     assert.doesNotThrow(() => apply(ctx))
     assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, false)
-    assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 0)
+    const remaining = state.listeners.filter((entry) => entry.name === 'tools/pre-execute')
+    assert.equal(remaining.length, 1, 'the execution observation listener remains')
+    assert.equal(remaining.every((entry) => entry.eventOptions?.prepend !== true), true, 'the execRoute prepended hook is removed')
     assert.throws(() => state.pluginApi.agent.routeOf({}), PluginApiFeatureDisabledError)
   }
 })
@@ -222,7 +224,9 @@ test('every missing tools or session substrate leaves execRoute disabled without
     apply(ctx)
 
     assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, false)
-    assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 0)
+    const remaining = state.listeners.filter((entry) => entry.name === 'tools/pre-execute')
+    assert.equal(remaining.length, 1, 'the execution observation listener remains')
+    assert.equal(remaining.every((entry) => entry.eventOptions?.prepend !== true), true, 'no execRoute prepended capture hook remains')
   }
 })
 
@@ -520,6 +524,8 @@ test('registered cleanup is idempotent and stale after a failed later apply', ()
   const dispose = execRouteEffect.fn()
   dispose()
   dispose()
-  assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 0)
+  const remaining = state.listeners.filter((entry) => entry.name === 'tools/pre-execute')
+  assert.equal(remaining.length, 1, 'the execution observation listener remains after execRoute cleanup')
+  assert.equal(remaining.every((entry) => entry.eventOptions?.prepend !== true), true, 'the execRoute prepended hook is removed')
   assert.throws(() => state.pluginApi.agent.routeOf({}), PluginApiFeatureDisabledError)
 })

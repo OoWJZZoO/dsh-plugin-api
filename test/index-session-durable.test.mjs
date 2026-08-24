@@ -123,6 +123,9 @@ test('apply mounts sessionDurable immediately after session without extending th
     'typert',
     'settingsRemote',
     'remote',
+    'execution',
+    'diagnostics',
+    'usage',
   ])
   assert.equal(feature(state, 'session').isActive, true)
   assert.equal(feature(state, 'sessionDurable').isActive, true)
@@ -137,7 +140,7 @@ test('apply mounts sessionDurable immediately after session without extending th
   ])
   assert.equal(typeof state.pluginApi.session.onDurable, 'function')
   assert.equal(typeof state.pluginApi.session.appendMessage, 'function')
-  assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 2)
+  assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 3)
 })
 
 test('durable cleanup restores feature-disabled, and a stale cleanup cannot revoke a re-mounted epoch', () => {
@@ -157,7 +160,7 @@ test('durable cleanup restores feature-disabled, and a stale cleanup cannot revo
 
   apply(ctx)
   assert.equal(feature(state, 'sessionDurable').isActive, true)
-  assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 2, 'durable remount retains one hub entry beside sessionRoute')
+  assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 3, 'durable remount retains one hub entry beside sessionRoute and the execution observer')
   const secondSessionApi = state.pluginApi.session
   const cleanups = state.effects
     .filter((entry) => entry.label === 'dsh-plugin-api: sessionDurable cleanup')
@@ -179,7 +182,7 @@ test('an effect registration failure resets the published durable epoch before d
   assert.doesNotThrow(() => apply(ctx))
 
   assert.equal(feature(state, 'sessionDurable').isActive, false)
-  assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 1, 'failed durable transaction leaves sessionRoute entry')
+  assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 2, 'failed durable transaction leaves sessionRoute and execution observers')
   assert.throws(() => state.pluginApi.session.durableEventTypes, (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
     assert.equal(error.feature, 'sessionDurable')
@@ -196,7 +199,7 @@ test('registry mount failures before and after activation reset the published du
     assert.doesNotThrow(() => apply(ctx))
 
     assert.equal(feature(state, 'sessionDurable').isActive, false)
-    assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 1)
+    assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 2)
     assert.throws(() => state.pluginApi.session.onDurable(), (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
       assert.equal(error.feature, 'sessionDurable')
