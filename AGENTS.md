@@ -161,6 +161,8 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 
 多 worktree 并行开发（M2+ 里程碑）必须遵循三阶段协议：**并行前契约先行**（命名规范、共享文件编辑边界、schema 词汇、失败呈现路径随任务书下发）→ **并行中强指导非铁律**（允许有理由的偏离，但必须记录并显式上报）→ **并行后预检 + 集中整合 + 全绿**。完整协议见 `docs/specs/plugin-api-m1-integration/parallel-workflow.md`。
 
+- **轻量契约路径（小批次小规模并行）**：同一批 feature 数量少、组件边界清晰、且无跨仓库消费者迁移验收时，契约包**无需**落成正式 spec 制品（不必建 `m*-contract` 目录）；在 `temp/` 放一份临时契约文档即可，但内容仍必须覆盖命名规范、共享文件编辑边界、冻结文件、失败呈现与合并顺序，并由任务书分发时引用。临时契约文档**非制品**：不登记、不进入 `docs/specs/`、不单独提交、用毕即删。是否适用该路径由用户按批裁量；该简化只作用于契约载体，**不豁免**任何 Stage 确认门、R 类硬约束（`docs/standards/capability-strategy.md`）或三阶段协议本身。
+
 ## 4. 核心设计决策（已讨论，作为 constitution 输入）
 
 1. 插件作者的**推荐、受支持**入口是主门面包 `@deepseek-ai/dsh-plugin-api-main`（仓库/项目名仍为 `dsh-plugin-api`；运行时通过 `ctx.pluginApi` 服务解析符号），由门面提供稳定性、版本协商与 fail-safe 保障。第三方插件**可以**绕过门面直接与 `dsh-tools`/`dsh-llm` 等内部包交互，但该路径被明确标记为 **unsupported escape hatch**：无兼容承诺、官方内部变化时可能破坏、自担风险。门面不强制、不拦截这种直连，也不为其提供任何保障。
