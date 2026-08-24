@@ -4,7 +4,19 @@
 范围：公开 DSH 插件源码、插件生态仓库与本地 `temp/research/` 快照。
 目的：从真实插件反复实现的 workaround、状态机和失败处理里反推 `dsh-plugin-api` 尚未覆盖的公共能力。
 
-本报告只做调研和候选提出，不创建正式 spec，不进入 Stage 0，不实现任何 feature。
+本报告最初只做调研和候选提出，不创建正式 spec，不进入 Stage 0，不实现任何 feature。
+2026-08-24 起，经用户明确指示，以下四个候选已从候选池立项并进入 SPEC1 Stage 0；本报告继续只承担候选溯源与状态登记，不承载 Requirements、Design 或 Tasks。
+
+## 当前立项状态
+
+| Feature | 状态 | 当前阶段 | Spec 制品 |
+|---|---|---|---|
+| `execution-observation` | 已立项，推进中 | SPEC1 Stage 1：Requirements 草案待用户确认 | `docs/specs/execution-observation/goal.md`；`docs/specs/execution-observation/requirements.md` |
+| `plugin-diagnostics` | 已立项，推进中 | SPEC1 Stage 1：Requirements 草案待用户确认 | `docs/specs/plugin-diagnostics/goal.md`；`docs/specs/plugin-diagnostics/requirements.md` |
+| `usage-budget-telemetry` | 已立项，推进中 | SPEC1 Stage 1：Requirements 草案待用户确认 | `docs/specs/usage-budget-telemetry/goal.md`；`docs/specs/usage-budget-telemetry/requirements.md` |
+| `mcp-catalog-lifecycle` | 已立项，推进中（R 类） | SPEC1 Stage 1：Requirements 草案待用户确认 | `docs/specs/mcp-catalog-lifecycle/goal.md`；`docs/specs/mcp-catalog-lifecycle/requirements.md` |
+
+其余候选仍处于候选池，未进入 Stage 0。
 
 ## 结论先行
 

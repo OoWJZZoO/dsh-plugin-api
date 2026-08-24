@@ -1,0 +1,27 @@
+# Stage 0 - Goal
+
+## Feature Name
+
+`execution-observation`
+
+## Status
+
+Stage 0 Goal 已确认，进入 Stage 1 Requirements。
+
+## Goal
+
+为第三方插件提供统一、只读、可恢复的执行生命周期观察能力，把 agent、tool、LLM、session、workflow 和 job 相关的现有事件关联到同一份稳定 execution projection。插件应能识别一次执行的身份、父子关系、阶段变化和唯一终态，从而在并发工具、重入流、取消、重试和重连场景中可靠地关联日志、usage、诊断和业务任务，而不必各自从碎片事件推断执行状态。
+
+首版目标是公共观察契约，不重新定义官方 agent loop，不把所有内部阶段扩展为新事件，也不在观察层自动执行 retry、fallback 或恢复策略。
+
+## Scope Boundary
+
+- 包含：执行 identity 与父子关联、生命周期开始/阶段/终态观察、按 session 查询历史 projection，以及并发、取消、重入、重连和迟到事件下的稳定性约束。
+- 观察结果是只读 projection；不承诺模型一定看到了某个事件，也不把 event sequence 当作 execution identity。
+- 首版以现有公开 `agent/*`、`tools/*`、`llm/stream`、`session/*` seam 组合为主；需要官方提供真正稳定 execution identity 的部分单独登记为 upstream proposal。
+- 不包含自动 retry、route policy、checkpoint restore、task/workflow 管理或新的 R 类 replacement bundle。
+- 必须遵守 fail-safe、官方包不修改和与现有 `pluginApi.routing`、session durable observation 能力的去重边界。
+
+## Expected Result
+
+第三方 telemetry、diagnostics、recovery 和 task 类插件可以共享同一 execution correlation contract，并在 execution 已结束或连接重建后得到一致的只读终态，而不是各自维护互不兼容的 execution 状态机。
