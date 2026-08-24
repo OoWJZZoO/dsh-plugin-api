@@ -243,7 +243,7 @@ test('host regression: the boundary-era and current hosts agree on every pre-exi
     // excluded from the pre-existing-face equality check.
     const helperMembers = ['renderContextSnapshot', 'joinContextSections']
     const LATER_ADDED_MEMBERS = ['assemble', 'defineTool', 'executionMode']
-    const BRANCH_ADDED_FEATURES = ['execution']
+    const BRANCH_ADDED_FEATURES = ['execution', 'usage']
     const currentFeatureNames = current.face.featureNames.filter((name) => !BRANCH_ADDED_FEATURES.includes(name))
     const currentFeatureActivity = current.face.featureActivity.filter((_, index) =>
       !BRANCH_ADDED_FEATURES.includes(current.face.featureNames[index]))

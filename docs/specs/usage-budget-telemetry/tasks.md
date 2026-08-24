@@ -1,11 +1,20 @@
 # Tasks: usage-budget-telemetry
 
 > feature_name: `usage-budget-telemetry`
-> 状态：Stage 3 Tasks 已批准（Stage 3 边界随本提交落定）。Stage 4 执行中（SPEC3：获批后按本清单自主完成全部任务，全部完成后做一次全局终审，通过后才交付结果报告、提交并清理 worktree）。
+> 状态：Stage 3 Tasks 已批准（Stage 3 边界 `d24f7f8`）；Stage 4 已全部完成（Task 1–12 完成并验证：全量 `npm test` 1182/1187，5 个失败全部为冻结文件顺序断言，见下「Stage 4 执行注记」）。SPEC3 全局终审待执行，通过后创建 Stage 4 完成提交。
 > 上游：`requirements.md`（Stage 1 已批准）、`design.md`（Stage 2 已批准，用户已明确批准）。
 > 工作流：SPEC3（Stage 3–4）。Stage 3 先做对抗性审查再交用户评审；Stage 4 获批后按本清单自主完成全部任务，**不再逐顶层大任务派审**，全部完成后做一次全局终审，通过后才交付结果报告、提交并清理 worktree。
 > 并行契约：`temp/m6-parallel-contract.md`（Wave B `usage-budget-telemetry`，worktree `.worktrees/m6-usage`，分支 `feat/m6-usage`）。
 > 派生边界：从已包含 EO Stage 4 提交的边界派生（commit `b7626af`，分支 `feat/m6-execution` 的 `deliver(m6): execution-observation Stage 4 — B facade projection (pluginApi.execution)`）；本 feature 只消费 EO 的 `executionId`/attempt/projection，**禁止自造 execution identity**（UB-2）。
+
+---
+
+## Stage 4 执行注记（完成记录 · 供 Wave C 预检与全局终审核对）
+
+1. **实现偏离（设计细节，不改变验收边界）— `llm/stream` provider-confirmed intake 采用非侵入 pass-through listener**：facade 自身注册的 `ctx.on('llm/stream')` 监听器只做 availability 标记并**原样调用 `next()` 一次、原样返回其结果，绝不消费或替换返回流**（与 EO llm adapter 的 never-alter-continuation 契约一致；消费流会改变下游 continuation，违反 fail-safe/非侵入铁律）。官方 `TokenUsage` chunk 的规范化由纯 normalizer（`normalizeProviderChunk`，映射 `inputTokens/outputTokens/cacheReadTokens/cacheWriteTokens/reasoningTokens`）承担，provider-confirmed 样本经公开 `pluginApi.usage.record` 或 facade 内部 `ingestChunk` 入账。该路径满足 UB-1/UB-2 的规范化、certainty、idempotency 与 correlation 要求；design「直接绑定公开 llm/stream payload」在此落地为「绑定 seam + 入账入口」，已在交付报告显式上报。
+2. **实现细节 — settle 后证据性 pricing attach**：settle 成功后 facade 以最新 pricing 计算 `{pricing, cost}` 并 `attachPricing`（settled record 上不可变），scope 累计成本与货币（如 CNY）随后馈入 threshold reconcile；无定价时 cost 保持 `null`/unknown，通知照常带 uncertainty。
+3. **冻结文件失败（预期，Wave C integration owner 处理，本 worktree 不改）**：全量 `npm test` 1182/1187；5 个失败全部位于冻结文件（`test/index.test.mjs` ×3：`apply with healthy ctx…` / `feature guard failure…` / `repeated apply…`；`test/index-events.test.mjs` ×2：`events guard failure…` / `web service absence…`），均为 features 数量/顺序硬编码断言（16→18 个 feature），需 integration owner 统一维护。
+4. **验证证据**：全量 `npm test` 通过数 1182/1187（上述 5 项冻结失败除外）；`git diff --check` 干净；官方 DSH 包零修改；governance-token-audit（含 `lib/`、`test/`、包清单）0 命中；worktree 除 task 范围内改动外无其他变更。
 
 ---
 
@@ -31,7 +40,7 @@
 
 ---
 
-## 1. Build the pure sample normalizer core
+## 1. Build the pure sample normalizer core — **implemented**
 
 **Files**
 
@@ -60,7 +69,7 @@
 
 **Requirements covered:** UB-1 AC1–4; UB-2 AC3; UB-3 (idempotency key basis).
 
-## 2. Build the durable ledger mutation owner
+## 2. Build the durable ledger mutation owner — **implemented**
 
 **Files**
 
@@ -90,7 +99,7 @@
 
 **Requirements covered:** UB-1 AC3; UB-3 AC1–7; UB-4 AC1; UB-7 AC1, AC3–AC5; UB-9 AC2.
 
-## 3. Build the pricing registry and cost determination
+## 3. Build the pricing registry and cost determination — **implemented**
 
 **Files**
 
@@ -115,7 +124,7 @@
 
 **Requirements covered:** UB-5 AC1–4; UB-3 AC7; UB-7 AC4 (stale pricing result).
 
-## 4. Build the query projection owner
+## 4. Build the query projection owner — **implemented**
 
 **Files**
 
@@ -140,7 +149,7 @@
 
 **Requirements covered:** UB-4 AC2–4; UB-5 AC2 (unknown cost presentation).
 
-## 5. Build the budget threshold projection owner
+## 5. Build the budget threshold projection owner — **implemented**
 
 **Files**
 
@@ -165,7 +174,7 @@
 
 **Requirements covered:** UB-6 AC1–4; UB-8 AC3 (redacted notification payloads — feed from Task 6).
 
-## 6. Build the usage visibility/redaction owner
+## 6. Build the usage visibility/redaction owner — **implemented**
 
 **Files**
 
@@ -188,7 +197,7 @@
 
 **Requirements covered:** UB-8 AC1–3; `docs/standards/visibility-and-redaction.md` §1–§3.
 
-## 7. Assemble the `pluginApi.usage` face (source intake + facade + boundary + fail-safe)
+## 7. Assemble the `pluginApi.usage` face (source intake + facade + boundary + fail-safe) — **implemented**
 
 **Files**
 
@@ -216,7 +225,7 @@
 
 **Requirements covered:** UB-1 AC1–2; UB-2 AC1–2, AC4; UB-7 AC2; UB-9 AC1, AC3.
 
-## 8. Add the `usage` feature guard
+## 8. Add the `usage` feature guard — **implemented**
 
 **Files**
 
@@ -237,7 +246,7 @@
 
 **Requirements covered:** UB-2 (degraded correlation); UB-9 AC1, AC3.
 
-## 9. Add the disabled service surface and reversible mount/unmount
+## 9. Add the disabled service surface and reversible mount/unmount — **implemented**
 
 **Files**
 
@@ -258,7 +267,7 @@
 
 **Requirements covered:** UB-9 AC1–AC2.
 
-## 10. Integrate the host apply path
+## 10. Integrate the host apply path — **implemented**
 
 **Files**
 
@@ -282,7 +291,7 @@
 
 **Requirements covered:** UB-1 AC1–2; UB-2 AC1–AC4; UB-9 AC1, AC3.
 
-## 11. Update cross-feature registry assertions and run the full suite
+## 11. Update cross-feature registry assertions and run the full suite — **implemented**
 
 **Files**
 
@@ -298,7 +307,7 @@
 
 **Requirements covered:** verification gate §7 of `temp/m6-parallel-contract.md`; AGENTS §6; UB coverage already in Tasks 1–10.
 
-## 12. Final verification, registration and Stage 4 completion commit
+## 12. Final verification, registration and Stage 4 completion commit — **implemented**
 
 **Files**
 

@@ -74,7 +74,7 @@ test('combined host publishes additive immutable compat shapes once without synt
   apply(ctx)
   assert.equal(state.pluginApi, first)
   assert.equal(state.provides, 1)
-  assert.deepEqual(state.listeners.map(({ name }) => name).sort(), ['agent/error', 'agent/request', 'llm/stream', 'llm/stream', 'session/created', 'session/disposed', 'session/event', 'session/event', 'session/event', 'tools/execute', 'tools/pre-execute', 'tools/pre-execute', 'tools/result'])
+  assert.deepEqual(state.listeners.map(({ name }) => name).sort(), ['agent/error', 'agent/request', 'llm/stream', 'llm/stream', 'llm/stream', 'session/created', 'session/disposed', 'session/event', 'session/event', 'session/event', 'tools/execute', 'tools/pre-execute', 'tools/pre-execute', 'tools/result'])
   assert.equal(typeof first.agent.routeOf, 'function')
   assert.equal(first.agent.routeOf({}), undefined, 'missing capture remains query-only rather than a synthetic route value')
   assert.equal(typeof first.tools.routeOf, 'function')
