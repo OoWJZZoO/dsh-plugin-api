@@ -359,6 +359,12 @@
 | U7 | 官方 session 上屏事件构造 helper（可选） | 把 `surfaceOp` / `sourceEventSeqs` 的上屏契约封装为高级 API | S2/S6 |
 | U8 | 官方 `compaction/*` 事件词汇（可选） | 当前压缩只有 `CompactionEngine.summarize()` 子类钩子，无 dispatch 点；R 类辅助包 `@deepseek-ai/dsh-plugin-api-compaction-events`（运行时名 `plugin-api-compaction-events`，历史治理名 `compaction-events-r1`）为 current workaround | SV17 + R1 replacement |
 | U9 | 官方 session-title 候选资格 / 合成消息排除 | 官方 `session-title` 的 fallback 与 first-prompt provider 会把已入库的 `source.kind: 'user'` 合成消息直接当作标题候选，无候选资格 dispatch 点；R 类辅助包 `@deepseek-ai/dsh-plugin-api-session-title`（运行时名 `plugin-api-session-title`，历史治理名 `session-title-r1`）为 current workaround。**退役条件**：官方提供等价候选资格 seam（如官方 `session-title/candidate` 事件或内置合成消息排除）后，辅助包 deprecate/退役，消费者迁移至官方 seam | session-title 服务（R 类） |
+| U10 | 官方 attachment pipeline seam | identity、transform、projection provenance、cancellation、cleanup 一体契约，替代门面/R 类自建管线 | `attachment-pipeline`（R 类辅助包 `@deepseek-ai/dsh-plugin-api-attachments`，运行时名 `plugin-api-attachments`，为 current workaround） |
+| U11 | 官方 agent-loop 有序 route-policy/health/fallback seam | 确定性策略收敛、attempt 内不可变 decision identity、health/circuit/probe evidence、fallback lineage | `model-route-policy`（R 类辅助包 `@deepseek-ai/dsh-plugin-api-agent-loop`，运行时名 `plugin-api-agent-loop`，为 current workaround） |
+| U12 | 官方 client lifecycle/rebind seam | face availability、owner-local generation、contribution binding、stale cleanup 一体契约 | `client-generation-rebind`（B 类 client facade） |
+| U13 | 官方完整请求边界 seam | 可复现官方 agent-loop 请求/重试时序与 caller provenance | `recovery-policy`（B/C 边界，proposal-only） |
+| U14 | 官方 agent-loop retry/fallback 决策 hook | 完整内部生命周期与失败语义，含 recovery 决策消费点 | `recovery-policy`（B/C 边界，proposal-only） |
+| U15 | 官方跨 session checkpoint restore 契约 | session/workspace/configuration/external-side-effect recovery 一体证明 | `recovery-policy`（B/C 边界，proposal-only） |
 
 ---
 
