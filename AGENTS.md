@@ -110,8 +110,8 @@ agent/dsh-plugin-api/
 - **对抗性审查（按工作流模式执行，模式定义见 §3.0.2）**：
   - **SPEC1（Stage 0–2）**：不派发对抗性审查。高质模型产出后直接交用户评审，用户明确批准即过门。
   - **SPEC2（Stage 0–2 审查纠偏）**：SPEC2 本身就是审查纠偏工作流；审查只核对当前阶段制品与已确认上游文档的一致性、不向上溯源，并就地修订当前文档。**SPEC2 是纯自动工作流，不设用户确认门**：优化完成即直接交付，不逐次交用户评审；仅当遇到**阻塞级别问题**（动摇已确认的 Goal/Requirements 验收边界、需人类判断的取舍、无法就地自动排除的矛盾）时，停下并请求人类裁决。无需对 SPEC2 再叠一层对抗性审查。涉及多个 feature 时，审查可由主 agent 按 feature 并行派发给审查子 agent，派发侧不阻塞（结束工具调用待回醒后统一调整），但每条 feature 线内部保持串行，见 §3.0.4。
-  - **SPEC3（Stage 3）**：Tasks 产出后、进入 Stage 4 前，必须先调用一个子 agent 做对抗性审查，并**阻塞性等待其完成**（在 DSH 工具中必须使用 `run_in_background: false`；禁止以后台/异步方式派审后继续主线）。**仅小修改（如一两处文字或单点修正）无需再对抗性审查**。审查只核对 tasks 与已确认 Goal/Requirements/Design 的一致性，不向上溯源。返回“无偏差”即通过审查门，**直接进入 Stage 4，不再提交用户评审**；有意见则集中修订，实质修订后再次派审，同样阻塞且串行，直至通过。
-  - **SPEC3（Stage 4）**：Tasks 通过对抗性审查门后由代理**自主完成全部任务**，不再逐任务等待人类确认，也**不再逐顶层大任务派审**。代理按 `tasks.md` 顺序完成全部顶层任务、验证与必要登记后，在交付结果报告前，必须对**整个 Stage 4 交付**（全部实现、测试、spec 修订与登记）调用**一次全局终审**：阻塞等待其完成（DSH 工具中必须使用 `run_in_background: false`），只核对交付物与 Tasks/Design/Requirements 的一致性，不向上溯源。全局终审返回“无偏差”后，代理才可交付结果报告、执行 Stage 4 完成提交并清理 worktree；有意见则在整个交付范围内集中修订，实质修订后再次派发全局终审（仍只审整体、不退回逐任务审查），直至通过。
+  - **SPEC3（Stage 3）**：Tasks 产出后、进入 Stage 4 前，必须先调用一个子 agent 做对抗性审查，并**阻塞性等待其完成**（在 DSH 工具中必须使用 `run_in_background: false`；禁止以后台/异步方式派审后继续主线）。**仅小修改（如一两处文字或单点修正）无需再对抗性审查**。审查只核对 tasks 与已确认 Goal/Requirements/Design 的一致性、并按 `docs/standards/` 适用分册比对 tasks/design 的规范符合性，不向上溯源。返回“无偏差”即通过审查门，**直接进入 Stage 4，不再提交用户评审**；有意见则集中修订，实质修订后再次派审，同样阻塞且串行，直至通过。
+  - **SPEC3（Stage 4）**：Tasks 通过对抗性审查门后由代理**自主完成全部任务**，不再逐任务等待人类确认，也**不再逐顶层大任务派审**。代理按 `tasks.md` 顺序完成全部顶层任务、验证与必要登记后，在交付结果报告前，必须对**整个 Stage 4 交付**（全部实现、测试、spec 修订与登记）调用**一次全局终审**：阻塞等待其完成（DSH 工具中必须使用 `run_in_background: false`），只核对交付物与 Tasks/Design/Requirements 的一致性、并按 `docs/standards/` 适用分册比对交付物的规范符合性，不向上溯源。全局终审返回“无偏差”后，代理才可交付结果报告、执行 Stage 4 完成提交并清理 worktree；有意见则在整个交付范围内集中修订，实质修订后再次派发全局终审（仍只审整体、不退回逐任务审查），直至通过。
   - **ANY**：不设固定审查门，但代码修改仍须满足 §6 的测试、fail-safe 与不夹带 spec 外功能等约束，且不得越出获批边界（§3.0.2）。
   - **通用审查纪律（凡存在审查门的模式）**：一旦对某制品/交付调用审查，代理必须暂停对同一对象的自行审查、编辑和重复派审；在收到该轮最终结论前不得推进主线。返回“无偏差”才能继续；实质修订后必须再次派审。SPEC2 多 feature 的调度例外（并行派审、派发侧不阻塞、结束调用待回醒后按 feature 线调整，见 §3.0.4）只调整调度方式，不改变“收到对应 feature 结论前不得改写其制品”的实质。
 - **Stage 4（Execute）通用规则**：
@@ -157,7 +157,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 - **requirements**：每条需求是否 EARS、可测试、无实现细节；是否覆盖 host/client 两面；是否把“外部可实现 vs 必须上游”标注清楚。
 - **design**：是否说明每个钩子的引出机制（官方事件直接绑定 / 底层钩子模拟 / 标记为 upstream proposal）；是否有失败路径与 guard 策略。
 - **tasks**：是否与 requirements 一一对应；是否包含测试任务；是否有迁移验收任务（见第 5 节）。
-- **standards（强制，docs/standards 对照）**：每个 feature 的 requirements/design 必须按领域对照 `docs/standards/` 六册全局规范（`README.md` 为索引：capability-strategy / api-shape / identity-and-lifecycle / durable-state-and-scope / visibility-and-redaction / concurrency-and-cancellation），并在 design 中显式声明各分册的适用性与对齐结论（含“不适用”）。**Stage 4 开始实现前必须重读对应分册**，交付终审前对照成品自查一遍；规范对照不替代对抗性审查门，用于从源头消除全局规范层面的偏差（教训来源：`coordination-lease` 交付后审计发现 generation 全局单调序号、bridge 重启重铸 generation、审计时间缺失、面放置与 scope 词汇等偏差，均为实现前未主动对照 standards 所致）。
+- **standards（强制，docs/standards 对照，职责分工）**：requirements/design 必须按领域对照 `docs/standards/` 六册全局规范（`README.md` 为索引：capability-strategy / api-shape / identity-and-lifecycle / durable-state-and-scope / visibility-and-redaction / concurrency-and-cancellation）并显式声明各分册的适用性与对齐结论（含“不适用”）。**负责写文档/实现的代理在开工（Stage 0–3 文档编写或 Stage 4 实现）前阅读适用分册一次即可，不需要再做交付自查**；按 standards 分册比对交付物的审查职责由**对抗性审查代理**承担（§3.2：SPEC3 的 Stage 3 与 Stage 4 审查均已将 `docs/standards/` 适用分册纳入核对范围）。分工边界：实现代理负责“实现前读懂一次”，审查代理负责“按 standard 比对交付”；该分工不豁免实现方的基本质量义务（§3.0 工程质量优先）。教训来源：`coordination-lease` 交付后审计发现 generation 全局单调序号、bridge 重启重铸 generation、审计时间缺失、面放置与 scope 词汇等偏差，均因实现与审查两侧都未对照 standards 所致。
 
 ### 3.5 并行开发工作流
 
