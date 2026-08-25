@@ -2,9 +2,10 @@
 
 ## Status
 
-Stage 3 Tasks: approved for this implementation run. The feature owner
-authorized direct execution after the approved Goal, Requirements, and Design;
-this task list is the Stage 3 boundary for the implementation sub-agent.
+Stage 3 Tasks: approved and executed for this implementation run. The feature
+owner authorized direct execution after the approved Goal, Requirements, and
+Design; this task list is the Stage 3/4 boundary for the implementation
+sub-agent.
 
 ## Execution Contract
 
@@ -23,7 +24,7 @@ this task list is the Stage 3 boundary for the implementation sub-agent.
 
 ## Tasks
 
-- [ ] 1. Add the replacement package boundary and deterministic assembly.
+- [x] 1. Add the replacement package boundary and deterministic assembly.
   - Create `packages/agent-loop/package.json` with the unified full version,
     exact locked `@deepseek-ai/dsh-agent-loop` identity, official peer
     dependency surface, and the package-owned patch entry.
@@ -37,7 +38,7 @@ this task list is the Stage 3 boundary for the implementation sub-agent.
     full installation have the same replacement row and no double-run.
   - Covers MR-1, MR-7, MR-8, and the Design C1/C2 assembly contract.
 
-- [ ] 2. Implement the dependency-free route capability owner.
+- [x] 2. Implement the dependency-free route capability owner.
   - Add `packages/agent-loop/lib/route-policy.js` with frozen candidate and
     decision models, owner/generation identity checks, deterministic priority
     ordering, policy/candidate registration and identity-scoped disposers.
@@ -55,7 +56,7 @@ this task list is the Stage 3 boundary for the implementation sub-agent.
     generation, unknown evidence, disposer isolation, and out-of-boundary
     rejection behavior.
 
-- [ ] 3. Vendor the locked official agent-loop and patch its route boundary.
+- [x] 3. Vendor the locked official agent-loop and patch its route boundary.
   - Add `packages/agent-loop/lib/forked-loop.js` from the audited official
     `dsh-agent-loop/lib/index.js`, retaining its license/source notice and
     official exports, config validation, settings registration,
@@ -74,7 +75,7 @@ this task list is the Stage 3 boundary for the implementation sub-agent.
     retry re-evaluation, no-route provider suppression, and waterfall parity.
   - Covers MR-1, MR-2, MR-5, MR-6, and Design C4/C6.
 
-- [ ] 4. Implement the replacement apply self-check and fallback behavior.
+- [x] 4. Implement the replacement apply self-check and fallback behavior.
   - Add `packages/agent-loop/lib/apply.js` and the component contract marker;
     inspect loader composition, official-row state, duplicate replacement
     rows, existing owners/services, and exact package/runtime/main-facade
@@ -94,7 +95,7 @@ this task list is the Stage 3 boundary for the implementation sub-agent.
     fallback, rollback, and idempotent cleanup.
   - Covers MR-1, MR-7, MR-8, MR-9, and Design C2/C3.
 
-- [ ] 5. Publish the conditional main-facade route-policy leaf.
+- [x] 5. Publish the conditional main-facade route-policy leaf.
   - Add the marker/loader/version resolver in `lib/index.js` without importing
     the auxiliary package, and pass the resolver into the existing service
     construction path.
@@ -111,7 +112,7 @@ this task list is the Stage 3 boundary for the implementation sub-agent.
     unrelated facade leaves.
   - Covers MR-2, MR-3, MR-4, MR-9, MR-10, and Design C3/C7.
 
-- [ ] 6. Add complete focused contract and boundary verification.
+- [x] 6. Add complete focused contract and boundary verification.
   - Add tests for official service/event parity, config-driven agents,
     create/resume ownership, settings and system-prompt variables, cancellation
     and reverse teardown using local fixtures around the audited official seam.
@@ -125,7 +126,7 @@ this task list is the Stage 3 boundary for the implementation sub-agent.
     and full-bundle composition checks.
   - Covers all MR requirements and the Design Testing Strategy items 1–7.
 
-- [ ] 7. Complete governance, migration evidence, and repository acceptance.
+- [x] 7. Complete governance, migration evidence, and repository acceptance.
   - Register the delivered `model-route-policy` feature and its R replacement
     in `docs/specs/plugin-api-features/feature-list.md`, preserving U11 and
     recording the official-equivalent retirement condition.
@@ -140,3 +141,23 @@ this task list is the Stage 3 boundary for the implementation sub-agent.
     check before the Stage 4 commit.
   - Covers MR-7, MR-8, MR-10 and the repository migration/registration rules.
 
+## Stage 4 Implementation Record
+
+- Replacement package: `packages/agent-loop/`; full/selection patch assembly
+  and unified package metadata are synchronized at `0.1.0-rc.6-0.5` / `0.5`.
+- Route owner tests cover deterministic policy convergence, frozen decisions,
+  window reuse, fallback lineage, bounded history, health/circuit/probe state,
+  generation-scoped disposal, and typed unavailable behavior.
+- Replacement tests cover active/disabled/mismatch/duplicate/owner-conflict
+  apply paths, rollback, package/patch composition, and the locked official
+  export/config/settings/source boundary. The installed official agent-loop
+  source and manifest digests remained unchanged.
+- Main facade publication remains additive and lazy: `pluginApi.routing` and
+  existing service/client surfaces are unchanged; unavailable replacement
+  state exposes the typed disabled route-policy leaf.
+- Migration evidence is in `MIGRATION_RECIPE.md`; no consumer repository or
+  installed official package was edited.
+- Acceptance commands completed for the final boundary: focused route,
+  replacement, facade, package-policy, integrity, syntax, diff-check, and
+  governance tests; the full repository `npm test` is run before the Stage 4
+  commit.

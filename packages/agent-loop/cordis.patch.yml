@@ -1,0 +1,10 @@
+# Replacement boundary: the official agent-loop row remains the import source;
+# this patch replaces only its loader-row service and event behavior.
+- id: agent-loop
+  disabled: true
+- insert:
+    - id: plugin-api-agent-loop
+      name: '@deepseek-ai/dsh-plugin-api-agent-loop'
+      config:
+        maxParallelToolCalls: 10
+        agents: []

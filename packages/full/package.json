@@ -18,7 +18,8 @@
     "@deepseek-ai/dsh-plugin-api-compaction-events": "workspace:*",
     "@deepseek-ai/dsh-plugin-api-session-title": "workspace:*",
     "@deepseek-ai/dsh-plugin-api-mcp": "workspace:*",
-    "@deepseek-ai/dsh-plugin-api-attachments": "workspace:*"
+    "@deepseek-ai/dsh-plugin-api-attachments": "workspace:*",
+    "@deepseek-ai/dsh-plugin-api-agent-loop": "workspace:*"
   },
   "devDependencies": {
     "@deepseek-ai/dsh-app-boot": "^0.1.0-rc.6"

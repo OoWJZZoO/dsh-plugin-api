@@ -4,7 +4,7 @@
 > 本文与 `AGENTS.md` §2 / §4 共同构成 A/B/C/R 分类与能力上限决策的权威依据；两者冲突时以 `AGENTS.md` 铁律为准。
 > 配套登记：`docs/specs/plugin-api-features/feature-list.md`。
 >
-> **维护修订（包政策推行）**：R 类辅助包与主包采用同一全量唯一版本规则（`<runtime全量版本>-<API协议大版本.迭代小版本>`，`dsh.api` 仅承载协议版本），主包校验辅助包版本一致；不一致时**只停用该辅助包对应的 R 类特性**（替代行仍提供官方原接口，新增事件/策略面不发布），不得停用主包或其他能力。R 类运行时命名不得携带治理后缀（如 `r1`、分类字母、需求编号）：已交付辅助包现行名为 `packages/compaction-events/`（row `plugin-api-compaction-events`）与 `packages/session-title/`（row `plugin-api-session-title`）。安装模式为全量聚合 bundle `@deepseek-ai/dsh-plugin-api-full`（确定性 patch 装配）或选择性安装主包 + 所需辅助包。
+> **维护修订（包政策推行）**：R 类辅助包与主包采用同一全量唯一版本规则（`<runtime全量版本>-<API协议大版本.迭代小版本>`，`dsh.api` 仅承载协议版本），主包校验辅助包版本一致；不一致时**只停用该辅助包对应的 R 类特性**（替代行仍提供官方原接口，新增事件/策略面不发布），不得停用主包或其他能力。R 类运行时命名不得携带治理后缀（如 `r1`、分类字母、需求编号）：已交付辅助包现行名为 `packages/compaction-events/`（row `plugin-api-compaction-events`）、`packages/session-title/`（row `plugin-api-session-title`）与 `packages/agent-loop/`（row `plugin-api-agent-loop`）。安装模式为全量聚合 bundle `@deepseek-ai/dsh-plugin-api-full`（确定性 patch 装配）或选择性安装主包 + 所需辅助包。
 
 ---
 
@@ -92,6 +92,7 @@ R9. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 | E8 priority / E9 deepFreeze / E11 fault containment | facade 注册侧/派发侧统一实现 | 无单一官方行（跨所有事件生产者；`@deepseek-ai/cordis` 不是 loader 行） | — | — | **永不转 R**，维持方案一或 Cordis 上游提案 |
 | U8 `compaction/*` 事件词汇 | `CompactionEngine.summarize()` 子类钩子 | `compaction-basic`（962 行） | 低–中 | 高 | **已交付**：replacement 包 `@deepseek-ai/dsh-plugin-api-compaction-events` 作为 current workaround；U8 保留为上游提案（见 feature-list §3） |
 | U9 `session-title/candidate` 候选资格 / 合成消息排除 | 官方 `session-title` 的 fallback + first-prompt provider 直接消费 `source.kind:'user'`，无候选资格 dispatch 点 | `session-title`（`dsh-session-title`，580 行） | 低–中 | 高 | **已交付**：replacement 包 `@deepseek-ai/dsh-plugin-api-session-title` 作为 current workaround（fallback 与 first-prompt provider 在统一候选资格策略下消费同一候选集）；U9 保留为上游提案（见 feature-list §3） |
+| U11 agent-loop route-policy/health/fallback seam | replacement 行在官方 `agent/request` 边界增加有序 route 收敛、attempt 内 immutable decision、health/circuit/probe evidence 与 fallback lineage；retry 仍由官方 loop/recovery owner 负责 | `agent-loop`（`dsh-agent-loop`，1295 行） | 高 | 高 | **已交付**：replacement 包 `@deepseek-ai/dsh-plugin-api-agent-loop` 作为 current workaround；U11 保留为上游提案（见 feature-list §3），官方提供等价公开 seam 后退役 |
 
 重估条件（允许已判“维持方案一”的条目回到 R 评估）：官方把对应包拆小/提供 src 构建流水线；出现第二个插件对同一语义的独立需求；或官方升级使门面转译的收敛证明不再成立。
 
@@ -100,6 +101,7 @@ R9. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 ## 6. 首批 R 类候选与执行边界
 
 - **候选 1：U8 `compaction/*` 事件词汇 —— 已交付**：fork `compaction-basic` 行，在保留官方 `compaction` 服务契约的前提下增加压缩事件 dispatch，经 `@deepseek-ai/dsh-plugin-api-compaction-events` 落地（requirements/design 覆盖 R1–R9：boot 自检、版本锁定、组件 owner 冲突检测、上游提案 U8 的退役条件）。U8 仍保留为上游提案，replacement 为 current workaround；官方提供等价词汇后辅助包进入 deprecation。
+- **候选 2：U11 agent-loop route-policy/health/fallback seam —— 已交付**：fork `agent-loop` 行，在保留官方 `AgentLoop` 服务、配置、settings、system-prompt variables、agent factory/driver、事件和 teardown 契约的前提下增加有序 route decision、健康/circuit/probe evidence 与 fallback lineage，经 `@deepseek-ai/dsh-plugin-api-agent-loop` 落地。U11 仍保留为上游提案，replacement 为 current workaround；官方提供等价公开 route seam 后辅助包进入 deprecation。
 - **观察项：ST4 settings remote 原生绑定** —— 价值中等，仅在其他理由已 fork typert 相关行时合并评估，不单独立项。
 
 其余 B 类维持方案一门面转译；`E8/E9/E11` 明确禁止 R 化。
