@@ -7,7 +7,7 @@ import { PluginApiFeatureDisabledError, PluginApiInactiveError } from '../lib/er
 function makeService({ coreActive = true } = {}) {
   const registry = createFeatureRegistry()
   const Service = createPluginApiService({
-    apiVersion: '0.5',
+    apiVersion: '0.6',
     registry,
     coreActive,
   })
@@ -118,7 +118,7 @@ test('a stale mounted slot cannot be used after remount', () => {
 test('core inactivity rejects mounted discovery operations with the inactive error', async () => {
   let coreActive = true
   const registry = createFeatureRegistry()
-  const Service = createPluginApiService({ apiVersion: '0.5', registry, coreActive: () => coreActive })
+  const Service = createPluginApiService({ apiVersion: '0.6', registry, coreActive: () => coreActive })
   const ctx = { reflect: { provide() {} }, logger: { error() {}, warn() {} }, get() { return undefined } }
   const service = new Service(ctx)
   service.mountFeature('toolDiscovery', makeDiscoveryOwner())

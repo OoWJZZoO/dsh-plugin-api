@@ -23,8 +23,8 @@ test('main, auxiliary, and full packages all share the unified full-version + ds
     assert.equal(pkg.dsh.api, main.dsh.api, `${pkg.name}: API protocol must equal the main package`)
     assert.equal(pkg.version.match(/^(.+)-\d+\.\d+$/)[1], main.version.match(/^(.+)-\d+\.\d+$/)[1], `${pkg.name}: runtime part must equal the main package`)
   }
-  assert.equal(main.version, '0.1.0-rc.6-0.5')
-  assert.equal(main.dsh.api, '0.5')
+  assert.equal(main.version, '0.1.0-rc.6-0.6')
+  assert.equal(main.dsh.api, '0.6')
 })
 
 test('the auxiliary packages do not declare the main package as a runtime dependency', () => {

@@ -11,8 +11,8 @@ import {
   ROUTE_POLICY_COMPONENT_SYMBOL,
 } from '../packages/agent-loop/lib/route-policy.js'
 
-const VERSION = '0.1.0-rc.6-0.5'
-const API = '0.5'
+const VERSION = '0.1.0-rc.6-0.6'
+const API = '0.6'
 
 function readers(overrides = {}) {
   const versions = {

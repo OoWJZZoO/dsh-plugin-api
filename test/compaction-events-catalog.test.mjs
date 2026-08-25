@@ -16,8 +16,8 @@ const COMPACTION_EVENT_NAMES = [
 ]
 
 const AUX_NAME = '@deepseek-ai/dsh-plugin-api-compaction-events'
-const MATCHING_CONTRACT = { runtime: '0.1.0-rc.6', api: '0.5' }
-const MATCHING_MANIFEST = { version: '0.1.0-rc.6-0.5', api: '0.5' }
+const MATCHING_CONTRACT = { runtime: '0.1.0-rc.6', api: '0.6' }
+const MATCHING_MANIFEST = { version: '0.1.0-rc.6-0.6', api: '0.6' }
 
 test('the replacement slice exposes exactly the five compaction entries with the required schema', () => {
   const slice = createCompactionEventsCatalogSlice()

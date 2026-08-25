@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-plugin-api-mcp",
   "description": "Replacement bundle for @deepseek-ai/dsh-mcp-client: faithful official host contract plus a read-only MCP server/tool catalog and lifecycle projection.",
-  "version": "0.1.0-rc.6-0.5",
+  "version": "0.1.0-rc.6-0.6",
   "type": "module",
   "main": "lib/apply.js",
   "exports": {
@@ -9,7 +9,7 @@
     "./package.json": "./package.json"
   },
   "dsh": {
-    "api": "0.5",
+    "api": "0.6",
     "bundle": {
       "patch": "./cordis.patch.yml"
     }

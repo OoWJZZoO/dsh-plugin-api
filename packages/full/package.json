@@ -1,10 +1,10 @@
 {
   "name": "@deepseek-ai/dsh-plugin-api-full",
   "description": "Full aggregate bundle for dsh-plugin-api: installs the main facade and every replacement bundle through one deterministic patch assembly.",
-  "version": "0.1.0-rc.6-0.5",
+  "version": "0.1.0-rc.6-0.6",
   "type": "module",
   "dsh": {
-    "api": "0.5",
+    "api": "0.6",
     "bundle": {
       "patch": "./cordis.patch.yml"
     }

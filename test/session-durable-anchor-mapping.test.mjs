@@ -28,7 +28,7 @@ function createPublishedFacade() {
   new SessionStore(ctx)
   const registry = createFeatureRegistry()
   const Service = createPluginApiService({
-    apiVersion: '0.5',
+    apiVersion: '0.6',
     registry,
     coreActive: () => true,
   })

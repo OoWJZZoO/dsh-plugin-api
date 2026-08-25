@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-plugin-api-agent-loop",
   "description": "Agent-loop replacement bundle with ordered model route policy and bounded health evidence.",
-  "version": "0.1.0-rc.6-0.5",
+  "version": "0.1.0-rc.6-0.6",
   "type": "module",
   "main": "lib/apply.js",
   "exports": {
@@ -11,7 +11,7 @@
     "./package.json": "./package.json"
   },
   "dsh": {
-    "api": "0.5",
+    "api": "0.6",
     "bundle": {
       "patch": "./cordis.patch.yml"
     }

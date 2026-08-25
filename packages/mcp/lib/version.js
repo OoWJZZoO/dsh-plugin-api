@@ -13,7 +13,7 @@
  */
 
 const RUNTIME_VERSION = '0.1.0-rc.6'
-const API_PROTOCOL = '0.5'
+const API_PROTOCOL = '0.6'
 
 export const MAIN_PACKAGE_NAME = '@deepseek-ai/dsh-plugin-api-main'
 export const OWN_PACKAGE_NAME = '@deepseek-ai/dsh-plugin-api-mcp'
