@@ -4,6 +4,7 @@
 
 SPEC1 Stage 0 Goal 已确认；R 类通道经用户于 2026-08-25 明确批准；Stage 1 Requirements 已确认（2026-08-25，M6 第四批次批量确认门）。
 修订注记（2026-08-25，用户指示）：SBE-7.4 明确 client-half 判定出现偏差时必须返工，不以返工成本为由弱化判定。
+修订注记（2026-08-26，Stage 4 执行期人类裁决）：对官方 `@deepseek-ai/dsh-session@0.1.0-rc.6` 实证发现设计补偿机制与运行时两处不兼容（自定义类型不能携带 surfaceOp；surface replace 只能折叠/1:1 交换、不能展开恢复 N 节点形状）。用户裁决采用 **路线 B**：保留多节点折叠 commit，rollback 改为**内容级恢复**（SBE-11.1 相应放宽）；commit 审计块**可由调用方自定义 `kind` 分类**（适配 user / 调用方 plugin id / goal 等场景）。SBE-10.3/11.1 已按裁决修订，其余验收不变。
 
 ## Introduction
 
@@ -155,7 +156,7 @@ SPEC1 Stage 0 Goal 已确认；R 类通道经用户于 2026-08-25 明确批准�
 
 1. **WHEN** a caller plans an edit against a target with an expectedVersion **THEN** the replacement SHALL bind the plan to that version and reject planning when the expectation does not match current durable state.
 2. **WHEN** a caller previews a plan **THEN** the preview SHALL describe the affected event range and resulting shape without mutating durable state.
-3. **WHEN** a plan is committed **THEN** the commit SHALL be atomic from observers' perspective—no intermediate half-committed state visible—and SHALL record who/what/when/generation in audit metadata.
+3. **WHEN** a plan is committed **THEN** the commit SHALL be atomic from observers' perspective—no intermediate half-committed state visible—and SHALL record who/what/when/generation plus a **caller-provided `kind` classification** (e.g. `user`, the caller's plugin id, or `goal`) in audit metadata; the same caller-provided `kind` SHALL apply to both replace-form and append-form commits.
 4. **WHEN** commit finds the expectedVersion stale or the plan already terminal **THEN** the replacement SHALL reject with a typed conflict result and SHALL leave current state untouched.
 5. **WHEN** a plan reaches any terminal outcome (`success | error | aborted | denied | superseded`) **THEN** the outcome SHALL be final and unique; late results SHALL lose submission qualification.
 
@@ -167,7 +168,8 @@ SPEC1 Stage 0 Goal 已确认；R 类通道经用户于 2026-08-25 明确批准�
 
 **Acceptance Criteria:**
 
-1. **WHEN** a committed plan is rolled back by its commitId **THEN** the replacement SHALL restore session state to the pre-commit shape and mark the rollback durably.
+1. **WHEN** a committed plan is rolled back by its commitId **THEN** the replacement SHALL restore the pre-commit **readable content** of the affected range (roles and boundaries annotated truthfully, never fabricating the original per-message shape) and mark the rollback durably.
+   - 附注（2026-08-26 人类裁决，路线 B）：官方 surface replace 只支持折叠/1:1 交换且被 shadow 节点不能恢复可见性，逐条恢复多节点原始形状在 append-only 补偿机制下不可实现；内容级恢复即本验收的公认语义。
 2. **WHEN** a plan declares or encounters effects outside session state **THEN** those effects SHALL be marked external, excluded from automatic rollback, and surfaced for explicit approval.
 3. **WHEN** rollback is invoked twice **THEN** it SHALL be idempotent and SHALL NOT revert newer legitimate commits.
 4. **WHEN** rollback cannot complete **THEN** the replacement SHALL fail closed with explicit state reporting and SHALL NOT present a partially restored session as recovered.
