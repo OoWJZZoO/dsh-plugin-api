@@ -5,7 +5,7 @@
 目的：从真实插件反复实现的 workaround、状态机和失败处理里反推 `dsh-plugin-api` 尚未覆盖的公共能力。
 
 本报告最初只做调研和候选提出，不创建正式 spec，不进入 Stage 0，不实现任何 feature。
-2026-08-24 起，经用户明确指示，候选自候选池陆续立项并进入 SPEC1 Stage 0。截至 2026-08-25，共 **11 个候选正式立项**：第一/二批八项（`execution-observation`、`plugin-diagnostics`、`usage-budget-telemetry`、`mcp-catalog-lifecycle`、`model-route-policy`、`attachment-pipeline`、`recovery-policy`、`client-generation-rebind`）已全部完成 Stage 4 交付；第三批三项（`coordination-lease`、`workspace-mutation-transaction`、`task-execution-observation`）已全部完成 Stage 4 交付（SPEC3 全程）。本报告继续只承担候选溯源与状态登记，不承载 Requirements、Design 或 Tasks；已交付状态的权威登记以 `feature-list.md` §7 为准。
+2026-08-24 起，经用户明确指示，候选自候选池陆续立项并进入 SPEC1 Stage 0。截至 2026-08-25，共 **12 个候选正式立项**：第一/二批八项（`execution-observation`、`plugin-diagnostics`、`usage-budget-telemetry`、`mcp-catalog-lifecycle`、`model-route-policy`、`attachment-pipeline`、`recovery-policy`、`client-generation-rebind`）已全部完成 Stage 4 交付；第三批三项（`coordination-lease`、`workspace-mutation-transaction`、`task-execution-observation`）已全部完成 Stage 4 交付（SPEC3 全程）；第五批次一项（`plugin-profile-management`）已完成 Stage 4 交付（SPEC3 全程）。本报告继续只承担候选溯源与状态登记，不承载 Requirements、Design 或 Tasks；已交付状态的权威登记以 `feature-list.md` §7 为准。
 
 ## 当前立项状态
 
@@ -22,8 +22,9 @@
 | `coordination-lease` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第三批次） | `docs/specs/coordination-lease/goal.md`；`docs/specs/coordination-lease/requirements.md`；`docs/specs/coordination-lease/design.md`；`docs/specs/coordination-lease/tasks.md` |
 | `workspace-mutation-transaction` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第三批次） | `docs/specs/workspace-mutation-transaction/goal.md`；`docs/specs/workspace-mutation-transaction/requirements.md`；`docs/specs/workspace-mutation-transaction/design.md`；`docs/specs/workspace-mutation-transaction/tasks.md` |
 | `task-execution-observation` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第三批次） | `docs/specs/task-execution-observation/goal.md`；`docs/specs/task-execution-observation/requirements.md`；`docs/specs/task-execution-observation/design.md`；`docs/specs/task-execution-observation/tasks.md` |
+| `plugin-profile-management` | 已交付（双面：投影 + 进程外执行器遥控写入） | SPEC3 Stage 4：交付完成（M6 第五批次） | `docs/specs/plugin-profile-management/goal.md`；`docs/specs/plugin-profile-management/requirements.md`；`docs/specs/plugin-profile-management/design.md`；`docs/specs/plugin-profile-management/tasks.md` |
 
-其余 9 个候选仍处于候选池，未进入 Stage 0。
+其余 8 个候选仍处于候选池，未进入 Stage 0。
 
 ## 结论先行
 

@@ -20,6 +20,7 @@ function createMockCtx(options = {}) {
     ? undefined
     : { section() {}, context() {}, variable() {}, tools() {}, suppressRuntimeContext() {} }
   const services = {
+    loader: { entries: () => [] },
     llm: {
       resolveModelInfo() {},
       prepareCall() {},
@@ -93,14 +94,15 @@ test('apply mounts remote then the observation faces (execution, diagnostics) an
   const names = state.pluginApi.features.map((f) => f.name)
   assert.ok(names.includes('remote'), 'remote feature listed')
   assert.equal(names.indexOf('remote'), names.indexOf('settingsRemote') + 1, 'remote mounts after settingsRemote')
-  assert.equal(names[names.length - 8], 'remote', 'remote stays directly before execution')
-  assert.equal(names[names.length - 7], 'execution', 'execution stays directly before recovery')
-  assert.equal(names[names.length - 6], 'recovery', 'recovery stays directly before coordination')
-  assert.equal(names[names.length - 5], 'coordination', 'coordination stays directly before workspaceTransactions')
-  assert.equal(names[names.length - 4], 'workspaceTransactions', 'workspaceTransactions stays directly before diagnostics')
-  assert.equal(names[names.length - 3], 'diagnostics', 'diagnostics stays directly before usage')
-  assert.equal(names[names.length - 2], 'usage', 'usage stays directly before tasks')
-  assert.equal(names[names.length - 1], 'tasks', 'tasks is the last FEATURE_MOUNTERS entry')
+  assert.equal(names[names.length - 9], 'remote', 'remote stays directly before execution')
+  assert.equal(names[names.length - 8], 'execution', 'execution stays directly before recovery')
+  assert.equal(names[names.length - 7], 'recovery', 'recovery stays directly before coordination')
+  assert.equal(names[names.length - 6], 'coordination', 'coordination stays directly before workspaceTransactions')
+  assert.equal(names[names.length - 5], 'workspaceTransactions', 'workspaceTransactions stays directly before diagnostics')
+  assert.equal(names[names.length - 4], 'diagnostics', 'diagnostics stays directly before usage')
+  assert.equal(names[names.length - 3], 'usage', 'usage stays directly before tasks')
+  assert.equal(names[names.length - 2], 'tasks', 'tasks stays directly before profile')
+  assert.equal(names[names.length - 1], 'profile', 'profile is the last FEATURE_MOUNTERS entry')
   assert.equal(state.pluginApi.remote.isActive, true)
   assert.equal(typeof state.pluginApi.remote.publish, 'function')
   assert.equal(typeof state.pluginApi.remote.dispose, 'function')

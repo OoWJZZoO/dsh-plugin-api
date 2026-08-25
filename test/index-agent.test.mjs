@@ -32,6 +32,7 @@ function createMockCtx(options = {}) {
       }
 
   const services = {
+    loader: { entries: () => [] },
     llm: {
       resolveModelInfo() {},
       prepareCall() {},
@@ -121,7 +122,7 @@ test('apply mounts agent after events and exposes a working registry read API', 
   assert.deepEqual(agents.getCalls, ['agent-1'])
 
   const features = state.pluginApi.features
-  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'workspaceTransactions', 'diagnostics', 'usage', 'tasks'])
+  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'workspaceTransactions', 'diagnostics', 'usage', 'tasks', 'profile'])
   assert.ok(features.slice(0, 13).every((f) => f.isActive), 'foundation-to-compat features remain active')
   assert.equal(features[13].isActive, false)
   assert.equal(features[14].isActive, false)
@@ -968,7 +969,7 @@ test('agent guard failure disables only agent and keeps facade active', () => {
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 23)
+  assert.equal(features.length, 24)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.equal(features[2].name, 'agent')
@@ -1019,7 +1020,7 @@ test('events guard failure does not block the agent registry read API', () => {
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 23)
+  assert.equal(features.length, 24)
   assert.equal(features[0].name, 'tools')
   assert.equal(features[0].isActive, true)
   assert.equal(features[1].name, 'events')

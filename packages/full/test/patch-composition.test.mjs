@@ -59,7 +59,7 @@ test('the full package follows the unified full-version and dsh.api policy', () 
   assert.equal(pkg.version.match(/^(.+)-(\d+\.\d+)$/)[2], pkg.dsh.api)
 })
 
-test('the full package depends on the main facade and every auxiliary package at workspace-consistent versions', () => {
+test('the full package depends on the main facade, the companion executor, and every auxiliary package at workspace-consistent versions', () => {
   assert.deepEqual(pkg.dependencies, {
     '@deepseek-ai/dsh-plugin-api-main': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-compaction-events': 'workspace:*',
@@ -67,6 +67,7 @@ test('the full package depends on the main facade and every auxiliary package at
     '@deepseek-ai/dsh-plugin-api-mcp': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-attachments': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-agent-loop': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-profile-manager': 'workspace:*',
   })
 })
 

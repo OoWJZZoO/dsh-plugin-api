@@ -42,7 +42,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (PPM-
 
 ## Tasks
 
-- [ ] 1. Implement the shared tolerant folding parser and its pure test suite.
+- [x] 1. Implement the shared tolerant folding parser and its pure test suite.
   - Change the main package runtime surface: add `js-yaml@^4.3.1` to
     `package.json` `dependencies` (the single justified runtime dependency —
     the YAML dialect of profile patch layers is the official `js-yaml`
@@ -108,7 +108,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (PPM-
     zero-side-effect assertion (directory hash unchanged after planDiff).
     Cover PPM-1.1/1.2/1.4, PPM-2.1/2.2, PPM-3.1/3.2/3.3.
 
-- [ ] 2. Implement the inspection mounter (projection face) with the
+- [x] 2. Implement the inspection mounter (projection face) with the
     runtime-view snapshot and typed/frozen results.
   - Add `lib/profile-inspection.js` exporting
     `createProfileInspection({ ctx, logger, fold, now })` returning
@@ -147,7 +147,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (PPM-
     guarantees, zero side effects on the fixture directory, and G1
     containment (throwing loader/fs degrades, never throws).
 
-- [ ] 3. Implement the facade guard, service slot, and fail-safe mounting for
+- [x] 3. Implement the facade guard, service slot, and fail-safe mounting for
     the `pluginApi.profile` namespace.
   - Add the `profile` feature guard branch in `lib/guards.js`: probe
     `ctx.get` and `ctx.loader.entries` (the runtime view is a mandatory
@@ -197,7 +197,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (PPM-
     typed inactive/disabled errors, repeated apply/unapply idempotence, and
     isolation from execution/recovery/usage/routing/client surfaces.
 
-- [ ] 4. Implement the executor package skeleton: CLI, handshake, protocol,
+- [x] 4. Implement the executor package skeleton: CLI, handshake, protocol,
     storage scope, config, and audit.
   - Add `packages/profile-manager/` as a plain npm package (NOT a Cordis
     bundle, NOT a replacement row): `package.json` with name
@@ -241,7 +241,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (PPM-
     initialization, config.json defaults and fail-closed overrides, audit
     append shape and append-only behavior, audit-failure degradation.
 
-- [ ] 5. Implement executor snapshot lifecycle and storage governance.
+- [x] 5. Implement executor snapshot lifecycle and storage governance.
   - `snapshot-create` takes `{ owner, source: 'runtime'|'disk', sourceProfile?,
     name? }`, creates a snapshot as a **near-instant atomic step** using lazy
     materialization: configuration files are copied now; dependencies are
@@ -293,7 +293,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (PPM-
     terminal state, state machine uncorrupted; different-owner parallelism
     does not block).
 
-- [ ] 6. Implement the executor validation pipeline: L1, L2 mock-first, and
+- [x] 6. Implement the executor validation pipeline: L1, L2 mock-first, and
     client-half mechanical validation.
   - `snapshot-validate { operationId, snapshotId, level }` runs the requested
     level and returns a handle-bearing operation (progress events then
@@ -361,7 +361,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (PPM-
     with shared vocabulary; pure client content isolation (never touches
     real profiles or the browser side).
 
-- [ ] 7. Implement the executor commit path and both write pipelines.
+- [x] 7. Implement the executor commit path and both write pipelines.
   - `quick-write { operationId, owner, intent, profile? }` runs the full
     pipeline automatically: prepare (config-type: generate the candidate
     patch overlay with the shared fold module; dependency-type: clone/lazy
@@ -402,7 +402,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (PPM-
     failure path, restartRequired truth on config/dependency change and
     false on no-op.
 
-- [ ] 8. Implement the mutation mounter (facade remote client) with handle
+- [x] 8. Implement the mutation mounter (facade remote client) with handle
     semantics, executor resolution, and degradation.
   - Add `lib/profile-mutation.js` exporting
     `createProfileMutation({ ctx, logger, resolveExecutor, fold })` returning
@@ -456,7 +456,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (PPM-
     validation before executor contact, and G1 containment on spawn/protocol
     failures.
 
-- [ ] 9. Complete integration, governance, and repository acceptance
+- [x] 9. Complete integration, governance, and repository acceptance
     evidence.
   - Wire the mutation surface into the `pluginApi.profile` getter composed
     in Task 3; verify the composed namespace against the design surface
@@ -503,4 +503,113 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (PPM-
 
 ## Stage 4 Implementation Record
 
-（完成全部任务、全局终审返回"无偏差"后，在此记录交付形状、测试数、登记与提交。)
+Completed 2026-08-25 (M6 第五批次, SPEC3) after all implementation tasks,
+verification and the global final review passed.
+
+- **Final host surface**: `pluginApi.profile` with frozen members `inspect`
+  (views runtime / disk / other), `health`, `planDiff` (inspection mounter,
+  `lib/profile-inspection.js`) and `apply` / `snapshot.create|modify|
+  validate|delete|apply` (mutation mounter, `lib/profile-mutation.js`, wired
+  as a lazy provider). Runtime feature key `profile` (guard branch in
+  `lib/guards.js`; `FEATURE_MOUNTERS` entry after `tasks`; service slot +
+  disabled surface + `KNOWN_FEATURES` in `lib/plugin-api-service.js`).
+- **Shared fold parser**: `lib/profile-fold.js` (pure, zero harness deps,
+  `js-yaml` as the main package's only runtime dependency; `./profile-fold`
+  subpath export serves both the facade and the executor). Tolerance
+  contract (unknown fields preserved, un-foldable layers marked unavailable,
+  `!!js` raw), health finding codes, planDiff pure computations.
+- **Executor**: `packages/profile-manager/` (plain npm package + bin; NOT a
+  Cordis bundle / replacement row; full visible version `0.1.0-rc.6-0.5`,
+  `dsh.api 0.5`; workspace dependency on the main package for the shared
+  fold module). Commands `handshake` / `quick-write` / `snapshot-create|
+  modify|validate|delete|apply` / `gc`; JSON-lines protocol; exit code maps
+  the terminal class; storage under `$DSH_HOME/plugin-api/profile-manager/`
+  (snapshots / cache/seed / backups / audit.log / tmp); config.json quotas
+  256MB/1GB + backupRetentionN=5 (fail-closed); append-only JSONL audit in
+  the executor process.
+- **Validation**: level tokens `basic` / `boot` (neutral runtime vocabulary);
+  L1 = `dsh --dump-config` structural health; L2 = disposable DSH_HOME with
+  seeded settings.yaml + port-pinned/mock-insert overlay + headless boot;
+  verdict `{ bootHealthy, rowsApplied, caveats[], clientWarnings[] }` judges
+  boot health, never inference success; provider-layer failures after boot
+  are caveats (pass), boot-phase crashes block. Bundled mock row
+  (`lib/mock-row.js`, official `llm.registerAdapter` + `inject: ['llm']`)
+  exists only in the disposable environment. Client-half mechanical
+  validation (`lib/client-check.js`): syntax / forbidden node built-ins /
+  `dsh.client` manifest conformance block; eval / unsafe-inner-html /
+  wildcard-postmessage are non-blocking shared-vocabulary warnings.
+- **Commit path** (`lib/commit.js` + `lib/pipelines.js`): CAS baseline hash
+  -> atomic sibling-temp+rename swap -> bounded backup generations with
+  rollback source; quick-write (prepare -> validate basic+boot -> commit)
+  and snapshot-apply (validated-generation gate) both leave the real
+  profile byte-identical on every failure path; `restartRequired` truth on
+  config/dependency change.
+- **Focused tests**: `test/profile-fold.test.mjs` (13),
+  `test/profile-inspection.test.mjs` (11), `test/profile-guard.test.mjs`
+  (7), `test/profile-mutation.test.mjs` (9) and executor package tests
+  (executor-skeleton 10, snapshot-lifecycle 9, storage-governance 7,
+  validate-pipeline 9, client-mechanical-validation 7, commit-pipeline 13)
+  — 95/95 profile-focused green in isolation.
+- **Shared suites**: `features.length` 23 -> 24 + order assertions updated
+  across `test/index*.test.mjs` (incl. the three extra suites identified in
+  review); `test/package.test.mjs` (entry points + single js-yaml runtime
+  dependency); `test/package-policy.test.mjs` (version-policy loop +
+  `full.dependencies`); `packages/full/test/patch-composition.test.mjs`;
+  `test/official-passthrough-independence.test.mjs` (branch-added features
+  list gains `profile`).
+- **Full suite**: `npm test`（memory-guarded）= 1877/1877 pass.
+- **Governance**: `git diff --check` clean; governance-token audit clean
+  (neutral runtime naming incl. `basic`/`boot` level tokens and the mock
+  package name); no private official imports; official DSH packages
+  untouched; no version bump (`0.1.0-rc.6-0.5` / `dsh.api 0.5`).
+- **Registration**: `feature-list.md` §2.13 `pluginApi.profile` namespace
+  row + §7 delivery row; heuristic proposals status table row + intro
+  count sentence synchronized; `visibility-and-redaction.md` §4 client-half
+  audience section; `client-threat-model-checklist.md` (shared warning
+  vocabulary); executor `README.md` (install modes + reinstall-cycle
+  tradeoff).
+- **E2E smoke**: one real quick-write against a scratch profile under a
+  temporary `$DSH_HOME` (installed dsh 0.1.0-rc.6, mock L2 fully offline):
+  success with `restartRequired: true`, atomic swap verified, 81 composed
+  rows, backup + audit present; manual restart checklist documented and the
+  temp script deleted after use.
+- **Global-final-review revisions (2026-08-25, whole-delivery fix round)**:
+  - owner binding minted from the caller fiber/loader entry per access
+    (never from a bare caller-supplied string; root/unknown fallback);
+  - runtime view captured once at mounter construction (boot-time snapshot,
+    post-init registrations never tracked) + explicit unavailable markers
+    for loader-unobservable package fields;
+  - seed-cache creation / hardlink materialization wired into quick-write
+    and the disposable L2 environment (empty-seed tolerated);
+  - client-half mechanical check auto-discovers staged client content in the
+    real validate path (blocking code fix);
+  - boot-init GC trigger from the facade with the runtime-view owner set;
+    GC target resolves from the snapshot's recorded source profile (never
+    the owner name) + tmp/ staging reclamation;
+  - inspect/health outputs redacted before freeze (fail-closed);
+  - auditability now authoritative from the append outcome (append failure
+    degrades the flag in the result) + degradation test;
+  - executor emits prepare/validate/commit stage progress; SIGTERM captured
+    (ignored) inside the commit window so atomic swaps finish; recoverSwap
+    heals hard-kill mid-swap on the next executor start + kill-mid-commit
+    test;
+  - facade-minted operation ids (never caller-supplied) + bounded executor
+    timeout mapped to error+timeout reason; dispose() aborts all in-flight
+    children (kill-and-cleanup);
+  - governance token scrub (no requirement IDs in implementation/tests) +
+    audit pattern extended with the PPM prefix; executor package test script
+    uses the repository glob convention;
+  - tests split to the task-named files (index-profile, profile-handle-
+    semantics).
+- **Second global-final-review fix round (2026-08-25)**: scoped package
+  owners (`@scope/name`) now pass the executor storage containment check
+  (nested owner scopes allowed; traversal/absolute/backslash segments still
+  rejected) with a full-chain scoped-owner test; orphan GC no longer guesses
+  the target profile from the owner name — runtime-source snapshots without a
+  recorded target are kept while the owner is in the runtime view and only
+  orphaned when the owner is absent everywhere (conservative); timeout →
+  error+reason classification, dispose() kill-and-cleanup, and commit-window
+  SIGTERM capture now have direct tests (signal-guard suite).
+- **Final commit**: recorded in the delivery report after the global final
+  review returned "无偏差"; worktree clean after the Stage 4 completion
+  commit.

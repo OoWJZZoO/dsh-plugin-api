@@ -13,10 +13,11 @@ const sessionTitle = readPackage('..', 'packages', 'session-title', 'package.jso
 const mcp = readPackage('..', 'packages', 'mcp', 'package.json')
 const attachments = readPackage('..', 'packages', 'attachments', 'package.json')
 const routePolicy = readPackage('..', 'packages', 'agent-loop', 'package.json')
+const profileManager = readPackage('..', 'packages', 'profile-manager', 'package.json')
 const full = readPackage('..', 'packages', 'full', 'package.json')
 
 test('main, auxiliary, and full packages all share the unified full-version + dsh.api policy', () => {
-  for (const pkg of [main, compaction, sessionTitle, mcp, attachments, routePolicy, full]) {
+  for (const pkg of [main, compaction, sessionTitle, mcp, attachments, routePolicy, profileManager, full]) {
     assert.match(pkg.version, /^(.+)-(\d+\.\d+)$/, `${pkg.name}: full unique version shape`)
     assert.equal(pkg.version.match(/^(.+)-(\d+\.\d+)$/)[2], pkg.dsh.api, `${pkg.name}: version suffix must equal dsh.api`)
     assert.equal(pkg.dsh.api, main.dsh.api, `${pkg.name}: API protocol must equal the main package`)
@@ -33,7 +34,7 @@ test('the auxiliary packages do not declare the main package as a runtime depend
   }
 })
 
-test('the full aggregate bundle depends on main and every auxiliary package at workspace-consistent versions', () => {
+test('the full aggregate bundle depends on main, the companion executor, and every auxiliary package', () => {
   assert.deepEqual(full.dependencies, {
     '@deepseek-ai/dsh-plugin-api-main': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-compaction-events': 'workspace:*',
@@ -41,6 +42,7 @@ test('the full aggregate bundle depends on main and every auxiliary package at w
     '@deepseek-ai/dsh-plugin-api-mcp': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-attachments': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-agent-loop': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-profile-manager': 'workspace:*',
   })
   assert.equal(full.dsh.bundle.patch, './cordis.patch.yml')
 })

@@ -25,6 +25,7 @@ function createMockCtx(options = {}) {
         suppressRuntimeContext() {},
       }
   const services = {
+    loader: { entries: () => [] },
     llm: {
       resolveModelInfo() {},
       prepareCall() {},
@@ -124,6 +125,7 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     { name: 'diagnostics', isActive: true },
     { name: 'usage', isActive: true },
     { name: 'tasks', isActive: true },
+    { name: 'profile', isActive: true },
   ])
   assert.equal(state.pluginApi.llm.isActive, true)
   assert.equal(typeof state.pluginApi.llm.request.transform, 'function')
@@ -187,7 +189,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-  assert.equal(features.length, 23)
+  assert.equal(features.length, 24)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -213,6 +215,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.deepEqual(features[20], { name: 'diagnostics', isActive: true })
   assert.deepEqual(features[21], { name: 'usage', isActive: true })
   assert.deepEqual(features[22], { name: 'tasks', isActive: true })
+  assert.deepEqual(features[23], { name: 'profile', isActive: true })
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),
