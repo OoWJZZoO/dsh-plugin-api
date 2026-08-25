@@ -19,9 +19,9 @@
 | `attachment-pipeline` | 已立项，推进中（R 类；owner `@deepseek-ai/dsh-attachment-local`） | SPEC1 Stage 2：Design 已确认；Stage 3 未启动 | `docs/specs/attachment-pipeline/goal.md`；`docs/specs/attachment-pipeline/requirements.md`；`docs/specs/attachment-pipeline/design.md` |
 | `recovery-policy` | 已立项，推进中（B/C policy-first） | SPEC1 Stage 2：Design 已确认；Stage 3 未启动 | `docs/specs/recovery-policy/goal.md`；`docs/specs/recovery-policy/requirements.md`；`docs/specs/recovery-policy/design.md` |
 | `client-generation-rebind` | 已立项，推进中（B 类；R 待未来单一 owner 证据） | SPEC1 Stage 2：Design 已确认；Stage 3 未启动 | `docs/specs/client-generation-rebind/goal.md`；`docs/specs/client-generation-rebind/requirements.md`；`docs/specs/client-generation-rebind/design.md` |
-| `coordination-lease` | Stage 0 Goal 草案，待用户确认（B 类） | SPEC1 Stage 0：Goal 草案 | `docs/specs/coordination-lease/goal.md` |
-| `workspace-mutation-transaction` | Stage 0 Goal 草案，待用户确认（B 类） | SPEC1 Stage 0：Goal 草案 | `docs/specs/workspace-mutation-transaction/goal.md` |
-| `task-execution-observation` | Stage 0 Goal 草案，待用户确认（B 类） | SPEC1 Stage 0：Goal 草案 | `docs/specs/task-execution-observation/goal.md` |
+| `coordination-lease` | Stage 1 Requirements 草案，待用户确认（B 类） | SPEC1 Stage 1：Requirements 草案 | `docs/specs/coordination-lease/goal.md`；`docs/specs/coordination-lease/requirements.md` |
+| `workspace-mutation-transaction` | Stage 1 Requirements 草案，待用户确认（B 类） | SPEC1 Stage 1：Requirements 草案 | `docs/specs/workspace-mutation-transaction/goal.md`；`docs/specs/workspace-mutation-transaction/requirements.md` |
+| `task-execution-observation` | Stage 1 Requirements 草案，待用户确认（B 类） | SPEC1 Stage 1：Requirements 草案 | `docs/specs/task-execution-observation/goal.md`；`docs/specs/task-execution-observation/requirements.md` |
 
 其余候选仍处于候选池，未进入 Stage 0。
 
