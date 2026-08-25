@@ -124,6 +124,7 @@ test('apply mounts sessionDurable immediately after session without extending th
     'settingsRemote',
     'remote',
     'execution',
+    'recovery',
     'diagnostics',
     'usage',
   ])

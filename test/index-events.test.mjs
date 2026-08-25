@@ -158,7 +158,7 @@ test('events guard failure disables only events and keeps facade active', () => 
 
 
 
-  assert.equal(features.length, 19)
+  assert.equal(features.length, 20)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.equal(features[1].name, 'events')
   assert.equal(features[1].isActive, false)
@@ -186,10 +186,12 @@ test('events guard failure disables only events and keeps facade active', () => 
   assert.equal(features[15].isActive, false)
   assert.equal(features[16].name, 'execution')
   assert.equal(features[16].isActive, true)
-  assert.equal(features[17].name, 'diagnostics')
+  assert.equal(features[17].name, 'recovery')
   assert.equal(features[17].isActive, true)
-  assert.equal(features[18].name, 'usage')
+  assert.equal(features[18].name, 'diagnostics')
   assert.equal(features[18].isActive, true)
+  assert.equal(features[19].name, 'usage')
+  assert.equal(features[19].isActive, true)
 
   assert.throws(
     () => state.pluginApi.events.on('goal/changed', () => {}),
@@ -210,7 +212,7 @@ test('web service absence keeps the services feature active while disabling only
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
 
-  assert.equal(features.length, 19)
+  assert.equal(features.length, 20)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -238,10 +240,12 @@ test('web service absence keeps the services feature active while disabling only
   assert.equal(features[15].isActive, false)
   assert.equal(features[16].name, 'execution')
   assert.equal(features[16].isActive, true)
-  assert.equal(features[17].name, 'diagnostics')
+  assert.equal(features[17].name, 'recovery')
   assert.equal(features[17].isActive, true)
-  assert.equal(features[18].name, 'usage')
+  assert.equal(features[18].name, 'diagnostics')
   assert.equal(features[18].isActive, true)
+  assert.equal(features[19].name, 'usage')
+  assert.equal(features[19].isActive, true)
 
   // the disabled services namespace throws typed errors for web too
   assert.throws(

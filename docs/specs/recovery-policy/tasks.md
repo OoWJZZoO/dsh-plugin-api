@@ -31,7 +31,7 @@ sub-agent.
 
 ## Tasks
 
-- [ ] 1. Implement the dependency-free failure classifier and bounded models.
+- [x] 1. Implement the dependency-free failure classifier and bounded models.
   - Add a pure recovery classifier/model module and focused tests for the five
     terminal classes, `error` plus `timeout` reason, bounded reason/source
     evidence, cancellation/supersession precedence, contradictory or missing
@@ -42,7 +42,7 @@ sub-agent.
   - Keep returned classification/reason/source structures immutable and free of
     harness dependencies. Cover RP-1 and the classifier portion of RP-8/RP-10.
 
-- [ ] 2. Implement operation capability ownership and ordered policy registry.
+- [x] 2. Implement operation capability ownership and ordered policy registry.
   - Add the host-side capability registry with validation for operation/scope,
     idempotency, retryability, allowed actions, side-effect class, deadline,
     retry budget, fork capability, and approval requirement; reject malformed
@@ -56,7 +56,7 @@ sub-agent.
     registration ordering, and hostile registration callbacks. Cover RP-2 and
     RP-3 registration criteria.
 
-- [ ] 3. Implement explicit decision convergence, bounds, and single-use state.
+- [x] 3. Implement explicit decision convergence, bounds, and single-use state.
   - Add the recovery owner/engine that accepts only explicit decision input,
     snapshots applicable capability/policy registrations, and converges valid
     `retry`, `abort`, `fallback`, `fork`, `stop`, and `no-op` results using the
@@ -75,7 +75,7 @@ sub-agent.
     policy failure containment, cancellation/stale result suppression, and
     immutable decision snapshots. Cover RP-3, RP-4, RP-5, RP-7, and RP-8.
 
-- [ ] 4. Implement execution/attempt integrity and compare-and-swap consume.
+- [x] 4. Implement execution/attempt integrity and compare-and-swap consume.
   - Add explicit execution/attempt correlation checks that accept identities
     only from supplied public projections, preserve execution identity across
     internal retry/fallback attempts, require distinct proposed attempt
@@ -93,7 +93,7 @@ sub-agent.
     attempt mismatch, concurrent consume, and cancellation races. Cover RP-4,
     RP-5, RP-6, and RP-7.
 
-- [ ] 5. Implement pure integration adapters and visibility/redaction helpers.
+- [x] 5. Implement pure integration adapters and visibility/redaction helpers.
   - Add `fromAgentRequestError(payload)` and `fromToolResult(exec, result)`
     normalizers for documented public shapes; keep them pure, zero-harness,
     non-listening, and free of retry/provider/checkpoint side effects.
@@ -110,7 +110,7 @@ sub-agent.
     field omission, explicit non-secret elevation, and no client-owned surface.
     Cover RP-8, RP-9, and RP-10.
 
-- [ ] 6. Mount the host facade with fail-safe lifecycle and typed unavailable
+- [x] 6. Mount the host facade with fail-safe lifecycle and typed unavailable
   behavior.
   - Add a `recovery` feature guard and mounter using the existing feature
     registry/service lifecycle. The mounter must construct the recovery owner,
@@ -130,7 +130,7 @@ sub-agent.
     from routing/execution/usage/client surfaces. Cover the mounting portions
     of RP-8 and RP-10.
 
-- [ ] 7. Complete cross-feature boundary, governance, migration, and repository
+- [x] 7. Complete cross-feature boundary, governance, migration, and repository
   acceptance evidence.
   - Add local-fixture tests proving explicit interoperability with public
     execution, budget, route, diagnostics, branch, and checkpoint projections
