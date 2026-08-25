@@ -250,8 +250,8 @@ test('host regression: the boundary-era and current hosts agree on every pre-exi
     // the later-era members that are already part of main, so all of them are
     // excluded from the pre-existing-face equality check.
     const helperMembers = ['renderContextSnapshot', 'joinContextSections']
-    const LATER_ADDED_MEMBERS = ['assemble', 'defineTool', 'executionMode']
-    const BRANCH_ADDED_FEATURES = ['execution', 'recovery', 'coordination', 'diagnostics', 'usage']
+    const LATER_ADDED_MEMBERS = ['assemble', 'defineTool', 'executionMode', 'discovery']
+    const BRANCH_ADDED_FEATURES = ['execution', 'recovery', 'coordination', 'diagnostics', 'usage', 'toolDiscovery']
     const currentFeatureNames = current.face.featureNames.filter((name) => !BRANCH_ADDED_FEATURES.includes(name))
     const currentFeatureActivity = current.face.featureActivity.filter((_, index) =>
       !BRANCH_ADDED_FEATURES.includes(current.face.featureNames[index]))

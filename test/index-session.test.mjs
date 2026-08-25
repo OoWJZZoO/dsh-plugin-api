@@ -116,7 +116,7 @@ test('apply mounts session after events with a composed events catalog', () => {
   assert.equal(state.pluginApi.session.isActive, true)
   assert.deepEqual(
     state.pluginApi.features.map((feature) => feature.name),
-    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'diagnostics', 'usage'],
+    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'diagnostics', 'usage', 'toolDiscovery'],
   )
   assert.ok(state.pluginApi.features.slice(0, 13).every((feature) => feature.isActive))
   assert.equal(state.pluginApi.features[13].isActive, false)
@@ -160,7 +160,7 @@ test('apply completes every guard pass before pass-2 publication and an early fe
   const features = state.pluginApi.features
   assert.deepEqual(
     features.map((feature) => feature.name),
-    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'diagnostics', 'usage'],
+    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'diagnostics', 'usage', 'toolDiscovery'],
   )
   assert.equal(features.find((feature) => feature.name === 'tools')?.isActive, false)
   assert.equal(features.find((feature) => feature.name === 'execRoute')?.isActive, false)
@@ -181,8 +181,8 @@ test('session guard failure disables only session and keeps the facade active', 
   assert.equal(state.pluginApi.isActive, true)
 
   const features = state.pluginApi.features
-  assert.equal(features.length, 21)
-  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'diagnostics', 'usage'])
+  assert.equal(features.length, 22)
+  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'session', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'diagnostics', 'usage', 'toolDiscovery'])
   assert.equal(features[0].isActive, true)
   assert.equal(features[1].isActive, true)
   assert.equal(features[2].isActive, true)

@@ -156,6 +156,7 @@ AuditRecord     { seq, at, kind:'activate'|'deactivate'|'revoke'|'exclude'|'fail
 | `DISCOVERY_ENTRY_DEACTIVATED` | 对软下线条目发起新 activation |
 | `DISCOVERY_ENTRY_FAILED` | activate 回调抛错/返回畸形输出（该 entry 标记 failed + diagnostics 带 owner 归因） |
 | `DISCOVERY_SCOPE_UNRESOLVED` | activate 无法从 session/execution 解析 scope key |
+| `DISCOVERY_ACTIVATION_SUPERSEDED` | 激活的 toolset 定义到达前已被同 scope 同 entry 的新 claim 取代（迟到结果只进审计/诊断，不发布） |
 | `DISCOVERY_GENERATION_STALE`（outcome） | stale/foreign dispose 的 typed no-op 结果（不抛） |
 
 ### S7. 装配与 fail-safe 落地
@@ -166,7 +167,7 @@ AuditRecord     { seq, at, kind:'activate'|'deactivate'|'revoke'|'exclude'|'fail
   - `activate(id, { session?, execution?, reason? }) → Promise<ToolsetHandle{ generation, dispose }>`
   - `deactivate(id, { reason? })`
   - `audit.query(filter?) → { items, truncated, nextCursor? }`（冻结；内存有界 500 条循环队列，non-durable 如实标注，PTD-5）
-  - `get availability` → `{ active, catalog: { entries, failed }, audit: { limit, count, truncated, gap? }, hint: { registered }, constraint: { status } }`（真值报告，PTD-7.3）
+  - `get availability` → `{ active, catalog: { registered, failed, offline }, toolsets, audit: { limit, count, truncated, gap? }, constraint: { status }, providerRegistered, hintRegistered }`（真值报告，PTD-7.3；provider/hint 注册状态由宿主接线如实填写，与交付实现一致）
 - 未装配/降级时全部方法抛 typed `PLUGIN_API_FEATURE_DISABLED('toolDiscovery')`（disabled surface）；setup 失败 → 整体 inert，availability 如实报 inactive（PTD-7.2）。
 - 装配点（共享文件追加式改动，批次契约 §2）：`lib/plugin-api-service.js`（`// tool-discovery` 注册块：`tools.discovery` 槽 + `_assignFeature`/`_readSlot`/`_disabledSurfaceFor`/`unmountFeature`/`KNOWN_FEATURES` 追加分支与 import）；`lib/index.js`（`// tool-discovery` 注册块：FEATURE_MOUNTERS 条目 + owner 装配 + `resolveMarkedRoutePolicy` 接线为 scopeConstraint）；`lib/guards.js`（追加 `toolDiscovery` probe 分支：`systemPrompt.tools`、`systemPrompt.section`、`tools` 服务面）。
 - 事件面：本 feature 不新增任何 catalog 事件条目（design 未定义），事件目录不动。
