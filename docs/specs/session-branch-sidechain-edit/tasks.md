@@ -7,11 +7,10 @@ SPEC1 Stage 0 Goal、Stage 1 Requirements、Stage 2 Design 已确认（2026-08-2
 ## 执行注（本 feature 批次纪律）
 
 - **契约**：`temp/m6-batch4-contract.md`（§1 命名、§2 共享文件编辑边界、§3 冻结文件、§4 失败呈现、§5 合并顺序与预检、§6 SBE 前置核查）。权威上游为 requirements/design 获批制品（cb17052 修订后为准）；契约与本文件冲突时以制品为准并上报。
-- **前置核查（契约 §6）已在本任务书编写阶段完成源码级核实**（Stage 4 任务 1 仍需实测闭环）：
-  - `Session.append(type, data, opts)` **不校验** `KNOWN_SESSION_EVENT_TYPES`——只做 JSON 可序列化、`assertSupportedRequestHeader`（仅拒 `request/header-delta` 与 legacy fallback reason）、`surfaceManager.validateNext`（seq 连续 + surface 语义）；
-  - seed/恢复路径 `assertSessionEventEnvelope` 同样**不校验**已知类型集合，只校验信封字段（type/seq/time/data/surfaceOp/sourceEventSeqs/ignorable）；
-  - `decodeStorageRecord` 对非 chunk 行直接透传；
-  - 结论：**设计主案（自定义事件经官方存储路径 round-trip）成立，无需回退 sidecar**。任务 1.1 以实测（写入→`packChunkRuns` 打包→`decodeStorageRecord` 解包→`Session.fromRestore`→折叠一致）闭环确认；若实测出现与源码核实相反的拒绝行为，立即停下按 design「自定义事件持久化机制」段预案改 sidecar 并回改 design（不得静默降级）。
+- **前置核查（契约 §6）源码级核实 + 实测闭环均已在本任务书编写阶段完成**（2026-08-25，实测脚本 `temp/m6-batch4-verify/custom-event-roundtrip.mjs`，用毕即删）：
+  - 源码核实：`Session.append(type, data, opts)` **不校验** `KNOWN_SESSION_EVENT_TYPES`——只做 JSON 可序列化、`assertSupportedRequestHeader`（仅拒 `request/header-delta` 与 legacy fallback reason）、`surfaceManager.validateNext`（seq 连续 + surface 语义）；seed/恢复路径 `assertSessionEventEnvelope` 同样**不校验**已知类型集合，只校验信封字段（type/seq/time/data/surfaceOp/sourceEventSeqs/ignorable）；`decodeStorageRecord` 对非 chunk 行直接透传。
+  - 实测结论：以裸 `Session` 写入自定义类型 `branch/created`、`edit/committed`（无 surfaceOp 元数据形态）→ `packChunkRuns` 打包 → `decodeStorageRecord` 解包 → `Session.fromRestore` 恢复——**全部接受**，round-trip 数据逐字段一致；`deriveMessages()` 忽略无 surfaceOp 的自定义元数据事件（不进入派生消息）；恢复计数比原始多 1 为官方自动追加 `session/end-seed` 所致（官方文档明示，符合预期）。
+  - **结论：设计主案（自定义事件经官方存储路径 round-trip）成立，无需回退 sidecar**；任务 1.1 的复刻一致性套件 round-trip 断言照常落地（不再需要 sidecar 预案路径）。
 - **命名（契约 §1.1）**：公开面 `pluginApi.session.branches`（facade 只读投影 + 操作入口）；替代行 ctx 子接口 `sessions.branches`；运行时名 `@deepseek-ai/dsh-plugin-api-session-branch`，替代行 id `plugin-api-session-branch`。**治理代号（SBE-/R 类/r1/spec 编号）不得出现在** `packages/session-branch/**`、`lib/**` 新增行、`test/**`、patch 文件与运行时字符串；错误码用能力词（如 `BRANCH_VERSION_CONFLICT`、`BRANCH_KIND_INVALID`、`EDIT_PLAN_TERMINAL`）。generation/commitId 为 owner 域内 opaque token（建议 `${ownerId}:${随机串}`），不做跨 owner 比较、不做全局单调承诺。
 - **共享文件（契约 §2 追加式，不改既有行）**：`lib/guards.js` 追加独立 `sessionBranch` probe 分支；`lib/index.js` 追加 `// session-branch facade` 分隔注释 import + `mountSessionBranchFacade` 注册块 + `FEATURE_MOUNTERS` 条目（`session` 之后）；`lib/plugin-api-service.js` 追加 `// session-branch facade` 分隔注释注册块。主包 `package.json` 本批不改版本/dsh.api（统一批次集成 sync）。**预先声明一处有理由偏离（契约 §3.5 偏离义务）**：`pluginApi.session` getter 为 `configurable:false` 且返回冻结组合产物，`session.branches` 必须在 `composeSessionApi` 组成路径内追加最小 add-on 行（带 `// session-branch facade` 分隔注释、仅追加不改写既有逻辑）——同 `tool-discovery` 对 `pluginApi.tools` 的先例处理，交付报告显式上报。
 - **冻结文件（契约 §3）一律不碰**：既有 feature 实现/测试、全部已交付辅助包、`AGENTS.md`、`docs/standards/**`、他人 spec 制品。
