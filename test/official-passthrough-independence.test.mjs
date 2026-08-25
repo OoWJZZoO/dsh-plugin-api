@@ -138,9 +138,11 @@ test('client regression: the boundary-era and current artifacts agree on every p
 test('client independence: the current artifact activates and forwards through the raw module substrate alone', async () => {
   const current = loadBundle(CURRENT_BUNDLE_SOURCE, 'client-current.js')
   const { live } = await observeClientFaces(current)
-  assert.equal(live.featureNames.length, 17)
-  assert.equal(live.featureNames.slice(10).every((name) => name.startsWith('client')), true)
-  assert.equal(live.featureActivity.slice(10).every(Boolean), true, 'all seven new faces must be active on the raw substrate')
+  assert.equal(live.featureNames.length, 18)
+  assert.equal(live.featureNames[10], 'clientLifecycle')
+  assert.equal(live.featureActivity[10], true)
+  assert.equal(live.featureNames.slice(11).every((name) => name.startsWith('client')), true)
+  assert.equal(live.featureActivity.slice(11).every(Boolean), true, 'all seven new faces must be active on the raw substrate')
 
   const { ctx, loader, namespaces } = bootFixture()
   const dispose = current.apply(ctx)

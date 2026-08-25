@@ -1,4 +1,4 @@
-import test from 'node:test'
+import test, { mock } from 'node:test'
 import assert from 'node:assert/strict'
 import { createUsageLedger } from '../lib/usage-ledger.js'
 import { createUsageQuery } from '../lib/usage-query.js'
@@ -66,11 +66,16 @@ test('query by execution id returns the matching execution record', () => {
 test('date filter narrows to records observed that day', () => {
   const ledger = createUsageLedger()
   const query = createUsageQuery({ ledger })
-  seed({ ledger, executionId: 'exec-1', day: '2026-08-24' })
-  const result = query.query({ day: '2026-08-25' })
-  assert.equal(result.items.length, 0)
-  const next = query.query({ day: '2026-08-24', sessionId: 'sess-1' })
-  assert.equal(next.items.length, 1)
+  mock.timers.enable({ apis: ['Date'], now: new Date('2026-08-24T12:00:00.000Z') })
+  try {
+    seed({ ledger, executionId: 'exec-1', day: '2026-08-24' })
+    const result = query.query({ day: '2026-08-25' })
+    assert.equal(result.items.length, 0)
+    const next = query.query({ day: '2026-08-24', sessionId: 'sess-1' })
+    assert.equal(next.items.length, 1)
+  } finally {
+    mock.timers.reset()
+  }
 })
 
 test('provider/model filters apply inside the requested scope', () => {

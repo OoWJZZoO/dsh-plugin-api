@@ -23,6 +23,37 @@ test('remote contribution validates then mounts once and preserves official disp
   await replacement()
 })
 
+test('package-shared mount returns independent owner leases', async () => {
+  let mounts = 0
+  let disposals = 0
+  const remote = {
+    async $mount(value) {
+      mounts += 1
+      assert.equal(value, contribution)
+      this.settings = { available: true }
+      return () => {
+        disposals += 1
+        delete this.settings
+      }
+    },
+  }
+  const api = createClientRemoteContribution({ remote })
+  const ownerA = {}
+  const ownerB = {}
+  const first = api.mountRemote(contribution, ownerA)
+  const second = api.mountRemote(contribution, ownerB)
+  assert.notEqual(first, second)
+  const disposeA = await first
+  const disposeB = await second
+  assert.equal(mounts, 1)
+  assert.equal(await disposeA(), true)
+  assert.equal(disposals, 0)
+  assert.deepEqual(remote.settings, { available: true })
+  assert.equal(await disposeA(), false)
+  assert.equal(await disposeB(), true)
+  assert.equal(disposals, 1)
+})
+
 test('malformed and mismatched faces fail without publishing an owner', async () => {
   const remote = { async $mount() { return () => {} } }
   const api = createClientRemoteContribution({ remote })
