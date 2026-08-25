@@ -1,0 +1,11 @@
+# dsh bundle patch for @deepseek-ai/dsh-plugin-api-session-branch.
+# Replacement boundary: we replace the `ctx.sessions` service/event face ONLY;
+# the `@deepseek-ai/dsh-session` import face stays official (the replacement
+# composes the official SessionStore rather than re-exporting it).
+# The official `id: session` row has no config block; the replacement row
+# matches that shape.
+- id: session
+  disabled: true
+- insert:
+    - id: plugin-api-session-branch
+      name: '@deepseek-ai/dsh-plugin-api-session-branch'

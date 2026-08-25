@@ -27,27 +27,31 @@ SPEC1 Stage 0 Goal、Stage 1 Requirements、Stage 2 Design 已确认（2026-08-2
 
 ## Tasks
 
-- [ ] **1. 前置核查与复刻基准（契约 §6 实测闭环；对应 requirements SBE-2/SBE-7/SBE-8.6、design「复刻策略」「自定义事件持久化机制」「旧 client cursor 处理」）**
+- [x] **1. 前置核查与复刻基准（契约 §6 实测闭环；对应 requirements SBE-2/SBE-7/SBE-8.6、design「复刻策略」「自定义事件持久化机制」「旧 client cursor 处理」）**
+  - 状态：implemented（Stage 4 完成，见交付报告；任务 8.2 的登记动作随批次集成 sync 提交落地）
   - 1.1 实测自定义事件 round-trip（design Testing Strategy 1）：以官方公开导出（`SessionStore`/`Session`/`packChunkRuns`/`decodeStorageRecord`/`adoptSessionEvent`/`KNOWN_SESSION_EVENT_TYPES` 等，不触碰模块私有）验证——(a) 向会话 append 自定义类型事件（`branch/created`、`branch/failed`，无 surfaceOp 元数据形态），经 `packChunkRuns`→`decodeStorageRecord`→`Session.fromRestore` 恢复后折叠结果与原始一致；未知类型在 `Session.fromRestore` 不被信封校验拒绝；(b) surface-eligible `user/message` replace 事件**内嵌 `edit` 审计块额外字段**经同一存储路径 round-trip 逐字段一致（派生消息仍只取 `message`）。**2026-08-26 修订：已实证自定义类型带 surfaceOp 会被官方拒绝（`surfaceOpOf`），故 commit/revert 的 surface 变更本体一律走 (b) 形态，不再有"自定义事件带 replace"路径**；结论按契约 §6 记录（主案成立 / 需回退 sidecar）。
   - 1.2 锁定版本复刻基准审计（design Replacement Identity Matrix 对照 `0.1.0-rc.6` 实测）：`ctx.sessions` 服务面（`create/prepare/enter/announce/flush/get/list/fork`）签名/时序/typed 错误、四事件（`session/created|disposed|event|flush`）派发形状与顺序、typert lookup `session` 注册、`Session` 实例面必要成员——核实结果记录在 `lib/delegate.js` 首部注释（含版本来源）。
   - 1.3 旧 client cursor 消费面核实（SBE-8.6）：对照锁定版本，确认既有 client 在父 session 事件流上的位置失效时官方可用的显式失效/迁移通道形态（typed invalidation 或迁移提示）；核实结论记录于 `lib/branch-log.js` 或 `lib/apply.js` 注释；无法用既有事件/状态呈现时按 C 类如实披露（不静默丢弃）。
   - 产出：`packages/session-branch/lib/*` 首部核实注释 + `test/delegate-parity.test.mjs` 复刻一致性套件（round-trip、五种 fork typed 拒绝码、`session/created` 否决回滚、flush 参与计数语义）。
 
-- [ ] **2. 包边界与确定性装配（requirements SBE-1/SBE-4.4、design Components；capability-strategy R1/R5/R7 落点）**
+- [x] **2. 包边界与确定性装配（requirements SBE-1/SBE-4.4、design Components；capability-strategy R1/R5/R7 落点）**
+  - 状态：implemented（Stage 4 完成，见交付报告；任务 8.2 的登记动作随批次集成 sync 提交落地）
   - 2.1 创建 `packages/session-branch/package.json`：统一全量唯一版本（`<runtime>-<api.major>.<api.minor>`，本批与主包当前值一致 `0.1.0-rc.6-0.5` / `dsh.api 0.5`，最终递增由批次集成 sync 统一处理）、`type: module`、`main: lib/apply.js`、`dsh.bundle.patch` 指向 `./cordis.patch.yml`、peerDependencies 锁定 `@deepseek-ai/dsh-session: 0.1.0-rc.6`（宿主共享实例，不新增无关运行时依赖）。
   - 2.2 创建 `packages/session-branch/cordis.patch.yml`：官方 patch 形状 `- id: session; disabled: true` + `- insert: - id: plugin-api-session-branch; name: '@deepseek-ai/dsh-plugin-api-session-branch'`（无 config 块，与官方行一致）；注释声明替换边界（只替换 `ctx.sessions` 服务/事件面，`@deepseek-ai/dsh-session` import 面保持官方）。
   - 2.3 批次集成预留（本期只搭文件，最终递增/登记由 sync 提交处理）：`packages/full/package.json` 依赖追加本包（workspace:*）、`packages/full/cordis.patch.yml` 末尾追加 `session` disable + `plugin-api-session-branch` insert 块（保持既有装配顺序与版本不动）、`pnpm-lock.yaml` 同步；`packages/full/test/patch-composition.test.mjs` 追加 session-branch 替代行断言（full 与选择性安装等价、无双跑）。
   - 2.4 包边界测试：`packages/session-branch/test/assembly.test.mjs`——patch 文件形状断言（只含官方 `disabled: true` + 唯一替代行）、package.json 版本/dsh.api 规则断言、full 聚合双装等价断言（compose 后同一组行、替代行唯一）。
   - 覆盖 SBE-1.1/1.2/1.3/1.4、SBE-4.4、SBE-5.2。
 
-- [ ] **3. 逐成员薄委托复刻层（requirements SBE-2/SBE-3、design「复刻策略」）**
+- [x] **3. 逐成员薄委托复刻层（requirements SBE-2/SBE-3、design「复刻策略」）**
+  - 状态：implemented（Stage 4 完成，见交付报告；任务 8.2 的登记动作随批次集成 sync 提交落地）
   - 3.1 实现 `packages/session-branch/lib/delegate.js`：apply 时实例化官方 `SessionStore`（组合官方公开导出，不 import 模块私有），`ctx.sessions` 服务按官方成员逐一原样转发（`create/prepare/enter/announce/flush/get/list/fork` 保时序/形状/typed 错误语义），`session/*` 四事件由底层 store 自行 dispatch（零重派发，杜绝双跑与形状漂移）；typert lookup 注册保持同名 `session` key。
   - 3.2 `symbols.js`（或并入 delegate/apply）：`Symbol.for('dsh-plugin-api.session-branch.contract')` 组件 owner 契约符号（同 compaction-events/session-title 先例），用于唯一 owner 冲突检测与主包 marker 门控；不得携带治理代号。
   - 3.3 `version.js` 纯函数：`parseFullVersion` / `fullVersionContractsMatch` / `runtimeIdentityMatches`（锁定 `0.1.0-rc.6`）——主包与辅助包版本一致校验、runtime identity 校验（SBE-1）。
   - 3.4 复刻一致性套件（纯函数 + 官方实例）：`test/delegate-parity.test.mjs`——八个服务成员逐一与官方直连行为一致断言（含五种 fork typed 拒绝码、`session/created` 同步抛错否决回滚、flush 参与计数、get/list 返回同一性、create 的 fiber-effect 生命周期）、四事件形状（payload/派发顺序与官方一致）、自定义事件 round-trip（任务 1.1 断言落此文件）。
   - 覆盖 SBE-2.1/2.2/2.3/2.4、SBE-3.1/3.2/3.3。
 
-- [ ] **4. branch 记录与 graph 折叠（requirements SBE-8/SBE-9、design「Branch 记录 = parent log 上的事件」）**
+- [x] **4. branch 记录与 graph 折叠（requirements SBE-8/SBE-9、design「Branch 记录 = parent log 上的事件」）**
+  - 状态：implemented（Stage 4 完成，见交付报告；任务 8.2 的登记动作随批次集成 sync 提交落地）
   - 4.1 实现 `packages/session-branch/lib/branch-log.js`（纯函数，零 harness）：`branch/created` 与 `branch/failed` 事件编解码（data：branchId、kind、boundarySeq、childSessionId、causalSourceSeqs、visibility、retention、inheritance 声明、state `active|failed`）；`foldBranchGraph(events)` → 冻结只读 branch graph（current/ancestors/children 一致、不凭空造链）。
   - 4.2 kind 校验：`retry | sidechain | experiment | rescue` 四固定 kind，未知 kind → typed validation 结果（`BRANCH_KIND_INVALID` 风格能力错误码）。
   - 4.3 失败清理（SBE-8.5）：branch 创建在 child 已 prepare 后失败 → parent log 补偿记录（`branch/failed` 终态或同一提交窗口 superseded 标记），不留 untracked 半成品；child 半成品显式清理或标记。
@@ -55,7 +59,8 @@ SPEC1 Stage 0 Goal、Stage 1 Requirements、Stage 2 Design 已确认（2026-08-2
   - 4.5 单元测试（`test/branch-log.test.mjs`）：编解码 round-trip、graph 折叠（单枝/多枝/失败枝/跨重启重建）、kind 拒绝对、冻结视图、审计式未知字段容忍。
   - 覆盖 SBE-8.1/8.2/8.3/8.4/8.5、SBE-9.1/9.2/9.3。
 
-- [ ] **5. edit plan 状态机（requirements SBE-10/SBE-11/SBE-12/SBE-14、design「Edit plan / commit / rollback = append-only 补偿」「Data Models」）**
+- [x] **5. edit plan 状态机（requirements SBE-10/SBE-11/SBE-12/SBE-14、design「Edit plan / commit / rollback = append-only 补偿」「Data Models」）**
+  - 状态：implemented（Stage 4 完成，见交付报告；任务 8.2 的登记动作随批次集成 sync 提交落地）
   - 5.1 实现 `packages/session-branch/lib/edit-plan.js`（纯函数核心，零 harness）：plan 记录形态（planId、targetSessionId、expectedVersion、range、**kind（调用方自定义，非空字符串、长度有界；调用方为插件时默认取调用方 plugin id，适配 `user`/plugin id/`goal` 等场景）**、externals[]、state `draft|success|error|aborted|denied|superseded`）——终态 final 且唯一，词汇与 SBE-10.5 逐字一致（identity-and-lifecycle §3）；非终态仅 `draft`。
   - 5.2 CAS 双检（SBE-10.1/10.4）：`plan()` 创建即校验 `expectedVersion === 当前 seq`（不匹配 typed conflict）；`commit()` 时再次 CAS 校验（漂移 → typed conflict，当前状态不动）。
   - 5.3 commit = 单 append surface-eligible `user/message` 事件（**2026-08-26 修订：自定义类型不能携带 surfaceOp，commit 本体必须落到 surface-eligible 类型上**）：`data.message` = plan 的 replacement 内容，`data.edit` = 内嵌审计块（`{kind(调用方自定义), planId, commitId, range, generation, actor, at, externals[]}`），`surfaceOp:{op:'replace', start, end}` 折叠删除被 shadow 节点（compaction 同款机制；目标范围可为多节点 N→1），`sourceEventSeqs` = 全部被 shadow surface 节点——一次 append 即原子提交点，观察者视角无半提交（SBE-10.3）；commit 成功后 plan 终态 `success`。
@@ -66,7 +71,8 @@ SPEC1 Stage 0 Goal、Stage 1 Requirements、Stage 2 Design 已确认（2026-08-2
   - 5.8 单元测试（`test/edit-plan.test.mjs`）：CAS 创建即拒与 commit 双检、终态唯一性（含 late 信号不改写）、补偿配对（commit↔revert：N→1 折叠后内容级恢复、1:1 精确恢复）、rollback 幂等（重复调用 typed no-op）、external-pending 出账、restore 验证失败 typed error、timeout 归 `error`（不新增终态）、`aborted > superseded > error` 同窗口裁决优先级、调用方自定义 kind 校验（非空/长度有界/插件缺省取 plugin id/非法拒绝）、`user/message` 内嵌 edit 审计块 round-trip（额外字段逐字段保持、派生消息只取 message）。
   - 覆盖 SBE-10.1–10.5、SBE-11.1–11.4、SBE-12.1–12.3、SBE-14.1/14.2/14.3/14.4。
 
-- [ ] **6. replacement apply 与 boot 自检（requirements SBE-1/SBE-4/SBE-5/SBE-6/SBE-13/SBE-15、design「Components and Interfaces」「Error Handling 与 guard」）**
+- [x] **6. replacement apply 与 boot 自检（requirements SBE-1/SBE-4/SBE-5/SBE-6/SBE-13/SBE-15、design「Components and Interfaces」「Error Handling 与 guard」）**
+  - 状态：implemented（Stage 4 完成，见交付报告；任务 8.2 的登记动作随批次集成 sync 提交落地）
   - 6.1 实现 `packages/session-branch/lib/apply.js`（fail-safe，绝不抛穿 apply）：identity 校验（runtime 全量版本、`@deepseek-ai/dsh-session` 包 identity、主包/本包版本一致，SBE-1）→ 官方行 disabled 断言 + 替代行 active 断言（SBE-4.1）→ 组件 owner 冲突检测（`Symbol.for('dsh-plugin-api.session-branch.contract')`：他人已注册 → 冲突诊断 + 正常 return，SBE-5.1/5.3；重复 insert / 目标行缺失 → fail-safe return，SBE-5.2）→ 契约探针（代表性 `sessions` 服务调用 + 事件接收）→ 委托装配。**身份校验通过时在 boot diagnostics 记录 verified identity，并在 metadata 标注覆盖本能力的 U-series 提案编号（SBE-1.4/SBE-6.2）。**
   - 6.2 自检失败/失配失败路径（SBE-4.2/4.3 + 契约 §4）：bounded 诊断 + 正常 return，不注册任何 branch 接口、绝不静默双跑；identity 失配只停用本 R 特性（官方行恢复续用），不波及主包门面（SBE-1.3）。
   - 6.3 branches 子接口注册（design 公开面 `sessions.branches`）：`create(parent, boundary, {kind, visibility?, retention?, inheritance?})`（校验边界复用官方 fork 严格性含 `OPEN_TURN/INVALID_BOUNDARY`，先 append `branch/created` 再官方 `fork`，失败补偿 §4.3）；`graph(sessionId)` 冻结投影（§4.4）；`plan/preview/commit/rollback/restore` 转发 edit-plan 状态机（任务 5）。typed 冲突/validation 结果；任何分支操作对既有 client cursor 按 1.3 核实结论显式处理（SBE-8.6）。branch 创建后 parent 既有事件 seq 集合不变、child 以独立 session 呈现（SBE-8.2），该断言落在 7.5 的 branch 集成测试。
@@ -75,7 +81,8 @@ SPEC1 Stage 0 Goal、Stage 1 Requirements、Stage 2 Design 已确认（2026-08-2
   - 6.6 boot 自检矩阵测试（`test/apply-matrix.test.mjs`）：官方行 absent/disabled/enabled × 版本匹配/失配 × owner 已注册/未注册 × 重复 insert/目标行缺失 → 各自 fail-safe 结果（inert/激活/官方回退），绝不双跑；卸载可逆（SBE-15.3）：替代行移除后官方行恢复、无残留 branch 状态要求；另含**激活成功态断言**：身份通过且装配成功后 boot diagnostics 记录了 verified identity 与提案编号（SBE-1.4/SBE-6.2）。
   - 覆盖 SBE-1、SBE-4.1–4.4、SBE-5.1–5.3、SBE-6.1/6.2、SBE-13.1–13.3、SBE-15.2/15.3。
 
-- [ ] **7. 主包 facade 装配（requirements SBE-15.1、契约 §2；design「host 门面侧」）**
+- [x] **7. 主包 facade 装配（requirements SBE-15.1、契约 §2；design「host 门面侧」）**
+  - 状态：implemented（Stage 4 完成，见交付报告；任务 8.2 的登记动作随批次集成 sync 提交落地）
   - 7.1 `lib/guards.js`：追加独立 `sessionBranch` feature guard 分支（probe：`ctx.get('sessions')` 可解析 + 替代行 contract marker 可检测；不修改他人 probe）。
   - 7.2 `lib/plugin-api-service.js`（追加式，契约 §2）：`// session-branch facade` 分隔注释注册块——`pluginApi.session.branches` 只读投影 + 操作入口转发至替代行 `sessions.branches`（惰性解析替代行 ctx 服务；替代行未激活/版本失配 → typed disabled 面，availability 如实）。`composeSessionApi` 组成路径内最小 add-on（偏离如实上报，见执行注）。
   - 7.3 `lib/index.js`（追加式）：`// session-branch facade` 分隔注释 import + `mountSessionBranchFacade`（featureRegistry 幂等短路；owner 构造失败 → 返回 null 由既有 fail-safe 路径禁用）+ `FEATURE_MOUNTERS` 条目（`session` 之后插入 `['sessionBranch', mountSessionBranchFacade]`）；主包不 import 辅助包（manifest 版本一致校验同 compaction-events/session-title 先例，失配仅停用本 R 特性）。
@@ -83,7 +90,8 @@ SPEC1 Stage 0 Goal、Stage 1 Requirements、Stage 2 Design 已确认（2026-08-2
   - 7.5 测试：`test/index-session-branch.test.mjs`（替代行 marker 激活/失配/未安装三态下的 facade 面、typed disabled、availability、与既有 session 面隔离）+ `test/compat-integration-lifecycle.test.mjs` 既有 feature-order 断言追加 `sessionBranch` 条目（本批正值 Wave A 合并窗口，按契约 §5 合并序 rebase 后统一更新基数）；含 branch create 后 parent 事件 seq 集合不变、child 独立 session 断言（SBE-8.2）。
   - 覆盖 SBE-15.1/15.4（facade 组合仅消费替代行公开面，R slice 不跨组件、横切派发语义不走 R）。
 
-- [ ] **8. 完成检查与交付**
+- [x] **8. 完成检查与交付**
+  - 状态：implemented（Stage 4 完成，见交付报告；任务 8.2 的登记动作随批次集成 sync 提交落地）
   - 8.1 全量回归：`npm test`（4G 护栏）全绿；`git diff --check` 干净；无冻结文件改动（契约 §3 清单逐一核对）；治理代号泄漏扫描（`packages/session-branch/**`、`lib/**` 新增行、`test/**`、`package.json`、patch 文件——SBE-/R 类/r1/需求编号/SPECx 等 token 不得出现）。
   - 8.2 治理登记（R7/SBE-6，登记动作随批次集成 sync 提交落地，本任务先在 spec 目录落实内容）：feature-list §7 追加本 feature 登记行（运行时名、owner、row id、design 要点、版本、U 提案编号）；U-series 新增一条覆盖 branch/edit 契约的提案（编号取 feature-list 现有最大编号 +1，登记时确认；退役条件：官方提供等价 branch/edit API 且消费者迁移）；requirements/design 状态行同步。
   - 8.3 修订注记：Stage 4 执行期间对 spec 文档的任何修订（任务 1 前置核查结论、1.3 cursor 核实结论、偏离记录）在 tasks.md 尾记录并列入交付报告。
@@ -107,3 +115,12 @@ SPEC1 Stage 0 Goal、Stage 1 Requirements、Stage 2 Design 已确认（2026-08-2
 | SBE-13 | 6.4 |
 | SBE-14 | 5.8、6.3（disposer 幂等 identity-bound） |
 | SBE-15 | 7.1–7.5、6.5 |
+## 8.3 修订注记（Stage 4 执行期，随交付报告）
+
+1. **机制修订（2026-08-26 人类裁决，路线 B，已并入 requirements/design/tasks）**：自定义事件类型不能携带 surfaceOp（官方 `isSurfaceEligibleType` 硬编码三种 message 类型，实测 `temp/m6-batch4-verify/edit-replace-roundtrip.mjs`）；surface replace 只能折叠/1:1 交换、不能展开恢复多节点形状（实测 `temp/m6-batch4-verify/replace3.mjs`）。commit 改为 single surface-eligible `user/message` replace（内嵌 `data.edit` 审计块，单 append 原子提交点不变）；rollback 改内容级恢复节点；`kind` 由调用方自定义（user / 调用方 plugin id / goal 等）。
+2. **编辑事件词汇**：不再使用自定义 `edit/committed` / `edit/reverted` 事件类型（运行时不可携带 surfaceOp）；编辑事件统一以 `user/message` + `data.edit.op = commit|revert|restore` 表达；`branch/created|failed` 保持自定义元数据事件（round-trip 实测成立）。
+3. **官方存储 round-trip 实测**：`decodeStorageRecord` 返回窗口嵌套数组，恢复路径需 `.flat()`（delegate-parity / edit-plan / branches.integration 三处测试均以此修复）；恢复事件计数比原始多 1 为官方自动追加的 `session/end-seed`（官方文档明示）。
+4. **cursor 显式处理结论（SBE-8.6 / 任务 1.3）**：client 面经官方 `surfaceOp` rewrite 重折叠，branch 创建为纯 append、commit/rollback 为官方 replace，均不会静默悬置 client cursor；被更新 commit shadow 的旧 commit 可逆性检查以 typed no-op 呈现（`rollback never reverts newer legitimate commits`），结论记录于 `lib/branch-log.js` 首部。
+5. **主门面装配偏离（契约 §2 记录义务）**：`pluginApi.session` getter 为 `configurable:false` 冻结组合产物，`session.branches` 经 `composeSessionApi(base, durable, branches)` 可选第三参最小 add-on 注入（`lib/plugin-api-service.js` 三处 `// session-branch facade` 段落）；FEATURE_MOUNTERS 插入 `session` 之后；`mountSessionBranchFeature` 导出供测试注入。
+6. **版本/dsh.api**：主包与全部辅助包维持 `0.1.0-rc.6-0.5 / 0.5`，递增由批次集成 sync 统一处理（契约 §2/§5）。
+7. **全局终审非阻塞意见落实**：激活日志补记 sole-owner 确认（SBE-5.3）与探针失败措辞修正（SBE-4）；`branches.create` 边界预检抛能力错误码并以注释说明官方码仍在 fork 成员面保留（SBE-8）；SBE-14.4 的 disposer 条款 v1 条件式空满足——v1 无公开 plan/branch disposer 面（plans 为内存句柄、随 owner 卸载清理），后续开放 disposer API 时落实；SBE-10.3 的"append 形式 kind"在 v1 为空满足（v1 仅 replace-form commit），注记留待后续；卸载可逆以矩阵"official enabled"用例 + patch 结构保证作代理。

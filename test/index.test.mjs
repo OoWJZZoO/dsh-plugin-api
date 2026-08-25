@@ -109,6 +109,7 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     { name: 'llm/admission', isActive: true },
     { name: 'security', isActive: true },
     { name: 'session', isActive: true },
+    { name: 'sessionBranch', isActive: false, reason: 'sessionBranch: feature mount did not produce a disposer; feature disabled' },
     { name: 'sessionDurable', isActive: true },
     { name: 'execRoute', isActive: true },
     { name: 'sessionRoute', isActive: true },
@@ -191,7 +192,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-  assert.equal(features.length, 25)
+  assert.equal(features.length, 26)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
@@ -203,23 +204,24 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.match(features[5].reason, /apiProxy/)
   assert.deepEqual(features[6], { name: 'security', isActive: true })
   assert.deepEqual(features[7], { name: 'session', isActive: true })
-  assert.deepEqual(features[8], { name: 'sessionDurable', isActive: true })
-  assert.deepEqual(features[9], { name: 'execRoute', isActive: true })
-  assert.deepEqual(features[10], { name: 'sessionRoute', isActive: true })
-  assert.deepEqual(features[11], { name: 'settings', isActive: true })
-  assert.deepEqual(features[12], { name: 'systemPrompt', isActive: true })
-  assert.deepEqual(features[13], { name: 'services', isActive: true })
-  assert.deepEqual(features[14], { name: 'typert', isActive: true })
-  assert.deepEqual(features[15], { name: 'settingsRemote', isActive: true })
-  assert.deepEqual(features[16], { name: 'remote', isActive: true })
-  assert.deepEqual(features[17], { name: 'execution', isActive: true })
-  assert.deepEqual(features[18], { name: 'recovery', isActive: true })
-  assert.deepEqual(features[19], { name: 'coordination', isActive: true })
-  assert.deepEqual(features[20], { name: 'workspaceTransactions', isActive: true })
-  assert.deepEqual(features[21], { name: 'diagnostics', isActive: true })
-  assert.deepEqual(features[22], { name: 'usage', isActive: true })
-  assert.deepEqual(features[23], { name: 'tasks', isActive: true })
-  assert.deepEqual(features[24], { name: 'toolDiscovery', isActive: true })
+  assert.deepEqual(features[8], { name: 'sessionBranch', isActive: false, reason: 'sessionBranch: feature mount did not produce a disposer; feature disabled' })
+  assert.deepEqual(features[9], { name: 'sessionDurable', isActive: true })
+  assert.deepEqual(features[10], { name: 'execRoute', isActive: true })
+  assert.deepEqual(features[11], { name: 'sessionRoute', isActive: true })
+  assert.deepEqual(features[12], { name: 'settings', isActive: true })
+  assert.deepEqual(features[13], { name: 'systemPrompt', isActive: true })
+  assert.deepEqual(features[14], { name: 'services', isActive: true })
+  assert.deepEqual(features[15], { name: 'typert', isActive: true })
+  assert.deepEqual(features[16], { name: 'settingsRemote', isActive: true })
+  assert.deepEqual(features[17], { name: 'remote', isActive: true })
+  assert.deepEqual(features[18], { name: 'execution', isActive: true })
+  assert.deepEqual(features[19], { name: 'recovery', isActive: true })
+  assert.deepEqual(features[20], { name: 'coordination', isActive: true })
+  assert.deepEqual(features[21], { name: 'workspaceTransactions', isActive: true })
+  assert.deepEqual(features[22], { name: 'diagnostics', isActive: true })
+  assert.deepEqual(features[23], { name: 'usage', isActive: true })
+  assert.deepEqual(features[24], { name: 'tasks', isActive: true })
+  assert.deepEqual(features[25], { name: 'toolDiscovery', isActive: true })
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),

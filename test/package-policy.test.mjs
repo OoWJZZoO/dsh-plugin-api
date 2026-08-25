@@ -13,10 +13,11 @@ const sessionTitle = readPackage('..', 'packages', 'session-title', 'package.jso
 const mcp = readPackage('..', 'packages', 'mcp', 'package.json')
 const attachments = readPackage('..', 'packages', 'attachments', 'package.json')
 const routePolicy = readPackage('..', 'packages', 'agent-loop', 'package.json')
+const sessionBranch = readPackage('..', 'packages', 'session-branch', 'package.json')
 const full = readPackage('..', 'packages', 'full', 'package.json')
 
 test('main, auxiliary, and full packages all share the unified full-version + dsh.api policy', () => {
-  for (const pkg of [main, compaction, sessionTitle, mcp, attachments, routePolicy, full]) {
+  for (const pkg of [main, compaction, sessionTitle, mcp, attachments, routePolicy, sessionBranch, full]) {
     assert.match(pkg.version, /^(.+)-(\d+\.\d+)$/, `${pkg.name}: full unique version shape`)
     assert.equal(pkg.version.match(/^(.+)-(\d+\.\d+)$/)[2], pkg.dsh.api, `${pkg.name}: version suffix must equal dsh.api`)
     assert.equal(pkg.dsh.api, main.dsh.api, `${pkg.name}: API protocol must equal the main package`)
@@ -27,7 +28,7 @@ test('main, auxiliary, and full packages all share the unified full-version + ds
 })
 
 test('the auxiliary packages do not declare the main package as a runtime dependency', () => {
-  for (const pkg of [compaction, sessionTitle, mcp, attachments, routePolicy]) {
+  for (const pkg of [compaction, sessionTitle, mcp, attachments, routePolicy, sessionBranch]) {
     assert.ok(!pkg.dependencies?.['@deepseek-ai/dsh-plugin-api-main'], pkg.name)
     assert.ok(!pkg.peerDependencies?.['@deepseek-ai/dsh-plugin-api-main'], `${pkg.name}: version consistency is enforced by apply-time metadata check`)
   }
@@ -41,6 +42,7 @@ test('the full aggregate bundle depends on main and every auxiliary package at w
     '@deepseek-ai/dsh-plugin-api-mcp': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-attachments': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-agent-loop': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-session-branch': 'workspace:*',
   })
   assert.equal(full.dsh.bundle.patch, './cordis.patch.yml')
 })
@@ -50,6 +52,7 @@ test('replacement row ids use capability names without governance suffixes', () 
   const titlePatch = readFileSync(join(here, '..', 'packages', 'session-title', 'cordis.patch.yml'), 'utf8')
   const attachmentPatch = readFileSync(join(here, '..', 'packages', 'attachments', 'cordis.patch.yml'), 'utf8')
   const routePolicyPatch = readFileSync(join(here, '..', 'packages', 'agent-loop', 'cordis.patch.yml'), 'utf8')
+  const sessionBranchPatch = readFileSync(join(here, '..', 'packages', 'session-branch', 'cordis.patch.yml'), 'utf8')
   const fullPatch = readFileSync(join(here, '..', 'packages', 'full', 'cordis.patch.yml'), 'utf8')
   assert.match(compactionPatch, /id: plugin-api-compaction-events/)
   assert.doesNotMatch(compactionPatch, /r1/)
@@ -59,10 +62,14 @@ test('replacement row ids use capability names without governance suffixes', () 
   assert.match(routePolicyPatch, /id: agent-loop[\s\S]*disabled: true/)
   assert.match(routePolicyPatch, /id: plugin-api-agent-loop/)
   assert.doesNotMatch(attachmentPatch, /r1/)
+  assert.match(sessionBranchPatch, /id: session[\s\S]*disabled: true/)
+  assert.match(sessionBranchPatch, /id: plugin-api-session-branch/)
+  assert.doesNotMatch(sessionBranchPatch, /r1/)
   assert.match(fullPatch, /id: plugin-api-main/)
   assert.match(fullPatch, /id: plugin-api-compaction-events/)
   assert.match(fullPatch, /id: plugin-api-session-title/)
   assert.match(fullPatch, /id: plugin-api-attachments/)
   assert.match(fullPatch, /id: plugin-api-agent-loop/)
+  assert.match(fullPatch, /id: plugin-api-session-branch/)
   assert.doesNotMatch(fullPatch, /r1/)
 })

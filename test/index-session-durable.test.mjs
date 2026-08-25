@@ -115,6 +115,7 @@ test('apply mounts sessionDurable immediately after session without extending th
     'llm/admission',
     'security',
     'session',
+    'sessionBranch',
     'sessionDurable',
     'execRoute',
     'sessionRoute',

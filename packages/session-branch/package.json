@@ -1,0 +1,41 @@
+{
+  "name": "@deepseek-ai/dsh-plugin-api-session-branch",
+  "description": "Replacement bundle for @deepseek-ai/dsh-session: faithful thin-delegate of the sessions service/event face plus a branch/edit contract over the official session log.",
+  "version": "0.1.0-rc.6-0.5",
+  "type": "module",
+  "main": "lib/apply.js",
+  "exports": {
+    ".": "./lib/apply.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "api": "0.5",
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-session": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-llm": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-scope": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-typert-protocol": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-invariants": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-brand": "^0.1.0-rc.6",
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-invariants": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-brand": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@deepseek-ai/dsh-app-boot": "^0.1.0-rc.6"
+  }
+}
