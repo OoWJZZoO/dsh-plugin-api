@@ -1,7 +1,7 @@
 # AGENTS.md — dsh-plugin-api
 
 本文件是 `dsh-plugin-api` 仓库的 AI 编码代理与人类维护者指南。**先读完再动手。**
-仓库采用 **spec coding 工作流**：新 feature 必须按 Stage 0–4 推进（Stage 0–2 经人类确认门，Stage 3 以对抗性审查为门）；已交付 feature 允许按获批 Tasks 维护实现、测试与文档。当前 M6 第三批三个 feature（`coordination-lease` / `workspace-mutation-transaction` / `task-execution-observation`）已完成 Stage 2 Design 确认，后续新增或重构仍须遵守本工作流。
+仓库采用 **spec coding 工作流**：新 feature 必须按 Stage 0–4 推进（Stage 0–2 经人类确认门，Stage 3 以对抗性审查为门）；已交付 feature 允许按获批 Tasks 维护实现、测试与文档。后续新增或重构仍须遵守本工作流。
 
 ---
 
@@ -171,7 +171,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 3. 事件 API 保留 Cordis 的 `ctx.on` + `emit/serial/parallel/waterfall`，只增加稳定类型、只读 payload 与 `priority`（lowest/low/normal/high/highest/monitor）。
 4. 需要优先“转译”的语义钩子：
    - 同步 `llm/request`（基于 `llm/stream` 重入，必须幂等收敛）
-   - 语义化 `llm/admission`（首个 feature 定为 `llm-image-admission`：第三方只声明“本会话/请求需要图片准入且承诺投影”，不公开 ModelInfo 变更；`resolveModelInfo` 包装仅作 B 类隐藏实现，并附 C 类上游提案）
+   - 语义化 `llm/admission`（第三方只声明“本会话/请求需要图片准入且承诺投影”，不公开 ModelInfo 变更；`resolveModelInfo` 包装仅作 B 类隐藏实现，并附 C 类上游提案）
    - `exec.route` / `routeOf(exec)`（基于 `agent.session.requestContext()` 或 `tools/pre-execute` 注入）
    - settings 可视化配置桥（`TypertRemoteService` + 客户端 `ctx.remote.$mount`）
    - session 上屏事件构造 helper（封装 `surfaceOp` / `sourceEventSeqs`）
@@ -247,4 +247,5 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 ## 8. 交付登记与规范目录（防过期）
 
 > 已交付 feature 的逐项登记表（范围、状态、Spec 目录、关键约束/设计）自 2026-08-21 起迁至 `docs/specs/plugin-api-features/feature-list.md` §7，本文不再保留登记表，避免双源漂移。规则不变：每个 feature 在 Stage 4 交付后，必须在该节追加条目并同步对应状态；公开 API 形状或里程碑状态变化时同步更新，防止文档过期过时（§3.0.1 中"登记为 delivered"即指该登记表）。
+> 本文件自身**不记录任何 feature 的进度/里程碑状态**（进度以各 feature spec 目录的状态行与 feature-list §7 登记为准）；修改本文件时不得引入"当前完成了xxx"式的进度表述。
 > 全局 feature 设计规范统一收于 `docs/standards/`（`README.md` 为索引；分册：`capability-strategy.md` 能力策略、`api-shape.md` API 形状、`identity-and-lifecycle.md` 身份与生命周期、`durable-state-and-scope.md` 持久状态与作用域、`visibility-and-redaction.md` 可见性、`concurrency-and-cancellation.md` 并发与取消；`stage0-common-questions.md` 已弃用作溯源）；新增全局规范落盘该目录并在 §6 登记。
