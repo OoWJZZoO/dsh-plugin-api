@@ -107,6 +107,7 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     { name: 'llm', isActive: true },
     { name: 'llm/request', isActive: true },
     { name: 'llm/admission', isActive: true },
+    { name: 'security', isActive: true },
     { name: 'session', isActive: true },
     { name: 'sessionDurable', isActive: true },
     { name: 'execRoute', isActive: true },
@@ -187,7 +188,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-  assert.equal(features.length, 23)
+  assert.equal(features.length, 24)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -196,23 +197,24 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.equal(features[5].name, 'llm/admission')
   assert.equal(features[5].isActive, false)
   assert.match(features[5].reason, /apiProxy/)
-  assert.deepEqual(features[6], { name: 'session', isActive: true })
-  assert.deepEqual(features[7], { name: 'sessionDurable', isActive: true })
-  assert.deepEqual(features[8], { name: 'execRoute', isActive: true })
-  assert.deepEqual(features[9], { name: 'sessionRoute', isActive: true })
-  assert.deepEqual(features[10], { name: 'settings', isActive: true })
-  assert.deepEqual(features[11], { name: 'systemPrompt', isActive: true })
-  assert.deepEqual(features[12], { name: 'services', isActive: true })
-  assert.deepEqual(features[13], { name: 'typert', isActive: true })
-  assert.deepEqual(features[14], { name: 'settingsRemote', isActive: true })
-  assert.deepEqual(features[15], { name: 'remote', isActive: true })
-  assert.deepEqual(features[16], { name: 'execution', isActive: true })
-  assert.deepEqual(features[17], { name: 'recovery', isActive: true })
-  assert.deepEqual(features[18], { name: 'coordination', isActive: true })
-  assert.deepEqual(features[19], { name: 'workspaceTransactions', isActive: true })
-  assert.deepEqual(features[20], { name: 'diagnostics', isActive: true })
-  assert.deepEqual(features[21], { name: 'usage', isActive: true })
-  assert.deepEqual(features[22], { name: 'tasks', isActive: true })
+  assert.deepEqual(features[6], { name: 'security', isActive: true })
+  assert.deepEqual(features[7], { name: 'session', isActive: true })
+  assert.deepEqual(features[8], { name: 'sessionDurable', isActive: true })
+  assert.deepEqual(features[9], { name: 'execRoute', isActive: true })
+  assert.deepEqual(features[10], { name: 'sessionRoute', isActive: true })
+  assert.deepEqual(features[11], { name: 'settings', isActive: true })
+  assert.deepEqual(features[12], { name: 'systemPrompt', isActive: true })
+  assert.deepEqual(features[13], { name: 'services', isActive: true })
+  assert.deepEqual(features[14], { name: 'typert', isActive: true })
+  assert.deepEqual(features[15], { name: 'settingsRemote', isActive: true })
+  assert.deepEqual(features[16], { name: 'remote', isActive: true })
+  assert.deepEqual(features[17], { name: 'execution', isActive: true })
+  assert.deepEqual(features[18], { name: 'recovery', isActive: true })
+  assert.deepEqual(features[19], { name: 'coordination', isActive: true })
+  assert.deepEqual(features[20], { name: 'workspaceTransactions', isActive: true })
+  assert.deepEqual(features[21], { name: 'diagnostics', isActive: true })
+  assert.deepEqual(features[22], { name: 'usage', isActive: true })
+  assert.deepEqual(features[23], { name: 'tasks', isActive: true })
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),
@@ -225,10 +227,13 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.equal(typeof services.llm.resolveModelInfo, 'function')
   // The request owner stays available; admission disabled without a gateway.
   // The execution llm source adapter and the usage intake add one listener each.
-  assert.equal(state.listeners.filter((l) => l.name === 'llm/stream').length, 3)
+  // The security facade stream listener is registered after the request
+  // owner's (model-request-before evaluates the effective request).
+  assert.equal(state.listeners.filter((l) => l.name === 'llm/stream').length, 4)
   // One facade pre-execute listener plus one execution tools source adapter
-  // plus one workspace-transaction evidence intake observer.
-  assert.equal(state.listeners.filter((l) => l.name === 'tools/pre-execute').length, 3)
+  // plus one workspace-transaction evidence intake observer plus one security
+  // facade listener.
+  assert.equal(state.listeners.filter((l) => l.name === 'tools/pre-execute').length, 4)
 })
 
 test('repeated apply reuses the existing branded service and does not provide twice', () => {
@@ -240,9 +245,9 @@ test('repeated apply reuses the existing branded service and does not provide tw
   assert.equal(state.provideCount, 1)
   assert.equal(state.pluginApi, firstService)
   assert.equal(state.pluginApi.isActive, true)
-  // One facade request listener plus execution/usage llm/stream listeners; a
-  // repeated apply must not add more.
-  assert.equal(state.listeners.filter((l) => l.name === 'llm/stream').length, 3)
+  // One facade request listener plus execution/usage llm/stream listeners
+  // plus one security facade listener; a repeated apply must not add more.
+  assert.equal(state.listeners.filter((l) => l.name === 'llm/stream').length, 4)
 })
 
 test('runtime version mismatch (core inert) does not intercept a direct internal-package interaction', () => {

@@ -138,17 +138,17 @@ test('tools active: apply mounts pluginApi.tools and extends the events catalog 
   assert.equal(state.pluginApi.tools.isActive, true)
 
   const features = state.pluginApi.features
-  assert.equal(features.length, 23)
+  assert.equal(features.length, 24)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
   assert.deepEqual(features[3], { name: 'llm', isActive: true })
   assert.deepEqual(features[4], { name: 'llm/request', isActive: true })
   assert.deepEqual(features[5], { name: 'llm/admission', isActive: true })
-  assert.deepEqual(features[6], { name: 'session', isActive: true })
-  assert.deepEqual(features[7], { name: 'sessionDurable', isActive: true })
-  assert.deepEqual(features[8], { name: 'execRoute', isActive: true })
-  assert.deepEqual(features[9], { name: 'sessionRoute', isActive: true })
+  assert.deepEqual(features[6], { name: 'security', isActive: true })
+  assert.deepEqual(features[7], { name: 'session', isActive: true })
+  assert.deepEqual(features[8], { name: 'sessionDurable', isActive: true })
+  assert.deepEqual(features[9], { name: 'execRoute', isActive: true })
 
   const catalog = state.pluginApi.events.catalog
   assert.equal(catalog['tools/change']?.mode, 'emit')
@@ -174,7 +174,7 @@ test('tools guard failure disables only tools and keeps the events catalog at ba
   assert.equal(state.pluginApi.isActive, true)
 
   const features = state.pluginApi.features
-  assert.equal(features.length, 23)
+  assert.equal(features.length, 24)
   assert.equal(features[0].name, 'tools')
   assert.equal(features[0].isActive, false)
   assert.match(features[0].reason, /tools service/)
@@ -183,11 +183,12 @@ test('tools guard failure disables only tools and keeps the events catalog at ba
   assert.deepEqual(features[3], { name: 'llm', isActive: true })
   assert.deepEqual(features[4], { name: 'llm/request', isActive: true })
   assert.deepEqual(features[5], { name: 'llm/admission', isActive: true })
-  assert.deepEqual(features[6], { name: 'session', isActive: true })
-  assert.deepEqual(features[7], { name: 'sessionDurable', isActive: true })
-  assert.equal(features[8].name, 'execRoute')
-  assert.equal(features[8].isActive, false)
-  assert.match(features[8].reason, /execRoute cannot resolve the official tools service/)
+  assert.deepEqual(features[6], { name: 'security', isActive: true })
+  assert.deepEqual(features[7], { name: 'session', isActive: true })
+  assert.deepEqual(features[8], { name: 'sessionDurable', isActive: true })
+  assert.equal(features[9].name, 'execRoute')
+  assert.equal(features[9].isActive, false)
+  assert.match(features[9].reason, /execRoute cannot resolve the official tools service/)
 
   assert.equal(state.pluginApi.events.catalog['session/created']?.mode, 'emit')
   assert.equal(state.pluginApi.events.catalog['tools/change'], undefined)

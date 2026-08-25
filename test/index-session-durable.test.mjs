@@ -113,6 +113,7 @@ test('apply mounts sessionDurable immediately after session without extending th
     'llm',
     'llm/request',
     'llm/admission',
+    'security',
     'session',
     'sessionDurable',
     'execRoute',
