@@ -37,7 +37,7 @@ flowchart LR
 | remote face availability | 复用 M3 C2 `mountRemoteContribution` 的官方 `ctx.remote.$mount` 生命周期 | B（官方服务组合） |
 | slot declaration epoch | 官方 `ctx.slots.inject(key, callback)` 的 declaration-lifetime effect（内部已按官方 declaration epoch 重跑）+ `slots/changed`；facade 以 inject 重入为 epoch 边界，不读官方私有计数 | B（官方服务直绑） |
 | settings revision | 官方 `settingsScope.bind(spec)` 的 `getSnapshot/subscribe`（M3 C3） | B（官方服务直绑） |
-| HMR / module arrival | 官方 `clientModules` 图监听与 `modules.invalidate`（M4 C10/SV24）作为证据源 | B（官方服务直绑） |
+| HMR / module arrival | 官方公开 `clientModules` module graph、load-cache 与 invalidation 面（M4 C10/SV24）作为证据源；不读取私有 `generation`/`attempt` | B（官方服务直绑） |
 | 官方统一 client lifecycle/rebind seam | 当前不存在 | C / U12 upstream proposal |
 | replacement / 自建 browser bundle | 不采用 | 无 R |
 
@@ -57,7 +57,7 @@ Host 侧不新增注册服务：runtime 版本来自官方 `host.describe`（`{v
 | `settings` | `settingsScope.bind(spec)` 的 status/revision | `status: 'unavailable'`、revision 变化、bind 失效 |
 | `modules` | module graph / `loadCache` 变更（HMR invalidate） | 图 rev 变化 |
 
-任一 adapter 缺失或失败只使该证据源 `degraded/unavailable`，不关闭其他 adapter 或整个 lifecycle facade。
+核心官方 client 服务缺失或 malformed，或 lifecycle registry 初始化失败时，`clientLifecycle` 才允许返回 disabled/inert surface；该失败必须记录安全诊断并继续 client boot。核心服务已存在且 registry 已初始化后，单个 adapter/evidence 缺失或失败只使对应证据源与受影响 face `degraded/unavailable`，不关闭其他 adapter、无关 face 或整个 lifecycle facade。
 
 ### C2. Face registry and availability projection
 
@@ -90,7 +90,7 @@ pluginApi.client.lifecycle.scan()                 // 只读诊断扫描（见 C5
 - 注册要求 faceId/ownerId/`require`/bind/disposer/`scope: 'client'`（v1 唯一支持 scope）齐备；重复 `(ownerId, faceId, generation)` mount 返回既有 identity-scoped handle 或 typed reject，**不创建第二个 live registration**。每次 bind 记录一个 owner-local `contributionId`（CG-1）。
 - generation 是 owner-local opaque token：由 facade 为每次 rebind 生成，只用于判定旧回调/旧 disposer 是否被取代，不跨 owner 比较；owner 需要排序时另带 owner-local revision（CG-1）。
 - availability 状态词汇：`available | pending | unavailable | degraded | disposed`，与 execution outcome 词汇隔离。snapshot 含 `faceId/ownerId/generation/capabilities/state/epochs/reasons/observedAt` 与当前 `contributionId/contributionEpoch`，深冻结。
-- 每个 domain 的 epoch 独立保留（CG-3）：`connection` 是 facade 从官方 `connection/reset` + hostDescription 变换推导的 owner-local epoch（官方 controller 的 generation/attempt 是 instance-private，不得当作公开读数）；`remote` 只随该 namespace mount/unmount；`slot` 以官方 `slots.inject` 的 declaration-lifetime 重入为边界；`settings` 采用 host revision。browser refresh、SSE reconnect、Typert schema revision、slot declaration epoch、settings revision 即使同区间发生也保留各自 cause，绝不合并为一个数字。
+- 每个 domain 的 epoch 独立保留（CG-3）：`connection` 是 facade 从官方 `connection/reset` + hostDescription 变换推导的 owner-local epoch（官方 controller 的 generation/attempt 是 instance-private，不得当作公开读数）；`modules` 只随官方公开 module graph/load-cache/invalidation 面的变化而变化，不读取私有 `generation`/`attempt`；`remote` 只随该 namespace mount/unmount；`slot` 以官方 `slots.inject` 的 declaration-lifetime 重入为边界；`settings` 采用 host revision。browser refresh、SSE reconnect、module arrival/HMR、Typert schema revision、slot declaration epoch、settings revision 即使同区间发生也保留五个独立 cause/epoch，绝不合并为一个数字。
 
 ### C3. Bind scheduler and rebind lifecycle
 
@@ -128,6 +128,7 @@ type AvailabilitySnapshot = Readonly<{
   state: FaceState
   epochs: Readonly<{
     connection?: string             // opaque connection generation evidence
+    modules?: string                // public module graph/load-cache/invalidation epoch
     remote?: string                 // per-namespace mount epoch
     slot?: number                   // official declarationEpoch
     settings?: number | string      // host revision
@@ -166,19 +167,19 @@ State 是生命周期投影，不是 execution outcome；`disposed` 表示 face 
 
 ## Error Handling and Fail-Safe
 
-注册校验失败、bind 抛错/reject、disposer 抛错、listener 失败、adapter 失败均 contained 于对应 face；facade 服务缺失时 feature inert（`pluginApi.client.lifecycle` 返回 disabled surface），client boot 继续。任何 repair/自动 recovery/transport 协议/profile mutation/跨 owner generation 比较请求 typed reject。单个 contribution 失败只使自身 `degraded/unavailable`，不关闭整个 client facade（CG-2/CG-4）。
+核心官方 client 服务缺失或 malformed，或 lifecycle registry 初始化失败时，feature inert（`pluginApi.client.lifecycle` 返回 disabled surface），并记录安全诊断后继续 client boot。核心服务可用且 registry 已初始化后，adapter/evidence 失败只使受影响 face `degraded/unavailable`；注册校验失败、bind 抛错/reject、listener/evidence subscriber 失败、disposer cleanup 失败与 diagnostic emission 失败均须在对应 face、listener、contribution 或 diagnostic 边界内 contained，不关闭 lifecycle facade、无关 face 或 client boot（CG-2/CG-4/CG-7）。任何 repair/自动 recovery/transport 协议/profile mutation/跨 owner generation 比较请求 typed reject。单个 contribution 失败只使自身 `degraded/unavailable`。
 
 ## Testing Strategy
 
 Focused tests SHALL cover：
 
-1. owner-local generation 与 revision 分离、跨 owner 不比较、connection/remote/slot/settings 四个 epoch 独立前进（含同区间 refresh+reconnect+schema revision 并发）。
+1. owner-local generation 与 revision 分离、跨 owner 不比较、connection/modules/remote/slot/settings 五个 epoch 独立前进；modules 只由官方公开 module graph/load-cache/invalidation 证据推进，不读取私有 generation/attempt；含同区间 refresh+reconnect+HMR+schema revision 并发。
 2. registration 契约：缺失 faceId/owner/bind/disposer/scope 拒绝；重复 mount 复用或拒绝；availability snapshot 冻结与状态词汇。
 3. bind/rebind：evidence 齐备后一次 bind、失效后 disposer 至多一次、再次可用以新 epoch 重绑、partial bind 失败只清理自身、通知含 old/new generation 与 reason。
 4. stale guard：晚到 Promise/HMR 回调/reconnect 旧回调在 dispose/replacement 后不能发布状态、不能注册、不能调用新 disposer；bounded stale diagnostic。
 5. 官方契约保真：经 C2/C3/C4/C5 既有 facade 调用的官方成员名、payload、disposer 所有权与错误不被重定义。
 6. diagnostics/redaction：contractVersion 缺失与不匹配降级、diagnostic 发射失败不影响 lifecycle、payload/settings/凭据不出现在投影。
-7. fail-safe：官方服务缺失/监听器抛错/apply 异常时 feature inert，client boot 不中断。
+7. fail-safe：核心官方服务缺失或 malformed、或 lifecycle registry 初始化失败时 feature inert，client boot 不中断；adapter/evidence 失败只局部降级，listener/evidence subscriber、disposer cleanup 与 diagnostic emission 失败均 contained，不关闭 facade、无关 face 或 client boot。
 
 Tests use local client fixtures over the audited official services；不声称修复或重连保证。
 
