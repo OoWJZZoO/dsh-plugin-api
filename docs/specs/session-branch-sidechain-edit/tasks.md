@@ -66,12 +66,12 @@ SPEC1 Stage 0 Goal、Stage 1 Requirements、Stage 2 Design 已确认（2026-08-2
   - 覆盖 SBE-10.1–10.5、SBE-11.1–11.4、SBE-12.1–12.3、SBE-14.1/14.2/14.3/14.4。
 
 - [ ] **6. replacement apply 与 boot 自检（requirements SBE-1/SBE-4/SBE-5/SBE-6/SBE-13/SBE-15、design「Components and Interfaces」「Error Handling 与 guard」）**
-  - 6.1 实现 `packages/session-branch/lib/apply.js`（fail-safe，绝不抛穿 apply）：identity 校验（runtime 全量版本、`@deepseek-ai/dsh-session` 包 identity、主包/本包版本一致，SBE-1）→ 官方行 disabled 断言 + 替代行 active 断言（SBE-4.1）→ 组件 owner 冲突检测（`Symbol.for('dsh-plugin-api.session-branch.contract')`：他人已注册 → 冲突诊断 + 正常 return，SBE-5.1/5.3；重复 insert / 目标行缺失 → fail-safe return，SBE-5.2）→ 契约探针（代表性 `sessions` 服务调用 + 事件接收）→ 委托装配。
+  - 6.1 实现 `packages/session-branch/lib/apply.js`（fail-safe，绝不抛穿 apply）：identity 校验（runtime 全量版本、`@deepseek-ai/dsh-session` 包 identity、主包/本包版本一致，SBE-1）→ 官方行 disabled 断言 + 替代行 active 断言（SBE-4.1）→ 组件 owner 冲突检测（`Symbol.for('dsh-plugin-api.session-branch.contract')`：他人已注册 → 冲突诊断 + 正常 return，SBE-5.1/5.3；重复 insert / 目标行缺失 → fail-safe return，SBE-5.2）→ 契约探针（代表性 `sessions` 服务调用 + 事件接收）→ 委托装配。**身份校验通过时在 boot diagnostics 记录 verified identity，并在 metadata 标注覆盖本能力的 U-series 提案编号（SBE-1.4/SBE-6.2）。**
   - 6.2 自检失败/失配失败路径（SBE-4.2/4.3 + 契约 §4）：bounded 诊断 + 正常 return，不注册任何 branch 接口、绝不静默双跑；identity 失配只停用本 R 特性（官方行恢复续用），不波及主包门面（SBE-1.3）。
-  - 6.3 branches 子接口注册（design 公开面 `sessions.branches`）：`create(parent, boundary, {kind, visibility?, retention?, inheritance?})`（校验边界复用官方 fork 严格性含 `OPEN_TURN/INVALID_BOUNDARY`，先 append `branch/created` 再官方 `fork`，失败补偿 §4.3）；`graph(sessionId)` 冻结投影（§4.4）；`plan/preview/commit/rollback/restore` 转发 edit-plan 状态机（任务 5）。typed 冲突/validation 结果；任何分支操作对既有 client cursor 按 1.3 核实结论显式处理（SBE-8.6）。
+  - 6.3 branches 子接口注册（design 公开面 `sessions.branches`）：`create(parent, boundary, {kind, visibility?, retention?, inheritance?})`（校验边界复用官方 fork 严格性含 `OPEN_TURN/INVALID_BOUNDARY`，先 append `branch/created` 再官方 `fork`，失败补偿 §4.3）；`graph(sessionId)` 冻结投影（§4.4）；`plan/preview/commit/rollback/restore` 转发 edit-plan 状态机（任务 5）。typed 冲突/validation 结果；任何分支操作对既有 client cursor 按 1.3 核实结论显式处理（SBE-8.6）。branch 创建后 parent 既有事件 seq 集合不变、child 以独立 session 呈现（SBE-8.2），该断言落在 7.5 的 branch 集成测试。
   - 6.4 sidechain 继承声明（SBE-13）：`create` 选项接受 route/memory/attachments/toolState 显式继承选择；未声明 → documented 最小默认 + 记录 effective inheritance 于 branch 记录；继承资源在 child 上下文不可用 → child degraded 启动 + gap 记录，不伪造继承状态（SBE-13.1/13.2/13.3）。
   - 6.5 诊断上报（SBE-15.2）：check 失败/策略回调反复抛错 → 经 plugin diagnostics 带 owner 归因上报（bounded）；不可用 → 降级 logger + availability 如实；禁止裸 console。
-  - 6.6 boot 自检矩阵测试（`test/apply-matrix.test.mjs`）：官方行 absent/disabled/enabled × 版本匹配/失配 × owner 已注册/未注册 × 重复 insert/目标行缺失 → 各自 fail-safe 结果（inert/激活/官方回退），绝不双跑；卸载可逆（SBE-15.3）：替代行移除后官方行恢复、无残留 branch 状态要求。
+  - 6.6 boot 自检矩阵测试（`test/apply-matrix.test.mjs`）：官方行 absent/disabled/enabled × 版本匹配/失配 × owner 已注册/未注册 × 重复 insert/目标行缺失 → 各自 fail-safe 结果（inert/激活/官方回退），绝不双跑；卸载可逆（SBE-15.3）：替代行移除后官方行恢复、无残留 branch 状态要求；另含**激活成功态断言**：身份通过且装配成功后 boot diagnostics 记录了 verified identity 与提案编号（SBE-1.4/SBE-6.2）。
   - 覆盖 SBE-1、SBE-4.1–4.4、SBE-5.1–5.3、SBE-6.1/6.2、SBE-13.1–13.3、SBE-15.2/15.3。
 
 - [ ] **7. 主包 facade 装配（requirements SBE-15.1、契约 §2；design「host 门面侧」）**
@@ -79,7 +79,7 @@ SPEC1 Stage 0 Goal、Stage 1 Requirements、Stage 2 Design 已确认（2026-08-2
   - 7.2 `lib/plugin-api-service.js`（追加式，契约 §2）：`// session-branch facade` 分隔注释注册块——`pluginApi.session.branches` 只读投影 + 操作入口转发至替代行 `sessions.branches`（惰性解析替代行 ctx 服务；替代行未激活/版本失配 → typed disabled 面，availability 如实）。`composeSessionApi` 组成路径内最小 add-on（偏离如实上报，见执行注）。
   - 7.3 `lib/index.js`（追加式）：`// session-branch facade` 分隔注释 import + `mountSessionBranchFacade`（featureRegistry 幂等短路；owner 构造失败 → 返回 null 由既有 fail-safe 路径禁用）+ `FEATURE_MOUNTERS` 条目（`session` 之后插入 `['sessionBranch', mountSessionBranchFacade]`）；主包不 import 辅助包（manifest 版本一致校验同 compaction-events/session-title 先例，失配仅停用本 R 特性）。
   - 7.4 既有 facade session 能力兼容（SBE-15.1）：替代行激活时 durable observation、受限 append、fork passthrough probes 在替代面上无语义变化（回归断言）。
-  - 7.5 测试：`test/index-session-branch.test.mjs`（替代行 marker 激活/失配/未安装三态下的 facade 面、typed disabled、availability、与既有 session 面隔离）+ `test/compat-integration-lifecycle.test.mjs` 既有 feature-order 断言追加 `sessionBranch` 条目（本批正值 Wave A 合并窗口，按契约 §5 合并序 rebase 后统一更新基数）。
+  - 7.5 测试：`test/index-session-branch.test.mjs`（替代行 marker 激活/失配/未安装三态下的 facade 面、typed disabled、availability、与既有 session 面隔离）+ `test/compat-integration-lifecycle.test.mjs` 既有 feature-order 断言追加 `sessionBranch` 条目（本批正值 Wave A 合并窗口，按契约 §5 合并序 rebase 后统一更新基数）；含 branch create 后 parent 事件 seq 集合不变、child 独立 session 断言（SBE-8.2）。
   - 覆盖 SBE-15.1/15.4（facade 组合仅消费替代行公开面，R slice 不跨组件、横切派发语义不走 R）。
 
 - [ ] **8. 完成检查与交付**
@@ -96,9 +96,9 @@ SPEC1 Stage 0 Goal、Stage 1 Requirements、Stage 2 Design 已确认（2026-08-2
 | SBE-3 (R3) | 3.1（组合而非再导出）、2.2 注释 |
 | SBE-4 (R4) | 2.2/2.4、6.1/6.2/6.6 |
 | SBE-5 (R6) | 6.1/6.6 |
-| SBE-6 (R7) | 8.2 |
+| SBE-6 (R7) | 8.2、6.1/6.5 |
 | SBE-7 (host-only) | 1.2（design Matrix 已留证，无 client 面） |
-| SBE-8 | 4.1–4.3、6.3（+1.3 cursor） |
+| SBE-8 | 4.1–4.3、6.3（+1.3 cursor）、7.5（SBE-8.2 显式断言） |
 | SBE-9 | 4.1/4.4 |
 | SBE-10 | 5.1/5.2/5.3/5.8 |
 | SBE-11 | 5.4/5.5/5.8 |
