@@ -35,7 +35,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (CL-1
 
 ## Tasks
 
-- [ ] 1. Implement the dependency-free identity normalization and validation.
+- [x] 1. Implement the dependency-free identity normalization and validation.
   - Add a pure `lib/coordination-normalize.js` module (zero harness
     dependencies) that normalizes resource identity (`scope` in
     session/workspace/profile/process, canonical bounded non-empty `key`,
@@ -65,7 +65,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (CL-1
     and redaction-failure fail-closed. Cover CL-1, the projection portions of
     CL-8, and the normalization portions of CL-9.
 
-- [ ] 2. Implement the adapters (memory-scoped default + storage-domain bridge)
+- [x] 2. Implement the adapters (memory-scoped default + storage-domain bridge)
     with per-resource serialized lanes.
   - Add `lib/coordination-adapters.js` implementing the internal adapter
     contract from the design (`capabilities`, `read`, `acquire`, `heartbeat`,
@@ -114,7 +114,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (CL-1
     upgrades the capability projection. Cover CL-2..CL-6 and CL-8 adapter
     portions.
 
-- [ ] 3. Implement the host owner facade with typed outcomes and adapter
+- [x] 3. Implement the host owner facade with typed outcomes and adapter
     selection.
   - Add `lib/coordination-lease.js` exporting `createCoordinationLease({ ctx,
     logger, now, idFactory })` returning `{ api, dispose, availability }`; the
@@ -156,7 +156,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (CL-1
     confirmed vs absent), backend failure containment (CL-8.4), and mount-time
     availability snapshot. Cover CL-2..CL-6 and CL-8.
 
-- [ ] 4. Implement the watch surface with epoch, resync truthfulness, and
+- [x] 4. Implement the watch surface with epoch, resync truthfulness, and
     observer containment.
   - The watch subscription object, epoch guarding, and observer containment
     are implemented in `lib/coordination-lease.js` (the owner module that also
@@ -187,7 +187,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (CL-1
     unavailable resync, throwing/rejected observer containment, and
     stale-callback epoch guarding. Cover CL-7.
 
-- [ ] 5. Implement visibility, redaction, scope denial, and boundary
+- [x] 5. Implement visibility, redaction, scope denial, and boundary
     truthfulness (host and client).
   - All values crossing the public boundary are bounded, deeply frozen, and
     redacted: credentials, secret tokens not intended for observation, and
@@ -213,7 +213,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (CL-1
     mutation surface or client manifest/remote entry, and inert client
     degradation. Cover CL-9 and CL-10.
 
-- [ ] 6. Mount the host facade with fail-safe lifecycle and typed disabled
+- [x] 6. Mount the host facade with fail-safe lifecycle and typed disabled
     behavior.
   - Add the `coordination` feature guard branch in `lib/guards.js` (public
     substrate probes; optional service resolution degrades per source and
@@ -238,7 +238,7 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (CL-1
     backend handling, and isolation from execution/recovery/usage/routing and
     client surfaces. Cover the mounting portions of CL-8 and CL-10.
 
-- [ ] 7. Complete cross-feature integration, governance, and repository
+- [x] 7. Complete cross-feature integration, governance, and repository
     acceptance evidence.
   - Add integration evidence (local fixtures with scripted public-service
     doubles — no test may assert cross-process durability from a memory
@@ -271,7 +271,43 @@ Stage 3 Tasks: 待执行。本清单承接已确认的 Goal / Requirements (CL-1
 
 ## Stage 4 Implementation Record
 
-To be completed after all implementation tasks and repository acceptance checks
-pass. Record the final host surface, focused/full test commands, governance and
-official-package integrity evidence, migration evidence, commit hash, and clean
-worktree state in the final delivery report.
+Completed 2026-08-25 after all implementation tasks and repository acceptance
+checks passed.
+
+- **Final host surface**: `pluginApi.coordination` with frozen methods
+  `availability(scope?)`, `acquire`, `heartbeat`, `release`, `takeover`,
+  `compareAndSet`, `watch` (all async, discriminated typed results); runtime
+  feature key `coordination` (guard branch in `lib/guards.js`,
+  FEATURE_MOUNTERS entry after `recovery`, service slot + disabled surface in
+  `lib/plugin-api-service.js`). No client transport/remote/mutation surface.
+- **Implementation files**: `lib/coordination-normalize.js` (pure
+  normalization/validation/availability/redaction, zero harness deps),
+  `lib/coordination-adapters.js` (memory-scoped default + storage-domain
+  bridge with explicit capability gating), `lib/coordination-lease.js` (host
+  owner with adapter selection, typed outcome vocabulary, watch epoch/resync/
+  containment).
+- **Focused tests**: `test/coordination-normalize.test.mjs` (14),
+  `test/coordination-adapters.test.mjs` (19), `test/coordination-lease.test.mjs`
+  (11), `test/coordination-watch.test.mjs` (10), `test/coordination-visibility.test.mjs`
+  (6), `test/coordination-guard.test.mjs` (3), `test/index-coordination.test.mjs`
+  (6), `test/coordination-integration.test.mjs` (5) — 74/74 green in isolation.
+- **Shared assertions**: pre-existing feature-list/order assertions across
+  `test/index.test.mjs`, `test/index-agent.test.mjs`, `test/index-events.test.mjs`,
+  `test/index-remote.test.mjs`, `test/index-session.test.mjs`,
+  `test/index-session-durable.test.mjs`, `test/index-system-prompt.test.mjs`,
+  `test/index-tools.test.mjs`, `test/official-passthrough-independence.test.mjs`
+  updated to include the `coordination` feature.
+- **Full suite**: `npm test` = 1634/1634 pass (memory-guarded).
+- **Governance evidence**: `git diff --check` clean; governance-token audit
+  clean (no governance labels/tokens in implementation files or tests —
+  runtime naming is neutral); no private official imports and no official
+  package paths in the diff (verified by
+  `test/coordination-integration.test.mjs`); official DSH package untouched.
+- **Registration**: `docs/specs/plugin-api-features/feature-list.md` §7 row
+  appended (delivered); status rows and intro narrative updated in
+  `docs/specs/plugin-api-features/dsh-plugin-api-heuristic-feature-proposals-2026-08-20.md`
+  for `coordination-lease` only; proposal #2's channel analysis preserved.
+- **Version**: no bump (stays `0.1.0-rc.6-0.5` / `dsh.api 0.5`; integration
+  owner aligns).
+- **Final commit**: recorded in the delivery report after global final review
+  returned "无偏差". Worktree clean after the Stage 4 completion commit.
