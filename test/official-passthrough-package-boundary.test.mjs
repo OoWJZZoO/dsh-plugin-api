@@ -10,6 +10,7 @@ test('package protocol metadata stays mutually consistent and atomic while the c
   const auxiliary = [
     ['packages/compaction-events/package.json', readPackage('packages/compaction-events/package.json')],
     ['packages/session-title/package.json', readPackage('packages/session-title/package.json')],
+    ['packages/attachments/package.json', readPackage('packages/attachments/package.json')],
     ['packages/full/package.json', readPackage('packages/full/package.json')],
   ]
   for (const [path, pkg] of auxiliary) {

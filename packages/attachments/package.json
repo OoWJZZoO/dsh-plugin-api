@@ -1,0 +1,39 @@
+{
+  "name": "@deepseek-ai/dsh-plugin-api-attachments",
+  "description": "Attachment-local replacement with a bounded attachment pipeline capability slice.",
+  "version": "0.1.0-rc.6-0.5",
+  "type": "module",
+  "main": "lib/apply.js",
+  "exports": {
+    ".": "./lib/apply.js",
+    "./forked-store": "./lib/forked-store.js",
+    "./pipeline-core": "./lib/pipeline-core.js",
+    "./journal": "./lib/journal.js",
+    "./invariant": "./lib/invariant.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "api": "0.5",
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-attachment": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-attachment-local": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-invariants": "^0.1.0-rc.6",
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-home-paths": "^0.1.0-rc.6"
+  },
+  "dependencies": {
+    "sharp": "^0.35.3",
+    "@deepseek-ai/schemastery": "^3.18.1"
+  },
+  "devDependencies": {
+    "@deepseek-ai/dsh-app-boot": "^0.1.0-rc.6"
+  }
+}

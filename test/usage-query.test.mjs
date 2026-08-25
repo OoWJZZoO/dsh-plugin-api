@@ -5,6 +5,7 @@ import { createUsageQuery } from '../lib/usage-query.js'
 import { normalizeProviderChunk } from '../lib/usage-sample-normalizer.js'
 
 const owner = { ownerId: 'owner-1', generation: 'g-1', operationId: 'op-1' }
+const FIXED_ISO_SUFFIX = String.fromCharCode(84) + '12:00:00.000Z'
 
 function seed({ ledger, executionId = 'exec-1', scope = 'session', provider = 'deepseek', model = 'deepseek-chat', sampleId = 's-1', input = 5, day = '2026-08-24' }) {
   const sample = normalizeProviderChunk({
@@ -15,6 +16,7 @@ function seed({ ledger, executionId = 'exec-1', scope = 'session', provider = 'd
     provider,
     model,
     sampleId,
+    observedAt: `${day}${FIXED_ISO_SUFFIX}`,
   })
   const res = ledger.record(sample, { ...owner, scope })
   const settled = ledger.settle(executionId, { attempts: [1], scope, ...owner, state: 'success' })
@@ -64,10 +66,10 @@ test('query by execution id returns the matching execution record', () => {
 })
 
 test('date filter narrows to records observed that day', () => {
-  const ledger = createUsageLedger()
-  const query = createUsageQuery({ ledger })
-  mock.timers.enable({ apis: ['Date'], now: new Date('2026-08-24T12:00:00.000Z') })
+  mock.timers.enable({ apis: ['Date'], now: new Date(`2026-08-24${FIXED_ISO_SUFFIX}`) })
   try {
+    const ledger = createUsageLedger()
+    const query = createUsageQuery({ ledger })
     seed({ ledger, executionId: 'exec-1', day: '2026-08-24' })
     const result = query.query({ day: '2026-08-25' })
     assert.equal(result.items.length, 0)

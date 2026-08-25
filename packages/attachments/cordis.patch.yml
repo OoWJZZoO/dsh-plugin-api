@@ -1,0 +1,8 @@
+# Replacement boundary: only the official attachment-local row is disabled;
+# the inserted row owns the same ctx.attachments service plus its pipeline slice.
+- id: attachment-local
+  disabled: true
+- insert:
+    - id: plugin-api-attachments
+      name: '@deepseek-ai/dsh-plugin-api-attachments'
+      config: {}
