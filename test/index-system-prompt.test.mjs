@@ -87,8 +87,8 @@ test('apply mounts the systemPrompt API and core-inactive calls forward to the o
 
   const section = { name: 's1', order: 1, text: 'hello' }
   assert.equal(state.pluginApi.systemPrompt.section(section), systemPrompt.sectionDisposer)
-  assert.equal(systemPrompt.sectionCalls.length, 1)
-  assert.equal(systemPrompt.sectionCalls[0], section)
+  assert.equal(systemPrompt.sectionCalls.length, 2, 'the facade hint section registers first')
+  assert.equal(systemPrompt.sectionCalls.at(-1), section)
 
   assert.equal(state.pluginApi.systemPrompt.context({ name: 'c1', order: 2, text: 'ctx' }), 'context-disposer')
   assert.equal(state.pluginApi.systemPrompt.variable('v', () => 'x'), 'variable-disposer')
@@ -103,8 +103,7 @@ test('systemPrompt guard failure disables only systemPrompt and keeps the facade
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 24)
-
+  assert.equal(features.length, 25)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -121,6 +120,10 @@ test('systemPrompt guard failure disables only systemPrompt and keeps the facade
   assert.equal(features[12].isActive, false)
   assert.match(features[12].reason, /systemPrompt\.service/)
   assert.deepEqual(features[13], { name: 'services', isActive: true })
+  assert.equal(features[24].name, 'toolDiscovery')
+  assert.equal(features[24].isActive, false)
+  assert.match(features[24].reason, /systemPrompt/)
+
 
   assert.throws(
     () => state.pluginApi.systemPrompt.section({ name: 's', order: 0, text: 'x' }),
