@@ -2,9 +2,9 @@
 
 ## Status
 
-Stage 3 Tasks 待执行。本清单承接已确认的 Goal / Requirements（TEO-1..TEO-10）
-与 Design；按 SPEC3 规则，经阻塞式对抗性审查（返回“无偏差”）后直接进入
-Stage 4，不设用户确认门。
+Stage 3 Tasks 已通过阻塞式对抗性审查（两轮：第一轮无 blocking / 3 advisory，已就地修订；第二轮“无偏差”）。
+本清单承接已确认的 Goal / Requirements（TEO-1..TEO-10）与 Design；按 SPEC3 规则
+直接进入 Stage 4，不设用户确认门。全部任务已实现并标记完成（Stage 4 交付完成，M6 第三批次）。
 
 ## Execution Contract
 
@@ -58,7 +58,7 @@ Stage 4，不设用户确认门。
 
 ## Tasks
 
-- [ ] 1. Implement the dependency-free normalization, state machine, and
+- [x] 1. Implement the dependency-free normalization, state machine, and
     validation module.
   - Add a pure `lib/task-execution-normalize.js` module (zero harness
     dependencies) that normalizes and validates task identity: unique bounded
@@ -126,7 +126,7 @@ Stage 4，不设用户确认门。
     behavior. Cover the normalization/validation portions of TEO-1, TEO-2,
     TEO-4, and TEO-9.
 
-- [ ] 2. Implement the source adapters, the durable task registry with
+- [x] 2. Implement the source adapters, the durable task registry with
     serialized lanes, and the connect/reconnect evidence path.
   - Add `lib/task-execution-adapters.js` implementing the internal source
     boundary from the design: `registry` (`read`, `writeCas`, plus an internal
@@ -182,7 +182,7 @@ Stage 4，不设用户确认门。
     generations, and idempotent disposer ownership. Cover the adapter portions
     of TEO-2, TEO-5, TEO-6, and TEO-7.
 
-- [ ] 3. Implement the host owner facade core: typed outcomes, source
+- [x] 3. Implement the host owner facade core: typed outcomes, source
     selection, `register`, `start`, and `claim`.
   - Add `lib/task-execution-observation.js` exporting
     `createTaskExecutionObservation({ ctx, execution, recovery, coordination,
@@ -244,7 +244,7 @@ Stage 4，不设用户确认门。
     coordination/execution double-degradation isolation. Cover TEO-1, TEO-2,
     and TEO-3.
 
-- [ ] 4. Implement settlement, reassign/takeover, observe, and history with
+- [x] 4. Implement settlement, reassign/takeover, observe, and history with
     immutable projections and epoch guards.
   - `settle` accepts only the current fenced attempt (TEO-4.1); the unified
     outcome (`success | error | aborted | denied | superseded`) is preserved
@@ -292,7 +292,7 @@ Stage 4，不设用户确认门。
     reconstruction over a memory registry asserted non-durable. Cover TEO-3,
     TEO-4, and TEO-5.
 
-- [ ] 5. Implement attach, visibility, redaction, scope denial, and the client
+- [x] 5. Implement attach, visibility, redaction, scope denial, and the client
     boundary.
   - `attach` validates the public identity of session/workflow/job/execution/
     transaction references and preserves the source owner and generation
@@ -330,16 +330,18 @@ Stage 4，不设用户确认门。
     unavailable-registry projections, and the absence of every client mutation
     surface. Cover the visibility portions of TEO-5, TEO-9, and TEO-10.
 
-- [ ] 6. Mount the host facade with fail-safe lifecycle and typed disabled
+- [x] 6. Mount the host facade with fail-safe lifecycle and typed disabled
     behavior.
   - Add the `tasks` feature guard branch in `lib/guards.js` (public substrate
     probes; optional service resolution degrades per source and never disables
     unrelated features), a `mountTasksFeature` mounter in `lib/index.js`
-    registered in `FEATURE_MOUNTERS` after `coordination` (batch order) and
-    before `diagnostics` (the coordination precedent's order; a mount-time
-    failure of `tasks` must not break the mounter tail), and the full service
-    wiring in `lib/plugin-api-service.js`: `tasks` in `KNOWN_FEATURES`, a
-    frozen live surface slot wiring
+    registered in `FEATURE_MOUNTERS` after the same-batch facade
+    `workspaceTransactions` and after `diagnostics` (the task facade consumes
+    the diagnostics projection as provenance evidence and the workspace
+    transaction projection when the same-batch feature is present, so it
+    mounts after both), and the full service wiring in
+    `lib/plugin-api-service.js`: `tasks` in `KNOWN_FEATURES`, a frozen live
+    surface slot wiring
     `register/start/claim/reassign/settle/attach/get/observe/history`,
     `createDisabledTasksApi` with the standard typed inactive/disabled errors,
     and matching `_readSlot`/`_disabledSurfaceFor`/`unmountFeature` handling.
@@ -368,7 +370,7 @@ Stage 4，不设用户确认门。
     source handling, and isolation from coordination/recovery/execution/
     usage/routing, workspace-transaction, and client surfaces.
 
-- [ ] 7. Complete cross-feature integration, governance, and repository
+- [x] 7. Complete cross-feature integration, governance, and repository
     acceptance evidence.
   - Add integration evidence (`test/task-execution-integration.test.mjs`,
     local fixtures with scripted public-surface doubles — no test may assert

@@ -5,7 +5,7 @@
 Stage 3 Tasks 已通过阻塞式对抗性审查（三轮：第一轮 2 blocking / 5 advisory，第二轮
 1 blocking / 1 advisory，第三轮“无偏差”，全部意见已就地修订）。本清单承接已确认的
 Goal / Requirements（WMT-1..WMT-10）与 Design；按 SPEC3 规则直接进入 Stage 4，
-不设用户确认门。
+不设用户确认门。全部任务已实现并标记完成（Stage 4 交付完成，M6 第三批次）。
 
 ## Execution Contract
 
@@ -48,7 +48,7 @@ Goal / Requirements（WMT-1..WMT-10）与 Design；按 SPEC3 规则直接进入 
 
 ## Tasks
 
-- [ ] 1. Implement the dependency-free normalization, state machine, and
+- [x] 1. Implement the dependency-free normalization, state machine, and
     validation module.
   - Add a pure `lib/workspace-transaction-normalize.js` module (zero harness
     dependencies) that normalizes and validates transaction identity:
@@ -101,7 +101,7 @@ Goal / Requirements（WMT-1..WMT-10）与 Design；按 SPEC3 规则直接进入 
     redaction, deep freeze, and redaction-failure fail-closed behavior. Cover
     the normalization/validation portions of WMT-1, WMT-3, WMT-7, and WMT-9.
 
-- [ ] 2. Implement the capability adapters and the transaction registry with
+- [x] 2. Implement the capability adapters and the transaction registry with
     serialized lanes.
   - Add `lib/workspace-transaction-adapters.js` implementing the internal
     adapter boundary from the design: `registry` (`read`, `writeCas`, plus an
@@ -159,7 +159,7 @@ Goal / Requirements（WMT-1..WMT-10）与 Design；按 SPEC3 规则直接进入 
     degradation, and idempotent disposer ownership. Cover the adapter
     portions of WMT-2, WMT-3, WMT-5, and WMT-6.
 
-- [ ] 3. Implement the host owner facade core: typed outcomes, adapter
+- [x] 3. Implement the host owner facade core: typed outcomes, adapter
     selection, `prepare`, and `record`.
   - Add `lib/workspace-mutation-transaction.js` exporting
     `createWorkspaceMutationTransaction({ ctx, coordination, recovery, logger,
@@ -225,7 +225,7 @@ Goal / Requirements（WMT-1..WMT-10）与 Design；按 SPEC3 规则直接进入 
     denial, and unverifiable-digest downgrades. Cover WMT-1, WMT-2, and
     WMT-3.
 
-- [ ] 4. Implement the settlement paths — preview, commit, rollback, recover —
+- [x] 4. Implement the settlement paths — preview, commit, rollback, recover —
     and the ordered immutable state-machine projection.
   - `preview` returns a frozen projection of resource changes, before/after
     evidence, source provenance, required approvals, rollback boundary, and
@@ -283,7 +283,7 @@ Goal / Requirements（WMT-1..WMT-10）与 Design；按 SPEC3 规则直接进入 
     the facade returns `unsupported`/`unknown` instead of claiming success.
     Cover WMT-5, WMT-6, WMT-7, and WMT-8.
 
-- [ ] 5. Implement observation, visibility, redaction, scope denial, and the
+- [x] 5. Implement observation, visibility, redaction, scope denial, and the
     client boundary.
   - `observe(transactionId)` returns a frozen subscription object with
     `current()` and `subscribe(fn)` plus an idempotent `dispose()`; delivered
@@ -322,7 +322,7 @@ Goal / Requirements（WMT-1..WMT-10）与 Design；按 SPEC3 规则直接进入 
     absence of every client mutation surface. Cover WMT-4 visibility portions,
     WMT-9, and WMT-10.
 
-- [ ] 6. Mount the host facade with fail-safe lifecycle and typed disabled
+- [x] 6. Mount the host facade with fail-safe lifecycle and typed disabled
     behavior.
   - Add the `workspaceTransactions` feature guard branch in `lib/guards.js`
     (public substrate probes; optional service resolution degrades per source
@@ -356,7 +356,7 @@ Goal / Requirements（WMT-1..WMT-10）与 Design；按 SPEC3 规则直接进入 
     malformed backend handling, and isolation from coordination/recovery/
     usage/routing and client surfaces.
 
-- [ ] 7. Complete cross-feature integration, governance, and repository
+- [x] 7. Complete cross-feature integration, governance, and repository
     acceptance evidence.
   - Add integration evidence (`test/workspace-transaction-integration.test.mjs`,
     local fixtures with scripted public-service doubles — no test may assert

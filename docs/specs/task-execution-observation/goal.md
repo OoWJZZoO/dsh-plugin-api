@@ -6,7 +6,7 @@
 
 ## Status
 
-Stage 0 Goal 已确认；Stage 2 Design 已确认（SPEC2 审查纠偏完成），待进入 Stage 3 Tasks。
+Stage 0 Goal 已确认；Stage 2 Design 已确认（SPEC2 审查纠偏完成）；Stage 3 对抗性审查通过；Stage 4 交付完成（M6 第三批次）。
 
 ## Goal
 

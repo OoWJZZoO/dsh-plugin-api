@@ -2,7 +2,7 @@
 
 ## Status
 
-Stage 2 Design 已确认；SPEC2 审查纠偏完成，可进入 Stage 3 Tasks。
+Stage 2 Design 已确认；SPEC2 审查纠偏完成；Stage 3 对抗性审查通过；Stage 4 交付完成（M6 第三批次）。
 
 ## Overview
 

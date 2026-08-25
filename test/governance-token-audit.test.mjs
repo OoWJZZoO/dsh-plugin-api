@@ -27,7 +27,7 @@ const BANNED_TOKENS = [
 ]
 
 /** Labels used by the governance documents, not by runtime contracts. */
-const GOVERNANCE_LABEL_PATTERN = /\b(?:ST|SV|AC|CL)-?\d+(?:\.\d+)?[a-z]?\b|\b[ABCRMDLTWFSUP]\d+(?:\.\d+)?[a-z]?\b|\b[ABCR]-class\b/g
+const GOVERNANCE_LABEL_PATTERN = /\b(?:ST|SV|AC|CL|WMT|TEO)-?\d+(?:\.\d+)?[a-z]?\b|\b[ABCRMDLTWFSUP]\d+(?:\.\d+)?[a-z]?\b|\b[ABCR]-class\b/g
 
 /** The only implementation labels intentionally retained for control syntax. */
 const CONTROL_LABEL_EXEMPTIONS = new Set([

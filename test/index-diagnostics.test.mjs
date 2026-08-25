@@ -53,8 +53,9 @@ test('healthy apply mounts diagnostics after remote and exposes a working projec
   assert.equal(diagnostics.isActive, true)
 
   const names = state.pluginApi.features.map((entry) => entry.name)
-  assert.equal(names.indexOf('diagnostics'), names.length - 2, 'diagnostics mounts directly before usage (Wave C order: remote, execution, diagnostics, usage)')
-  assert.equal(names[names.length - 1], 'usage', 'usage is the last FEATURE_MOUNTERS entry')
+  assert.equal(names.indexOf('diagnostics'), names.length - 3, 'diagnostics mounts directly before usage (Wave C order: remote, execution, diagnostics, usage; third-batch tasks mounts last)')
+  assert.equal(names[names.length - 2], 'usage', 'usage stays directly before tasks')
+  assert.equal(names[names.length - 1], 'tasks', 'tasks is the last FEATURE_MOUNTERS entry')
 
   const diag = state.pluginApi.diagnostics
   assert.equal(typeof diag.register, 'function')
