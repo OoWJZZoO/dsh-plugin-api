@@ -6,7 +6,7 @@
 
 ## Status
 
-Stage 0 Goal 草案，待用户确认。
+Stage 0 Goal 已确认；Stage 2 Design 已确认（SPEC2 审查纠偏完成），待进入 Stage 3 Tasks。
 
 ## Goal
 

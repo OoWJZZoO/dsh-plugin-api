@@ -2,7 +2,7 @@
 
 ## Status
 
-Stage 1 Requirements 草案，待用户确认。
+Stage 1 Requirements 已确认；Stage 2 Design 已确认（SPEC2 审查纠偏完成），待进入 Stage 3 Tasks。
 
 ## Introduction
 
