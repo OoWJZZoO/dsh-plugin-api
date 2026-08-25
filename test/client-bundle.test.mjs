@@ -104,17 +104,21 @@ test('bundle publishes the seven official passthrough leaves, disabled without a
   const api = ctx.get('pluginApi')
   assert.ok(api?.client)
   const features = api.client.features
-  assert.equal(features.length, 17, 'the existing ten client features plus the seven passthrough leaves')
+  assert.equal(features.length, 18, 'the existing ten client features, lifecycle feature, plus the seven passthrough leaves')
   assert.deepEqual([...features].slice(0, 10).map((f) => f.name), [
     'clientManifest', 'clientConnection', 'clientCodec', 'clientOfficialServices',
     'clientRemoteContribution', 'clientSettingsRemote', 'clientSettingsScope',
     'clientSlots', 'clientSlotEvents', 'clientRemoteEvents',
   ])
+  assert.equal(features[10].name, 'clientLifecycle')
+  assert.equal(features[10].isActive, false, 'lifecycle is disabled when its core module evidence is absent')
+  assert.throws(() => api.client.lifecycle.registerFace({}), (error) =>
+    error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'clientLifecycle')
   const leaves = ['inputTriggers', 'commandUi', 'modelDirectories', 'conversation', 'conversationEvents', 'conversationViews', 'timer']
   for (const leaf of leaves) {
     assert.ok(api.client[leaf], `client.${leaf} must be published`)
   }
-  for (const feature of features.slice(10)) {
+  for (const feature of features.slice(11)) {
     assert.equal(feature.isActive, false, `${feature.name} is unavailable without the module loader`)
   }
   // A fake-context call still reports the typed surface-keyed error.

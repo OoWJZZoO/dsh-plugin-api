@@ -30,14 +30,16 @@ test('the root and all seven pending shells are observable synchronously while t
     'clientRemoteContribution', 'clientSettingsRemote', 'clientSettingsScope',
     'clientSlots', 'clientSlotEvents', 'clientRemoteEvents',
   ])
-  assert.deepEqual(features.slice(10).map((f) => f.name).sort(), [...CLIENT_OFFICIAL_LEAVES].sort())
+  assert.equal(features[10].name, 'clientLifecycle')
+  assert.equal(features[10].isActive, true)
+  assert.deepEqual(features.slice(11).map((f) => f.name).sort(), [...CLIENT_OFFICIAL_LEAVES].sort())
   for (const feature of features) assert.equal(typeof feature.isActive, 'boolean')
   // Pending leaves typed-fail with their surface key.
   assert.throws(() => api.client.conversation.send('x'), (error) =>
     error instanceof PluginApiFeatureDisabledError && error.feature === 'client.conversation')
   for (const descriptor of CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS) loader.resolvePending(descriptor.moduleId)
   await settleAll()
-  for (const feature of ctx.get('pluginApi').client.features.slice(10)) assert.equal(feature.isActive, true)
+  for (const feature of ctx.get('pluginApi').client.features.slice(11)) assert.equal(feature.isActive, true)
   await dispose()
 })
 
@@ -129,7 +131,7 @@ test('each client getter read creates a fresh composition while member identitie
   assert.equal(first.codec, second.codec)
   assert.equal(first.connection, second.connection)
   assert.notEqual(first.conversation, second.conversation)
-  assert.equal(first.features.length, 17)
+  assert.equal(first.features.length, 18)
 })
 
 test('cache invalidation retires only the affected leaf, typed-fails old references, logs once, and never rebinds', async () => {
@@ -170,7 +172,8 @@ test('disposal during an in-flight import retires the root generation and ignore
     assert.equal(await dispose(), true)
     for (const descriptor of CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS) loader.resolvePending(descriptor.moduleId)
     await settleAll()
-    for (const feature of api.client.features.slice(10)) assert.equal(feature.isActive, false)
+    assert.equal(api.client.features[10].isActive, false)
+    for (const feature of api.client.features.slice(11)) assert.equal(feature.isActive, false)
     assert.throws(() => api.client.conversation.send('x'), (error) => error instanceof PluginApiInactiveError)
     assert.equal(unhandled, 0)
   } finally {
@@ -188,7 +191,8 @@ test('a clean apply after disposal creates a new root generation and old referen
   assert.notEqual(secondDispose, firstDispose)
   await settleAll()
   const secondApi = ctx.get('pluginApi')
-  for (const feature of secondApi.client.features.slice(10)) assert.equal(feature.isActive, true)
+  assert.equal(secondApi.client.features[10].isActive, true)
+  for (const feature of secondApi.client.features.slice(11)) assert.equal(feature.isActive, true)
   assert.throws(() => firstApi.client.conversation.send('old'), (error) => error instanceof PluginApiInactiveError)
   assert.equal(await secondApi.client.conversation.send('new'), providerValue)
 })
@@ -202,8 +206,9 @@ test('an absent module loader disables all seven leaves with missing-service whi
   const api = ctx.get('pluginApi')
   assert.ok(api?.client)
   assert.equal(typeof api.client.slots.register, 'function', 'existing client faces stay published without the module loader')
-  assert.equal(api.client.features.length, 17)
-  for (const feature of api.client.features.slice(10)) assert.equal(feature.isActive, false)
+  assert.equal(api.client.features.length, 18)
+  assert.equal(api.client.features[10].isActive, false)
+  for (const feature of api.client.features.slice(11)) assert.equal(feature.isActive, false)
   for (const surfaceKey of ['client.inputTriggers', 'client.commandUi', 'client.modelDirectories', 'client.conversation',
     'client.conversationEvents', 'client.conversationViews', 'client.timer']) {
     assert.ok(logs.some((line) => line.includes(surfaceKey) && line.includes('missing-service')), `missing diagnostic for ${surfaceKey}`)
@@ -220,8 +225,9 @@ test('independence fixture: a raw modules service plus seven valid namespaces ac
   await settleAll()
   const api = ctx.get('pluginApi')
   assert.equal(api.client.modules, undefined, 'no client.modules facade is invented')
-  assert.equal(api.client.features.length, 17)
-  for (const feature of api.client.features.slice(10)) assert.equal(feature.isActive, true, `${feature.name} must activate`)
+  assert.equal(api.client.features.length, 18)
+  assert.equal(api.client.features[10].isActive, true)
+  for (const feature of api.client.features.slice(11)) assert.equal(feature.isActive, true, `${feature.name} must activate`)
   const input = api.client.inputTriggers
   const source = { id: 1 }
   const unregisterSource = input.registerSource(source)
