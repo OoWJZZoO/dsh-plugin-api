@@ -26,9 +26,15 @@ const MCP_OFFICIAL = { id: 'mcp-client', name: '@deepseek-ai/dsh-mcp-client', co
 const MCP_REPLACEMENT = { id: 'plugin-api-mcp', name: '@deepseek-ai/dsh-plugin-api-mcp', config: {} }
 const ATTACHMENT_OFFICIAL = { id: 'attachment-local', name: '@deepseek-ai/dsh-attachment-local', config: {} }
 const ATTACHMENT_REPLACEMENT = { id: 'plugin-api-attachments', name: '@deepseek-ai/dsh-plugin-api-attachments', config: {} }
+const AGENT_LOOP_OFFICIAL = { id: 'agent-loop', name: '@deepseek-ai/dsh-agent-loop', config: {} }
+const AGENT_LOOP_REPLACEMENT = {
+  id: 'plugin-api-agent-loop',
+  name: '@deepseek-ai/dsh-plugin-api-agent-loop',
+  config: { maxParallelToolCalls: 10, agents: [] },
+}
 
 const officialBaseLayer = [
-  { insert: [COMPACTION_OFFICIAL, TITLE_OFFICIAL, MCP_OFFICIAL, ATTACHMENT_OFFICIAL] },
+  { insert: [COMPACTION_OFFICIAL, TITLE_OFFICIAL, MCP_OFFICIAL, ATTACHMENT_OFFICIAL, AGENT_LOOP_OFFICIAL] },
 ]
 
 const fullLayer = [
@@ -41,6 +47,8 @@ const fullLayer = [
   { insert: [MCP_REPLACEMENT] },
   { id: 'attachment-local', disabled: true },
   { insert: [ATTACHMENT_REPLACEMENT] },
+  { id: 'agent-loop', disabled: true },
+  { insert: [AGENT_LOOP_REPLACEMENT] },
 ]
 
 test('the full package follows the unified full-version and dsh.api policy', () => {
@@ -58,12 +66,20 @@ test('the full package depends on the main facade and every auxiliary package at
     '@deepseek-ai/dsh-plugin-api-session-title': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-mcp': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-attachments': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-agent-loop': 'workspace:*',
   })
 })
 
 test('the full patch assembles main and all replacement rows in deterministic order', () => {
   const entries = composeEntries([fullLayer])
-  assert.deepEqual(entries, [MAIN_ROW, COMPACTION_REPLACEMENT, TITLE_REPLACEMENT, MCP_REPLACEMENT, ATTACHMENT_REPLACEMENT])
+  assert.deepEqual(entries, [
+    MAIN_ROW,
+    COMPACTION_REPLACEMENT,
+    TITLE_REPLACEMENT,
+    MCP_REPLACEMENT,
+    ATTACHMENT_REPLACEMENT,
+    AGENT_LOOP_REPLACEMENT,
+  ])
 })
 
 test('composing over an official base disables all official rows and appends the deterministic assembly', () => {
@@ -73,24 +89,27 @@ test('composing over an official base disables all official rows and appends the
     { ...TITLE_OFFICIAL, disabled: true },
     { ...MCP_OFFICIAL, disabled: true },
     { ...ATTACHMENT_OFFICIAL, disabled: true },
+    { ...AGENT_LOOP_OFFICIAL, disabled: true },
     MAIN_ROW,
     COMPACTION_REPLACEMENT,
     TITLE_REPLACEMENT,
     MCP_REPLACEMENT,
     ATTACHMENT_REPLACEMENT,
+    AGENT_LOOP_REPLACEMENT,
   ])
 })
 
 test('the full patch text keeps the deterministic order and adds no extra row', () => {
   const mainIndex = patchFile.indexOf("name: '@deepseek-ai/dsh-plugin-api-main'")
-  const compactionIndex = patchFile.indexOf("id: plugin-api-compaction-events")
-  const titleIndex = patchFile.indexOf("id: plugin-api-session-title")
-  const mcpIndex = patchFile.indexOf("id: plugin-api-mcp")
-  const attachmentIndex = patchFile.indexOf("id: plugin-api-attachments")
+  const compactionIndex = patchFile.indexOf('id: plugin-api-compaction-events')
+  const titleIndex = patchFile.indexOf('id: plugin-api-session-title')
+  const mcpIndex = patchFile.indexOf('id: plugin-api-mcp')
+  const attachmentIndex = patchFile.indexOf('id: plugin-api-attachments')
+  const agentLoopIndex = patchFile.indexOf('id: plugin-api-agent-loop')
   assert.ok(
-    mainIndex >= 0 && compactionIndex > mainIndex && titleIndex > compactionIndex && mcpIndex > titleIndex && attachmentIndex > mcpIndex,
-    'rows must appear main → compaction → session-title → mcp → attachment',
+    mainIndex >= 0 && compactionIndex > mainIndex && titleIndex > compactionIndex && mcpIndex > titleIndex && attachmentIndex > mcpIndex && agentLoopIndex > attachmentIndex,
+    'rows must appear main → compaction → session-title → mcp → attachment → agent-loop',
   )
-  assert.equal((patchFile.match(/- insert:/g) ?? []).length, 5, 'exactly main + four replacement inserts')
-  assert.equal((patchFile.match(/disabled: true/g) ?? []).length, 4, 'exactly four official rows disabled')
+  assert.equal((patchFile.match(/- insert:/g) ?? []).length, 6, 'exactly main + five replacement inserts')
+  assert.equal((patchFile.match(/disabled: true/g) ?? []).length, 5, 'exactly five official rows disabled')
 })

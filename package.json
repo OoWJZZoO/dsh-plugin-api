@@ -28,7 +28,7 @@
   },
   "scripts": {
     "test": "DBUS_SESSION_BUS_ADDRESS=${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/1000/bus} systemd-run --user --scope -p MemoryMax=4G npm run test:raw",
-    "test:raw": "node --test \"test/**/*.mjs\""
+    "test:raw": "node --test \"test/**/*.mjs\" \"packages/*/test/*.mjs\""
   },
   "keywords": [
     "deepseek-harness",

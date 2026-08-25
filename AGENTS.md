@@ -19,7 +19,7 @@ agent/dsh-plugin-api/
 ├── package.json        # 主包 @deepseek-ai/dsh-plugin-api-main（声明 dsh.client 清单；peerDependencies 共享宿主实例）
 ├── packages/           # 辅助 replacement bundles（compaction-events/、session-title/）与全量聚合 bundle @deepseek-ai/dsh-plugin-api-full
 ├── docs/specs/         # spec coding 制品（见第 3 节）
-└── test/               # npm test（= node --test "test/**/*.mjs"，temp/ 不参与扫描；见 §6）
+└── test/               # npm test（= node --test "test/**/*.mjs" "packages/*/test/*.mjs"，temp/ 不参与扫描；见 §6）
 ```
 
 一句话定位：**官方之上的“转译稳定器”**。官方内部包变化时，只改这一个仓库，而不是让 N 个社区插件各自 hack。
@@ -202,7 +202,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 
 - **对于尚未走完 Stage 0–3 确认门的新 feature**，只允许写该 feature 的 `AGENTS.md` 变更与 `docs/specs/**` 制品；不得提前写实现代码。该 feature 的 Stage 4（Execute）获批后，才允许创建或修改 `lib/`、`package.json`、`test/`、`scripts/` 等实现产物；已交付 feature 的维护必须有对应获批 Tasks、治理变更或 ANY 工作流的明确人类指示作为依据，且不得借维护新增 feature（§3.0.2）。
 - 制品目录：`docs/specs/<feature_name>/requirements.md`、`design.md`、`tasks.md`。
-- 测试（进入 execute 阶段后）：统一 `npm test`（即 `node --test "test/**/*.mjs"`）。**不要用裸 `node --test`**：它会递归扫描全仓库，把 `temp/`（gitignored 研究/临时目录）里的外来测试也收进来并导致失败/挂起；显式 glob 只覆盖 `test/`。纯函数模块保持零 harness 依赖。
+- 测试（进入 execute 阶段后）：统一 `npm test`（即 `node --test "test/**/*.mjs" "packages/*/test/*.mjs"`，覆盖主仓库 `test/` 与全部包级 `packages/*/test/`）。**不要用裸 `node --test`**：它会递归扫描全仓库，把 `temp/`（gitignored 研究/临时目录）里的外来测试也收进来并导致失败/挂起；显式 glob 只覆盖两处测试目录。纯函数模块保持零 harness 依赖。
 - **测试内存护栏（默认开启）**：`npm test` 通过 `systemd-run --user --scope -p MemoryMax=4G` 在 4G cgroup 内运行，超限由内核 OOM-killer 只击杀测试进程（`run-u*.scope: Failed with result 'oom-kill'`），保护宿主（尤其 8G 内存的 WSL）不被测试拖入全局 OOM。**不要绕过护栏直接跑 `node --test`**；确需原始命令时用 `npm run test:raw`（与旧 `test` 脚本等价）。护栏依赖 systemd 用户实例，脚本已内联默认 `DBUS_SESSION_BUS_ADDRESS`。背景：本套件曾在失败断言大量累积 diff（数万条）时单进程吃到 15G+，触发整机 OOM。因此遇到 `oom-kill` 应先修测试本身（如失控的失败断言、挂起用例），而不是调大阈值或绕过护栏。
 - 不引入与门面无关的运行时依赖；需要宿主共享实例的包一律 `peerDependencies`。
 - **治理魔法字母不进入实现代码**：`lib/`、`packages/`、`test/` 等实现与测试代码，以及 `package.json`、bundle patch 等实现产物中，不得出现从治理文档（AGENTS.md、`docs/standards/capability-strategy.md`、`docs/specs/**`）泄漏出的分类字母、需求/feature 编号或带治理代号的魔法标识。治理编号只允许存在于 `docs/` 治理/规格制品与本文件的登记溯源文字中。例如以下 token（含等价字符串字面量、行 id、feature 名、Symbol 键、错误文案、包描述、目录/文件名）禁止出现在实现代码里（清单不穷尽，凡属治理编号/后缀/代号同型者一律禁止）：

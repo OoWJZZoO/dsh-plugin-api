@@ -2,7 +2,7 @@
 
 DeepSeek Harness 社区插件 API 门面（主包 `@deepseek-ai/dsh-plugin-api-main`）：把官方 Cordis 扩展点稳定化，给第三方插件一个统一、受支持的 import/inject 入口。仓库路径为 `agent/dsh-plugin-api`（monorepo：主包 + `packages/` 下的辅助 replacement bundles + 全量聚合 bundle）。
 
-> 当前状态：host 能力 + replacement 通道已交付（`compaction-events` 压缩事件词汇、`session-title` 会话标题候选资格策略）。主包与全部辅助包统一 full version `0.1.0-rc.6-0.5`、`dsh.api: 0.5`；consumer 仍须按 feature availability 做 fail-safe 降级。
+> 当前状态：host 能力 + replacement 通道已交付。已交付 replacement bundles：`compaction-events`（压缩事件词汇）、`session-title`（会话标题候选资格策略）、`mcp`（MCP server/tool catalog 与 lifecycle 只读投影）、`attachments`（attachment pipeline/投影）、`agent-loop`（model route policy/health/circuit）。M6 门面投影：`pluginApi.execution` / `usage` / `diagnostics` / `recovery`，以及 marker 门控的 `pluginApi.routePolicy` 与 client 侧 `pluginApi.client.lifecycle`。主包与全部辅助包统一 full version `0.1.0-rc.6-0.5`、`dsh.api: 0.5`；consumer 仍须按 feature availability 做 fail-safe 降级。
 
 ## 安装
 
@@ -21,9 +21,15 @@ dsh plugin --profile <profile> add @deepseek-ai/dsh-plugin-api-main
 dsh plugin --profile <profile> add @deepseek-ai/dsh-plugin-api-compaction-events
 # 需要标题候选策略时：
 # dsh plugin --profile <profile> add @deepseek-ai/dsh-plugin-api-session-title
+# 需要 MCP 只读 catalog/lifecycle 投影时：
+# dsh plugin --profile <profile> add @deepseek-ai/dsh-plugin-api-mcp
+# 需要 attachment pipeline 时：
+# dsh plugin --profile <profile> add @deepseek-ai/dsh-plugin-api-attachments
+# 需要 model route policy（agent-loop）时：
+# dsh plugin --profile <profile> add @deepseek-ai/dsh-plugin-api-agent-loop
 ```
 
-`@deepseek-ai/dsh-plugin-api-full` 只做聚合：依赖主包与全部辅助包，并拥有一份按确定顺序装配主包及所有替代行的 patch；它不新增任何 API，第三方 API 仍完全由主包的 `ctx.pluginApi` 提供。
+`@deepseek-ai/dsh-plugin-api-full` 只做聚合：依赖主包与全部辅助包（含上述五个 replacement bundle），并拥有一份按确定顺序装配主包及所有替代行的 patch；它不新增任何 API，第三方 API 仍完全由主包的 `ctx.pluginApi` 提供。全量安装必须与选择性安装（main + 全部辅助包）装配出同一组主包行与替代行、同一行为；任一辅助包与主包版本不一致时，只停用该辅助包对应的 replacement 特性，不波及主包门面。
 
 ## 版本协商（主包与辅助包统一）
 
@@ -97,7 +103,7 @@ pluginApi.routing.availability // { execution: boolean, session: boolean }
 
 当缺失语义天然属于某个官方 loader 行、且经 `docs/standards/capability-strategy.md` 批准登记时，可发布独立 replacement bundle：用官方 patch 机制（`- id: <官方行>; disabled: true` + `- insert:` 替代行）禁用该官方行，由替代行完整提供原行的 ctx 服务/事件契约并增加接口。replacement 绝不修改官方安装文件；它只替换 ctx 服务/事件面，**不替换** `@deepseek-ai/dsh-*` 包 import 面。
 
-**已交付示例：`@deepseek-ai/dsh-plugin-api-compaction-events`**（源码 `packages/compaction-events/`，row id `plugin-api-compaction-events`）fork 官方 `compaction-basic` 行，在完整保留 `ctx.compaction` 契约的前提下新增 `compaction/*` 事件词汇（`request/started/completed/failed/skipped`）；**`@deepseek-ai/dsh-plugin-api-session-title`**（源码 `packages/session-title/`，row id `plugin-api-session-title`）fork 官方 `session-title` 行并提供 `session-title/candidate` 候选资格策略瀑布。主包 `pluginApi.events.catalog` 以动态 replacement slice 呈现（仅替代行 active 且版本一致时列出）。专项规格见 `docs/specs/` 下对应制品。
+**已交付示例：`@deepseek-ai/dsh-plugin-api-compaction-events`**（源码 `packages/compaction-events/`，row id `plugin-api-compaction-events`）fork 官方 `compaction-basic` 行，在完整保留 `ctx.compaction` 契约的前提下新增 `compaction/*` 事件词汇（`request/started/completed/failed/skipped`）；**`@deepseek-ai/dsh-plugin-api-session-title`**（源码 `packages/session-title/`，row id `plugin-api-session-title`）fork 官方 `session-title` 行并提供 `session-title/candidate` 候选资格策略瀑布；**`@deepseek-ai/dsh-plugin-api-mcp`**（源码 `packages/mcp/`，row id `plugin-api-mcp`）fork 官方 `mcp-client` 行，在忠实复刻官方 host ctx 契约之上提供只读 `ctx.mcpCatalog` catalog/lifecycle 投影；**`@deepseek-ai/dsh-plugin-api-attachments`**（源码 `packages/attachments/`，row id `plugin-api-attachments`）fork 官方 `attachment-local` 行，保留 `ctx.attachments` 官方契约并增加 `pipeline` / `projection`；**`@deepseek-ai/dsh-plugin-api-agent-loop`**（源码 `packages/agent-loop/`，row id `plugin-api-agent-loop`）fork 官方 `agent-loop` 行，保留 `ctx.agentLoop` 官方契约并增加有序 route 收敛与 attempt decision evidence。主包 `pluginApi.events.catalog` 以动态 replacement slice 呈现（仅替代行 active 且版本一致时列出）；R 类 marker-gated 投影（`pluginApi.mcp` / `attachments` / `routePolicy`）仅在对应替代行激活时出现。专项规格见 `docs/specs/` 下对应制品。
 
 ## 门面完整性
 
@@ -111,6 +117,6 @@ pluginApi.routing.availability // { execution: boolean, session: boolean }
 ## 测试
 
 ```bash
-# 默认只跑 test/ 下的测试（temp/ 等临时目录永不参与扫描）
+# 覆盖仓库全量测试（test/ 与全部 packages/*/test/；temp/ 等临时目录永不参与扫描）
 npm test
 ```

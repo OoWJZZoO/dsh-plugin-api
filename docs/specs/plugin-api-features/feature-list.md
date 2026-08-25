@@ -399,6 +399,7 @@
 | U8 `compaction/*` 事件词汇 | 仅 `summarize()` 子类钩子 | `compaction-basic` | 低–中 | 高 | **已交付**（运行时名 `plugin-api-compaction-events`；U8 保留为上游提案，stale-index B4 已迁移） |
 | U9 `session-title/candidate` 候选资格 / 合成消息排除 | 官方 fallback + first-prompt provider 直接消费 `source.kind:'user'`，无候选资格 dispatch 点 | `session-title`（`dsh-session-title`） | 低–中 | 高 | **已交付**（运行时名 `plugin-api-session-title`；U9 保留为上游提案，replacement 为 current workaround，退役条件见 §3 U9 行） |
 | U10 `attachment-pipeline` identity/transform/projection/cleanup | 官方 attachment loader 没有完整 pipeline seam；replacement 在保留 `ctx.attachments` 官方契约的同时增加 bounded pipeline capability | `attachment-local`（`dsh-attachment-local`） | 中–高 | 高 | **本次交付**（运行时名 `plugin-api-attachments`，owner `@deepseek-ai/dsh-attachment-local`；U10 保留为上游提案，replacement 为 current workaround，退役条件见 §3 U10 行） |
+| U11 `model-route-policy` route 收敛/health/circuit/fallback | 官方 `agent-loop` 无有序 route-policy/health/circuit/probe 公共 dispatch 点；replacement 在保留 `ctx.agentLoop` 官方契约的同时增加有序 route 收敛、不可变 attempt decision、health/circuit/probe evidence 与 fallback lineage | `agent-loop`（`dsh-agent-loop`） | 中–高 | 高 | **本次交付**（运行时名 `plugin-api-agent-loop`，owner `@deepseek-ai/dsh-agent-loop`；U11 保留为上游提案，replacement 为 current workaround，退役条件见 §3 U11 行） |
 | U16 `mcp-catalog-lifecycle` | 官方 `dsh-mcp-client` 无 dispatch 点；忠实 host 复刻之上增加只读 server/tool catalog 与 lifecycle 投影 | `mcp-client`（`dsh-mcp-client`，610 行，当前 host-only） | 中 | 高 | **本次交付**（运行时名 `plugin-api-mcp`，owner `@deepseek-ai/dsh-mcp-client`；U16 保留为上游提案，replacement 为 current workaround，退役条件见 §3 U16 行） |
 
 ---
