@@ -12,7 +12,7 @@ SPEC1 Stage 0 Goal 已确认；R 类通道经用户 2026-08-25 批准；Stage 1 
 
 | 项 | 内容 | 来源 |
 |---|---|---|
-| runtime 全量版本 | `0.1.0-rc.6`（含 rc 后缀精确相等） | AGENTS §4 版本规则 |
+| runtime 全量版本 | `0.1.0-rc.6`（含 rc 后缀精确相等） | 本机实际安装 identity（`/usr/lib/node_modules/@deepseek-ai/dsh/package.json` 的 version；AGENTS §4 只定义版本格式规则，不构成取值来源） |
 | 被替代 owner 包 | `@deepseek-ai/dsh-session@0.1.0-rc.6` | 其 package.json |
 | 官方行 | `- id: session`，无 config 块 | `dsh-base/cordis.patch.yml:27-28` |
 | ctx 服务面 | `ctx.sessions: SessionStore`——`create/prepare/enter/announce/flush/get/list/fork` | owner types `index.d.ts:290-416` |
@@ -21,17 +21,19 @@ SPEC1 Stage 0 Goal 已确认；R 类通道经用户 2026-08-25 批准；Stage 1 
 | typert 面 | `TypertLookupMap.session: TypertLookup<Session, SessionId>` 必须保持 | types `:78-82` |
 | 导出面 | `SessionStore(default)/Session/SessionForkError/adoptSessionEvent/snapshotSessionEvent/KNOWN_SESSION_EVENT_TYPES/SESSION_FORMAT_VERSION/fold*/is*Surface*/canonicalHeader/headerEquals/decodeStorageRecord/packChunkRuns/interruptedTurnClosers/TOOL_*/SessionPreparation` 等 | owner lib/index.js export 尾 + types `:15-27` |
 | config/settings 面 | 行无 config；未消费 settings | patch + 全文核查 |
-| client half（§10 六项） | 全负：(a) 无 dsh.client manifest/无 dsh 字段；(b) 无 remote namespace；(c) 无 slot/settings bridge；(d) 无 client/host 协商；(e) 无 browser state/reconnect 语义；(f) 无 client-facing event/service → **host-only** | owner package.json exports 全为 server 面；SBE-7 留档 |
+| client half（§10 六项） | 全负：(a) 无 dsh.client manifest/无 dsh 字段；(b) 无 remote namespace；(c) 无 slot/settings bridge；(d) 无 client/host 协商；(e) 无 browser state/reconnect 语义；(f) 无 client-facing event/service → **host-only** | owner package.json exports 全为 server 面；SBE-7.1 六项证据留档 |
 | peer 注入 | cordis `Service/Context`、`dsh-scope Scoped`、`dsh-llm Message`、`typert-protocol TypertLookup` | owner types imports |
+
+注：row15（runtime 主包）与 row16（owner 包）是两个实体，本锁定环境恰为同值；取值均以实际安装 package.json 为准。
 
 ## Standards 对照结论
 
-- capability-strategy：R1–R9 逐条落点——R1 patch 形状(§Architecture)；R2 上表矩阵+委托复刻；R3 import 面不覆盖(组合而非再导出)；R4 boot 自检；R5 SBE-1；R6 冲突检测；R7 U-series 提案登记(tasks 登记，diagnostics 引用)；R8 host-only 判定成立则不适用(留证)；R9 不触碰。
+- capability-strategy：R1–R9 逐条落点——R1 patch 形状（官方 `disabled:true` + `insert`，见 Components cordis.patch.yml；验收句 SBE-4.4）；R2 上表矩阵+委托复刻；R3 import 面不覆盖(组合而非再导出)；R4 boot 自检；R5 SBE-1；R6 冲突检测；R7 U-series 提案**已登记**（覆盖 branch/edit 契约；编号于 tasks 阶段在 feature-list §7 落定；退役条件：官方提供等价 branch/edit API 且消费者迁移后；boot diagnostics 引用，SBE-6.2）；R8 host-only 判定成立(Matrix client-half 行留证，client 复刻不适用)；R9 不跨组件、横切派发语义与 boot 胶水不走 R（SBE-15.4，声明不适用留痕）。
 - api-shape：branch graph 查询=projection；edit plan/commit/rollback=durable mutation(identity+generation+commitState、fail-closed、审计)；一面原则满足。R slice 归属唯一组件 `dsh-session`，facade 组合部分不依赖跨组件 replacement。
 - identity-and-lifecycle：branchId 为 owner 域内 id；plan 终态用统一词汇且 final；generation 用 opaque token（此处取 plan 记录的创建序 opaque 串，不做全局单调承诺）。
 - durable-state-and-scope：branch/plan 记录归属 **session 档**（随 parent session 事件日志持久化，天然跨重启）；commit/rollback 无半提交可见（单次 append 即提交点）；rollback 幂等按 operation 能力声明，restore 默认不自动 retry。
 - visibility-and-redaction：branch/plan 元数据 diagnostic/UI 可见、非模型可见（不进 prompt 组装）；preview 输出遵循既有 redaction 底线。
-- concurrency-and-cancellation：并发策略声明 **compare-and-swap**（expectedVersion = `session.seq`，官方 contiguous seq 契约即版本向量）；scope=单 session；取消来源=caller signal 与 supersede；提交资格=plan 未终态+version 未漂移+owner 未 dispose。
+- concurrency-and-cancellation：并发策略声明 **compare-and-swap**（expectedVersion = `session.seq`，官方 contiguous seq 契约即版本向量）；scope=单 session；取消来源=caller signal 与 supersede；提交资格=plan 未终态+version 未漂移+owner 未 dispose；被取代 plan/branch 的 pending 异步完成仅留 diagnostics（SBE-14.3）；disposer 幂等且 identity-bound、不删新 owner 记录（SBE-14.4）；inherited 资源不可用时 child degraded 启动并记录 gap、不伪造（SBE-13.3）。
 
 ## Architecture
 
@@ -56,19 +58,22 @@ sequenceDiagram
 
 替代行 apply 时实例化官方 `import { SessionStore } from '@deepseek-ai/dsh-session'`（使用公开导出，不触碰模块私有），以**薄委托层**暴露 `ctx.sessions`：每个成员原样转发（保时序/形状/typed 错误），`session/*` 四事件由底层 store 自行 dispatch（零重派发，杜绝双跑与形状漂移）；typert lookup 注册保持同名 key。委托层之上仅追加 `sessions.branches` 子接口（branch/edit 面）。该方式使 R2 的"完整复刻"从"手工仿写"降级为"结构保证"。
 
+**自定义事件持久化机制**：branch/edit 记录以 append 到 parent log 的自定义事件（`branch/created`、`edit/committed`、`edit/reverted` 等）持久化，为此委托层须在**保持官方事件类型语义与派发顺序不变**（R2 边界内，官方 `KNOWN_SESSION_EVENT_TYPES` 等词汇不被改写）的前提下，扩展本 bundle 自定义事件类型的接纳/编解码面，使之经官方存储路径原样 round-trip；"自定义事件经官方持久化跨重启可重建"列入复刻一致性套件断言（Testing item 1）。若锁定版本实测不允许该扩展，则改 sidecar 记录并同步修订本节与 Branch 记录节的持久化声称（Stage 3/4 实测义务，非 SPEC2 断言）。
+
 ### Branch 记录 = parent log 上的事件
 
 - `branches.create(parent, boundary, {kind, ...})`：先以官方同款校验（`INVALID_BOUNDARY/OPEN_TURN/...`）验证边界 → 在 **parent session** append `branch/created` 事件（data：branchId(kind 内 opaque)、kind、boundarySeq、childSessionId、causal sourceEventSeqs、visibility、retention、inheritance 声明）→ 再调官方 `fork(parent, boundary, childId)` 建 child（header `parentSession/seedLength` 官方血缘字段自然承载）。
-- branch graph 查询 = 折叠 parent log 中 `branch/created|branch/closed` 事件的冻结投影；跨重启恢复免费获得（持久化插件本就订阅这些事件）。
+- branch graph 查询 = 折叠 parent log 中 `branch/created` 与 `branch/failed` 事件的冻结投影（首版不设 `branch/closed` 终态词，branch 生命周期终态从简，见 Data Models 与克制设计）；跨重启恢复免费获得（持久化插件本就订阅这些事件）。
 - 失败清理：fork 失败 → 向 parent append `branch/failed` 终态记录（或回滚刚 append 的 created——同一提交窗口内以补偿事件标记 superseded），不留 untracked 半成品。
+- 旧 client cursor 处理（goal 高风险边界）：fork/replace/rewind 使既有 client 在父 session 事件流上的位置失效时，以显式事件/状态呈现 typed invalidation（含 cursor 失效信息），不静默丢弃；具体形态（invalidation 事件或迁移提示）在实现任务首项对照锁定版本 client 消费面核实。
 
 ### Edit plan / commit / rollback = append-only 补偿
 
-- `plan(session, target, expectedVersion)`：expectedVersion 即 `session.seq`；plan 记录为 draft（内存句柄 + 校验），不改日志。
+- `plan(session, target, expectedVersion)`：expectedVersion 即 `session.seq`；**创建即校验 expectedVersion==当前 seq，不匹配返回 typed 冲突（SBE-10.1）**；plan 记录为 draft（内存句柄 + 校验），不改日志；commit 时再次 CAS 校验。
 - `preview(plan)`：只读推导受影响 surface 范围与结果形态（利用官方 `foldSurface/deriveMessages` 投影函数离线折叠），并列出计划涉及的 external side-effect 声明。
-- `commit(plan)`：CAS 校验 expectedVersion==当前 seq → 单次 append `edit/committed` 事件（data 含 plan 摘要、目标范围、replacement 定义、commitId、who/when/generation）→ 该事件以官方 `surfaceOp:'replace'` 语义进入 surface（compaction 同款机制：replace 删除被 shadow 节点）。**一次 append 即原子提交点**，观察者视角无半提交。
-- `rollback(commitId)`：校验该 commit 仍可逆 → append 逆向 `edit/reverted` replace 事件（恢复被 shadow 的原始节点可见性）→ 幂等：已 reverted 的 commitId 再次调用返回 typed no-op。不可自动回滚的 external 效果在 commit 记录中预先标记，rollback 结果如实列为 external-pending，要求显式 acknowledgment。
-- `restore`：restore=对指定历史 commitId 序列的重放校验——先离线折叠验证连续性，通过后一次性 append 恢复事件；失败 typed error 且默认不 auto-retry。
+- `commit(plan)`：CAS 校验 expectedVersion==当前 seq → 单次 append `edit/committed` 事件（data 含 plan 摘要、目标范围、replacement 定义、commitId、who/when/generation）→ 该事件以官方 `surfaceOp:'replace'` 语义进入 surface（compaction 同款机制：replace 删除被 shadow 节点）。**一次 append 即原子提交点**，观察者视角无半提交；commit 成功后该 plan 终态落 `success`（终态词汇与 SBE-10.5 逐字一致）。
+- `rollback(commitId)`：校验该 commit 仍可逆 → append 逆向 `edit/reverted` replace 事件（恢复被 shadow 的原始节点可见性）→ 幂等：已被逆 replace 标记的 commitId 再次调用返回 typed no-op。**逆 replace 是审计/补偿表达，不改变所属 plan 的终态（仍为 `success`）**。不可自动回滚的 external 效果在 commit 记录中预先标记，rollback 结果如实列为 external-pending，要求显式 acknowledgment。
+- `restore`（SBE-12）：restore=对指定历史 commitId 序列的重放校验——先离线折叠验证连续性（可引用 `recovery-policy` 的 checkpoint 证据作为恢复点来源，不重复实现配额/保留策略，goal 消费项落地）；restore 范围内声明的外部副作用走显式 acknowledgment 路径并在结果中枚举（与 SBE-11 的 external-pending 共用词汇）；通过后一次性 append 恢复事件；失败 typed error 且默认不 auto-retry。
 
 ## Components and Interfaces
 
@@ -76,7 +81,7 @@ sequenceDiagram
 @deepseek-ai/dsh-plugin-api-session-branch
   ├─ lib/apply.js        // patch 入口：identity 校验→boot 自检→委托装配→branches 接口注册
   ├─ lib/delegate.js     // SessionStore 逐成员薄委托（复刻层）
-  ├─ lib/branch-log.js   // branch/created|closed|failed 事件编解码+graph 折叠（纯函数）
+  ├─ lib/branch-log.js   // branch/created|failed 事件编解码+graph 折叠（纯函数）
   ├─ lib/edit-plan.js    // plan/CAS/preview/commit/rollback 状态机（纯函数核心）
   ├─ test/*.mjs          // 包级测试
   └─ cordis.patch.yml    // - id: session disabled:true + insert plugin-api-session-branch
@@ -89,10 +94,10 @@ host 门面侧：`pluginApi.session.branches` 只读投影 + 操作入口转发�
 ```text
 BranchRecord   { branchId, kind:'retry'|'sidechain'|'experiment'|'rescue', parentSessionId,
                  boundarySeq, childSessionId, causalSourceSeqs[], visibility, retention,
-                 inheritance?: {route?,memory?,attachments?,toolState?}, state:'active'|'closed'|'failed' }
+                 inheritance?: {route?,memory?,attachments?,toolState?}, state:'active'|'failed' }
 EditPlan       { planId, targetSessionId, expectedVersion, range:{fromSeq,toSeq}, kind,
-                 externals: ExternalEffectRef[], state:'draft'|'committed'|'reverted'|
-                 'error'|'aborted'|'denied'|'superseded' }   // 终态 final 且唯一
+                 externals: ExternalEffectRef[], state:'draft'|'success'|'error'|'aborted'|
+                 'denied'|'superseded' }   // 非终态仅 draft；终态 final 且唯一，与 SBE-10.5 词汇逐字一致
 EditCommit     { commitId, planId, generation, at, actor, replacementRef, externals[] }
 ```
 
@@ -111,8 +116,8 @@ EditCommit     { commitId, planId, generation, at, actor, replacementRef, extern
 
 ## Testing Strategy
 
-1. **复刻一致性套件**（对锁定版本的回归锚）：对 `create/prepare/enter/announce/flush/get/list/fork` 与四事件逐一断言委托层与官方直连行为一致（含 fork 五种 typed 拒绝码、`session/created` 否决回滚、flush 参与计数语义）。
-2. **纯函数单元**（零 harness）：branch-log 折叠、edit-plan CAS/终态机、补偿配对（commit↔revert）、inheritance 默认表。
+1. **复刻一致性套件**（对锁定版本的回归锚）：对 `create/prepare/enter/announce/flush/get/list/fork` 与四事件逐一断言委托层与官方直连行为一致（含 fork 五种 typed 拒绝码、`session/created` 否决回滚、flush 参与计数语义）；自定义事件（branch/edit 系列）经官方存储 round-trip 断言（写入→读出→折叠一致）。
+2. **纯函数单元**（零 harness）：branch-log 折叠、edit-plan CAS/终态机（含创建即拒与 commit 双检、终态唯一性）、补偿配对（commit↔revert）、inheritance 默认表、disposer 幂等、pending 异步仅留诊断。
 3. **集成（harness boot 应用 patch）**：自检断言三件套；branch 创建→child 血缘字段断言；commit 后 deriveMessages 反映 replace、rollback 后还原；外部效果 ack 流；重启后 graph 从持久化日志重建一致。
 4. **冲突/停用**：模拟竞争 owner 行与失配 identity → 安全停用且官方行为可恢复（卸载可逆性）。
 5. **治理登记**：U-series upstream proposal 条目与退役条件写入 feature-list/tasks 登记项（R7 验收）。

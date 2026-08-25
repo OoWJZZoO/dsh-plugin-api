@@ -24,12 +24,12 @@ SPEC1 Stage 0 Goal 已确认；R 类通道经用户于 2026-08-25 明确批准�
 
 按 `docs/standards/` 六册对照：
 
-- **capability-strategy**：核心适用——R1–R9 逐条落实于 SBE-1…SBE-7；组件唯一 owner、boot 自检、版本锁定、上游提案退役均为硬性验收。
+- **capability-strategy**：核心适用——R1–R9 逐条落实（R1→SBE-4.4、R2→SBE-2、R3→SBE-3、R4→SBE-4、R5→SBE-1、R6→SBE-5、R7→SBE-6、R8→SBE-7、R9→SBE-15.4）；组件唯一 owner、boot 自检、版本锁定、上游提案退役均为硬性验收。
 - **api-shape**：适用——branch graph 查询为 projection 面（冻结只读）；edit plan 为 durable mutation 面（identity + generation + commitState、fail-closed、审计）；branch kind 注册若开放策略化则属 policy 面，首版不开放（一面原则：主面为 durable mutation）。
-- **identity-and-lifecycle**:适用——branch id 与 generation 用 owner 域内命名（opaque token）；终态词汇统一且 final；不用生命周期词冒充终态。
+- **identity-and-lifecycle**：适用——branch id 与 generation 用 owner 域内命名（opaque token）；终态词汇统一且 final；不用生命周期词冒充终态。
 - **durable-state-and-scope**：核心适用——branch/edit 记录单档归属 session 层；多步变更 commit/rollback 不允许半提交可见；操作能力按 operation 声明（rollback 幂等性、restore 是否可自动 retry 默认否）。
 - **visibility-and-redaction**：适用——branch 元数据默认 diagnostic/UI 可见、非模型可见；restore/preview 输出中的敏感内容沿用既有 redaction 底线。
-- **concurrency-and-cancellation**:适用——stale plan 失去提交资格、abort 语义、disposer 按 identity 清理、并发策略声明为 compare-and-swap（Design 中细化 scope 与冲突判定）。
+- **concurrency-and-cancellation**：适用——stale plan 失去提交资格、abort 语义、disposer 按 identity 清理、并发策略声明为 compare-and-swap（Design 中细化 scope 与冲突判定）。
 
 ## Requirements
 
@@ -80,6 +80,7 @@ SPEC1 Stage 0 Goal 已确认；R 类通道经用户于 2026-08-25 明确批准�
 1. **WHEN** the replacement row applies **THEN** it SHALL assert that the official `session` row is disabled, that its own row is active, and that key contracts (a representative sessions service call and event receipt) are usable.
 2. **WHEN** any self-check assertion fails **THEN** the bundle SHALL log a bounded diagnostic and return normally without throwing through apply, and SHALL NOT leave partial branch interfaces registered.
 3. **WHEN** both the official behavior and the replacement behavior would be reachable for the same session operation **THEN** the configuration SHALL be treated as a fault condition detected by SBE-5 checks and SHALL fail safe rather than double-run.
+4. **WHEN** the replacement is applied through the official patch mechanism **THEN** the patch SHALL use only the official `disabled: true` + `insert` replacement form and SHALL NOT modify any official package file (R1).
 
 **Classification:** R.
 
@@ -130,6 +131,7 @@ SPEC1 Stage 0 Goal 已确认；R 类通道经用户于 2026-08-25 明确批准�
 3. **WHEN** branch creation succeeds **THEN** the branch record SHALL carry causal provenance (parent boundary seq and referenced source event seqs) and an owner-domain branch identity.
 4. **WHEN** a caller supplies an unknown kind **THEN** the replacement SHALL reject with a typed validation result.
 5. **WHEN** branch creation fails after the child session was prepared **THEN** the replacement SHALL clean up or mark the partial child explicitly and SHALL NOT leave an untracked half-created branch.
+6. **WHEN** a branch operation forks, replaces, or rewinds a session's event stream **THEN** the replacement SHALL define explicit handling for existing client cursor positions on that session (typed invalidation or migration) and SHALL NOT let them fail silently.
 
 **Classification:** R (core branch contract over the replicated fork primitive).
 
@@ -139,7 +141,7 @@ SPEC1 Stage 0 Goal 已确认；R 类通道经用户于 2026-08-25 明确批准�
 
 **Acceptance Criteria:**
 
-1. **WHEN** a caller queries branches for a session **THEN** the replacement SHALL return frozen read-only views of matching branch records including kind, boundary, provenance, visibility, and retention metadata.
+1. **WHEN** a caller queries branches for a session **THEN** the replacement SHALL return frozen read-only views of matching branch records including kind, boundary, provenance, visibility, and retention metadata, and SHALL identify the current/active branch view.
 2. **WHEN** a caller walks ancestors or children from a branch **THEN** the returned graph SHALL be consistent with committed branch records and SHALL NOT fabricate links from heuristics.
 3. **WHEN** queried records contain sensitive content references **THEN** views SHALL follow the default audience policy: diagnostic/UI-visible, not injected into model context.
 
@@ -203,7 +205,7 @@ SPEC1 Stage 0 Goal 已确认；R 类通道经用户于 2026-08-25 明确批准�
 **Acceptance Criteria:**
 
 1. **WHEN** multiple plans target overlapping ranges **THEN** submission SHALL follow the declared compare-and-swap strategy; losers receive typed conflicts without corrupting winners.
-2. **WHEN** a cancel signal arrives for an in-flight plan operation **THEN** the operation's terminal outcome SHALL be decided at a single submission point honoring `aborted > superseded > error > timeout-error` within the same window, and once atomically submitted SHALL NOT be rewritten.
+2. **WHEN** a cancel signal arrives for an in-flight plan operation **THEN** the operation's terminal outcome SHALL be decided at a single submission point honoring `aborted > superseded > error` within the same window (timeout recorded as an `error` cause annotation, terminal vocabulary unchanged), and once atomically submitted SHALL NOT be rewritten.
 3. **WHEN** an execution holding plan/branch handles is aborted or superseded **THEN** its pending async completions SHALL lose submission qualification and be retained only as diagnostics.
 4. **WHEN** branch or plan disposer runs **THEN** cleanup SHALL be idempotent and identity-bound, never removing a newer owner's records.
 
@@ -218,8 +220,9 @@ SPEC1 Stage 0 Goal 已确认；R 类通道经用户于 2026-08-25 明确批准�
 1. **WHEN** the replacement row is active **THEN** existing facade session capabilities (durable observation, restricted append, fork passthrough probes) SHALL operate over the replaced surface without semantic change.
 2. **WHEN** the replacement degrades or fails any SBE check **THEN** the event SHALL be reported through plugin diagnostics with owner attribution, and availability surfaces SHALL reflect the true state.
 3. **WHEN** the replacement is removed from the profile **THEN** the official row SHALL resume unchanged (reversibility), with no residual branch state required for official operation.
+4. **WHERE** cross-cutting dispatch semantics (priority / deepFreeze / fault containment) or boot glue would be implicated **THEN** this feature SHALL NOT carry them on the replacement channel and SHALL keep its R slice bounded to the single `dsh-session` component (R9).
 
-**Classification:** R + B facade integration.
+**Classification:** R (facade composition compatibility); this feature adds no B-class emulation hooks—existing facade capabilities run over the replaced surface as consumers only.
 
 ## Non-Goals
 

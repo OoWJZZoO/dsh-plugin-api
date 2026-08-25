@@ -51,10 +51,11 @@ sequenceDiagram
   1. entry.activate() 返回 `ToolDefinition[]`（插件自带定义）；
   2. entry 声明引用既有已注册工具名集合（仅做可见性门控）。
 - **Discovery provider**：facade 启动时向 `systemPrompt.tools()` 注册一个 facade-owned provider；其每次求值输出"当前 scope 内所有 active 且未被取代的 toolset 的 schemas"。deactivate/dispose 只改 active 集合，下一 assemble 自然生效——**不需要任何官方行内改动**。
-- **Search**：纯投影，返回冻结 descriptor 数组 + exclusion 元数据（route constraint 命中时附原因）。
+- **Search**：纯投影，返回冻结 descriptor 数组 + exclusion 元数据（route constraint 命中时附原因）；**无匹配时显式返回空 `descriptors[]` 与空 `exclusions[]`，不捏造建议**（PTD-2.2）。
 - **Deactivate 语义映射**（对应 PTD-4）：
   - entry 级 `deactivate(id, {reason})`=软下线：拒绝新 activation，已发 ToolsetHandle 继续有效至其执行结束；
-  - handle 级 `handle.dispose()`=精确回收该 generation：从 active 集合移除，下一个 assemble 起不可见（等价 latest-wins 提交资格剥夺）；
+  - handle 级 `handle.dispose()`=精确回收该 generation：从 active 集合移除，下一个 assemble 起不可见（等价 latest-wins 提交资格剥夺）；dispose 以自身持有 generation 自校验，**stale/foreign generation 的 dispose 返回 typed no-op/拒绝并保留当前 active 暴露**（PTD-4.4 的落地位：goal 层 `deactivate(id, generation)` 语义即映射到此 handle 级回收）；
+  - scope 结束/owner dispose：execution/session scope 结束或 entry disposer 运行时回收该 scope 内该 owner 的 active 记录与其 resources（PTD-4.3 与 PTD-3.6 的清理规则）；
   - stale 结果 guard：被取代 generation 的迟到回调只进 audit，不再发布。
 - **Prompt hint 注入**：有 active catalog 条目且 scope 开启 hint 时，经 `systemPrompt` section/context 贡献 descriptor 清单与调用语法；无条目贡献零字节；注入失败只降级 hint。
 
@@ -63,18 +64,24 @@ sequenceDiagram
 ```text
 pluginApi.tools.discovery
   ├─ catalog.register(spec) → Handle{generation, dispose}
-  ├─ search(query, {scope}) → {descriptors[], exclusions[]}
+  ├─ search(query, {scope}) → {descriptors[], exclusions[]}   // goal 层位置参数 `search(query, scope)` 细化为选项对象，便于后续附加过滤参数
   ├─ activate(id, {session, execution, reason}) → ToolsetHandle{generation, dispose}
-  ├─ deactivate(id, {reason?})                    // entry 级软下线
+  ├─ deactivate(id, {reason?})                    // entry 级软下线；generation 精确回收走 handle.dispose()（PTD-4.4）
   └─ audit.query(filter) → frozen records         // diagnostic/UI 可见
 ```
+
+## Client Boundary（PTD-8）
+
+- client 半面只消费既有 host projections 的只读 exposure 摘要（随 availability 元数据），并经现有远程投影通道下发，不新增 client transport。
+- 不暴露 catalog 注册、search 代查、activate/deactivate 任何 client 面（PTD-8.2）。
+- 无兼容 host 投影时 client 半面 inert/降级，不影响其他 client 面加载（PTD-8.3）。
 
 ## Data Models
 
 ```text
 Descriptor      { id, owner, summary, capabilities[], sourceKind: 'plugin'|'skill'|'mcp'|'builtin-ref' }
 ActiveToolset   { entryId, generation, scopeKey, tools: ToolDefinition[]|names[], activatedAt, reason }
-AuditRecord     { seq, at, kind:'activate'|'deactivate'|'revoke'|'exclude'|'fail', entryId, owner, generation?, reason }
+AuditRecord     { seq, at, kind:'activate'|'deactivate'|'revoke'|'exclude'|'fail', entryId, sourceKind, owner, generation?, reason }
 ```
 
 ## Error Handling 与 guard
@@ -82,8 +89,11 @@ AuditRecord     { seq, at, kind:'activate'|'deactivate'|'revoke'|'exclude'|'fail
 | 故障 | 行为 |
 |---|---|
 | activate 回调抛错/返回畸形 | 该 entry 标记 failed（diagnostics 带 owner 归因），其余 entry 与宿主请求不受影响 |
+| 注册失败/畸形 descriptor | 该条目不进入目录（duplicate 走 typed conflict），注入面贡献零字节，经 plugin diagnostics 上报 owner 归因；其余 entry 与宿主不受影响（PTD-7.4） |
 | provider 求值异常 | 本次 assemble 输出该 provider 空集合并记 diagnostics；不影响其他 providers 与 prompt 组装 |
 | dispose 后迟到回调 | 失去提交资格，仅保留为 audit/diagnostic |
+| stale/foreign generation 的 dispose | typed no-op/拒绝，当前 active 暴露保留（PTD-4.4） |
+| audit 写入失败 | 显式上报 gap（availability/diagnostics），不捏造记录；exposure 按 PTD-3 继续（PTD-5.3） |
 | facade setup 失败 | 整体 inert + availability 如实报告，绝不抛穿 apply |
 | route constraint 引用缺失 | exclusion 元数据标 unknown，不阻断搜索 |
 

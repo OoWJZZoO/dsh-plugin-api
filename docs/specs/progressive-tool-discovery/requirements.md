@@ -9,7 +9,7 @@ SPEC1 Stage 0 Goal 已确认；Stage 1 Requirements 已确认（2026-08-25，M6 
 
 `progressive-tool-discovery` 为 tools 提供统一的 discover → search → activate → expose 生命周期：工具先以轻量 descriptor 注册，模型按需搜索并激活后才能拿到完整工具定义。它收敛 `dsh-mcp-client-v2`（tool search）、`dsh-vision-toolkit`（activation-gated registration）、`dsh-agent-teams`（prompt 约束调用时机）各自绕过的同一公共缺口——per-turn 的工具暴露策略。
 
-本 feature 初版是 **B 类 host facade**：基于现有 tools registry、systemPrompt assemble 与 skills registry 组合。官方 `dsh-tools` loader 行的 R 化是登记在案的后续选项，是否触发由 Design 阶段可行性结论决定；凡官方面无法支撑的暴露语义（如 turn 内 toolset 重建边界），如实标注 C 类 `upstream-required` 并披露真实生效边界，不虚报即时性。Host 是权威面；client 不拥有 activation 权威。
+本 feature 初版是 **B 类 host facade**：基于现有 tools registry、systemPrompt assemble 与 skills registry 组合。官方 `dsh-tools` loader 行的 R 化是登记在案的后续选项，是否触发由 Design 阶段可行性结论决定；凡官方面无法支撑的暴露语义（如 turn 内 toolset 重建边界），按 PTD-3.4 如实披露真实生效边界；若证据充分则按 PTD-3.5 立即返工 R 类。Host 是权威面；client 不拥有 activation 权威。
 
 ## Definitions and Boundaries
 
@@ -40,7 +40,7 @@ SPEC1 Stage 0 Goal 已确认；Stage 1 Requirements 已确认（2026-08-25，M6 
 
 **Acceptance Criteria:**
 
-1. **WHEN** a caller registers a catalog entry **THEN** the facade SHALL require a unique entry id, a non-empty owner id, a bounded summary, declared capabilities, an activate callback, and SHALL return a handle with generation token and disposer.
+1. **WHEN** a caller registers a catalog entry **THEN** the facade SHALL require a unique entry id, a non-empty owner id, a summary bounded to at most 200 characters, at most 16 declared capabilities, an activate callback, and SHALL return a handle with generation token and disposer.
 2. **WHEN** a caller registers a duplicate entry id within the same owner namespace **THEN** the facade SHALL reject it with a typed conflict result and SHALL preserve the existing entry.
 3. **WHEN** a disposer is invoked more than once **THEN** the facade SHALL make disposal idempotent and SHALL NOT remove entries owned by other owners.
 4. **WHEN** a registered entry's summary or capability metadata is consumed by any projection **THEN** the facade SHALL provide it as frozen read-only data.
@@ -71,9 +71,9 @@ SPEC1 Stage 0 Goal 已确认；Stage 1 Requirements 已确认（2026-08-25，M6 
 3. **WHEN** an activation is requested for an unknown, disposed, or conflicting entry state **THEN** the facade SHALL reject it with a typed result and SHALL NOT partially expose tools.
 4. **WHERE** the official loader constraints prevent intra-turn toolset rebuild **THEN** the facade SHALL apply the exposure at the real effective boundary (such as the next turn) and SHALL report that boundary truthfully instead of claiming immediate effect.
 5. **GIVEN** the Design-stage audit produces sufficient evidence that the official `dsh-tools` loader cannot support intra-turn (or otherwise usable) toolset rebuild **THEN** the feature SHALL be reworked onto the R channel—replacing the `dsh-tools` row per capability-strategy R1–R9—and its first delivered version SHALL expose working activation functionality; a disclosure-only degraded facade SHALL NOT serve as the first delivered version.
-5. **WHEN** an execution holding a toolset view finishes **THEN** the view's validity ends with its scope and SHALL NOT leak into unrelated sessions or executions.
+6. **WHEN** an execution holding a toolset view finishes **THEN** the view's validity ends with its scope and SHALL NOT leak into unrelated sessions or executions.
 
-**Classification:** B where existing registry/systemPrompt seams suffice; C (`upstream-required`) for guarantees beyond what official dispatch exposes.
+**Classification:** B; guarantees beyond what official dispatch exposes follow PTD-3.4's truthful boundary disclosure instead of being claimed as immediate.
 
 ### PTD-4 Deactivation and generation replacement
 
@@ -121,6 +121,7 @@ SPEC1 Stage 0 Goal 已确认；Stage 1 Requirements 已确认（2026-08-25，M6 
 1. **WHEN** an entry's activate callback throws or returns malformed output **THEN** the facade SHALL contain the failure, mark that entry failed with owner attribution via plugin diagnostics, and SHALL keep other entries and the hosting operation alive.
 2. **WHEN** the feature itself fails setup **THEN** it SHALL degrade to inert availability reporting, SHALL NOT throw through apply, and SHALL NOT kill harness boot.
 3. **WHEN** degraded **THEN** availability queries SHALL reflect the true state and previously exposed generations remain governed by their recorded state rather than fabricated defaults.
+4. **WHEN** a catalog registration fails or yields an unusable entry **THEN** the facade SHALL contain the failure, report it with owner attribution via plugin diagnostics, and SHALL keep other entries and the hosting operation alive.
 
 **Classification:** B.
 
