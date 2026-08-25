@@ -17,6 +17,12 @@ SPEC1 Stage 0 Goal、Stage 1 Requirements、Stage 2 Design 已确认（2026-08-2
 - **失败呈现（契约 §4）**：typed rejection、fail-closed 默认（branch/plan 冲突 typed；策略/回调抛错只降级该条目经 plugin diagnostics 带 owner 归因上报）；apply 内全部故障 bounded 日志 + 正常 return（G1 模式）；审计/exposure 失败显式 gap/truncated 标记；禁止裸 console 替代 diagnostics 通道。
 - **测试**：包级 `packages/session-branch/test/*.mjs` + 主仓 `test/*.mjs`（facade 集成）；统一 `npm test`（4G 护栏），不用裸 `node --test`；纯函数模块零 harness 依赖。完成检查含 `git diff --check`、治理代号泄漏扫描、无冻结文件改动、`npm test` 全绿。
 - 任务状态：每个顶层任务完成后，把标题前 `[ ]` 改为 `[x]` 并在其下追加一行 `- 状态：implemented`。
+- **Stage 4 实现前置只读勘察（2026-08-25，基于合并 Wave A 后的 main `45c23a6`，供接续会话直接使用，无需重查）**：
+  - `lib/plugin-api-service.js:666` `composeSessionApi(base, durable)` 是 `pluginApi.session` 唯一组成路径；`_publishSessionApi()`（`lib/plugin-api-service.js:1003-1004`）在构造（923）、`_assignFeature('session')`（1096）、`_assignFeature('sessionRoute')`（1121）、dispose（1264）四处被调用——`session.branches` add-on 必须经由 `_publishSessionApi` 路径注入（在 `_sessionSurface = composeSessionApi(...)` 后追加最小组合行，带 `// session-branch facade` 注释），保证四路径（含 sessionRoute 重挂）一致刷新。
+  - `lib/index.js:299` `readReplacementAuxiliaryManifests()` 现含 `compactionEvents`/`sessionTitle` 两项；SBE 需在 `readPackageManifest` 同款函数追加 `sessionBranch: readPackageManifest('@deepseek-ai/dsh-plugin-api-session-branch')`（版本一致校验，主包不 import 辅助包，失配仅停用本 R 特性——同 compaction-events/session-title 先例）。
+  - U 系列最新编号 **U16**（`mcp-catalog-lifecycle`）；本 feature 的 U-series 上游提案登记取 **U17**（覆盖 branch/edit 契约；退役条件：官方提供等价 branch/edit API 且消费者迁移后），feature-list §3 表 + §7 登记行随批次集成 sync 落地。
+  - `packages/full/test/patch-composition.test.mjs` 断言文件含版本 pin（`0.1.0-rc.6-0.5` / `dsh.api 0.5`）与逐替代行装配序；sync 递增版本时该文件的版本 pin 必须同步更新（全量聚合包与全部辅助包版本一致规则）。
+  - 主仓 feature 计数现状（合并 Wave A 后）：`FEATURE_MOUNTERS` 25 项、`pluginApi.features` 25 项（tail 序 `remote→execution→recovery→coordination→workspaceTransactions→diagnostics→usage→tasks→toolDiscovery`）；SBE 的 `sessionBranch` mount 插入 `session` 之后不扰动 tail pin（`test/security-policy-assembly.test.mjs`、`test/index-remote.test.mjs`、`test/index-diagnostics.test.mjs` 的 tail 断言以相对索引表达）。
 
 ## Tasks
 
