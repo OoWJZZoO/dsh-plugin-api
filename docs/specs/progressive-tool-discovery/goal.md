@@ -6,7 +6,8 @@
 
 ## Status
 
-SPEC1 Stage 0：Goal 待用户确认（M6 第四批次批量确认门，尚未获批）。
+SPEC1 Stage 0：Goal 已确认（M6 第四批次批量确认门）。
+修订注记（2026-08-25，用户指示）：若 Design 阶段取得充分证据证明官方 loader 不支持 turn 内 toolset 重建，本 feature 立即返工为 R 类（替代 `dsh-tools` 行），第一版即交付可用功能；不以只披露边界的门面残缺形态作为首版交付。
 
 ## Goal
 
@@ -37,12 +38,11 @@ SPEC1 Stage 0：Goal 待用户确认（M6 第四批次批量确认门，尚未�
 - 不包含：
   - skill activation lifetime 本身（#16 另行立项）；
   - route policy 决策（已由 `model-route-policy` 拥有）；
-  - prompt 文案创作或 systemPrompt 内容策略（本面只注入暴露所需的 descriptor/说明位）；
-  - 官方 `dsh-tools` 行替换——若在 design 阶段证明官方 loader 行内 toolset 无法在门面侧动态重建，则把 `dsh-tools` 装配行登记为后续正式 R 候选，不在本 feature 内实施。
+  - prompt 文案创作或 systemPrompt 内容策略（本面只注入暴露所需的 descriptor/说明位）。
 
 ## Classification
 
-B 类初版（tools registry + systemPrompt + skills 组合）；`dsh-tools` loader 行的 R 化保留为登记在案的后续选项，是否触发由 Design 阶段的可行性结论决定。
+B 类初版（tools registry + systemPrompt + skills 组合）。升级规则（2026-08-25 用户指示）：若 Design 阶段以充分证据证明官方 `dsh-tools` loader 行内 toolset 无法在门面侧动态重建到可用程度，本 feature **立即返工为 R 类**（替代 `dsh-tools` 装配行），第一版直接交付可用的 activation 功能——R 返工属于本 feature 内的通道决定，不是另立候选，也不得以"披露边界即可"的门面残缺形态充当首版。
 
 ## Expected Result
 

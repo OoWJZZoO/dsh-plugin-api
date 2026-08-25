@@ -6,7 +6,7 @@
 
 ## Status
 
-SPEC1 Stage 0：Goal 待用户确认（M6 第四批次批量确认门，尚未获批）。
+SPEC1 Stage 0：Goal 已确认（M6 第四批次批量确认门）。
 
 ## Goal
 
