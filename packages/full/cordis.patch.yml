@@ -3,7 +3,8 @@
 #   1. main facade row (must precede any third-party plugin row);
 #   2. compaction replacement: disable the official row, insert ours;
 #   3. session-title replacement: disable the official row, insert ours;
-#   4. mcp replacement: disable the official loader row, insert ours.
+#   4. mcp replacement: disable the official loader row, insert ours;
+#   5. attachment replacement: disable the official loader row, insert ours.
 # The bundle adds no API of its own: third-party plugins keep using
 # ctx.pluginApi from @deepseek-ai/dsh-plugin-api-main.
 - insert:
@@ -30,4 +31,10 @@
 - insert:
     - id: plugin-api-mcp
       name: '@deepseek-ai/dsh-plugin-api-mcp'
+      config: {}
+- id: attachment-local
+  disabled: true
+- insert:
+    - id: plugin-api-attachments
+      name: '@deepseek-ai/dsh-plugin-api-attachments'
       config: {}
