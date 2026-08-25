@@ -2,7 +2,9 @@
 
 ## Status
 
-Stage 2 Design 已确认；SPEC2 审查纠偏完成，可进入 Stage 3 Tasks。
+Stage 2 Design 已确认；SPEC2 审查纠偏完成，可进入 Stage 3 Tasks。2026-08-25
+ANY 维护修订（规范对齐）见各节标注与文末「ANY 维护修订记录」，不改变已确认
+的 Goal/Requirements 验收边界。
 
 ## Overview
 
@@ -38,6 +40,19 @@ projection through an already supported channel; that projection is read-only,
 redacted, carries availability and generation metadata, and degrades to an inert
 local face without blocking unrelated client faces when no compatible host
 projection exists (CL-10.1, CL-10.3).
+
+### Face placement (api-shape 三面模型对齐，ANY 修订 2026-08-25)
+
+本 feature 以 **durable mutation** 为主公开面（acquire / heartbeat / release /
+takeover / compareAndSet 写 lease 记录），`watch` / `current` 是其同 owner 的
+**只读投影面**，与 mutation 共享同一记录状态空间：投影是 mutation 的即时
+镜像，不注册策略、不写状态，遵守 mutation → event → projection 的单向数据流
+（`api-shape.md` §2）。这与 `api-shape.md` §3 的 llm 分面先例（各面不共享
+私有状态、各自 feature guard）不同：lease/CAS 是读写一体域，投影必须观察
+mutation 的结果才能成立，强行拆面会破坏单向数据流且令 watch 无法消费事件。
+本取舍保持单一并发语义 owner（adapter 的 per-key 串行 lane），不构成
+`api-shape.md` §4 smell #1 的拆面触发；若未来官方提供统一 lease seam，
+本面形状随兼容路径（B compatibility path）重估。
 
 ## Architecture
 
@@ -192,6 +207,17 @@ token is unique per generation and is required for protected writes. Expiry is
 checked against the adapter's clock policy; an uncertain clock/backend result
 cannot be upgraded to active ownership.
 
+Generation is a **resource-local monotonic sequence** (ANY 修订 2026-08-25):
+it is strictly increasing only within the same canonical resource, never
+comparable across resources, and callers must treat it as an opaque token
+(`identity-and-lifecycle.md` §2). The durable bridge persists the sequence
+with the record itself (`seq` internal field, never projected), so a process
+restart continues the sequence from the persisted record and **never re-mints
+a generation value that already exists** — a stale era's heartbeat, fencing
+proof, or takeover proof stays invalid against a newer era record (CL-3.4,
+CL-5.2). The memory adapter restarts its sequence on dispose; that is
+disclosed by the honest memory-scoped, non-durable projection.
+
 Executions, tasks, workspace transactions, or sessions whose identities are
 supplied by sibling features are preserved as bounded provenance; the facade
 never mints a replacement identity for them (CL-1.4).
@@ -226,13 +252,23 @@ The projection distinguishes a capability that is absent (`unsupported`) from a
 backend that is currently unhealthy (`unavailable`) and from a state that could
 not be verified (`unknown`).
 
+Scope vocabulary includes `process` (ANY 修订 2026-08-25): this is the
+**explicitly non-durable** memory tier. `durable-state-and-scope.md` §1 defines
+three durable tiers (session / workspace / profile); memory records are
+transient and their projection must truthfully report `durability: 'memory'`
+and never claim cross-process or cross-restart recovery. Durable bridge
+records belong to the workspace tier only (as reported by the host).
+
 ## Error Handling
 
 Validation errors are returned before backend access. Runtime outcomes include:
 `conflict`, `stale-holder`, `expired`, `released`, `superseded`,
 `compare-conflict`, `unsupported`, `unavailable`, `unknown`, and `inactive`.
-Each result includes the resource identity, operation, availability, and bounded
-observed generation/version where safe.
+Each result includes the resource identity, operation, availability, bounded
+observed generation/version where safe, and the observation time
+(`observedAt`, ISO) so the audit trail is complete — who / what / when /
+generation (`durable-state-and-scope.md` §2). Successful CAS results carry
+`observedAt` as well; watch events already carry `observedAt`.
 
 Acquire never replaces an unexpired foreign lease. Heartbeat never revives an
 expired lease. Release is identity-bound and idempotent; a repeat release of the
@@ -246,6 +282,21 @@ after expiry returns `expired`, a stale handle returns `superseded`, a foreign
 conflict returns `conflict`, and a repeat disposer returns `released`. A lookup
 outside the caller's declared scope returns the same unavailable shape as a
 missing resource and never reveals whether a private resource exists (CL-9.2).
+
+### Operation capability declaration（ANY 修订 2026-08-25）
+
+Per-operation capability declaration (`durable-state-and-scope.md` §3); the
+facade never performs automatic retry — an unconfirmed result is returned to
+the caller, never replayed by the facade:
+
+| Operation | Idempotency | Auto-retry | Fail-closed |
+|---|---|---|---|
+| `acquire` | deterministic conflict on repeat while unexpired (no replace) | no | yes |
+| `heartbeat` | deterministic stale/expired codes on replay after expiry | no | yes |
+| `release` | idempotent same-generation no-op (`released`) | no | yes |
+| `takeover` | proof mismatch returns conflict without change | no | yes |
+| `compareAndSet` | replay of an applied version = `compare-conflict`, never double-commits | no | yes |
+| `watch` | subscription disposer idempotent | no | yes |
 
 If redaction or freezing fails, the facade returns an unavailable projection and
 does not expose the underlying value. If a watch callback fails, only that
@@ -272,3 +323,22 @@ adapter contract tests using scripted public-service doubles.
 No test may assert cross-process durability from an in-memory adapter. Tests that
 exercise future official hooks must be capability-gated and must verify the
 facade degrades explicitly when the hook is absent.
+
+## ANY 维护修订记录（2026-08-25）
+
+依据用户 ANY 指示与 `docs/standards/` 六册符合性审计结论，就地修订本文
+（不改变已确认的 Goal/Requirements 验收边界，不新增能力；代码侧修订与
+回归测试见 Stage 4 交付后的维护提交）：
+
+1. **生成语义**（`identity-and-lifecycle.md` §2/§3）：明确 generation 为
+   资源局部单调序号、跨资源不可比（修复全局统一单调序号的字面偏差）；
+   durable bridge 的序列随记录持久化，重启不重铸（修复旧 era proof/heartbeat
+   跨重启失效保证）——见「Lease handle and record」节。
+2. **面放置**（`api-shape.md` §1/§3/§4）：显式声明 mutation + projection
+   同体取舍及其理由——见「Face placement」节。
+3. **审计时间**（`durable-state-and-scope.md` §2）：操作结果补 `observedAt`——
+   见「Error Handling」节。
+4. **操作能力声明**（`durable-state-and-scope.md` §3）：逐操作声明幂等 /
+   auto-retry / fail-closed——见「Operation capability declaration」节。
+5. **Scope 词汇**（`durable-state-and-scope.md` §1）：`process` 仅为显式非
+   durable 内存档，durable 记录只落 workspace 档——见「Availability」节。

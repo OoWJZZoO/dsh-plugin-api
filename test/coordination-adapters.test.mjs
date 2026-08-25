@@ -19,7 +19,7 @@ async function acquire(adapter, { ownerId = 'owner', leaseMs = 60_000, provenanc
   return adapter.acquire({ resource, ownerId, leaseMs, provenance })
 }
 
-test('acquire returns unique generations and fencing tokens with monotonic ordering', async () => {
+test('acquire returns unique per-resource generations and fencing tokens', async () => {
   const { now, advance } = fakeClock()
   const adapter = createMemoryCoordinationAdapter({ now })
   const first = await acquire(adapter, { ownerId: 'a', leaseMs: 1_000 })
@@ -29,10 +29,13 @@ test('acquire returns unique generations and fencing tokens with monotonic order
   assert.equal(second.ok, true)
   assert.notEqual(first.handle.generation, second.handle.generation)
   assert.notEqual(first.handle.fencingToken, second.handle.fencingToken)
+  // generations are strictly increasing only within the same resource
   assert.ok(first.handle.generation < second.handle.generation)
+  // a different resource starts its own resource-local sequence: its first
+  // generation is never comparable to the first resource's era
   const third = await adapter.acquire({ resource: otherResource, ownerId: 'c', leaseMs: 1_000 })
   assert.equal(third.ok, true)
-  assert.ok(second.handle.generation < third.handle.generation)
+  assert.equal(third.handle.generation, first.handle.generation)
 })
 
 test('acquire conflicts with an unexpired foreign lease and never replaces it', async () => {
@@ -228,6 +231,50 @@ test('memory adapter watches deliver immutable transitions and dispose only thei
   // no delivery after release of the last listener
   await acquire(adapter, { ownerId: 'owner-c', leaseMs: 60_000 })
   assert.equal(otherEvents.length, 1)
+})
+
+test('bridge generations survive restart: stale-era proofs stay invalid against a new era', async () => {
+  const storage = new Map()
+  const unit = {
+    read(key) { return storage.get(key) ?? null },
+    write(key, record) { storage.set(key, record); return true },
+    compareAndSwap(key, expectedVersion, record) {
+      if (storage.get(key)?.version !== expectedVersion) return false
+      storage.set(key, record)
+      return true
+    },
+  }
+  const capabilityReport = { scope: 'workspace', durability: 'durable', atomicCas: true, atomicTakeover: true, status: 'available' }
+  let current = START_MS
+  const now = () => new Date(current)
+  const resource = { scope: 'workspace', key: 'restart-resource' }
+
+  // era 1: acquire through a first adapter instance
+  const first = createStorageDomainCoordinationAdapter({ unit, capabilityReport, now })
+  const era1 = await first.acquire({ resource, ownerId: 'owner', leaseMs: 1_000 })
+  assert.equal(era1.ok, true)
+  first.dispose()
+
+  // restart: a fresh adapter instance over the same durable domain, clock
+  // past the previous lease expiry
+  current += 2_000
+  const second = createStorageDomainCoordinationAdapter({ unit, capabilityReport, now })
+  const era2 = await second.acquire({ resource, ownerId: 'owner', leaseMs: 60_000 })
+  assert.equal(era2.ok, true)
+  // the new era must never re-mint the old era's generation
+  assert.notEqual(era2.handle.generation, era1.handle.generation)
+  // a stale coordinator's era-1 generation proof cannot take over era 2
+  const stale = await second.takeover({
+    resource, ownerId: 'newbie', leaseMs: 60_000,
+    expectedProof: { generation: era1.handle.generation },
+  })
+  assert.equal(stale.ok, false)
+  assert.equal(stale.code, 'conflict')
+  // an era-1 heartbeat also stays rejected
+  const staleBeat = await second.heartbeat({ resource, handle: era1.handle, leaseMs: 30_000 })
+  assert.equal(staleBeat.ok, false)
+  assert.equal(staleBeat.code, 'superseded')
+  second.dispose()
 })
 
 test('takeover of a resource with no record returns the same stable unavailable code across adapters', async () => {

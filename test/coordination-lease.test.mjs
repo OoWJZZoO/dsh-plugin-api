@@ -26,6 +26,8 @@ test('facade acquire returns a handle with owner, generation, expiry, fencing an
   assert.equal(outcome.ok, true)
   assert.equal(outcome.code, 'acquired')
   assert.equal(outcome.operation, 'acquire')
+  assert.ok(outcome.observedAt, 'results carry the observation time for the audit trail')
+  assert.ok(Date.parse(outcome.observedAt) <= Date.now() + 60_000)
   assert.equal(outcome.handle.ownerId, 'owner')
   assert.ok(outcome.handle.generation)
   assert.ok(outcome.handle.fencingToken)
@@ -37,6 +39,7 @@ test('facade acquire returns a handle with owner, generation, expiry, fencing an
   const second = await owner.api.acquire({ resource, ownerId: 'other', leaseMs: 60_000 })
   assert.equal(second.ok, false)
   assert.equal(second.code, 'conflict')
+  assert.ok(second.observedAt, 'failed results carry the observation time too')
   assert.deepEqual(second.observed, { generation: outcome.handle.generation, version: 0, state: 'active' })
 })
 

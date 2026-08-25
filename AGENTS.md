@@ -157,6 +157,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 - **requirements**：每条需求是否 EARS、可测试、无实现细节；是否覆盖 host/client 两面；是否把“外部可实现 vs 必须上游”标注清楚。
 - **design**：是否说明每个钩子的引出机制（官方事件直接绑定 / 底层钩子模拟 / 标记为 upstream proposal）；是否有失败路径与 guard 策略。
 - **tasks**：是否与 requirements 一一对应；是否包含测试任务；是否有迁移验收任务（见第 5 节）。
+- **standards（强制，docs/standards 对照）**：每个 feature 的 requirements/design 必须按领域对照 `docs/standards/` 六册全局规范（`README.md` 为索引：capability-strategy / api-shape / identity-and-lifecycle / durable-state-and-scope / visibility-and-redaction / concurrency-and-cancellation），并在 design 中显式声明各分册的适用性与对齐结论（含“不适用”）。**Stage 4 开始实现前必须重读对应分册**，交付终审前对照成品自查一遍；规范对照不替代对抗性审查门，用于从源头消除全局规范层面的偏差（教训来源：`coordination-lease` 交付后审计发现 generation 全局单调序号、bridge 重启重铸 generation、审计时间缺失、面放置与 scope 词汇等偏差，均为实现前未主动对照 standards 所致）。
 
 ### 3.5 并行开发工作流
 
