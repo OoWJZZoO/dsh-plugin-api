@@ -2,7 +2,7 @@
 
 ## Status
 
-SPEC1 Stage 2：Design 已撰写，**待用户批准**（2026-08-25 经 SPEC2 就地优化：补 PPM-10 客户端半身机械校验机制、结果形状补 restart-required 与备份代次上限、配额可调通道、审计 generation/受众、六册标准对照结论；未越 Goal/Requirements 验收边界）。
+SPEC1 Stage 2：**Design 已获用户批准**（M6 第五批次确认门）。批准前 2026-08-25 经 SPEC2 就地优化：补 PPM-10 客户端半身机械校验机制、结果形状补 restart-required 与备份代次上限、配额可调通道、审计 generation/受众、六册标准对照结论；未越 Goal/Requirements 验收边界。
 
 ## Overview
 
