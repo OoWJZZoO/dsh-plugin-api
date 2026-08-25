@@ -5,25 +5,25 @@
 目的：从真实插件反复实现的 workaround、状态机和失败处理里反推 `dsh-plugin-api` 尚未覆盖的公共能力。
 
 本报告最初只做调研和候选提出，不创建正式 spec，不进入 Stage 0，不实现任何 feature。
-2026-08-24 起，经用户明确指示，以下四个候选已从候选池立项并进入 SPEC1 Stage 0；本报告继续只承担候选溯源与状态登记，不承载 Requirements、Design 或 Tasks。
+2026-08-24 起，经用户明确指示，候选自候选池陆续立项并进入 SPEC1 Stage 0。截至 2026-08-25，共 **11 个候选正式立项**：第一/二批八项（`execution-observation`、`plugin-diagnostics`、`usage-budget-telemetry`、`mcp-catalog-lifecycle`、`model-route-policy`、`attachment-pipeline`、`recovery-policy`、`client-generation-rebind`）已全部完成 Stage 4 交付；第三批三项（`coordination-lease`、`workspace-mutation-transaction`、`task-execution-observation`）已完成 Stage 2 Design 确认（经 SPEC2 审查纠偏），待 Stage 3。本报告继续只承担候选溯源与状态登记，不承载 Requirements、Design 或 Tasks；已交付状态的权威登记以 `feature-list.md` §7 为准。
 
 ## 当前立项状态
 
 | Feature | 状态 | 当前阶段 | Spec 制品 |
 |---|---|---|---|
-| `execution-observation` | 已立项，推进中 | SPEC1 Stage 2：Design 草案待用户确认 | `docs/specs/execution-observation/goal.md`；`docs/specs/execution-observation/requirements.md`；`docs/specs/execution-observation/design.md` |
-| `plugin-diagnostics` | 已立项，推进中 | SPEC1 Stage 2：Design 草案待用户确认 | `docs/specs/plugin-diagnostics/goal.md`；`docs/specs/plugin-diagnostics/requirements.md`；`docs/specs/plugin-diagnostics/design.md` |
-| `usage-budget-telemetry` | 已立项，推进中 | SPEC1 Stage 2：Design 草案待用户确认 | `docs/specs/usage-budget-telemetry/goal.md`；`docs/specs/usage-budget-telemetry/requirements.md`；`docs/specs/usage-budget-telemetry/design.md` |
-| `mcp-catalog-lifecycle` | 已立项，推进中（R 类） | SPEC1 Stage 2：Design 草案待用户确认 | `docs/specs/mcp-catalog-lifecycle/goal.md`；`docs/specs/mcp-catalog-lifecycle/requirements.md`；`docs/specs/mcp-catalog-lifecycle/design.md` |
-| `model-route-policy` | 已立项，推进中（R 类；owner `@deepseek-ai/dsh-agent-loop`） | SPEC1 Stage 2：Design 已确认；Stage 3 未启动 | `docs/specs/model-route-policy/goal.md`；`docs/specs/model-route-policy/requirements.md`；`docs/specs/model-route-policy/design.md` |
-| `attachment-pipeline` | 已立项，推进中（R 类；owner `@deepseek-ai/dsh-attachment-local`） | SPEC1 Stage 2：Design 已确认；Stage 3 未启动 | `docs/specs/attachment-pipeline/goal.md`；`docs/specs/attachment-pipeline/requirements.md`；`docs/specs/attachment-pipeline/design.md` |
-| `recovery-policy` | 已立项，推进中（B/C policy-first） | SPEC1 Stage 2：Design 已确认；Stage 3 未启动 | `docs/specs/recovery-policy/goal.md`；`docs/specs/recovery-policy/requirements.md`；`docs/specs/recovery-policy/design.md` |
-| `client-generation-rebind` | 已立项，推进中（B 类；R 待未来单一 owner 证据） | SPEC1 Stage 2：Design 已确认；Stage 3 未启动 | `docs/specs/client-generation-rebind/goal.md`；`docs/specs/client-generation-rebind/requirements.md`；`docs/specs/client-generation-rebind/design.md` |
+| `execution-observation` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第一批 Wave C） | `docs/specs/execution-observation/goal.md`；`docs/specs/execution-observation/requirements.md`；`docs/specs/execution-observation/design.md`；`docs/specs/execution-observation/tasks.md` |
+| `plugin-diagnostics` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第一批 Wave C） | `docs/specs/plugin-diagnostics/goal.md`；`docs/specs/plugin-diagnostics/requirements.md`；`docs/specs/plugin-diagnostics/design.md`；`docs/specs/plugin-diagnostics/tasks.md` |
+| `usage-budget-telemetry` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第一批 Wave C） | `docs/specs/usage-budget-telemetry/goal.md`；`docs/specs/usage-budget-telemetry/requirements.md`；`docs/specs/usage-budget-telemetry/design.md`；`docs/specs/usage-budget-telemetry/tasks.md` |
+| `mcp-catalog-lifecycle` | 已交付（R 类；运行时名 `@deepseek-ai/dsh-plugin-api-mcp`） | SPEC3 Stage 4：交付完成（M6 第一批 Wave C） | `docs/specs/mcp-catalog-lifecycle/goal.md`；`docs/specs/mcp-catalog-lifecycle/requirements.md`；`docs/specs/mcp-catalog-lifecycle/design.md`；`docs/specs/mcp-catalog-lifecycle/tasks.md` |
+| `model-route-policy` | 已交付（R 类；运行时名 `@deepseek-ai/dsh-plugin-api-agent-loop`；owner `@deepseek-ai/dsh-agent-loop`） | SPEC3 Stage 4：交付完成（M6 第二批） | `docs/specs/model-route-policy/goal.md`；`docs/specs/model-route-policy/requirements.md`；`docs/specs/model-route-policy/design.md`；`docs/specs/model-route-policy/tasks.md` |
+| `attachment-pipeline` | 已交付（R 类；运行时名 `@deepseek-ai/dsh-plugin-api-attachments`；owner `@deepseek-ai/dsh-attachment-local`） | SPEC3 Stage 4：交付完成（M6 第二批 Wave A） | `docs/specs/attachment-pipeline/goal.md`；`docs/specs/attachment-pipeline/requirements.md`；`docs/specs/attachment-pipeline/design.md`；`docs/specs/attachment-pipeline/tasks.md` |
+| `recovery-policy` | 已交付（B/C policy-first） | SPEC3 Stage 4：交付完成（M6 第二批） | `docs/specs/recovery-policy/goal.md`；`docs/specs/recovery-policy/requirements.md`；`docs/specs/recovery-policy/design.md`；`docs/specs/recovery-policy/tasks.md` |
+| `client-generation-rebind` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第二批 Wave A） | `docs/specs/client-generation-rebind/goal.md`；`docs/specs/client-generation-rebind/requirements.md`；`docs/specs/client-generation-rebind/design.md`；`docs/specs/client-generation-rebind/tasks.md` |
 | `coordination-lease` | 已立项，推进中（B 类） | SPEC1 Stage 2：Design 已确认；Stage 3 未启动 | `docs/specs/coordination-lease/goal.md`；`docs/specs/coordination-lease/requirements.md`；`docs/specs/coordination-lease/design.md` |
 | `workspace-mutation-transaction` | 已立项，推进中（B 类） | SPEC1 Stage 2：Design 已确认；Stage 3 未启动 | `docs/specs/workspace-mutation-transaction/goal.md`；`docs/specs/workspace-mutation-transaction/requirements.md`；`docs/specs/workspace-mutation-transaction/design.md` |
 | `task-execution-observation` | 已立项，推进中（B 类） | SPEC1 Stage 2：Design 已确认；Stage 3 未启动 | `docs/specs/task-execution-observation/goal.md`；`docs/specs/task-execution-observation/requirements.md`；`docs/specs/task-execution-observation/design.md` |
 
-其余候选仍处于候选池，未进入 Stage 0。
+其余 9 个候选仍处于候选池，未进入 Stage 0。
 
 ## 结论先行
 
@@ -463,6 +463,8 @@ R 类共有的推进条件：
 6. R bundle 不能承载 priority、deepFreeze、fault containment 等横切派发语义；这些仍属于 facade/framework 层。
 
 ## 优先级建议
+
+> 本节为 2026-08-20 的启动顺序建议（历史快照）；实际立项与当前状态以「当前立项状态」表为准。
 
 ### 第一梯队：先做公共契约
 
