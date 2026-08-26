@@ -5,7 +5,7 @@
 目的：从真实插件反复实现的 workaround、状态机和失败处理里反推 `dsh-plugin-api` 尚未覆盖的公共能力。
 
 本报告最初只做调研和候选提出，不创建正式 spec，不进入 Stage 0，不实现任何 feature。
-2026-08-24 起，经用户明确指示，候选自候选池陆续立项并进入 SPEC1 Stage 0。截至 2026-08-25，共 **15 个候选正式立项**：第一/二批八项（`execution-observation`、`plugin-diagnostics`、`usage-budget-telemetry`、`mcp-catalog-lifecycle`、`model-route-policy`、`attachment-pipeline`、`recovery-policy`、`client-generation-rebind`）已全部完成 Stage 4 交付；第三批三项（`coordination-lease`、`workspace-mutation-transaction`、`task-execution-observation`）已全部完成 Stage 4 交付（SPEC3 全程）；第四批三项（`security-policy-egress-guard`、`progressive-tool-discovery`、`session-branch-sidechain-edit`）于同日经用户指示进入 SPEC1 Stage 0（其中 `session-branch-sidechain-edit` 经用户明确批准按 R 类推进，owner 为官方 `@deepseek-ai/dsh-session`），已连续通过 Stage 0–2 批量确认门（2026-08-25），进入 Stage 3/4；第五批次一项（`plugin-profile-management`）已完成 Stage 4 交付（SPEC3 全程）。本报告继续只承担候选溯源与状态登记，不承载 Requirements、Design 或 Tasks；已交付状态的权威登记以 `feature-list.md` §7 为准。
+2026-08-24 起，经用户明确指示，候选自候选池陆续立项并进入 SPEC1 Stage 0。截至 2026-08-26，共 **17 个候选正式立项**：第一/二批八项（`execution-observation`、`plugin-diagnostics`、`usage-budget-telemetry`、`mcp-catalog-lifecycle`、`model-route-policy`、`attachment-pipeline`、`recovery-policy`、`client-generation-rebind`）已全部完成 Stage 4 交付；第三批三项（`coordination-lease`、`workspace-mutation-transaction`、`task-execution-observation`）已全部完成 Stage 4 交付（SPEC3 全程）；第四批三项（`security-policy-egress-guard`、`progressive-tool-discovery`、`session-branch-sidechain-edit`）已完成 Stage 4 交付；第五批次一项（`plugin-profile-management`）已完成 Stage 4 交付；第六批次两项（`skill-discovery-activation`、`context-provenance`）已进入 SPEC1 Stage 0，当前等待批量 Goal 确认门。`memory-interoperability` 经评审明确排除立项（功能组件而非门面：单插件即可用已交付 API 完整实现记忆，跨插件共享记忆缺少已证实需求），已撤出候选池，详见 §10。本报告继续只承担候选溯源与状态登记，不承载 Requirements、Design 或 Tasks；已交付状态的权威登记以 `feature-list.md` §7 为准。
 
 ## 当前立项状态
 
@@ -26,8 +26,11 @@
 | `progressive-tool-discovery` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第四批次 Wave A Stage 4；批次集成 sync 后合入） | `docs/specs/progressive-tool-discovery/goal.md`；`docs/specs/progressive-tool-discovery/requirements.md`；`docs/specs/progressive-tool-discovery/design.md`；`docs/specs/progressive-tool-discovery/tasks.md` |
 | `session-branch-sidechain-edit` | 已交付（R 类；owner `@deepseek-ai/dsh-session`，运行时名 `@deepseek-ai/dsh-plugin-api-session-branch`） | SPEC3 Stage 4：交付完成（M6 第四批次 Wave B；批次集成 sync 后合入） | `docs/specs/session-branch-sidechain-edit/goal.md`；`docs/specs/session-branch-sidechain-edit/requirements.md`；`docs/specs/session-branch-sidechain-edit/design.md`；`docs/specs/session-branch-sidechain-edit/tasks.md` |
 | `plugin-profile-management` | 已交付（双面：投影 + 进程外执行器遥控写入） | SPEC3 Stage 4：交付完成（M6 第五批次） | `docs/specs/plugin-profile-management/goal.md`；`docs/specs/plugin-profile-management/requirements.md`；`docs/specs/plugin-profile-management/design.md`；`docs/specs/plugin-profile-management/tasks.md` |
+| `memory-interoperability` | 已明确排除立项（功能组件非门面；由具体 memory 插件基于已交付 API 自行实现） | 不进入 Stage 0 | —（候选分析留档于本文件 §10） |
+| `skill-discovery-activation` | 已立项，待确认（B 类 host-only；R 仅保留后续评估） | SPEC1 Stage 0：Goal 待确认（M6 第六批次 Wave A） | `docs/specs/skill-discovery-activation/goal.md` |
+| `context-provenance` | 已立项，待确认（B/C 边界） | SPEC1 Stage 0：Goal 待确认（M6 第六批次 Wave B） | `docs/specs/context-provenance/goal.md` |
 
-其余 5 个候选仍处于候选池，未进入 Stage 0。
+其余 2 个候选（`remote-session-channel`、`adapter-decoration`）仍处于候选池，未进入 Stage 0；`memory-interoperability` 已于 2026-08-26 撤出候选池并明确排除立项。
 
 ## 结论先行
 
@@ -112,7 +115,7 @@ done
 | 7 | MCP catalog / dynamic lifecycle | tools/list、连接和工具 generation 不稳定 | R 优先 | 5 | 5 | 4 | 第一梯队，正式 R 候选 |
 | 8 | Progressive tool discovery | 工具集过大，模型不知道何时暴露哪个工具 | B，必要时 R | 5 | 4 | 4 | 第一梯队 |
 | 9 | Security policy / egress guard | approval、redaction、子进程出站策略互相割裂 | B，横切不 R | 5 | 5 | 5 | 第一梯队 |
-| 10 | Memory interoperability | memory 只是一组私有工具，无法共享 scope/provenance | B | 4 | 4 | 4 | 第二梯队 |
+| 10 | Memory interoperability | memory 只是一组私有工具，无法共享 scope/provenance | B | 4 | 4 | 4 | 已排除立项（2026-08-26） |
 | 11 | Session branch / sidechain / edit | fork、rewind、side question 没有统一 branch identity | R 优先 | 5 | 5 | 5 | 第一梯队，正式 R 候选 |
 | 12 | Plugin health / diagnostics | feature 失败只能看日志，用户不知道为何 inactive | B | 5 | 5 | 2 | 第一梯队 |
 | 13 | Model health / failover / route policy | 路由策略被每个插件私自 prepend | R 优先 | 5 | 5 | 5 | 第一梯队，正式 R 候选 |
@@ -285,6 +288,8 @@ record.compareAndSet(key, expectedVersion, value)
 - conflict resolution、redaction 和 retention policy 可注册。
 
 **通道判断。** B 类，基于 storage、session、context 组合。它不替代某个具体 memory plugin；后者应只是 provider/consumer。没有必要 R，除非官方未来新增唯一 memory loader。
+
+**立项结论（2026-08-26）：排除立项，撤回候选。** 评审确认该候选是功能组件而非门面转译：最终用户安装一个 memory 插件即可完整获得记忆能力，且该插件可基于已交付的工具接口、session/execution 观察与 systemPrompt/session 上屏 seam 自行实现；`pluginApi.memory` 的 `put/get/search/remove`、`recall`、`compose` 没有稳定任何官方语义钩子，而是新造一个记忆子系统。跨插件共享同一份记忆的需求未被任何已证实场景支撑，属于臆想性多消费者设计（AGENTS.md §3.0.3 克制设计原则）。因此本候选从候选池撤出，不再立项；记忆能力由具体功能插件自行实现，需要来源解释的消费者走既有 contribution/sourceEventSeqs 契约。
 
 ### 11. Session branch / sidechain / edit
 
@@ -485,12 +490,14 @@ R 类共有的推进条件：
 ### 第二梯队：依赖第一梯队
 
 - `coordination-lease`：需要先定 task/execution identity 和 storage scope。
-- `context-provenance`：需要先定 execution、attachment、memory 和 session branch provenance。
+- `context-provenance`：需要先定 execution、attachment 和 session branch provenance；memory 来源由具体插件经既有 contribution 元数据声明，不依赖专用 memory facade。
 - `client-generation-rebind`：需要先定 diagnostics/availability 和 remote contract。
 - `task-execution-observation`：需要复用 execution、lease 和 recovery。
 - `progressive-tool-discovery`、`skill-activation`：需要对齐 tools catalog 和 client exposure。
 - `session-branch-sidechain-edit`、`remote-session-channel`、`adapter-decoration`：价值高但状态一致性和 R 复刻成本更高，适合在对应 owner identity 已明确后启动。
-- `memory-interoperability`、`plugin-profile-management`：价值明确，但不是普通第三方插件安装后必需的核心依赖，适合独立可选 bundle。
+- `plugin-profile-management`：价值明确，但不是普通第三方插件安装后必需的核心依赖，适合独立可选 bundle。
+
+（`memory-interoperability` 已于 2026-08-26 撤出候选池并明确排除立项，见 §10，不再参与启动顺序。）
 
 这里的“第二梯队”表示依赖关系和启动顺序，不表示候选没有价值，也不表示 R 类候选应该被排除。
 

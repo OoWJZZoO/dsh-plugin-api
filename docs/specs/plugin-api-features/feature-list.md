@@ -40,7 +40,7 @@
 | **M3** | settings 可视化配置桥 + client bundle（remote / codec / slot） |
 | **M4** | 当前已冻结的剩余 A 类官方透传接口（host service seam、核心 namespace API、client service/event API） |
 | **M5** | M4 冻结后审计发现的新增 A 类官方透传接口 |
-| **M6** | 启发式候选 feature 规划里程碑：不在本文逐项列出，候选表单见 [heuristic-feature-proposals-2026-08-20.md](./dsh-plugin-api-heuristic-feature-proposals-2026-08-20.md)（20 个候选、第一/二梯队与 R 类评估）；候选经 Stage 0 批准正式立项后再按现行规则回填本文对应命名空间条目 |
+| **M6** | 启发式候选 feature 规划里程碑：不在本文逐项列出，候选表单见 [heuristic-feature-proposals-2026-08-20.md](./dsh-plugin-api-heuristic-feature-proposals-2026-08-20.md)（20 个候选、第一/二梯队与 R 类评估）；候选经 Stage 0 批准正式立项后再按现行规则回填本文对应命名空间条目；第六批次当前为 `skill-discovery-activation`（Wave A）→ `context-provenance`（Wave B，不依赖 memory facade）；`memory-interoperability` 已明确排除立项（功能组件非门面，由具体 memory 插件基于已交付 API 实现，见候选表单 §10） |
 | **M-final** | C 类上游提案、迁移验收（dsh-read-image / dsh-pro-ex-ability-anchor）与治理收尾 |
 
 ### 1.3.1 M2 共同契约状态（非公开 API）
