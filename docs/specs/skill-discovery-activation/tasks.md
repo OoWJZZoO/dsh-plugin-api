@@ -2,7 +2,7 @@
 
 ## Status
 
-SPEC3（M6 第六批次 Wave A，`feat/m6-skill-activation`）。承接已获批的 Stage 0–2（d7ab9fe）。本阶段不设用户确认门，以对抗性审查为门；审查返回"无偏差"后直接进入 Stage 4 自主执行。
+SPEC3（M6 第六批次 Wave A，`feat/m6-skill-activation`）。承接已获批的 Stage 0–2（d7ab9fe）。Tasks 经三轮对抗性审查（意见全部集中修订）通过，阶段提交 b21eb2f；**Stage 4 已交付**（全局终审见本文末状态与本线报告）。
 
 执行载体：`temp/m6-batch6-contract.md`（Wave A 分工、命名规范、共享文件编辑边界、冻结文件、Schema 词汇、失败呈现路径、合并顺序）。冲突时以本 tasks 的"执行决议"为准并上报。
 
@@ -85,24 +85,24 @@ SPEC3（M6 第六批次 Wave A，`feat/m6-skill-activation`）。承接已获批
 
 ### 1. packages/tool-skill 骨架与官方回退依赖
 
-- [ ] **1.1 创建 `packages/tool-skill/package.json` 与 `packages/tool-skill/cordis.patch.yml`**
+- [x] **1.1 创建 `packages/tool-skill/package.json` 与 `packages/tool-skill/cordis.patch.yml`**
   - package.json：`name: '@deepseek-ai/dsh-plugin-api-tool-skill'`，`version: '0.1.0-rc.6-0.6'`，`type: module`，`main: lib/apply.js`，`dsh.api: '0.6'`，`dsh.bundle.patch: './cordis.patch.yml'`，`peerDependencies`：`@deepseek-ai/dsh-tool-skill@0.1.0-rc.6`（唯一被替代 owner 包）、`@deepseek-ai/dsh-skill`、`@deepseek-ai/dsh-tools`、`@deepseek-ai/dsh-llm`、`@deepseek-ai/dsh-agent`、`@deepseek-ai/schemastery`、`@deepseek-ai/cordis`（均为 `^0.1.0-rc.6`/`^3.18.1`/`^4.0.1` 同型）；`scripts.test = 'node --test'`；license MIT。
   - cordis.patch.yml：只含 `- id: tool-skill / disabled: true` + `- insert: [{ id: plugin-api-tool-skill, name: '@deepseek-ai/dsh-plugin-api-tool-skill' }]`（官方行 id/name 以 dsh-base patch 第 247 行为准）。
   - 注释写明 replacement boundary（只换 ctx 服务/事件面，import 面保留官方）。
   - `package.json.description`、apply 日志文案保持中立（仅表达能力/语义），**不含任何治理编号 token**（`governance-token-audit` 的 `\b[ABCRMDLTWFSUP]\d+…` 模式会扫描 description 与日志文案）。
   - 验收：SDA-R1/R3。
-- [ ] **1.2 创建 `packages/tool-skill/lib/version.js`**（纯函数，零 harness 依赖）
+- [x] **1.2 创建 `packages/tool-skill/lib/version.js`**（纯函数，零 harness 依赖）
   - 镜像 session-branch `version.js`：`LOCKED_RUNTIME_VERSION='0.1.0-rc.6'`、`LOCKED_OWNER_PACKAGE='@deepseek-ai/dsh-tool-skill'`、`parseFullVersion`、`fullVersionContractsMatch`、`runtimeIdentityMatches`（支持注入锁定值）。
   - 验收：SDA-R5（runtime+owner 全量 identity 精确匹配、方向②主门面协议比较的基元）。
 
 ### 2. 纯校验与 diff 基元（TDD）
 
-- [ ] **2.1 实现 `packages/tool-skill/lib/skill-activation-normalize.js` 与测试 `packages/tool-skill/test/normalize.test.mjs`**
+- [x] **2.1 实现 `packages/tool-skill/lib/skill-activation-normalize.js` 与测试 `packages/tool-skill/test/normalize.test.mjs`**
   - 纯函数：descriptor spec 归一（见 1.3.2 全字段校验）、activation 输入归一（1.3.3/1.3.4/1.3.5）、scope 归一（kind 枚举 + key 非空字符串）、registerSkill 输入归一（name/summary/content/capabilities/sourceKind/activation 半归一）、audit 查询归一（limit 夹取）、minimal-update 政策输入归一。
   - 返回 `{ ok:true, value }` / `{ ok:false, code, reason }`；不抛。
   - 测试覆盖每条非法路径的 code、边界长度（summary 200/201、capabilities 16/17）、condition 声明与 auto-match/provider-sourced 的绑定。
   - 验收：SDA-0/1/3/10/C2 的输入侧 + 契约 §6 映射。
-- [ ] **2.2 实现 `packages/tool-skill/lib/catalog-diff.js` 与测试 `packages/tool-skill/test/catalog-diff.test.mjs`**
+- [x] **2.2 实现 `packages/tool-skill/lib/catalog-diff.js` 与测试 `packages/tool-skill/test/catalog-diff.test.mjs`**
   - 官方复刻纯函数：`catalogDescription(value, maxLength)`（正则归一 + 截断 `...`，与官方逐字一致）、`digestCatalogEntries(entries)`（sha256 over `JSON.stringify([name, description])` 行）、`readCatalogEntries(source)`（含 entries 数组校验，非法返回 undefined；官方语义）、`renderCatalogEntries`-等价的行渲染器（`- \`name\`: escapedDescription`，escapeText 由 dsh-skill 提供）。
   - 扩展纯函数：`buildDelta(previous, current)` → `{ added:[{name,summary}], removed:[{name}], changed:[{name,summary}] }`（按 name 比对 description）；`aggregateNotices(delta, maxSummaryLength)` → 单条有界英文 CONTEXT 文本（SDA-C2.1 三句式、changed summary 截断 `min(maxLength,200)`、一行一条、空 delta 返回 null）与 `{ kind:'skill-catalog-update' }` 元数据辅助。
   - 测试：差量三型、同 digest 幂等（`digestCatalogEntries` 对同一 entries 恒定）、截断、空 entries、readCatalogEntries 非法源返回 undefined、notice 模板逐字断言。
@@ -110,7 +110,7 @@ SPEC3（M6 第六批次 Wave A，`feat/m6-skill-activation`）。承接已获批
 
 ### 3. 激活状态机（TDD）
 
-- [ ] **3.1 实现 `packages/tool-skill/lib/skill-activation-engine.js` 与测试 `packages/tool-skill/test/engine.test.mjs`**
+- [x] **3.1 实现 `packages/tool-skill/lib/skill-activation-engine.js` 与测试 `packages/tool-skill/test/engine.test.mjs`**
   - 纯状态机（注入 `now()`、`generateGeneration()`、`recordAudit` 侧写）；API：`registerDescriptor`/`unregisterDescriptor`/`activate`/`deactivate`/`exposure`/`audit`/`availabilityGates`/`activationState(scopeKey, skillId)`/`policyRegister(scopeKey)`/`policyDispose(scopeKey)`/`minimalPolicyFor(scopeKey)`/`recordCatalogChange`。
   - 语义按 1.3：latest-wins（同 (skillId,scopeKey) 新激活 → 旧 `superseded` + audit）、TTL 惰性过期（`expired` + audit）、降级（registry/dependencies part）、explicit 加载门判定（`loadGateState(scopeKey, skillId)` 区分 absent/inactive/degraded/explicit-only/ok）、descriptor 生命周期（register/unregister/dispose、同 owner 重注册 = 新 descriptor generation、他 owner 冲突）、audit 环形 500、冻结投影。
   - 测试：latest-wins 链、TTL 到期/未到期、scope 两个激活互不影响、degrade 三态、audit 环形裁剪与冻结、stale/foreign generation 的 typed 拒绝、explicit 类激活门、重复 policy 注册 latest-wins + disposer no-op、descriptor 冲突/同 owner 重注册、**激活超时路径（1.3.14：注入慢 registry resolver + deadline → `ACTIVATION_TIMEOUT`；无 deadline 不触发；超时不落任何 mutation/终态）**。
@@ -118,13 +118,13 @@ SPEC3（M6 第六批次 Wave A，`feat/m6-skill-activation`）。承接已获批
 
 ### 4. 三面保真复刻 + 门控插入（TDD）
 
-- [ ] **4.1 实现 `packages/tool-skill/lib/forked-tool-skill.js` 与 parity 测试 `packages/tool-skill/test/forked-tool-skill.test.mjs`**
+- [x] **4.1 实现 `packages/tool-skill/lib/forked-tool-skill.js` 与 parity 测试 `packages/tool-skill/test/forked-tool-skill.test.mjs`**
   - 以官方 `@deepseek-ai/dsh-tool-skill/lib/index.js`（0.1.0-rc.6）为逐字基线复刻三面：① `skill` 工具 `defineTool`（name/description/parameters/output.schema/render/presentCall 逐字段一致，execute 走 `ctx.skills.list/get` + `isModelInvocable` + lookup `{cwd, signal, scope}`，错误文案逐字）；② `agent/pre-step` 用户调用注入（`/name` gesture 扫描 `invokedSkillNames`、`createUserMessage` + `renderSkillContent` 注入、`isUserInvocable` 检查）；③ `agent/pre-step` 目录机制（snapshot.complete 门、`catalogSourceEntries`、digest、`catalogHistory`、`catalogMessage`、首发布 `renderCatalogMessage`、变更 `renderCatalogUpdate`、同 digest 清理/幂等、消息 id 替换语义）。
   - 组合形态：`createForkedToolSkill({ ctx, config, extension })`；`extension === null` 时三面为**官方逐字 parity**（门控/告知策略零插入）；`extension` 提供 `{ activationStateFor(agent, skillId), minimalPolicyFor(agent), recordCatalogChange(agent, kind), diagnostic(ownerId, detail) }`。
   - 两个 pre-step 监听器按官方注册顺序与错误文案注册；`ctx.on` 返回 disposer 计数（供 apply 自检探针）。
   - parity 测试（先证 parity 再证扩展）：fake ctx + fake skills/tools 下，无 extension 时（a）skill 工具 schema/output/render 形状与官方逐字段比对（官方基线以直接 import 官方 `apply` 注册的同一 fake ctx 为对照，两边产出 deepEqual）；（b）execute 的 list→get 解析、未知名/不可 model 调用错误文案逐字；（c）`/name` 注入与目录消息文本、source.kind/entries/update 标记、首发布 vs 变更消息逐字；（d）同 digest 幂等、visibleDigest 清理。
   - 验收：SDA-R2/R3（契约保真，先 parity 后扩展）。
-- [ ] **4.2 门控插入实现 + 测试 `packages/tool-skill/test/gating.test.mjs`（并入 4.1 的组件）**
+- [x] **4.2 门控插入实现 + 测试 `packages/tool-skill/test/gating.test.mjs`（并入 4.1 的组件）**
   - 目录过滤：官方 `snapshot.skills.filter(isModelInvocable)` 之后按 1.3.6 叠加门控过滤（无 descriptor → parity 直通；descriptor'd 且 state≠active → 排除；scope 不可解析 → fail-closed 排除 + 诊断）。
   - `skill` 工具 execute：官方 `isModelInvocable` 检查并列处插入激活门（descriptor'd：state≠active → 抛 code=`SKILL_LOAD_DENIED` 的 Error，message 含原因；explicit 类且激活非 explicit → 同拒绝；scope 不可解析 → fail-closed 拒绝）。
   - pre-step 注入：官方 `isUserInvocable` 之后插入注入门（descriptor'd：state≠active → 跳过 + 诊断；sourceKind=explicit → 跳过；scope 不可解析 → 跳过）。
@@ -133,14 +133,14 @@ SPEC3（M6 第六批次 Wave A，`feat/m6-skill-activation`）。承接已获批
 
 ### 5. 目录变化告知（TDD）
 
-- [ ] **5.1 实现目录告知（并入 4.1 组件）与测试 `packages/tool-skill/test/catalog-notice.test.mjs`**
+- [x] **5.1 实现目录告知（并入 4.1 组件）与测试 `packages/tool-skill/test/catalog-notice.test.mjs`**
   - 首发布恒全量（官方消息，policy 无关）；无政策 digest 变化 → 官方全量 replacement（`skill-catalog` + update:true）；政策开启 digest 变化 → 单条英文最小更新 CONTEXT（`skill-catalog-update`，聚合、summary 截断 200、`source.entries` 全量有效条目元数据）；同 digest 幂等（不注入、既有消息清理语义保留）；政策 dispose 后下一次变化回落全量 replacement 并替换既有 notice；delta 计算/注入抛错 → 回退全量 + 诊断 + 不破坏 decision（kind 不变、消息数组形状不变、后续轮从存储历史重算）；catalog-history 扩展识别两种 kind 后与官方行为在不含 update 消息时逐字一致。
   - 测试：上述每条 + 消息文本逐字断言（三句式模板）、power 场景（同轮多 skill 增删改聚合为一条）。
   - 验收：SDA-C1/C2/C3/C4。
 
 ### 6. registerSkill 语法糖（TDD）
 
-- [ ] **6.1 实现 `packages/tool-skill/lib/register-skill-sugar.js` 与测试 `packages/tool-skill/test/register-skill-sugar.test.mjs`**
+- [x] **6.1 实现 `packages/tool-skill/lib/register-skill-sugar.js` 与测试 `packages/tool-skill/test/register-skill-sugar.test.mjs`**
   - `createRegisterSkillSugar({ ctx, engine, descriptorRegister, log })` → `registerSkill(input)`：组合顺序恒为官方 `ctx.skills.register` → descriptor overlay → 可选 activation；返回句柄 `{ skillId, owner, generation, activate, deactivate, exposure, dispose }`（句柄内方法即引擎/服务对应操作的 bound 转发）。
   - 官方 first-wins 透传（no-op disposer 不伪造所有权）；激活失败回滚两半（1.3.11）；dispose 双半幂等 identity-bound；官方注册抛错 → typed。
   - 测试：组合顺序 spy、first-wins、dispose 幂等/identity、半程回滚（overlay 失败回滚内容注册、激活失败回滚两半）、active 时官方 get 可解析 / inactive 时 skill 工具拒绝（接 4.2 的 load gate）、句柄方法转发。
@@ -148,38 +148,38 @@ SPEC3（M6 第六批次 Wave A，`feat/m6-skill-activation`）。承接已获批
 
 ### 7. 替代行 apply（boot 自检矩阵 / 版本锁定 / owner 冲突 / 官方回退）
 
-- [ ] **7.1 实现 `packages/tool-skill/lib/apply.js` 与测试 `packages/tool-skill/test/apply-matrix.test.mjs`**
+- [x] **7.1 实现 `packages/tool-skill/lib/apply.js` 与测试 `packages/tool-skill/test/apply-matrix.test.mjs`**
   - `export const name = 'dsh-plugin-api-tool-skill'`、`export const inject = ['agents', 'tools', 'skills']`（官方行同型）、`Config`（`catalogDescriptionMaxLength` 默认 500 + 正整数断言，官方同型）、`apply`（fail-safe，任何路径不抛）。
-  - `createToolSkillApply(overrides)`（读版本/读 api/officialApply/探针可注入，测试缝）：流程 = loader 组合探针（official 行 presence/disabled、replacement 行计数、重复插入）→ official enabled → leave；无 replacement 行/重复行 → inert + 诊断；身份矩阵（runtime identity + owner identity + 主门面 fullVersionContractsMatch）→ 过：实例化 engine + fork + 发布 `ctx.skillActivation`（服务对象挂 `Symbol.for('dsh-plugin-api.tool-skill.contract')` = true）+ boot 自检探针（official 行 disabled、replacement 行 active、`ctx.tools.get('skill')` 全局视图解析到本工具、两条 pre-step 监听已注册、catalog 提供者可解析、契约面成员齐全）→ 任一探针失败 = dispose 全部 + 诊断 + 返回；失配：官方行为回退（import `@deepseek-ai/dsh-tool-skill` 的 apply 运行，扩展不发布；official apply 抛错 → inert + 诊断）。
+  - `createToolSkillApply(overrides)`（读版本/读 api/officialApply/探针可注入，测试缝）：流程 = loader 组合探针（official 行 presence/disabled、replacement 行计数、重复插入）→ official enabled → leave；无 replacement 行/重复行 → inert + 诊断；身份矩阵（runtime identity + owner identity + 主门面 fullVersionContractsMatch）→ 过：实例化 engine + fork + 发布 `ctx.skillActivation`（服务对象挂 `Symbol.for('dsh-plugin-api.tool-skill.contract')` = true）+ boot 自检探针（official 行 disabled、replacement 行 active、`ctx.tools.get('skill')` 全局视图解析到本工具、两条 pre-step 监听已注册、catalog 提供者可解析、契约面成员齐全）→ 任一探针失败 = dispose 全部 + 诊断 + **回退官方行为**（执行期收敛：与身份失配路径共用 fallbackToOfficial——单跑官方 apply，绝不静默双跑、不丢 skill 行为；apply-matrix 固化该路径）；失配：官方行为回退（import `@deepseek-ai/dsh-tool-skill` 的 apply 运行，扩展不发布；official apply 抛错 → inert + 诊断）。
   - 测试矩阵：official enabled / disabled、replacement 0/1/2、身份 ok/失配（runtime、owner、主门面 api 分别失配）、official apply 抛错、探针失败回滚（工具未注册上、pre-step 注册失败、契约探针失败各一）、成功路径（自检矩阵全过，audit 无残留）。
   - 验收：SDA-R1/R4/R5/R6/R9 + 契约 §7 全绿约束。
 
 ### 8. 主门面条件投影（B 面 marker/版本门控）
 
-- [ ] **8.1 `lib/plugin-api-service.js`：`skillsActivation` 挂载点与禁用面**
+- [x] **8.1 `lib/plugin-api-service.js`：`skillsActivation` 挂载点与禁用面**
   - `KNOWN_FEATURES.add('skillsActivation')`；构造函数初始化 `_skillsActivationSlot`/`_skillsActivationSurface = createDisabledSkillsActivationApi(active)`，新增 `skills` 顶层命名空间（Object.defineProperty getter → 冻结 `{ activation: 当前面 }`）与 `_publishSkillsApi()`；`_assignFeature('skillsActivation', api)` 特例（成员形状校验、slot latest-wins、frozen surface、fail() 含 Inactive/Disabled typed 语义、availability 组合）；`_restoreDisabledSurface` 对应分支。
   - 验收：SDA-5（禁用 typed surface；只停本 feature）。
-- [ ] **8.2 `lib/guards.js`：`skillsActivation` probe（单 else-if，紧随 toolDiscovery 分支之后）**
+- [x] **8.2 `lib/guards.js`：`skillsActivation` probe（单 else-if，紧随 toolDiscovery 分支之后）**
   - probe `ctx.get`（主门面需惰性解析 `ctx.skillActivation` 服务做 marker 探针）。
   - 验收：契约 §3 固定顺序 + 各 feature guard 模式。
-- [ ] **8.3 `lib/index.js`：manifest 读取与 feature mounter**
+- [x] **8.3 `lib/index.js`：manifest 读取与 feature mounter**
   - `readReplacementAuxiliaryManifests()` 增 `toolSkill: readPackageManifest('@deepseek-ai/dsh-plugin-api-tool-skill')`；`mountSkillsActivationFeature({ ctx, service, featureRegistry, logger, auxiliaryManifests, facadeContract })`：version gate（复用 sessionBranch 同型比较：辅助包 fullVersion 的 runtime+api 与 facadeContract 一致）→ resolve/ensure（`ctx.get('skillActivation')` + 契约符号 + 成员校验）→ ownerApi 全方法转发 + availability；失配 → 仅本面禁用 + warn；FEATURE_MOUNTERS 插入 `['skillsActivation', mountSkillsActivationFeature]`（toolDiscovery 之后、profile 之前）；`export { mountSkillsActivationFeature }`。
   - 验收：SDA-5.2（marker 门控条件投影、其他能力不受影响）。
-- [ ] **8.4 主门面测试 `test/skill-activation-facade.test.mjs` 与 `test/skill-activation-guard.test.mjs`**
+- [x] **8.4 主门面测试 `test/skill-activation-facade.test.mjs` 与 `test/skill-activation-guard.test.mjs`**
   - facade：版本匹配/失配/辅助包缺失三态（投影 active / typed disabled surface / availability 报告）、转发形状（activate/exposure/audit/policy 与 fake 服务 deepEqual）、Inactive/Disabled 抛错、其他 feature 不受影响（相对快照）、`pluginApi.skills.activation` 命名空间形状、冻结面。
   - guard：probe 通过/缺 ctx.get 拒载、FEATURE_MOUNTERS 顺序（skillsActivation 在 toolDiscovery 后、profile 前）、registry 键名。
   - 验收：SDA-5 + 契约 §2/§3。
 
 ### 9. 全量验证与收尾
 
-- [ ] **9.1 治理与完整性验证**
+- [x] **9.1 治理与完整性验证**
   - `node --test test/governance-token-audit.test.mjs` 零违规（含新增 packages/tool-skill 全部文件）；`git diff --check` 干净；官方包零修改验证：对 `/usr/lib/node_modules/@deepseek-ai/dsh/**` 执行只读安装态一致性校验（基线内容比对或安装清单核对）并确认本线未向其写入（官方包不在本仓库 git 追踪内，"git status 官方路径"无效；该检查只服务于交付义务，不做仓库级文件哈希加固）。
   - **SDA-R8 六项判定证据记录**：完成报告逐项记录 host-only 六项判定证据（官方 `dsh-tool-skill/package.json` 无 `dsh.client` manifest；不注册 remote namespace；不提供 slot/settings bridge；无 client↔host 版本协商；无 browser-side state/reconnect 语义；无 client-facing event/service → 六项全否 → host-only、不产生 client 构建面），供 feature-list §7 登记与全局终审核对。
   - 验收：AGENTS.md §6 治理魔法字母、官方包硬约束、SDA-R8。
-- [ ] **9.2 全量测试（Stage 4 门）**
+- [x] **9.2 全量测试（Stage 4 门）**
   - worktree 根执行统一 `npm test`（勿裸 `node --test`）；结果 = 本线新增测试全绿 + 存量测试除 §1.4 全量枚举的冻结断言失败外全绿；逐条列出失败断言（文件 + 断言形状 + 数量）并确认全部落在 §1.4 枚举内，移交 integration owner。
   - 验收：契约 §7.1（按 1.4 边界解释）+ AGENTS.md §3.2 Stage 4。
-- [ ] **9.3 文档回写与任务勾选**
+- [x] **9.3 文档回写与任务勾选**
   - 全部任务勾选 implemented；执行中发现的需求/设计矛盾按 AGENTS.md §3.2 就地修订对应文档并在报告列出（不夹带范围外变更），本线已知修订清单：design.md 的 skills/change 失实陈述**全部 4 处**（1.3.18：数据流图、数据流句、"官方 skills/change 监听器"失败路径句、Hook Extraction Summary 强制表"目录失效通知 | A | 官方 skills/change 事件绑定"——修订时同步调整强制表归属）、design.md 架构图 `SA --> DG[plugin-diagnostics 归因]`（1.3.17 归因通道决议，仅此一处）、design.md `policy.registerMinimalCatalogUpdate(scope?)` 签名措辞（1.3.8 收敛）、design.md Error Handling typed 码清单（码表对齐注：`ACTIVATION_SUPERSEDED`/`ACTIVATION_EXPIRED` 移出返回码语义为状态词汇、增列 `ACTIVATION_INVALID`）；tasks.md 状态行更新为 Stage 4 完成。
   - 验收：AGENTS.md §3.2 阶段纪律。
 

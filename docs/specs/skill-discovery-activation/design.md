@@ -2,7 +2,7 @@
 
 ## Status
 
-SPEC1 Stage 2：Design 已产出，与重构后的 Goal/Requirements 一并提交 M6 第六批次批量确认门，**尚未获批**。获批前不得进入 Stage 3 Tasks。本文为 Wave A：`context-provenance` 的设计将消费本文定义的 Exposure record 词汇（SDA-5）与目录 notice 的 `source.kind` 元数据。
+SPEC1 Stage 2：Design 已获用户批准（2026-08-26，M6 第六批次批量确认门，含 R 类通道重构版）。Stage 3–4 已完成（tasks 经对抗性审查、Stage 4 已交付并在 tasks.md 回写；本文件经执行期修订：skills/change 失实陈述、plugin-diagnostics 归因图、policy 签名、Error Handling 码表对齐）。本文为 Wave A：`context-provenance` 的设计将消费本文定义的 Exposure record 词汇（SDA-5）与目录 notice 的 `source.kind` 元数据。
 
 ## Overview
 
@@ -29,9 +29,8 @@ flowchart LR
   POLICY[minimal-update policy] --> CAT
   SKILL --> S[官方 ctx.skills list/get]
   PRE --> S
-  S --> EV[skills/change → 失效 epoch]
+  S --> EV[skills 目录变更 → 每轮 digest 重算]
   SA --> TD[pluginApi.tools.discovery 委托]
-  SA --> DG[plugin-diagnostics 归因]
   MF[主门面 marker 门控] -.条件投影.-> SA
   MF -.SDA-5 Exposure record.-> CP[context-provenance]
 ```
@@ -48,7 +47,7 @@ flowchart LR
 | `catalog-diff.js` | 官方 digest 复刻 + 增量化：added/removed/changed 差量计算与聚合（政策开启时启用） | R（官方目录机制行为策略化扩展，默认官方对齐） |
 | 主门面 `lib/index.js` 条件投影 | `pluginApi.skills.activation` marker/版本门控投影 `ctx.skillActivation` | B 面（只投影，不维护第二状态机） |
 
-**数据流（单向）**：`skills/change` / `activate`/`deactivate` → 状态机 mutation → 三路径门控 + digest 重算 → 目录消息注入（默认全量重发；政策开启时英文最小更新）→ 冻结投影。投影不写、策略不读私有状态（`api-shape.md` §2）。
+**数据流（单向）**：官方 `skills` registry 每轮 pre-step 的 digest 重算（官方 `tool-skill` 不监听 `skills/change`，目录失效由 digest 历史机制承担）与 `activate`/`deactivate` → 状态机 mutation → 三路径门控 + digest 重算 → 目录消息注入（默认全量重发；政策开启时英文最小更新）→ 冻结投影。投影不写、策略不读私有状态（`api-shape.md` §2）。
 
 ## Components and Interfaces
 
@@ -62,7 +61,7 @@ flowchart LR
   - `deactivate(skill, generation, scope?)`（SDA-4）
   - `exposure(skill, generation)` → 冻结 Exposure record（SDA-5）
   - `audit(query)`（SDA-8）、`availability()`（SDA-9）
-  - `policy.registerMinimalCatalogUpdate(scope?)` → disposer（SDA-C2）
+  - `policy.registerMinimalCatalogUpdate({ scope })`（scope 必填、kind 限 `session`）→ `{ ok, dispose }`（SDA-C2；可选 scope 收敛为必填：政策必须 per-session）
 - **Exposure record（SDA-5，Wave B 契约词汇，形状冻结）**：
 
 ```text
@@ -101,11 +100,11 @@ flowchart LR
 统一 typed 结果（不抛穿插件回调、绝不抛穿 apply）：
 
 - `SKILL_REGISTRATION_INVALID` / `SKILL_ENTRY_CONFLICT` / `SKILL_ENTRY_UNKNOWN` / `SKILL_ENTRY_DISPOSED` / `SKILL_ENTRY_FAILED`
-- `ACTIVATION_SCOPE_UNRESOLVED` / `ACTIVATION_SUPERSEDED` / `ACTIVATION_EXPIRED` / `ACTIVATION_DEGRADED` / `ACTIVATION_TIMEOUT`
+- `ACTIVATION_SCOPE_UNRESOLVED` / `ACTIVATION_INVALID` / `ACTIVATION_DEGRADED` / `ACTIVATION_TIMEOUT`（`ACTIVATION_SUPERSEDED`/`ACTIVATION_EXPIRED` 仅作激活记录状态词汇与 audit kind，不作返回码）
 - `SKILL_LOAD_DENIED`（skill 工具门控拒绝，含 reason）/ `INJECTION_SKIPPED`（pre-step 门控跳过）
 - `DEACTIVATE_STALE_GENERATION` / `EXPOSURE_STALE_GENERATION` / `UNAVAILABLE` / `INACTIVE`
 
-官方 `skills/change` 监听器与 pre-step 钩子内部异常全部吞掉并降级为诊断（官方语义：监听器失败不得否决注册表变更/决策流）。
+官方 `tool-skill` 不监听 `skills/change`（目录失效由 digest/历史机制承担）；pre-step 钩子内部异常按官方语义传播且不否决注册表变更，替换行新增的增量计算/注入路径一律就地 containment 并降级为诊断（SDA-C4）。
 
 ## Failure Paths and Guard Strategy
 
@@ -121,7 +120,7 @@ flowchart LR
 | 语义 | 通道 | 引出机制 |
 |---|---|---|
 | 官方 skills registry 读取 | A | `ctx.skills` 直通（只读消费，不替换 dsh-skill 行） |
-| 目录失效通知 | A | 官方 `skills/change` 事件绑定 |
+| 目录失效通知 | R | 官方 `tool-skill` 无 `skills/change` 监听；目录失效由替代行复刻的每轮 digest/历史机制承担（首发布与变更消息注入） |
 | skill 工具 / pre-step 注入 / 目录机制 | **R** | 禁用 `tool-skill` 行 + 插入 `plugin-api-tool-skill`；保真复刻三面后增加 activation 门控与目录变化告知策略（默认官方全量重发；政策切换英文最小更新） |
 | session 内动态激活策略 | **R** | 官方无 dispatch；替代行内 `ctx.skillActivation` 状态机为唯一 owner |
 | 工具暴露 | B（委托） | `pluginApi.tools.discovery` 已交付 seam |

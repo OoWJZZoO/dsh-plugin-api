@@ -2,7 +2,7 @@
 
 ## Status
 
-SPEC1 Stage 1：Requirements 已获用户批准（2026-08-26，M6 第六批次批量确认门）。**2026-08-26 经用户明确指示重构**：本 feature 改走 R 类通道（替换官方 `tool-skill` 行）并新增 session 内动态 skill 策略与目录变化告知（默认官方全量重发对齐；注册政策后切换为英文最小更新信息）。重构后的 Requirements 与 Design 一并待本批确认门；获批前不得进入 Stage 3 Tasks。
+SPEC1 Stage 1：Requirements 已获用户批准（2026-08-26，M6 第六批次批量确认门，含 R 类通道重构版）。Stage 3–4 已完成（tasks 经对抗性审查、Stage 4 已交付并在 tasks.md 回写）。
 
 ## Introduction
 
