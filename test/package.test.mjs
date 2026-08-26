@@ -10,6 +10,7 @@ test('package.json is parseable and exposes the expected entry points', () => {
   assert.equal(pkg.main, 'lib/index.js')
   assert.equal(pkg.exports['.'], './lib/index.js')
   assert.equal(pkg.exports['./package.json'], './package.json')
+  assert.equal(pkg.exports['./profile-fold'], './lib/profile-fold.js')
 })
 
 test('dsh.api is a major.minor contract', () => {
@@ -74,6 +75,8 @@ test('peerDependencies are the exact union of facade host and durable-audit iden
   }
 })
 
-test('capability services feature adds no runtime dependencies', () => {
-  assert.ok(!pkg.dependencies || Object.keys(pkg.dependencies).length === 0)
+test('the profile-composition folding parser is the only runtime dependency', () => {
+  assert.ok(pkg.dependencies, 'package.json must declare the fold-parser dependency')
+  assert.deepEqual(Object.keys(pkg.dependencies), ['js-yaml'])
+  assert.match(pkg.dependencies['js-yaml'], /^\^?4\./)
 })

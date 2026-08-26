@@ -356,6 +356,31 @@
 
 词汇：`health {healthy|degraded|failed|pending|unknown}`；`availability {active|degraded-active|inactive|unavailable|unknown}`（与 health 分离）；`severity {info|warning|error|critical}`；`blocking {blocking|non-blocking|unknown}`；`uncertainty {observed|inferred|unavailable}`；scope 固定四值。redaction fail-closed：snapshot/notification/log/client 出版共用同一份已脱敏冻结快照（secret 键/凭证值/evidence 白名单/boundedDetail 限长/深度有界）。client publication 为可选 seam：缺省显式 client-unavailable、host 保持 active；真实 host↔client 接线属 Wave C 整合议题（B3）。
 
+### 2.13 `pluginApi.profile` —— profile 组合投影与双模式变更（M6 第五批次）
+
+> host-only 双面命名空间（api-shape §3 一面原则的 llm 先例拆分、独立 owner、各自 fail-safe 边界）：
+> 投影面（inspection mounter）只读展示三种视图 + 健康体检 + dry-run diff；写入面（mutation mounter）
+> 是进程外 companion 执行器（`@deepseek-ai/dsh-plugin-api-profile-manager`）的安全遥控客户端——
+> 进程内永不实现 profile 写入逻辑（先验证后落盘 / CAS / 原子替换 / 备份轮换）。无 events catalog
+> slice、无 client manifest、无 remote/slot/settings bridge（capability-strategy §10 六项全否）。
+
+| Member | 形状（示意） | 说明 |
+|---|---|---|
+| `profile.inspect({view, profile?, overlayFiles?})` | `frozen ResolvedView` | 三视图：`runtime`（boot-init 时点从 `ctx.loader.entries()` 捕获的组合快照，不跟踪动态注册）、`disk`（当前 profile 文件按官方组合顺序折叠）、`other`（显式 profile 目录严格只读）；层解析失败 → 该层 `unavailable`+reason，成功部分照常返回；全部冻结、脱敏 fail-closed |
+| `profile.health(target)` | `frozen {findings}` | 体检码：duplicate-row-id / missing-package / row-package-mismatch / version-inconsistent / unknown-layer；零副作用 |
+| `profile.planDiff(intent)` | `frozen PlanDiff` | 纯内存 dry-run：config 类 → 候选 overlay YAML；deps 类 → 目标依赖集与增量；绝不写文件 |
+| `profile.apply(intent)` | `OperationHandle` | 快捷写；自动 prepare → validate(basic+boot 全跑) → commit；句柄：operationId / onProgress / cancel / 终态五词 + restartRequired |
+| `profile.snapshot.create/modify/delete/apply` | `typed 直接结果` | 手动快照管理瞬时原子步骤；delete 仅限自有（ownership-conflict 拒绝）；apply 有 validated-generation 硬门（gate-conflict） |
+| `profile.snapshot.validate(snapshotId, level)` | `OperationHandle` | 按需跑校验门（basic 结构 / boot 隔离启动）；通过 → 快照 `validated` 并绑定内容代次（PPM-6.3） |
+
+写入降级：执行器缺席或握手失配（方向①已装 runtime 全量 identity 精确相等、方向② `dsh.api` major.minor 匹配，
+任一失配）→ 写动词 typed `unavailable`，读侧完全不受影响（PPM-4.3）。执行器存储全部位于
+`$DSH_HOME/plugin-api/profile-manager/`（snapshots/ cache/seed/ backups/ audit.log/ tmp/；profile 档，
+`durable-state-and-scope.md` §1）；配额 256MB/owner + 1GB total、备份保留 N=5（config.json，fail-closed）；
+孤儿 GC 在 boot-init 扫描判孤即删（reinstall 循环取舍已文档化）；审计 JSONL append-only（executor 进程内）。
+client 半身交付 = 机械校验（语法/import 边界/`dsh.client` 清单一致性阻断；危险 sink 启发式非阻断 warning
+共享词汇）+ 威胁模型清单（`client-threat-model-checklist.md`；`visibility-and-redaction.md` §4 增补 client 受众）。
+
 ---
 
 ## 3. C 类上游提案汇总（M-final，不写实现）
@@ -500,3 +525,4 @@
 | `security-policy-egress-guard` | M6 B 类 host-only security facade：`pluginApi.security`（`policy`/`redaction`/`egress`/`audit` 只读注册与决策收敛面 + bounded audit） | delivered（M6 第四批次 Wave A Stage 4 交付） | `docs/specs/security-policy-egress-guard/` | feature key = `security`（guard 单 else-if 分支 / FEATURE_MOUNTERS 紧邻 `llm/admission` 之后 / registry 键 / namespace 统一）；官方已有 dispatch 点之上稳定化（llm/stream 模型请求前置评估、系统提示可见性检查、egress 决策、工具调用结果脱敏、审计环形缓冲），identity 域内 opaque、fail-closed 默认（deny/ask）、策略回调抛错只降级该条目并经 plugin diagnostics 带 owner 归因；版本不单独 bump（批次集成 sync 统一） |
 | `progressive-tool-discovery` | M6 B 类 host facade：`pluginApi.tools.discovery`（`catalog`/`search`/`activate`/`deactivate`/`audit` + 只读 availability）——描述符目录、作用域激活、generation 替换、bounded audit 与每轮 assemble 的暴露 | delivered（M6 第四批次 Wave A Stage 4 交付） | `docs/specs/progressive-tool-discovery/` | feature key = `toolDiscovery`（FEATURE_MOUNTERS 末尾）；latest-wins 提交资格、stale-generation typed no-op disposer、entry 失败回收 in-flight 激活、bounded 500 条 audit ring 显式 gap、冻结投影；暴露走官方 system-prompt tools/section seam（provider 每 assemble 重评估）；case-2 toolNames 只入 state/audit 永不注入提示；版本不单独 bump（批次集成 sync 统一） |
 | `session-branch-sidechain-edit` | M6 R 类 replacement bundle：`pluginApi.session.branches`（facade 只读投影 + 操作入口）与替代行 ctx 子接口 `sessions.branches`（create/graph/plan/preview/commit/rollback/restore + availability）——named branch（retry/sidechain/experiment/rescue）、branch graph、CAS edit plan、内容级 rollback 与 restore 验证 | delivered（M6 第四批次 Wave B Stage 4 交付，批次集成 sync 后合入） | `docs/specs/session-branch-sidechain-edit/` | 运行时名 `@deepseek-ai/dsh-plugin-api-session-branch`（源码 `packages/session-branch/`，row id `plugin-api-session-branch`，唯一 owner `@deepseek-ai/dsh-session`）。disable `session` + insert 替代行；thin delegate：实例化官方 `SessionStore` 并经同 fiber 换值暴露（8 成员保接收者/时序/typed 错误、四事件零重派发、typert 同 key）；branch 记录 = parent log 自定义元数据事件（`branch/created|failed`，官方存储 round-trip 重建 graph）；commit = 单次 surface-eligible `user/message` replace（内嵌 `data.edit` 审计块：调用方自定义 kind（user/plugin id/goal）、planId、commitId、range、generation、actor、at、externals——单 append 原子提交点）；rollback = 内容级恢复节点 + 幂等 revert 标记（N→1 折叠后内容级恢复、1:1 精确恢复、被更新 commit shadow 的旧 commit typed no-op）；restore = verify-then-append + external 显式 acknowledgment + 失败 flag recovery-pending 不 auto-retry；inheritance 声明记录 + gaps 如实（child degraded 不伪造）；apply boot 自检矩阵（identity 锁定 `0.1.0-rc.6`、官方行 disabled/替代行 active、sole owner 冲突检测、契约探针）+ fail-safe；主门面 marker/版本门控条件投影（失配仅停用本 R 特性）；full 聚合 patch 装配第 7 块；U17 保留为上游提案（replacement 为 current workaround，退役条件见 §3 U17 行）；批次集成 sync 后版本统一 `0.1.0-rc.6-0.6` / `dsh.api 0.6` |
+| `plugin-profile-management` | M6 第五批次 host-only 双面：`pluginApi.profile`（投影面 `inspect`/`health`/`planDiff` + 写入面 `apply`/`snapshot.*`）——统一三视图投影与"先验证后落盘"双模式变更管线 | delivered（M6 第五批次 Stage 4 交付） | `docs/specs/plugin-profile-management/` | 写入逻辑唯一实现在进程外 companion 执行器 `@deepseek-ai/dsh-plugin-api-profile-manager`（普通 npm 包 + bin，非 Cordis bundle、非 replacement 行；`packages/profile-manager/`）；门面 mutation mounter 是遥控客户端：握手双向校验（方向①已装 runtime 全量 identity 精确相等、方向② `dsh.api` major.minor 匹配）后写动词才放行，执行器缺席/失配 → typed `unavailable`、读侧不受影响；共享容错折叠解析器 `lib/profile-fold.js`（纯函数、js-yaml 官方 `JSON_SCHEMA`+`!!js` 方言、unknown 字段保留、不可折叠层显式标注、两侧同一实现，经主包 `./profile-fold` subpath export）；执行器安全管线：快照生命周期 clean/dirty/validated（validate 通过绑定内容代次，apply 硬门 gate-conflict）、seed 硬链接缓存 + 指纹原子重建（exclusive）、配额 256MB/owner/1GB total 拒写不删（fail-closed）、确认孤儿 GC 即删、CAS + 原子替换 + 有界备份代次轮换（rollback 源）、mock-first L2（mock provider 零网络零凭据 + 端口钉住 + overlay insert 注入、verdict `{bootHealthy, rowsApplied, caveats[], clientWarnings[]}` 判定 boot 健康非推理成功、provider 层失败 caveat 放行、boot 崩溃阻断）、客户端半身机械校验（语法/import 边界/`dsh.client` 清单一致性阻断 + 危险 sink 共享警告词汇）、JSONL 审计 append-only；句柄语义：五词终态（timeout 归 error+reason）、commit 前取消 aborted/commit 后 too-late、kill-and-cleanup、restartRequired 明示；终态与降级走 design typed code 目录；无 events catalog slice、无 R 行、无上游提案登记（M-final 排除已遵守）、无版本 bump；6 个 focused 套件（fold 13 + inspection 11 + guard 7 + mutation 9 + executor 55 + 共享断言更新）全绿，`npm test` 全量绿、`git diff --check` 与治理 token 审计干净、官方包零修改；client 威胁模型清单与 `visibility-and-redaction.md` §4 client 受众为本 feature 配套交付。 |

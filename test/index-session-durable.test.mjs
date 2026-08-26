@@ -16,6 +16,7 @@ function createMockCtx(options = {}) {
     fork() {},
   }
   const services = {
+    loader: { entries() { return [] } },
     llm: {
       resolveModelInfo() {},
       prepareCall() {},
@@ -135,6 +136,7 @@ test('apply mounts sessionDurable immediately after session without extending th
 
     'toolDiscovery',
 
+    'profile',
   ])
   assert.equal(feature(state, 'session').isActive, true)
   assert.equal(feature(state, 'sessionDurable').isActive, true)

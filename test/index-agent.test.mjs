@@ -32,6 +32,7 @@ function createMockCtx(options = {}) {
       }
 
   const services = {
+    loader: { entries() { return [] } },
     llm: {
       resolveModelInfo() {},
       prepareCall() {},
@@ -121,7 +122,7 @@ test('apply mounts agent after events and exposes a working registry read API', 
   assert.deepEqual(agents.getCalls, ['agent-1'])
 
   const features = state.pluginApi.features
-  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'workspaceTransactions', 'diagnostics', 'usage', 'tasks', 'toolDiscovery'])
+  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'workspaceTransactions', 'diagnostics', 'usage', 'tasks', 'toolDiscovery', 'profile'])
   assert.ok(features.slice(0, 15).every((f) => f.name === 'sessionBranch' || f.isActive), 'foundation-to-compat features remain active; the absent auxiliary branch add-on is the only inactive member')
 
   assert.equal(features[16].isActive, false)
@@ -969,7 +970,7 @@ test('agent guard failure disables only agent and keeps facade active', () => {
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 26)
+  assert.equal(features.length, 27)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
@@ -1024,7 +1025,7 @@ test('events guard failure does not block the agent registry read API', () => {
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 26)
+  assert.equal(features.length, 27)
 
   assert.equal(features[0].name, 'tools')
   assert.equal(features[0].isActive, true)

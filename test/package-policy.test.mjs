@@ -14,10 +14,11 @@ const mcp = readPackage('..', 'packages', 'mcp', 'package.json')
 const attachments = readPackage('..', 'packages', 'attachments', 'package.json')
 const routePolicy = readPackage('..', 'packages', 'agent-loop', 'package.json')
 const sessionBranch = readPackage('..', 'packages', 'session-branch', 'package.json')
+const profileManager = readPackage('..', 'packages', 'profile-manager', 'package.json')
 const full = readPackage('..', 'packages', 'full', 'package.json')
 
 test('main, auxiliary, and full packages all share the unified full-version + dsh.api policy', () => {
-  for (const pkg of [main, compaction, sessionTitle, mcp, attachments, routePolicy, sessionBranch, full]) {
+  for (const pkg of [main, compaction, sessionTitle, mcp, attachments, routePolicy, sessionBranch, profileManager, full]) {
     assert.match(pkg.version, /^(.+)-(\d+\.\d+)$/, `${pkg.name}: full unique version shape`)
     assert.equal(pkg.version.match(/^(.+)-(\d+\.\d+)$/)[2], pkg.dsh.api, `${pkg.name}: version suffix must equal dsh.api`)
     assert.equal(pkg.dsh.api, main.dsh.api, `${pkg.name}: API protocol must equal the main package`)
@@ -43,6 +44,7 @@ test('the full aggregate bundle depends on main and every auxiliary package at w
     '@deepseek-ai/dsh-plugin-api-attachments': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-agent-loop': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-session-branch': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-profile-manager': 'workspace:*',
   })
   assert.equal(full.dsh.bundle.patch, './cordis.patch.yml')
 })

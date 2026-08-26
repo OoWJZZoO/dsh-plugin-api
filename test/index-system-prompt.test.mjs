@@ -24,6 +24,7 @@ function createMockCtx(options = {}) {
     registerFetchProvider() { return () => {} },
   }
   const services = {
+    loader: { entries() { return [] } },
     llm: {
       resolveModelInfo() {},
       prepareCall() {},
@@ -103,7 +104,7 @@ test('systemPrompt guard failure disables only systemPrompt and keeps the facade
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-  assert.equal(features.length, 26)
+  assert.equal(features.length, 27)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -122,6 +123,7 @@ test('systemPrompt guard failure disables only systemPrompt and keeps the facade
   assert.match(features[13].reason, /systemPrompt\.service/)
   assert.deepEqual(features[14], { name: 'services', isActive: true })
   assert.equal(features[25].name, 'toolDiscovery')
+  assert.equal(features[26].name, 'profile')
   assert.equal(features[25].isActive, false)
   assert.match(features[25].reason, /systemPrompt/)
 

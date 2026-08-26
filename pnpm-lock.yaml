@@ -62,6 +62,9 @@ importers:
       '@deepseek-ai/dsh-user-approval':
         specifier: ^0.1.0-rc.6
         version: 0.1.0-rc.7(0e60389e09a0218a8df655f1aa11eb12)
+      js-yaml:
+        specifier: ^4.3.1
+        version: 4.3.1
 
   packages/agent-loop:
     dependencies:
@@ -191,6 +194,9 @@ importers:
       '@deepseek-ai/dsh-plugin-api-mcp':
         specifier: workspace:*
         version: link:../mcp
+      '@deepseek-ai/dsh-plugin-api-profile-manager':
+        specifier: workspace:*
+        version: link:../profile-manager
       '@deepseek-ai/dsh-plugin-api-session-branch':
         specifier: workspace:*
         version: link:../session-branch
@@ -234,6 +240,12 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+
+  packages/profile-manager:
+    dependencies:
+      '@deepseek-ai/dsh-plugin-api-main':
+        specifier: workspace:*
+        version: link:../..
 
   packages/session-branch:
     dependencies:

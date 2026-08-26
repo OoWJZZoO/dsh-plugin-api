@@ -5,7 +5,7 @@
 目的：从真实插件反复实现的 workaround、状态机和失败处理里反推 `dsh-plugin-api` 尚未覆盖的公共能力。
 
 本报告最初只做调研和候选提出，不创建正式 spec，不进入 Stage 0，不实现任何 feature。
-2026-08-24 起，经用户明确指示，候选自候选池陆续立项并进入 SPEC1 Stage 0。截至 2026-08-25，共 **14 个候选正式立项**：第一/二批八项（`execution-observation`、`plugin-diagnostics`、`usage-budget-telemetry`、`mcp-catalog-lifecycle`、`model-route-policy`、`attachment-pipeline`、`recovery-policy`、`client-generation-rebind`）已全部完成 Stage 4 交付；第三批三项（`coordination-lease`、`workspace-mutation-transaction`、`task-execution-observation`）已全部完成 Stage 4 交付（SPEC3 全程）；第四批三项（`security-policy-egress-guard`、`progressive-tool-discovery`、`session-branch-sidechain-edit`）于同日经用户指示进入 SPEC1 Stage 0（其中 `session-branch-sidechain-edit` 经用户明确批准按 R 类推进，owner 为官方 `@deepseek-ai/dsh-session`），已连续通过 Stage 0–2 批量确认门（2026-08-25），进入 Stage 3/4。本报告继续只承担候选溯源与状态登记，不承载 Requirements、Design 或 Tasks；已交付状态的权威登记以 `feature-list.md` §7 为准。
+2026-08-24 起，经用户明确指示，候选自候选池陆续立项并进入 SPEC1 Stage 0。截至 2026-08-25，共 **15 个候选正式立项**：第一/二批八项（`execution-observation`、`plugin-diagnostics`、`usage-budget-telemetry`、`mcp-catalog-lifecycle`、`model-route-policy`、`attachment-pipeline`、`recovery-policy`、`client-generation-rebind`）已全部完成 Stage 4 交付；第三批三项（`coordination-lease`、`workspace-mutation-transaction`、`task-execution-observation`）已全部完成 Stage 4 交付（SPEC3 全程）；第四批三项（`security-policy-egress-guard`、`progressive-tool-discovery`、`session-branch-sidechain-edit`）于同日经用户指示进入 SPEC1 Stage 0（其中 `session-branch-sidechain-edit` 经用户明确批准按 R 类推进，owner 为官方 `@deepseek-ai/dsh-session`），已连续通过 Stage 0–2 批量确认门（2026-08-25），进入 Stage 3/4；第五批次一项（`plugin-profile-management`）已完成 Stage 4 交付（SPEC3 全程）。本报告继续只承担候选溯源与状态登记，不承载 Requirements、Design 或 Tasks；已交付状态的权威登记以 `feature-list.md` §7 为准。
 
 ## 当前立项状态
 
@@ -22,11 +22,12 @@
 | `coordination-lease` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第三批次） | `docs/specs/coordination-lease/goal.md`；`docs/specs/coordination-lease/requirements.md`；`docs/specs/coordination-lease/design.md`；`docs/specs/coordination-lease/tasks.md` |
 | `workspace-mutation-transaction` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第三批次） | `docs/specs/workspace-mutation-transaction/goal.md`；`docs/specs/workspace-mutation-transaction/requirements.md`；`docs/specs/workspace-mutation-transaction/design.md`；`docs/specs/workspace-mutation-transaction/tasks.md` |
 | `task-execution-observation` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第三批次） | `docs/specs/task-execution-observation/goal.md`；`docs/specs/task-execution-observation/requirements.md`；`docs/specs/task-execution-observation/design.md`；`docs/specs/task-execution-observation/tasks.md` |
-| `security-policy-egress-guard` | 已立项，交付中（B 类） | SPEC1 Stage 0–2 已确认；Stage 3/4 交付中（M6 第四批次 Wave A） | `docs/specs/security-policy-egress-guard/goal.md`；`docs/specs/security-policy-egress-guard/requirements.md`；`docs/specs/security-policy-egress-guard/design.md`；`docs/specs/security-policy-egress-guard/tasks.md` |
-| `progressive-tool-discovery` | 已立项，交付中（B 类） | SPEC1 Stage 0–2 已确认；Stage 3/4 交付中（M6 第四批次 Wave A） | `docs/specs/progressive-tool-discovery/goal.md`；`docs/specs/progressive-tool-discovery/requirements.md`；`docs/specs/progressive-tool-discovery/design.md`；`docs/specs/progressive-tool-discovery/tasks.md` |
-| `session-branch-sidechain-edit` | 已立项，推进中（R 类，经用户批准；owner `@deepseek-ai/dsh-session`，运行时名 `@deepseek-ai/dsh-plugin-api-session-branch`） | SPEC1 Stage 2：Design 已确认；Stage 3 推进中（M6 第四批次 Wave B） | `docs/specs/session-branch-sidechain-edit/goal.md`；`docs/specs/session-branch-sidechain-edit/requirements.md`；`docs/specs/session-branch-sidechain-edit/design.md`；`docs/specs/session-branch-sidechain-edit/tasks.md` |
+| `security-policy-egress-guard` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第四批次 Wave A Stage 4；批次集成 sync 后合入） | `docs/specs/security-policy-egress-guard/goal.md`；`docs/specs/security-policy-egress-guard/requirements.md`；`docs/specs/security-policy-egress-guard/design.md`；`docs/specs/security-policy-egress-guard/tasks.md` |
+| `progressive-tool-discovery` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第四批次 Wave A Stage 4；批次集成 sync 后合入） | `docs/specs/progressive-tool-discovery/goal.md`；`docs/specs/progressive-tool-discovery/requirements.md`；`docs/specs/progressive-tool-discovery/design.md`；`docs/specs/progressive-tool-discovery/tasks.md` |
+| `session-branch-sidechain-edit` | 已交付（R 类；owner `@deepseek-ai/dsh-session`，运行时名 `@deepseek-ai/dsh-plugin-api-session-branch`） | SPEC3 Stage 4：交付完成（M6 第四批次 Wave B；批次集成 sync 后合入） | `docs/specs/session-branch-sidechain-edit/goal.md`；`docs/specs/session-branch-sidechain-edit/requirements.md`；`docs/specs/session-branch-sidechain-edit/design.md`；`docs/specs/session-branch-sidechain-edit/tasks.md` |
+| `plugin-profile-management` | 已交付（双面：投影 + 进程外执行器遥控写入） | SPEC3 Stage 4：交付完成（M6 第五批次） | `docs/specs/plugin-profile-management/goal.md`；`docs/specs/plugin-profile-management/requirements.md`；`docs/specs/plugin-profile-management/design.md`；`docs/specs/plugin-profile-management/tasks.md` |
 
-其余 6 个候选仍处于候选池，未进入 Stage 0。
+其余 5 个候选仍处于候选池，未进入 Stage 0。
 
 ## 结论先行
 

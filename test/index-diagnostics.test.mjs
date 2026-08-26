@@ -5,6 +5,7 @@ import { PluginApiFeatureDisabledError } from '../lib/errors.js'
 
 function createMockCtx(options = {}) {
   const services = {
+    loader: { entries() { return [] } },
     llm: { resolveModelInfo() {}, prepareCall() {}, stream() {}, registerAdapter() {}, registerConfigurableProviders() {}, registerModelDiscovery() {} },
     tools: { register() {}, restrict() {}, guard() {}, get() {}, schemas() {}, execute() {}, presentAs() {} },
     agents: { get() {}, list() {}, roots() {} },
@@ -53,10 +54,11 @@ test('healthy apply mounts diagnostics after remote and exposes a working projec
   assert.equal(diagnostics.isActive, true)
 
   const names = state.pluginApi.features.map((entry) => entry.name)
-  assert.equal(names.indexOf('diagnostics'), names.length - 4, 'diagnostics mounts directly after workspaceTransactions')
-  assert.equal(names[names.length - 3], 'usage', 'usage stays directly before tasks')
-  assert.equal(names[names.length - 2], 'tasks', 'tasks stays directly before toolDiscovery')
-  assert.equal(names[names.length - 1], 'toolDiscovery', 'tool discovery is the last FEATURE_MOUNTERS entry')
+  assert.equal(names.indexOf('diagnostics'), names.length - 5, 'diagnostics mounts directly after workspaceTransactions')
+  assert.equal(names[names.length - 4], 'usage', 'usage stays directly before tasks')
+  assert.equal(names[names.length - 3], 'tasks', 'tasks stays directly before toolDiscovery')
+  assert.equal(names[names.length - 2], 'toolDiscovery', 'tool discovery mounts directly before profile')
+  assert.equal(names[names.length - 1], 'profile', 'profile is the last FEATURE_MOUNTERS entry')
 
 
   const diag = state.pluginApi.diagnostics
