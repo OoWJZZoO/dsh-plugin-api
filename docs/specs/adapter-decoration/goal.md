@@ -6,7 +6,7 @@
 
 ## Status
 
-SPEC1 Stage 0：Goal 草案，等待用户确认。用户已明确批准本 feature 采用 R 类通道（2026-08-26）。
+SPEC1 Stage 0：Goal 已获用户确认（2026-08-26）；Stage 1 Requirements 已获确认，现进入 Stage 2 Design。用户已明确批准本 feature 采用 R 类通道。
 
 ## Goal
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-SPEC1 Stage 1：Requirements 草案，基于已批准 Goal，等待用户确认。
+SPEC1 Stage 1：Requirements 已获用户确认（2026-08-26），现进入 Stage 2 Design。
 
 ## Introduction
 
