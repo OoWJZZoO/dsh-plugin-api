@@ -27,8 +27,8 @@
 | `session-branch-sidechain-edit` | 已交付（R 类；owner `@deepseek-ai/dsh-session`，运行时名 `@deepseek-ai/dsh-plugin-api-session-branch`） | SPEC3 Stage 4：交付完成（M6 第四批次 Wave B；批次集成 sync 后合入） | `docs/specs/session-branch-sidechain-edit/goal.md`；`docs/specs/session-branch-sidechain-edit/requirements.md`；`docs/specs/session-branch-sidechain-edit/design.md`；`docs/specs/session-branch-sidechain-edit/tasks.md` |
 | `plugin-profile-management` | 已交付（双面：投影 + 进程外执行器遥控写入） | SPEC3 Stage 4：交付完成（M6 第五批次） | `docs/specs/plugin-profile-management/goal.md`；`docs/specs/plugin-profile-management/requirements.md`；`docs/specs/plugin-profile-management/design.md`；`docs/specs/plugin-profile-management/tasks.md` |
 | `memory-interoperability` | 已明确排除立项（功能组件非门面；由具体 memory 插件基于已交付 API 自行实现） | 不进入 Stage 0 | —（候选分析留档于本文件 §10） |
-| `skill-discovery-activation` | 已立项，待确认（B 类 host-only；R 仅保留后续评估） | SPEC1 Stage 0–1：Goal/Requirements 已产出，待批量确认门（M6 第六批次 Wave A） | `docs/specs/skill-discovery-activation/goal.md`；`docs/specs/skill-discovery-activation/requirements.md` |
-| `context-provenance` | 已立项，待确认（B/C 边界） | SPEC1 Stage 0–1：Goal/Requirements 已产出，待批量确认门（M6 第六批次 Wave B） | `docs/specs/context-provenance/goal.md`；`docs/specs/context-provenance/requirements.md` |
+| `skill-discovery-activation` | 已立项，待确认（R 类；owner `@deepseek-ai/dsh-tool-skill`，运行时名 `plugin-api-tool-skill`；2026-08-26 用户指示由 B 类改 R 类） | SPEC1 Stage 2 重构：Goal/Requirements/Design 已产出，待批量确认门（M6 第六批次 Wave A；Stage 0–1 已获批 2026-08-26） | `docs/specs/skill-discovery-activation/goal.md`；`docs/specs/skill-discovery-activation/requirements.md`；`docs/specs/skill-discovery-activation/design.md` |
+| `context-provenance` | 已立项，待确认（B 类门面 + `sent` 证据 R 切片于 `plugin-api-agent-loop`，owner `@deepseek-ai/dsh-agent-loop`；2026-08-26 用户指示） | SPEC1 Stage 2 重构：Goal/Requirements/Design 已产出，待批量确认门（M6 第六批次 Wave B；Stage 0–1 已获批 2026-08-26） | `docs/specs/context-provenance/goal.md`；`docs/specs/context-provenance/requirements.md`；`docs/specs/context-provenance/design.md` |
 
 其余 2 个候选（`remote-session-channel`、`adapter-decoration`）仍处于候选池，未进入 Stage 0；`memory-interoperability` 已于 2026-08-26 撤出候选池并明确排除立项。
 
@@ -121,7 +121,7 @@ done
 | 13 | Model health / failover / route policy | 路由策略被每个插件私自 prepend | R 优先 | 5 | 5 | 5 | 第一梯队，正式 R 候选 |
 | 14 | Remote session / channel bridge | mobile/remote 连接没有统一 resume、ack、权限语义 | R 优先 | 4 | 4 | 5 | 第二梯队，正式 R 候选 |
 | 15 | Task/workflow execution observation | task board、workflow、job、session identity 不一致 | B | 5 | 5 | 4 | 第一梯队 |
-| 16 | Skill discovery / activation | skill 注册和工具暴露没有 per-agent/per-turn 生命周期 | R 或 B | 4 | 4 | 4 | 第二梯队 |
+| 16 | Skill discovery / activation | skill 注册和工具暴露没有 per-agent/per-turn 生命周期 | R 或 B | 4 | 4 | 4 | 已立项（R 类，2026-08-26） |
 | 17 | Adapter decoration lifecycle | synthetic adapter / wrapper 复制 metadata、难以卸载 | R 优先 | 5 | 5 | 5 | 第一梯队，正式 R 候选 |
 | 18 | Multimodal attachment pipeline | image workaround 无法扩展到 attachment provenance 和转换 | R 优先 | 5 | 5 | 5 | 第一梯队，正式 R 候选 |
 | 19 | Workspace mutation transaction | claim、checkpoint、rewind、restore 不能形成一次事务 | B | 5 | 5 | 5 | 第一梯队 |
@@ -206,6 +206,8 @@ record.compareAndSet(key, expectedVersion, value)
 - compaction/prune 时发出可查询的 replacement mapping，而不是只留下结果。
 
 **通道判断。** 现有 `systemPrompt` 和 session surface 可支撑一部分 B 类实现；真正让官方 agent loop 消费带 provenance 的 assembled context 可能需要 C 类上游接口。它不应取代现有 tokenMeter 或 session surface，而是为两者提供可解释的组合层。
+
+**立项结论（2026-08-26，用户明确指示）：门面本体维持 B 类；`sent` 证据切片改 R 类。** 官方 `dsh-agent-loop` 组装/发送点（`renderContextSections`/`renderPrompt`）无 provenance dispatch；本候选在既有 `@deepseek-ai/dsh-plugin-api-agent-loop` replacement（唯一 owner `@deepseek-ai/dsh-agent-loop`）上新增 evidence-only 证据发射（identifiers/seq 范围，无 content，不改组装/策略决策），使 `sent` 由真实证据支撑；组装点原生消费带 provenance 的 assembled context 仍登记 C 类上游提案 U19。
 
 **风险。** provenance 不能伪造为“模型一定看到了”；必须区分 contributed、served、sent、archived、redacted 五种状态，并控制敏感信息进入 inspector。
 
@@ -384,6 +386,8 @@ record.compareAndSet(key, expectedVersion, value)
 - skill 依赖缺失时只降级该 skill，不影响其他 registry 条目。
 
 **通道判断。** B 类可以围绕现有 skills registry、tools registry 和 systemPrompt 实现；如果官方 skill loader 是唯一负责“skill -> tool exposure”的地方，R 类也应正式保留为选项。不要为了规避 R 把每个 skill 的 activation 拼在插件自己的 prompt listener 里。
+
+**立项结论（2026-08-26，用户明确指示）：改 R 类。** 官方 `dsh-skill` 只拥有 registry，模型侧暴露的唯一一致性 owner 是 `dsh-tool-skill`（`skill` 工具 + `agent/pre-step` 注入 + `<available_skills>` 目录机制，均只查静态 `modelInvocable`/`userInvocable` 布尔）。本候选以 R 类落地：禁用 `tool-skill` 行 + 插入 `plugin-api-tool-skill`，保真复刻三面契约后增加 session 内动态 activation 策略、目录变化告知策略（默认官方全量重发对齐，政策入口切换为英文最小更新信息）；U18 保留为上游提案。上述“B 类 + R 选项”判断被本结论取代。
 
 ### 17. Adapter decoration lifecycle
 

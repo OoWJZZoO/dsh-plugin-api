@@ -17,7 +17,7 @@ agent/dsh-plugin-api/
 ├── lib/index.js        # host 插件：注册 ctx.pluginApi，包装官方服务、挂转译钩子
 ├── lib/client.js       # client 插件：浏览器端 helper（remote contribution / codec / slot）
 ├── package.json        # 主包 @deepseek-ai/dsh-plugin-api-main（声明 dsh.client 清单；peerDependencies 共享宿主实例）
-├── packages/           # 辅助 replacement bundles（compaction-events/、session-title/、mcp/、attachments/、agent-loop/）与全量聚合 bundle @deepseek-ai/dsh-plugin-api-full
+├── packages/           # 辅助 replacement bundles（compaction-events/、session-title/、mcp/、attachments/、agent-loop/、tool-skill/）与全量聚合 bundle @deepseek-ai/dsh-plugin-api-full
 ├── docs/specs/         # spec coding 制品（见第 3 节）
 └── test/               # npm test（= node --test "test/**/*.mjs" "packages/*/test/*.mjs"，temp/ 不参与扫描；见 §6）
 ```

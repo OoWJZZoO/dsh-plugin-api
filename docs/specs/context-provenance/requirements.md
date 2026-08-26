@@ -2,34 +2,35 @@
 
 ## Status
 
-SPEC1 Stage 1：Requirements 已产出，与 Stage 0 Goal 一并提交 M6 第六批次批量确认门，**尚未获批**。获批前不得进入 Stage 2 Design。本件为 Wave B：已消费 Wave A `skill-discovery-activation` 的 exposure 词汇（见 CP-2，引用 SDA-5 exposure record）。
+SPEC1 Stage 1：Requirements 已获用户批准（2026-08-26，M6 第六批次批量确认门）。**2026-08-26 经用户明确指示重构**：`sent` 证据切片改走 R 类实现（扩展现有 agent-loop replacement）。重构后的 Requirements 与 Design 一并待本批确认门；获批前不得进入 Stage 3 Tasks。本件为 Wave B：已消费 Wave A `skill-discovery-activation` 的 exposure 词汇（CP-2，引用 SDA-5 Exposure record）。
 
 ## Introduction
 
-`context-provenance` 为第三方插件与诊断/界面消费者提供可解释的上下文组合与 provenance 契约：回答一段内容从哪里来、是否实际服务给模型、何时被压缩/替换/归档、以及为什么不可见。它把 systemPrompt 注入、session surface、attachment projection、tool/skill exposure、memory 插件产出与 compaction 产生的碎片关联成一个有界、只读可审阅的贡献图（contribution graph），但绝不把“已贡献”伪装成“模型一定看到了”。
+`context-provenance` 为第三方插件与诊断/界面消费者提供可解释的上下文组合与 provenance 契约。官方事实（2026-08-26 本机 DSH `0.1.0-rc.6` 源码核实）：最终 system prompt 的组装与渲染发生在 `dsh-agent-loop` 内部（`renderContextSections(assembly)` / `renderPrompt(assembly)`），官方没有任何“本次组装实际包含/丢弃了什么、最终发送了什么”的 dispatch 点。因此：
 
-本 feature 初版按 **B/C 边界**推进：现有 systemPrompt/session surface 可支撑有界 facade（B 类）；要求官方 agent loop 在组装点原生消费带 provenance 的 assembled context 属于 **C 类**，只登记 upstream proposal、不伪造官方保证（CP-5）。组合结果是只读解释面：不拥有 memory/attachment/session/skill/tool 的持久状态，不得因 compose 结果自动执行 retry、route、approval、mutation 或 prompt 注入旁路。
+- 门面本体为 **B 类**组合 facade（contribution 注册、compose、inspect、replacement mapping）；
+- `sent` 证据切片为 **R 类**：在既有 `@deepseek-ai/dsh-plugin-api-agent-loop` replacement（owner `@deepseek-ai/dsh-agent-loop`，已交付并锁定 runtime identity）上新增 assembled-context 证据发射，使 `sent` 由真实证据支撑；
+- 官方 agent loop **原生消费**带 provenance 的 assembled context（组装点策略消费）仍属 **C 类**，登记上游提案 U19，不伪造官方保证。
 
 ## Definitions and Boundaries
 
-- **Contribution**：一次注册 `{ id, owner, scope, phase, priority, content/ref, source, sourceEventSeqs, expiresAt, audience }`；content/ref 只承载引用或已脱敏内容。
-- **Node lifecycle/visibility states**：`contributed` → `served` → `sent` | `archived` | `redacted` | `superseded`。这些是可见性/生命周期状态，不是操作终态词汇；有终态的操作对象仍使用 `identity-and-lifecycle.md` §3 的统一终态词汇。
-- **Compose**：把当前请求范围内的 contributions 按 scope/phase/priority 组装为冻结贡献图；纯读解释面。
-- **Inspect**：session 维度的 served / archive / dropped 只读投影。
-- **Replacement mapping**：compaction/prune 证据驱动的旧节点 → 新节点映射。
-- **与相邻 feature 分工**：execution/session correlation 归 `execution-observation`；attachment identity/generation 归 `attachment-pipeline`；branch boundary/edit lineage 归 `session-branch-sidechain-edit`；工具暴露来源归 `progressive-tool-discovery`；skill 暴露来源归 `skill-discovery-activation`（本 feature 消费其 SDA-5 exposure record 词汇，不重实现其生命周期）；失败与可见性边界归 `plugin-diagnostics` 与 `visibility-and-redaction`；memory 来源可选，由具体插件经 contribution 元数据声明，不依赖专用 memory facade。
+- **Contribution**：一次注册 `{ id, owner, scope, phase, priority, content/ref, source, sourceEventSeqs, expiresAt, audience }`。
+- **Node lifecycle/visibility states**：`contributed` → `served` → `sent` | `archived` | `redacted` | `superseded`。这些是可见性/生命周期状态，不是操作终态词汇（`identity-and-lifecycle.md` §3）。
+- **Assembled-context evidence（R 证据）**：agent-loop replacement 在等价渲染点发射的冻结证据 `{ sessionId, generation, systemSections: [{ sectionKey, sourceTags }], messageRanges: [{ fromSeq, toSeq, count }], dropped: [{ ref, reason }], observedAt }`——只观测，不改变 loop 内组装/策略决策。
+- **Compose / Inspect / Replacement mapping**：同重构前定义（冻结贡献图 / session 维度投影 / compaction/prune 旧节点→新节点映射）。
+- **与相邻 feature 分工**：execution/session correlation 归 `execution-observation`；attachment provenance 归 `attachment-pipeline` 投影；branch/edit lineage 归 `session-branch-sidechain-edit`；工具暴露来源归 `progressive-tool-discovery`；skill 暴露来源归 `skill-discovery-activation`（SDA-5 Exposure record 与目录 notice 的 `source.kind`）；R 证据切片归 `model-route-policy` 的 replacement 包（同组件第二能力）；memory 来源可选，经 contribution 元数据声明；失败与可见性边界归 `plugin-diagnostics` 与 `visibility-and-redaction`。
 - **Host/client boundary**：host-only；不新增 client remote/slot/settings 面。
 
 ## Standards Alignment
 
 按 `docs/standards/` 六册对照：
 
-- **capability-strategy**：适用——初版 B 类组合 facade；官方 assembled-context seam 的 C 类边界记录于 CP-5；不涉及 R replacement；横切派发语义不走 R。
-- **api-shape**：核心适用——主公开面为 projection 面（compose/inspect 冻结只读、无副作用）；compose 策略为独立 policy registry 面（纯函数、输入显式传入）；无 durable mutation 面。
-- **identity-and-lifecycle**：适用——贡献与节点使用 owner-specific generation；节点状态是生命周期/可见性状态而非终态词汇；`superseded` 只作被替换节点的状态与 replacement lineage，不开启旧结果补写通道。
-- **durable-state-and-scope**：部分适用——本 feature 不声明 durable mutation 面；bounded 历史与 replacement mapping 若持久化须单档归属（Design 定）；默认不自动 retry。
-- **visibility-and-redaction**：核心适用——受众包络（模型/UI/diagnostic）逐节点强制；secret 默认禁止进入 graph/inspector；脱敏失败 fail-closed；逐条受众标注见各需求。
-- **concurrency-and-cancellation**：适用——compose/inspect 尊重 AbortSignal；stale generation 失去提交资格；projection observer epoch；单贡献源失败只降级该来源。
+- **capability-strategy**：核心适用——B 类门面 + 单一官方组件的 R 能力切片（`dsh-agent-loop`，唯一 replacement owner 已存在）；requirements 逐条对照 R1–R9（CP-5）；U19 上游提案与退役条件；§10 client 半面判定（本切片为宿主行内证据发射，六项全否 → host-only，与既有 agent-loop 包判定一致）；横切派发语义不走 R。
+- **api-shape**：核心适用——主公开面为 projection 面（compose/inspect 冻结只读）；compose 策略为独立 policy registry 面（纯函数）；R 切片只发射证据、不做策略决策（policy 面不在 R 内）。
+- **identity-and-lifecycle**：适用——owner-specific generation；节点状态是生命周期/可见性状态而非终态词汇；`superseded` 只作 replacement lineage。
+- **durable-state-and-scope**：部分适用——门面不声明 durable mutation 面；bounded 历史与 mapping 若持久化须单档归属（Design 定）；证据 payload 为内存冻结快照，不承诺 durable。
+- **visibility-and-redaction**：核心适用——受众包络逐节点强制；证据 payload 只携带 sectionKey/seq 范围/sourceTags，不含 content；secret 默认禁止；脱敏失败 fail-closed。
+- **concurrency-and-cancellation**：适用——compose/inspect 尊重 AbortSignal；stale generation 失去提交资格；observer epoch；证据发射与消费的异步竞争按 latest-wins/observedAt 收敛。
 
 ## Requirements
 
@@ -40,11 +41,11 @@ SPEC1 Stage 1：Requirements 已产出，与 Stage 0 Goal 一并提交 M6 第六
 **Acceptance Criteria:**
 
 1. **WHEN** a caller registers a contribution **THEN** the facade SHALL require a unique id, a non-empty owner, a single scope tier from `{ request, session }`, phase, priority, a source kind, and an audience envelope, and SHALL return a handle with generation token and disposer.
-2. **WHEN** a duplicate contribution id is registered within the same owner namespace **THEN** the facade SHALL reject it with a typed conflict result and SHALL preserve the existing contribution.
-3. **WHEN** a disposer is invoked more than once **THEN** the facade SHALL make disposal idempotent and SHALL NOT remove contributions owned by other owners.
-4. **WHEN** contribution metadata is consumed by any projection **THEN** the facade SHALL provide it as frozen read-only data.
+2. **WHEN** a duplicate contribution id is registered within the same owner namespace **THEN** typed conflict; the existing contribution SHALL be preserved.
+3. **WHEN** a disposer is invoked more than once **THEN** disposal SHALL be idempotent and SHALL NOT remove contributions owned by other owners.
+4. **WHEN** contribution metadata is consumed by any projection **THEN** it SHALL be frozen read-only.
 
-**Classification:** B（facade registry）；content 的受众按 CP-8 包络强制执行。
+**Classification:** B（facade registry）。
 
 ### CP-2 Source vocabulary and seams
 
@@ -52,13 +53,13 @@ SPEC1 Stage 1：Requirements 已产出，与 Stage 0 Goal 一并提交 M6 第六
 
 **Acceptance Criteria:**
 
-1. **WHEN** a contribution is registered **THEN** it SHALL declare a source kind from `{ systemPrompt, sessionSurface, attachment, toolExposure, skillExposure, memory, compaction }` plus the producing owner.
-2. **WHEN** a contribution derives from session surface **THEN** it SHALL carry bounded `sourceEventSeqs` and SHALL NOT synthesize sequence numbers that the source did not provide.
-3. **WHEN** the facade consumes skill exposure provenance **THEN** it SHALL use the exposure record vocabulary defined by `skill-discovery-activation` (SDA-5) via that feature's public projection, and SHALL treat the skill feature as the source owner without re-implementing its lifecycle.
+1. **WHEN** a contribution is registered **THEN** it SHALL declare a source kind from `{ systemPrompt, sessionSurface, attachment, toolExposure, skillExposure, memory, compaction, assembledEvidence }` plus the producing owner.
+2. **WHEN** a contribution derives from session surface **THEN** it SHALL carry bounded `sourceEventSeqs` and SHALL NOT synthesize sequence numbers the source did not provide.
+3. **WHEN** the facade consumes skill exposure provenance **THEN** it SHALL use the Exposure record vocabulary defined by `skill-discovery-activation` (SDA-5) and the catalog-notice `source.kind` metadata (`skill-catalog` / `skill-catalog-update`), treating the skill feature as source owner.
 4. **WHEN** a memory plugin contributes recall content **THEN** the facade SHALL accept it via declared contribution metadata only (optional source) and SHALL NOT depend on any dedicated memory facade.
 5. **WHEN** a source seam is unavailable **THEN** evidence from that source SHALL degrade with a typed unavailable/degraded result while other sources SHALL remain unaffected.
 
-**Classification:** B（组合既有公开 seam）；skill 词汇为 Wave A 契约消费，memory 为可选来源。
+**Classification:** B（组合既有公开 seam + R 证据消费）。
 
 ### CP-3 Compose and budget
 
@@ -72,7 +73,7 @@ SPEC1 Stage 1：Requirements 已产出，与 Stage 0 Goal 一并提交 M6 第六
 4. **WHEN** a compose policy is registered **THEN** it SHALL be a pure function evaluated only at the compose decision point; a throwing policy SHALL degrade that decision point to its default and SHALL NOT fail the whole composition.
 5. **WHEN** one contributor fails during assembly **THEN** the failure SHALL be recorded as degraded evidence for that contributor and SHALL NOT break the assembled graph for the others.
 
-**Classification:** B projection（主公开面）+ policy registry（compose 策略）；无 durable mutation。
+**Classification:** B projection（主公开面）+ policy registry（compose 策略）。
 
 ### CP-4 Node states and provenance fields
 
@@ -87,18 +88,21 @@ SPEC1 Stage 1：Requirements 已产出，与 Stage 0 Goal 一并提交 M6 第六
 
 **Classification:** B；状态词汇为生命周期/可见性状态，不与 `identity-and-lifecycle.md` §3 终态词汇混用。
 
-### CP-5 Served/sent evidence boundary（B/C）
+### CP-5 Assembled-context evidence slice（R 类）
 
-**User Story:** As a plugin maintainer, I want the facade to claim only what the available evidence supports, so that "served" is never presented as "the model saw it" without proof.
+**User Story:** As a diagnostic or UI consumer, I want authoritative evidence of what was actually sent to the model, so that `sent` is fact-based instead of asserted.
 
 **Acceptance Criteria:**
 
-1. **WHEN** the facade marks a node `sent` **THEN** it SHALL do so only on supported official dispatch evidence; otherwise the ceiling SHALL be `served` with an explicit disclosure that `served ≠ sent`.
-2. **WHEN** no send evidence exists **THEN** the facade SHALL NOT claim model visibility for that node.
-3. **GIVEN** native consumption of provenance-carrying assembled context at the official agent loop assembly point is required **THEN** the requirement SHALL be registered as a C-class upstream proposal; the facade SHALL NOT fabricate that guarantee.
-4. **WHEN** the upstream seam is unavailable **THEN** the facade SHALL return bounded unavailable/degraded evidence and SHALL NOT affect harness boot.
+1. **WHEN** the agent-loop replacement renders the assembled system prompt or prepares the message dispatch (equivalent of official `renderContextSections` / `renderPrompt` call sites) **THEN** it SHALL emit a frozen assembled-context evidence payload `{ sessionId, generation, systemSections, messageRanges, dropped, observedAt }` and SHALL NOT alter the assembled content, ordering, or loop decisions (evidence-only, no policy inside the R slice).
+2. **WHEN** the evidence slice is emitted **THEN** it SHALL be delivered only through the official patch mechanism of the existing `plugin-api-agent-loop` replacement (R1), preserve the official `ctx.agentLoop` contract (R2), not cover the `@deepseek-ai/dsh-agent-loop` import surface (R3), and pass the package's existing boot self-check (R4), version lock (R5), sole-owner conflict detection (R6), and cross-cutting-dispatch exclusion (R9).
+3. **WHEN** the evidence references content **THEN** it SHALL carry identifiers/seq ranges only (sectionKey, sourceTags, message seq ranges) and SHALL NOT embed content or secrets in the payload.
+4. **WHEN** the evidence slice is absent or inactive **THEN** the facade SHALL cap node states at `served` with the `served ≠ sent` disclosure and SHALL NOT synthesize `sent`.
+5. **WHEN** evidence matches a graph node **THEN** the facade SHALL transition that node to `sent` with the evidence reference and observedAt; unmatched contributions SHALL remain `served`/`dropped` per their own records.
+6. **WHEN** evidence arrives late or for a stale generation **THEN** the facade SHALL apply the stale-result guard and SHALL NOT re-write an already-finalized node state.
+7. **WHEN** this feature is delivered **THEN** it SHALL register upstream proposal **U19（官方 assembled-context evidence seam）** with retirement condition: 官方在组装/发送点提供等价 provenance 证据（或 agent loop 原生消费带 provenance 的 assembled context）后，消费者迁移官方 seam，本 R 切片能力退役、只保留门面。
 
-**Classification:** B/C 边界；upstream proposal 在 Design 阶段登记（U-series），本 feature 不伪造官方保证。
+**Classification:** R 能力切片（owner `dsh-agent-loop`，承载于已交付 `@deepseek-ai/dsh-plugin-api-agent-loop`）+ C 类上游提案登记。
 
 ### CP-6 Inspect projection
 
@@ -107,11 +111,11 @@ SPEC1 Stage 1：Requirements 已产出，与 Stage 0 Goal 一并提交 M6 第六
 **Acceptance Criteria:**
 
 1. **WHEN** `inspect(session)` is invoked **THEN** the facade SHALL return a frozen projection of served, archived, and dropped nodes with per-node reasons.
-2. **WHEN** history exceeds bounds **THEN** the facade SHALL return bounded results with `truncated` / `nextCursor` / `unavailable` metadata and SHALL NOT fabricate missing history.
+2. **WHEN** history exceeds bounds **THEN** bounded results with `truncated` / `nextCursor` / `unavailable` metadata; no fabricated history.
 3. **WHEN** inspection output is produced **THEN** redaction SHALL be applied before projection and the audience envelope SHALL be enforced per node.
-4. **WHEN** the requested session is missing or out of scope **THEN** the facade SHALL return a typed unavailable result and SHALL NOT disclose resource existence beyond the caller's scope.
+4. **WHEN** the requested session is missing or out of scope **THEN** typed unavailable result; no existence disclosure beyond the caller's scope.
 
-**Classification:** B projection；默认 UI/diagnostic 受众，模型受众须经显式 policy（`visibility-and-redaction.md` §2）。
+**Classification:** B projection；默认 UI/diagnostic 受众。
 
 ### CP-7 Replacement mapping（compaction/prune）
 
@@ -120,22 +124,22 @@ SPEC1 Stage 1：Requirements 已产出，与 Stage 0 Goal 一并提交 M6 第六
 **Acceptance Criteria:**
 
 1. **WHEN** compaction or prune evidence is available through the official seam or the delivered compaction events vocabulary **THEN** the facade SHALL record a bounded replacement mapping `{ oldNodeIds → newNodeId, reason, generation }`.
-2. **WHEN** replacement mappings are queried **THEN** the facade SHALL return frozen read-only views.
-3. **WHEN** the compaction seam is unavailable **THEN** the facade SHALL return an explicit unavailable result and SHALL NOT fabricate mappings or claim a replacement that did not happen.
+2. **WHEN** replacement mappings are queried **THEN** frozen read-only views.
+3. **WHEN** the compaction seam is unavailable **THEN** explicit unavailable result; no fabricated mappings.
 
 **Classification:** B（消费官方 compaction seam 与已交付 compaction 事件词汇）。
 
 ### CP-8 Redaction and audience envelope
 
-**User Story:** As a plugin maintainer, I want secret content to stay out of every projection by default, so that provenance graphs cannot become an exfiltration channel.
+**User Story:** As a plugin maintainer, I want secret content to stay out of every projection and evidence payload by default.
 
 **Acceptance Criteria:**
 
 1. **WHEN** a contribution contains secret values **THEN** the facade SHALL NOT include them in any graph or inspector output unless a user/profile policy explicitly allows it, and that policy SHALL default to deny.
 2. **WHEN** a node is projected **THEN** its audience envelope (model / UI / diagnostic) SHALL be enforced per audience; model-visible content SHALL be an explicit design decision per node.
-3. **WHEN** redaction fails **THEN** the facade SHALL fail closed: the node SHALL be excluded or marked `redacted`, and raw content SHALL NEVER be leaked.
+3. **WHEN** redaction fails **THEN** fail closed: the node SHALL be excluded or marked `redacted`, and raw content SHALL NEVER be leaked (evidence payloads carry identifiers only, no content).
 
-**Classification:** B；`visibility-and-redaction.md` 全册适用（含 §4 client 半身受众——本 feature 不新增 client 产物）。
+**Classification:** B；`visibility-and-redaction.md` 全册适用。
 
 ### CP-9 Cancellation, stale generation, and degradation
 
@@ -145,8 +149,8 @@ SPEC1 Stage 1：Requirements 已产出，与 Stage 0 Goal 一并提交 M6 第六
 
 1. **WHEN** compose or inspect receives a cancellation signal **THEN** the facade SHALL respect it and SHALL produce a typed aborted outcome for that operation without corrupting other operations.
 2. **WHEN** a contribution's generation is stale **THEN** its pending results SHALL lose submission qualification and SHALL be retained only as diagnostics.
-3. **WHEN** projections are observed **THEN** the facade SHALL provide an observer epoch and stale-callback guard per the projection lifecycle.
-4. **WHEN** a source assembly fails **THEN** the failure SHALL degrade only that source with typed evidence, SHALL never throw through apply, and SHALL never kill harness boot.
+3. **WHEN** projections are observed **THEN** observer epoch and stale-callback guard per the projection lifecycle.
+4. **WHEN** a source assembly fails **THEN** the failure SHALL degrade only that source with typed evidence, never throw through apply, never kill harness boot.
 
 **Classification:** B；`concurrency-and-cancellation.md` §2–5 适用。
 
@@ -159,15 +163,14 @@ SPEC1 Stage 1：Requirements 已产出，与 Stage 0 Goal 一并提交 M6 第六
 1. **WHEN** the facade consumes other features **THEN** it SHALL use their public projections only and SHALL NOT own or mutate their durable state.
 2. **WHEN** a compose result exists **THEN** it SHALL NOT trigger retry, route, approval, mutation, or prompt-injection bypass.
 3. **WHEN** client code interacts with this feature **THEN** the feature SHALL expose no client remote/slot/settings surface.
-4. **WHEN** implementation crosses official component boundaries **THEN** the feature SHALL NOT use cross-component R replacement.
+4. **WHEN** implementation crosses official component boundaries **THEN** the feature SHALL NOT use cross-component R replacement; the single R slice SHALL remain within the `dsh-agent-loop` component.
 
-**Classification:** B boundary；`capability-strategy.md` §4.1 组件边界与 facade 组合。
+**Classification:** B boundary；`capability-strategy.md` §4.1（facade + 单一 R 能力切片）。
 
 ## Non-Goals
 
-- 替代 token meter 或重建官方 transcript。
-- 无限历史导出；secret 进入 inspector。
-- 客户端 remote/slot/settings 面。
-- 跨组件 R replacement。
+- 替代 token meter 或重建官方 transcript；无限历史导出；secret 进入 inspector。
+- 客户端 remote/slot/settings 面；跨组件 R replacement。
 - 由 compose 结果自动执行 retry/route/approval/mutation 或 prompt 注入旁路。
 - 为 memory 提供专用 facade（memory 为可选来源，经 contribution 元数据声明）。
+- 在 R 证据切片内做 loop 组装/策略决策（切片只发射证据；组装点策略消费归 C 类 U19）。

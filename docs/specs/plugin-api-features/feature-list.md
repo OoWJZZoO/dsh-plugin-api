@@ -40,7 +40,7 @@
 | **M3** | settings 可视化配置桥 + client bundle（remote / codec / slot） |
 | **M4** | 当前已冻结的剩余 A 类官方透传接口（host service seam、核心 namespace API、client service/event API） |
 | **M5** | M4 冻结后审计发现的新增 A 类官方透传接口 |
-| **M6** | 启发式候选 feature 规划里程碑：不在本文逐项列出，候选表单见 [heuristic-feature-proposals-2026-08-20.md](./dsh-plugin-api-heuristic-feature-proposals-2026-08-20.md)（20 个候选、第一/二梯队与 R 类评估）；候选经 Stage 0 批准正式立项后再按现行规则回填本文对应命名空间条目；第六批次当前为 `skill-discovery-activation`（Wave A）→ `context-provenance`（Wave B，不依赖 memory facade）；`memory-interoperability` 已明确排除立项（功能组件非门面，由具体 memory 插件基于已交付 API 实现，见候选表单 §10） |
+| **M6** | 启发式候选 feature 规划里程碑：不在本文逐项列出，候选表单见 [heuristic-feature-proposals-2026-08-20.md](./dsh-plugin-api-heuristic-feature-proposals-2026-08-20.md)（20 个候选、第一/二梯队与 R 类评估）；候选经 Stage 0 批准正式立项后再按现行规则回填本文对应命名空间条目；第六批次当前为 `skill-discovery-activation`（Wave A，R 类：替换官方 `tool-skill` 行，运行时名 `plugin-api-tool-skill`，U18）→ `context-provenance`（Wave B，B 类门面 + `sent` 证据 R 切片于 `plugin-api-agent-loop`，U19；不依赖 memory facade）；`memory-interoperability` 已明确排除立项（功能组件非门面，由具体 memory 插件基于已交付 API 实现，见候选表单 §10） |
 | **M-final** | C 类上游提案、迁移验收（dsh-read-image / dsh-pro-ex-ability-anchor）与治理收尾 |
 
 ### 1.3.1 M2 共同契约状态（非公开 API）
@@ -404,6 +404,8 @@ client 半身交付 = 机械校验（语法/import 边界/`dsh.client` 清单一
 | U15 | 官方跨 session checkpoint restore 契约 | session/workspace/configuration/external-side-effect recovery 一体证明 | `recovery-policy`（B/C 边界，proposal-only） |
 | U16 | 官方 MCP catalog/lifecycle seam | 官方 `dsh-mcp-client` 无公共 catalog/lifecycle 服务/事件面（generation、list-change、availability、identity、stale cleanup）；R 类辅助包 `@deepseek-ai/dsh-plugin-api-mcp`（运行时名 `plugin-api-mcp`）为 current workaround。**退役条件**：官方提供等价公共 catalog/lifecycle 契约（generation identity、分页/list-change 同步、availability 转换、raw/public tool identity、stale cleanup 与等价失败语义）后 deprecate/退役，消费者迁移官方 seam，本包停止发布重复生命周期语义 | MCP 服务（R 类） |
 | U17 | 官方 branch/edit 契约（branch identity、branch graph、edit plan/commit/rollback、restore 验证） | 官方 `dsh-session` 只有低层 `fork` 与 typed 拒绝码，无 branch identity、branch graph、编辑计划与回滚语义；R 类辅助包 `@deepseek-ai/dsh-plugin-api-session-branch`（运行时名 `plugin-api-session-branch`）为 current workaround。**退役条件**：官方提供等价 branch/edit API（branch 身份、graph 查询、CAS edit plan 与内容级 rollback/restore 验证）且消费者迁移后，本包 deprecate 并退役 | session-branch 服务（R 类） |
+| U18 | 官方 session 内动态 skill activation/exposure seam | 官方 `dsh-tool-skill` 的 `skill` 工具、`agent/pre-step` 注入与 `<available_skills>` 目录只查静态 `modelInvocable`/`userInvocable` 布尔，无 per-session/agent/turn 激活、TTL、停用与来源约束，且目录变化时全量重发 catalog；R 类辅助包 `@deepseek-ai/dsh-plugin-api-tool-skill`（运行时名 `plugin-api-tool-skill`，唯一 owner `@deepseek-ai/dsh-tool-skill`）为 current workaround；目录变化告知默认与官方对齐全量重发，注册政策后切换为英文最小更新信息。**退役条件**：官方 `tool-skill` 路径原生提供 activation-aware 目录过滤、加载门控、注入门控（或等价公开 seam）后，消费者迁移官方 seam，本 replacement deprecate/退役 | skill 暴露（R 类） |
+| U19 | 官方 assembled-context evidence seam | 官方 `dsh-agent-loop` 组装/发送点（`renderContextSections`/`renderPrompt`）无 provenance dispatch，无法证明哪些内容实际进入模型请求；R 类切片在既有 `@deepseek-ai/dsh-plugin-api-agent-loop`（唯一 owner `@deepseek-ai/dsh-agent-loop`）上新增 evidence-only 证据发射（identifiers/seq 范围，无 content、不改组装/策略决策）为 current workaround。**退役条件**：官方在组装/发送点提供等价 provenance 证据（或 agent loop 原生消费带 provenance 的 assembled context）后，消费者迁移官方 seam，本 R 切片能力退役、门面保留 | `context-provenance`（R 能力切片） |
 
 ---
 

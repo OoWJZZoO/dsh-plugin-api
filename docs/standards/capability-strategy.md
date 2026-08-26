@@ -93,6 +93,8 @@ R9. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 | U8 `compaction/*` 事件词汇 | `CompactionEngine.summarize()` 子类钩子 | `compaction-basic`（962 行） | 低–中 | 高 | **已交付**：replacement 包 `@deepseek-ai/dsh-plugin-api-compaction-events` 作为 current workaround；U8 保留为上游提案（见 feature-list §3） |
 | U9 `session-title/candidate` 候选资格 / 合成消息排除 | 官方 `session-title` 的 fallback + first-prompt provider 直接消费 `source.kind:'user'`，无候选资格 dispatch 点 | `session-title`（`dsh-session-title`，580 行） | 低–中 | 高 | **已交付**：replacement 包 `@deepseek-ai/dsh-plugin-api-session-title` 作为 current workaround（fallback 与 first-prompt provider 在统一候选资格策略下消费同一候选集）；U9 保留为上游提案（见 feature-list §3） |
 | U11 agent-loop route-policy/health/fallback seam | replacement 行在官方 `agent/request` 边界增加有序 route 收敛、attempt 内 immutable decision、health/circuit/probe evidence 与 fallback lineage；retry 仍由官方 loop/recovery owner 负责 | `agent-loop`（`dsh-agent-loop`，1295 行） | 高 | 高 | **已交付**：replacement 包 `@deepseek-ai/dsh-plugin-api-agent-loop` 作为 current workaround；U11 保留为上游提案（见 feature-list §3），官方提供等价公开 seam 后退役 |
+| SDA skill activation/exposure（M6 第六批次 Wave A，2026-08-26 用户指示改 R 类） | 官方 `tool-skill` 行的目录/加载/注入路径无 activation 状态（静态 `modelInvocable`/`userInvocable` 布尔），session 内动态 skill 策略与目录变化告知策略无 dispatch 点 | `tool-skill`（`dsh-tool-skill`，宿主面 ~375 行） | 中 | 高（session 内动态策略 + 目录变化告知策略：默认官方全量重发对齐，政策入口切换为英文最小更新） | **本次立项（R 类）**：运行时名 `plugin-api-tool-skill`，唯一 owner `@deepseek-ai/dsh-tool-skill`，host-only（§10 六项全否）；U18 保留为上游提案，退役条件见 feature-list §3 U18 行 |
+| assembled-context evidence（M6 第六批次 Wave B `context-provenance` 的 `sent` 证据切片，2026-08-26 用户指示改 R 类） | 官方 `agent-loop` 组装/发送点（`renderContextSections`/`renderPrompt`）无 provenance dispatch，`sent` 状态无证据 | `agent-loop`（`dsh-agent-loop`，1295 行） | 低–中（扩展现有 replacement 包，同组件第二能力） | 高（`sent` 由真实证据支撑） | **本次立项（R 类切片）**：在已交付 `@deepseek-ai/dsh-plugin-api-agent-loop` 上新增 evidence-only 证据发射（不改组装/策略决策）；U19 保留为上游提案，退役条件见 feature-list §3 U19 行 |
 
 重估条件（允许已判“维持方案一”的条目回到 R 评估）：官方把对应包拆小/提供 src 构建流水线；出现第二个插件对同一语义的独立需求；或官方升级使门面转译的收敛证明不再成立。
 
@@ -134,7 +136,7 @@ R9. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 
 > 综合 Stage 0 共同问题 NO.6（2026-08-21 确认）。
 
-- **每个官方组件插件包最多一个独立 replacement 包**：replacement 包命名为 `@deepseek-ai/dsh-plugin-api-<domain>`（如 MCP → `@deepseek-ai/dsh-plugin-api-mcp`、session branch → `@deepseek-ai/dsh-plugin-api-session-branch`、attachments → `@deepseek-ai/dsh-plugin-api-attachments`）；一个包可替换该官方组件内多个行并承载多个相关 feature，但不得跨组件，也不得为同一组件引入第二个竞争 replacement 包。
+- **每个官方组件插件包最多一个独立 replacement 包**：replacement 包命名为 `@deepseek-ai/dsh-plugin-api-<domain>`（如 MCP → `@deepseek-ai/dsh-plugin-api-mcp`、session branch → `@deepseek-ai/dsh-plugin-api-session-branch`、attachments → `@deepseek-ai/dsh-plugin-api-attachments`、skill exposure → `@deepseek-ai/dsh-plugin-api-tool-skill`）；一个包可替换该官方组件内多个行并承载多个相关 feature，但不得跨组件，也不得为同一组件引入第二个竞争 replacement 包。
 - 沿用现有 full/selection install 模式与统一版本协商（见文首"维护修订"条）；辅助包与主包版本不一致时只停用该 R 特性。
 
 ## 10. 客户端半面判定（host-only 或完整 client 复制）
