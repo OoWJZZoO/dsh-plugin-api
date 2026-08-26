@@ -15,6 +15,7 @@ import {
   ROUTE_POLICY_PACKAGE_NAME,
   createRoutePolicyOwner,
 } from './route-policy.js'
+import { EVIDENCE_ACTIVE_SYMBOL } from './evidence-slice.js'
 
 export const name = 'plugin-api-agent-loop'
 export const inject = ['loader']
@@ -317,6 +318,13 @@ export function createAgentLoopApply(overrides = {}) {
           const agentLoop = getService(ctx, 'agentLoop')
           if (!isAgentLoopService(agentLoop, true)) throw new Error('forked agent-loop service contract probe failed')
           if (!isRoutePolicyService(getService(ctx, 'routePolicy'))) throw new Error('route-policy service disappeared')
+          // Additive boot self-check: the assembled-context evidence marker is
+          // an evidence-only capability. Its absence degrades only the
+          // evidence slice (sent evidence unreachable); route policy and the
+          // official loop contract stay fully active (evidence-only iron rule).
+          if (agentLoop?.[EVIDENCE_ACTIVE_SYMBOL] !== true) {
+            log(ctx, 'plugin-api-agent-loop: assembled-context evidence capability is unavailable; sent evidence is degraded (route policy unaffected)')
+          }
           log(ctx, 'plugin-api-agent-loop: replacement active')
           return registration
         } catch (error) {

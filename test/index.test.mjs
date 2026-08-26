@@ -129,6 +129,10 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
 
     { name: 'toolDiscovery', isActive: true },
 
+    { name: 'skillsActivation', isActive: false, reason: 'skillsActivation: feature mount did not produce a disposer; feature disabled' },
+
+    { name: 'context', isActive: true },
+
     { name: 'profile', isActive: true },
   ])
   assert.equal(state.pluginApi.llm.isActive, true)
@@ -193,7 +197,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-  assert.equal(features.length, 26)
+assert.equal(features.length, 28)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
@@ -220,9 +224,11 @@ test('feature guard failure disables only llm/admission and keeps the facade act
   assert.deepEqual(features[20], { name: 'coordination', isActive: true })
   assert.deepEqual(features[21], { name: 'workspaceTransactions', isActive: true })
   assert.deepEqual(features[22], { name: 'diagnostics', isActive: true })
-  assert.deepEqual(features[23], { name: 'tasks', isActive: true })
+assert.deepEqual(features[23], { name: 'tasks', isActive: true })
   assert.deepEqual(features[24], { name: 'toolDiscovery', isActive: true })
-  assert.deepEqual(features[25], { name: 'profile', isActive: true })
+  assert.deepEqual(features[25], { name: 'skillsActivation', isActive: false, reason: 'skillsActivation: feature mount did not produce a disposer; feature disabled' })
+  assert.deepEqual(features[26], { name: 'context', isActive: true })
+  assert.deepEqual(features[27], { name: 'profile', isActive: true })
 
   assert.throws(
     () => state.pluginApi.llm.admission.register({}),

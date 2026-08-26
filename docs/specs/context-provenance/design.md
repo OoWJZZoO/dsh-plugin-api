@@ -42,6 +42,8 @@ flowchart LR
 
 **数据流（单向）**：sources 产生证据 → contribution 注册 → compose/inspect 冻结投影 → evidence 触发 `sent` 迁移。投影不写、compose 不决策、R 切片不决策（`api-shape.md` §2）。
 
+**状态派生澄清（Stage 4 实现期修订，2026-08-26）**：`served` 是**派生分类**而非持久状态转移——compose 是纯投影（CP-3.1 / `api-shape.md` §1 projection 面：不写状态、不注册策略、不调 mutation），节点被该 session 最近一次 compose graph 包含即报告为 `served`，engine 仅保留每 session 最近一次 graph 快照（latest-wins）供 inspect 派生与分页；持久转移仅四条：evidence→`sent`、mapping→`archived`/`superseded`、redaction 失败→`redacted`（均为外部事件/失败路径驱动，与投影纯度不冲突）。
+
 ## Components and Interfaces
 
 ### 公开面（`pluginApi.context`）
@@ -58,6 +60,8 @@ flowchart LR
 ### 内部接口
 
 - engine 注入 `{ sources, reportDiagnostics, now, idFactory, sessionResolver, evidenceSource }`；session 解析复用 execution-observation correlation，缺省回退 `session.requestContext()`，失败 typed `INSPECT_UNAVAILABLE`。
+
+**sessionResolver 语义澄清（Stage 4 实现期修订，2026-08-26）**：执行期确认本 feature 的 sessionResolver 面向「显式 session 引用」（字符串/含 `id`/`sessionId` 的对象），而 execution-observation correlation 与 `session.requestContext()` 属于 agent/execution 场景的隐式解析，本 feature 公开面不接收 exec/agent 对象；因此 resolver 的最小诚实语义为：well-formed 引用 → ok（持久会话不一定在 live store，存在性检查会产生假阴性，克制设计不引入）；畸形引用 → 失败 → typed `INSPECT_UNAVAILABLE`；合法引用但无记录 → 有界空投影而非伪造历史（CP-6.4 的"缺失/越界"按引用格式判定，不做跨调用方存在性披露）。
 - compose 策略：纯函数 policy 瀑布；AbortSignal → typed `aborted`。
 
 ## Data Models
