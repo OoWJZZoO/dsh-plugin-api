@@ -1,0 +1,12 @@
+# Bundle patch for @deepseek-ai/dsh-plugin-api-tool-skill.
+# Replacement boundary: we replace the `tool-skill` loader row's ctx
+# service/event behavior ONLY; the `@deepseek-ai/dsh-tool-skill` import
+# surface stays official (the replacement composes the official package
+# helpers and runs the official apply on identity mismatch).
+# The official `id: tool-skill` row has no config block; the replacement
+# row matches that shape (config flows through the profile layer).
+- id: tool-skill
+  disabled: true
+- insert:
+    - id: plugin-api-tool-skill
+      name: '@deepseek-ai/dsh-plugin-api-tool-skill'
