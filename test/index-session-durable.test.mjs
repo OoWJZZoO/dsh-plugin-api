@@ -131,7 +131,6 @@ test('apply mounts sessionDurable immediately after session without extending th
     'coordination',
     'workspaceTransactions',
     'diagnostics',
-    'usage',
     'tasks',
 
     'toolDiscovery',

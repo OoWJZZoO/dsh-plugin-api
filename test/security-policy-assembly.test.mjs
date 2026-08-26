@@ -63,17 +63,16 @@ test('healthy apply mounts security and exposes the four faces plus availability
   assert.equal(availability.secretPolicy, 'default-deny')
 })
 
-test('the FEATURE_MOUNTERS tail order pins stay intact (remote..usage at the end)', () => {
+test('the FEATURE_MOUNTERS tail order pins stay intact (remote..toolDiscovery at the end)', () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
   const names = state.pluginApi.features.map((entry) => entry.name)
-  assert.equal(names[names.length - 10], 'remote', 'remote stays directly before execution')
-  assert.equal(names[names.length - 9], 'execution', 'execution stays directly before recovery')
-  assert.equal(names[names.length - 8], 'recovery', 'recovery stays directly before coordination')
-  assert.equal(names[names.length - 7], 'coordination', 'coordination stays directly before workspaceTransactions')
-  assert.equal(names[names.length - 6], 'workspaceTransactions', 'workspaceTransactions stays directly before diagnostics')
-  assert.equal(names[names.length - 5], 'diagnostics', 'diagnostics stays directly before usage')
-  assert.equal(names[names.length - 4], 'usage', 'usage stays directly before tasks')
+  assert.equal(names[names.length - 9], 'remote', 'remote stays directly before execution')
+  assert.equal(names[names.length - 8], 'execution', 'execution stays directly before recovery')
+  assert.equal(names[names.length - 7], 'recovery', 'recovery stays directly before coordination')
+  assert.equal(names[names.length - 6], 'coordination', 'coordination stays directly before workspaceTransactions')
+  assert.equal(names[names.length - 5], 'workspaceTransactions', 'workspaceTransactions stays directly before diagnostics')
+  assert.equal(names[names.length - 4], 'diagnostics', 'diagnostics stays directly before tasks')
   assert.equal(names[names.length - 3], 'tasks', 'tasks stays directly before toolDiscovery')
   assert.equal(names[names.length - 2], 'toolDiscovery', 'tool discovery is the last FEATURE_MOUNTERS entry')
   // security mounts in the middle (after llm/admission, before session)
@@ -150,8 +149,6 @@ test('without a working ctx.on substrate the feature degrades to inert (no enfor
   }, 'all seams absent: no enforcement is claimed')
   // registry faces still work; the fail-safe degrade never throws through apply
   assert.equal(typeof state.pluginApi.security.policy.register, 'function')
-  // unrelated features keep mounting
-  assert.equal(featureOf(state, 'usage').isActive, true)
 })
 
 test('when the ctx.on guard substrate is missing the feature disables with typed errors', () => {

@@ -45,7 +45,7 @@ function activeCoordinationLease(pluginApi) {
   })
 }
 
-test('healthy apply mounts the tasks facade after diagnostics/usage and exposes the frozen surface', async () => {
+test('healthy apply mounts the tasks facade after diagnostics and exposes the frozen surface', async () => {
   const { ctx, state } = createContext()
   assert.doesNotThrow(() => apply(ctx))
   const names = state.pluginApi.features.map((entry) => entry.name)
@@ -150,5 +150,4 @@ test('tasks mount survives missing optional source seams and keeps isolation fro
   const feature = state.pluginApi.features.find((entry) => entry.name === 'tasks')
   assert.equal(feature?.isActive, true)
   assert.equal(state.pluginApi.features.find((entry) => entry.name === 'execution')?.isActive, true)
-  assert.equal(state.pluginApi.features.find((entry) => entry.name === 'usage')?.isActive, true)
 })

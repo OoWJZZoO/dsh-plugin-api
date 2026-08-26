@@ -45,7 +45,7 @@ test('explicit public projections interoperate without ownership or mutation', a
   declareCapability(recovery)
   const evidence = {
     source: { kind: 'operation', observedAt: '2026-08-25T00:00:00.000Z', certainty: 'observed' },
-    budget: { remaining: 3, provenance: { source: 'usage-budget-telemetry', certainty: 'observed' } },
+    budget: { remaining: 3, provenance: { source: 'budget-observation', certainty: 'observed' } },
     route: { lineageId: 'route-lineage-1', provenance: { source: 'model-route-policy', certainty: 'inferred' } },
     diagnostics: { availability: 'active', provenance: { source: 'plugin-diagnostics', certainty: 'observed' } },
     branch: { branchId: 'branch-1', provenance: { source: 'session', certainty: 'observed' } },

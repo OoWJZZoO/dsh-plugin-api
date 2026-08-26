@@ -158,5 +158,4 @@ test('workspaceTransactions mount survives broken optional seams and keeps isola
   // isolation: coordination, recovery, and the rest stay active
   assert.equal(state.pluginApi.features.find((entry) => entry.name === 'coordination')?.isActive, true)
   assert.equal(state.pluginApi.features.find((entry) => entry.name === 'recovery')?.isActive, true)
-  assert.equal(state.pluginApi.features.find((entry) => entry.name === 'usage')?.isActive, true)
 })
