@@ -8,14 +8,14 @@ const VERSIONS = {
   '@deepseek-ai/dsh': '0.1.0-rc.6',
   '@deepseek-ai/dsh-llm': '0.1.0-rc.6',
   '@deepseek-ai/dsh-session': '0.1.0-rc.6',
-  '@deepseek-ai/dsh-plugin-api-session-branch': '0.1.0-rc.6-0.6',
-  '@deepseek-ai/dsh-plugin-api-main': '0.1.0-rc.6-0.6',
+  '@deepseek-ai/dsh-plugin-api-session-branch': '0.1.0-rc.6-0.7',
+  '@deepseek-ai/dsh-plugin-api-main': '0.1.0-rc.6-0.7',
 }
 
 function goodEnv() {
   return {
     readPackageVersion: (name) => VERSIONS[name],
-    readPackageApi: () => '0.6',
+    readPackageApi: () => '0.7',
   }
 }
 
@@ -123,7 +123,7 @@ test('version mismatch: official fallback registered, replacement contract off',
   let constructed = 0
   const apply = createSessionBranchApply({
     readPackageVersion: (name) => (name === '@deepseek-ai/dsh-plugin-api-main' ? '0.1.0-rc.6-9.9' : VERSIONS[name]),
-    readPackageApi: () => '0.6',
+    readPackageApi: () => '0.7',
     officialStoreFactory: (c) => { constructed += 1; return fakeStore(c) },
     delegateFactory: fakeDelegate,
   })
@@ -141,7 +141,7 @@ test('runtime identity mismatch: official fallback registered', () => {
   let constructed = 0
   const apply = createSessionBranchApply({
     readPackageVersion: (name) => (name === '@deepseek-ai/dsh-session' ? '0.1.0-rc.7' : VERSIONS[name]),
-    readPackageApi: () => '0.6',
+    readPackageApi: () => '0.7',
     officialStoreFactory: (c) => { constructed += 1; return fakeStore(c) },
     delegateFactory: fakeDelegate,
   })

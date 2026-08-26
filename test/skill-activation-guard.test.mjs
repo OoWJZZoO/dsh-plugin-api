@@ -80,7 +80,7 @@ test('KNOWN_FEATURES accepts the skillsActivation feature key with prepared tran
     disable() {},
     mount() {},
   }
-  const Service = createPluginApiService({ apiVersion: '0.6', registry, coreActive: true })
+  const Service = createPluginApiService({ apiVersion: '0.7', registry, coreActive: true })
   const ctx = {
     fiber: { uid: 1, state: 2 },
     reflect: { provide() { return () => {} } },

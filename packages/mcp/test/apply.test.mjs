@@ -9,7 +9,7 @@ import {
 } from '../lib/apply.js'
 import { McpCatalogService } from '../lib/catalog.js'
 
-const CONSISTENT = { version: '0.1.0-rc.6-0.6', api: '0.6' }
+const CONSISTENT = { version: '0.1.0-rc.6-0.7', api: '0.7' }
 const GOOD = {
   '@deepseek-ai/dsh-llm': '0.1.0-rc.6',
   '@deepseek-ai/dsh-mcp-client': '0.1.0-rc.6',

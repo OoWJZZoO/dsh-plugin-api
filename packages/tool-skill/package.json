@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-plugin-api-tool-skill",
   "description": "Replacement bundle for @deepseek-ai/dsh-tool-skill: faithful fork of the model-facing skill tool, user-invocation injection, and session catalog machinery, plus a session-scoped skill activation/exposure contract with per-session minimal catalog update notices.",
-  "version": "0.1.0-rc.6-0.6",
+  "version": "0.1.0-rc.6-0.7",
   "type": "module",
   "main": "lib/apply.js",
   "exports": {
@@ -9,7 +9,7 @@
     "./package.json": "./package.json"
   },
   "dsh": {
-    "api": "0.6",
+    "api": "0.7",
     "bundle": {
       "patch": "./cordis.patch.yml"
     }

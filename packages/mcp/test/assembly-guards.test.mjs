@@ -78,13 +78,13 @@ test('assembly guard: patched composition passes the loader self-check', () => {
 
 test('assembly guard: identity matrix mismatch disables only the replacement capability', () => {
   const consistent = {
-    ownVersion: '0.1.0-rc.6-0.6',
-    ownApi: '0.6',
-    mainVersion: '0.1.0-rc.6-0.6',
-    mainApi: '0.6',
+    ownVersion: '0.1.0-rc.6-0.7',
+    ownApi: '0.7',
+    mainVersion: '0.1.0-rc.6-0.7',
+    mainApi: '0.7',
   }
   assert.equal(fullVersionContractsMatch(consistent), true)
-  assert.equal(fullVersionContractsMatch({ ...consistent, mainVersion: '0.1.1-rc.6-0.6' }), false)
+  assert.equal(fullVersionContractsMatch({ ...consistent, mainVersion: '0.1.1-rc.6-0.7' }), false)
   // the check itself stays pure: a mismatch simply disables this package's row
   const patch = patchFile
   assert.ok(patch.includes('disabled: true'))

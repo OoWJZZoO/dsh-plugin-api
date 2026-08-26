@@ -62,7 +62,7 @@ test('runCli emits the JSON-lines result envelope and maps exit codes', async ()
     assert.equal(event.outcome, 'success')
     assert.equal(typeof event.result.builtForRuntime, 'string')
     assert.equal(event.result.builtForRuntime, '0.1.0-rc.6')
-    assert.equal(event.result.apiProtocol, '0.6')
+    assert.equal(event.result.apiProtocol, '0.7')
     assert.ok(event.auditability === undefined || event.auditability === true)
   } finally {
     rmSync(home, { recursive: true, force: true })
@@ -85,18 +85,18 @@ test('runCli rejects malformed invocations with error exit and typed invalid-inp
 })
 
 test('handshake reports the executor build identity from its own manifest', () => {
-  const manifest = { name: '@deepseek-ai/dsh-plugin-api-profile-manager', version: '0.1.0-rc.6-0.6', dsh: { api: '0.6' } }
+  const manifest = { name: '@deepseek-ai/dsh-plugin-api-profile-manager', version: '0.1.0-rc.6-0.7', dsh: { api: '0.7' } }
   const result = runHandshake(manifest, undefined)
   assert.equal(result.outcome, 'success')
   assert.equal(result.builtForRuntime, '0.1.0-rc.6')
-  assert.equal(result.apiProtocol, '0.6')
-  assert.equal(result.version, '0.1.0-rc.6-0.6')
+  assert.equal(result.apiProtocol, '0.7')
+  assert.equal(result.version, '0.1.0-rc.6-0.7')
 })
 
 test('handshake degrades on an invalid own manifest', () => {
   assert.equal(runHandshake(undefined, undefined).outcome, 'error')
   assert.equal(runHandshake({ version: '1.2.3' }, undefined).outcome, 'error')
-  assert.equal(runHandshake({ version: '0.1.0-rc.6-0.6' }, undefined).outcome, 'error')
+  assert.equal(runHandshake({ version: '0.1.0-rc.6-0.7' }, undefined).outcome, 'error')
 })
 
 test('storage scope resolves under $DSH_HOME and creates the layout', () => {

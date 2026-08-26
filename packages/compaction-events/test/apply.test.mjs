@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { createCompactionEventsApply, inject, name, fullVersionContractsMatch, parseFullVersion } from '../lib/apply.js'
 import { COMPACTION_EVENTS_ACTIVE_SYMBOL } from '../lib/forked-engine.js'
 
-const CONSISTENT = { version: '0.1.0-rc.6-0.6', api: '0.6' }
+const CONSISTENT = { version: '0.1.0-rc.6-0.7', api: '0.7' }
 
 class FakeForkedEngine {
   constructor(ctx, config) {
@@ -105,13 +105,13 @@ test('plugin entry exports the expected name and inject list', () => {
 })
 
 test('full version contract helpers parse and compare full unique versions', () => {
-  assert.deepEqual(parseFullVersion('0.1.0-rc.6-0.6'), { runtime: '0.1.0-rc.6', api: '0.6' })
+  assert.deepEqual(parseFullVersion('0.1.0-rc.6-0.7'), { runtime: '0.1.0-rc.6', api: '0.7' })
   assert.equal(fullVersionContractsMatch({
-    ownVersion: '0.1.0-rc.6-0.6', ownApi: '0.6',
-    mainVersion: '0.1.0-rc.6-0.6', mainApi: '0.6',
+    ownVersion: '0.1.0-rc.6-0.7', ownApi: '0.7',
+    mainVersion: '0.1.0-rc.6-0.7', mainApi: '0.7',
   }), true)
   assert.equal(fullVersionContractsMatch({
-    ownVersion: '0.1.0-rc.6-0.6', ownApi: '0.6',
+    ownVersion: '0.1.0-rc.6-0.7', ownApi: '0.7',
     mainVersion: '0.1.0-rc.6-0.4', mainApi: '0.4',
   }), false)
 })

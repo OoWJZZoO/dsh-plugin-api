@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-plugin-api-profile-manager",
   "description": "Companion executor CLI for profile management: validates and lands profile changes outside the host process (safe-write pipeline owner).",
-  "version": "0.1.0-rc.6-0.6",
+  "version": "0.1.0-rc.6-0.7",
   "type": "module",
   "main": "./lib/cli.js",
   "bin": {
@@ -14,7 +14,7 @@
     "./package.json": "./package.json"
   },
   "dsh": {
-    "api": "0.6"
+    "api": "0.7"
   },
   "scripts": {
     "test": "node --test \"test/*.mjs\""

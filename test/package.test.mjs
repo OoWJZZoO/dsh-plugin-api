@@ -17,20 +17,20 @@ test('dsh.api is a major.minor contract', () => {
   assert.ok(pkg.dsh, 'package.json must declare the dsh field')
   assert.equal(typeof pkg.dsh.api, 'string')
   assert.match(pkg.dsh.api, /^\d+\.\d+$/)
-  assert.equal(pkg.dsh.api, '0.6')
+  assert.equal(pkg.dsh.api, '0.7')
 })
 
 test('package version is the full unique version: <runtime-full-version>-<api-major>.<api-minor>', () => {
   assert.match(pkg.version, /^(.+)-(\d+\.\d+)$/)
   const apiPart = pkg.version.match(/^(.+)-(\d+\.\d+)$/)[2]
   assert.equal(apiPart, pkg.dsh.api, 'version api part must equal dsh.api')
-  assert.equal(pkg.version, '0.1.0-rc.6-0.6')
+  assert.equal(pkg.version, '0.1.0-rc.6-0.7')
 })
 
-test('the protocol advances numerically from 0.5 to 0.6 without promoting the reserved 1.0', () => {
+test('the protocol advances numerically from 0.6 to 0.7 without promoting the reserved 1.0', () => {
   const [major, minor] = pkg.dsh.api.split('.').map(Number)
   assert.equal(major, 0)
-  assert.equal(minor, 6)
+  assert.equal(minor, 7)
   assert.notEqual(pkg.dsh.api, '1.0')
 })
 

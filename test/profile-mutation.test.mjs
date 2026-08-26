@@ -20,7 +20,7 @@ import {
  * terminal outcomes deterministically.
  */
 function createFakeExecutor({
-  handshakeShapes = { builtForRuntime: '0.1.0-rc.6', apiProtocol: '0.6' },
+  handshakeShapes = { builtForRuntime: '0.1.0-rc.6', apiProtocol: '0.7' },
   progressStages = ['prepare', 'validate', 'commit'],
   outcome = 'success',
   resultCode,
@@ -37,7 +37,7 @@ function createFakeExecutor({
     'const write = (obj) => process.stdout.write(JSON.stringify(obj) + "\\n")',
     'const env = process.env',
     'if (command === "handshake") {',
-    '  write({ type: "result", outcome: env.FAKE_HANDSHAKE_OUTCOME ?? "success", result: { builtForRuntime: env.FAKE_RUNTIME ?? "0.1.0-rc.6", apiProtocol: env.FAKE_API ?? "0.6" } })',
+    '  write({ type: "result", outcome: env.FAKE_HANDSHAKE_OUTCOME ?? "success", result: { builtForRuntime: env.FAKE_RUNTIME ?? "0.1.0-rc.6", apiProtocol: env.FAKE_API ?? "0.7" } })',
     '  process.exit(0)',
     '}',
     'const handleBearing = command === "quick-write" || command === "snapshot-validate"',
@@ -79,7 +79,7 @@ function baseOptions(fake, extra = {}) {
   return {
     logger: { warn() {}, error() {} },
     installedRuntime: '0.1.0-rc.6',
-    facadeApi: '0.6',
+    facadeApi: '0.7',
     env: {
       ...BASE_ENV,
       DSH_PLUGIN_API_PROFILE_EXECUTOR: fake.script,
@@ -109,7 +109,7 @@ test('handshake validates both directions and reports mismatches typed', async (
     const ok = await runHandshakeCheck({
       path: fake.script,
       installedRuntime: '0.1.0-rc.6',
-      facadeApi: '0.6',
+      facadeApi: '0.7',
       env: {},
     }, { nodeBin: process.execPath })
     assert.equal(ok.ok, true)
@@ -117,7 +117,7 @@ test('handshake validates both directions and reports mismatches typed', async (
     const runtimeMismatch = await runHandshakeCheck({
       path: fake.script,
       installedRuntime: '0.1.0-rc.999',
-      facadeApi: '0.6',
+      facadeApi: '0.7',
       env: {},
     }, { nodeBin: process.execPath })
     assert.equal(runtimeMismatch.ok, false)
@@ -246,7 +246,7 @@ test('a stalled executor settles error with a timeout reason classification', as
     '#!/usr/bin/env node',
     'const [command] = process.argv.slice(2)',
     'if (command === "handshake") {',
-    '  process.stdout.write(JSON.stringify({ type: "result", outcome: "success", result: { builtForRuntime: "0.1.0-rc.6", apiProtocol: "0.6" } }) + "\\n")',
+    '  process.stdout.write(JSON.stringify({ type: "result", outcome: "success", result: { builtForRuntime: "0.1.0-rc.6", apiProtocol: "0.7" } }) + "\\n")',
     '  process.exit(0)',
     '}',
     '// snapshot-delete: hang forever (the facade kills after timeout)',
@@ -258,7 +258,7 @@ test('a stalled executor settles error with a timeout reason classification', as
     const mutation = createProfileMutation({
       logger: { warn() {}, error() {} },
       installedRuntime: '0.1.0-rc.6',
-      facadeApi: '0.6',
+      facadeApi: '0.7',
       env: { DSH_PLUGIN_API_PROFILE_EXECUTOR: script },
       nodeBin: process.execPath,
       timeoutMs: 400,

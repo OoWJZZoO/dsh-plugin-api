@@ -24,7 +24,7 @@ test('route policy facade is additive and typed-unavailable until replacement ga
   const registry = createFeatureRegistry()
   let owner = null
   const ServiceClass = createPluginApiService({
-    apiVersion: '0.6',
+    apiVersion: '0.7',
     registry,
     coreActive: true,
     routePolicyProvider: () => owner,

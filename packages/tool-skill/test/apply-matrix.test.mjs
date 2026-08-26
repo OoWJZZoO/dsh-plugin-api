@@ -6,14 +6,14 @@ const VERSIONS = {
   '@deepseek-ai/dsh': '0.1.0-rc.6',
   '@deepseek-ai/dsh-llm': '0.1.0-rc.6',
   '@deepseek-ai/dsh-tool-skill': '0.1.0-rc.6',
-  '@deepseek-ai/dsh-plugin-api-tool-skill': '0.1.0-rc.6-0.6',
-  '@deepseek-ai/dsh-plugin-api-main': '0.1.0-rc.6-0.6',
+  '@deepseek-ai/dsh-plugin-api-tool-skill': '0.1.0-rc.6-0.7',
+  '@deepseek-ai/dsh-plugin-api-main': '0.1.0-rc.6-0.7',
 }
 
 function goodEnv(overrides = {}) {
   return {
     readPackageVersion: (name) => overrides.versions?.[name] ?? VERSIONS[name],
-    readPackageApi: (name) => (name.includes('plugin-api') ? '0.6' : undefined),
+    readPackageApi: (name) => (name.includes('plugin-api') ? '0.7' : undefined),
     ...overrides,
   }
 }
@@ -191,8 +191,8 @@ test('apply: runtime, owner and main-facade identity mismatches fall back to off
   const cases = [
     { versions: { '@deepseek-ai/dsh': '0.1.0-rc.7' }, label: 'runtime' },
     { versions: { '@deepseek-ai/dsh-tool-skill': '0.1.0-rc.7' }, label: 'owner' },
-    { versions: { '@deepseek-ai/dsh-plugin-api-main': '0.1.0-rc.7-0.6' }, label: 'main version' },
-    { versions: { '@deepseek-ai/dsh-plugin-api-main': '0.1.0-rc.6-0.7' }, label: 'main api' },
+    { versions: { '@deepseek-ai/dsh-plugin-api-main': '0.1.0-rc.7-0.7' }, label: 'main version' },
+    { versions: { '@deepseek-ai/dsh-plugin-api-main': '0.1.0-rc.6-0.6' }, label: 'main api' },
   ]
   for (const { versions, label } of cases) {
     const state = freshState()

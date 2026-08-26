@@ -7,7 +7,7 @@ import { PluginApiFeatureDisabledError, PluginApiInactiveError } from '../lib/er
 function makeService({ coreActive = true } = {}) {
   const registry = createFeatureRegistry()
   const Service = createPluginApiService({
-    apiVersion: '0.6',
+    apiVersion: '0.7',
     registry,
     coreActive,
   })

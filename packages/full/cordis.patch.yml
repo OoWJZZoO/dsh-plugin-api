@@ -6,7 +6,8 @@
 #   4. mcp replacement: disable the official loader row, insert ours;
 #   5. attachment replacement: disable the official loader row, insert ours;
 #   6. agent-loop replacement: disable the official loader row, insert ours;
-#   7. session-branch replacement: disable the official session row, insert ours.
+#   7. session-branch replacement: disable the official session row, insert ours;
+#   8. tool-skill replacement: disable the official skill loader row, insert ours.
 # The bundle adds no API of its own: third-party plugins keep using
 # ctx.pluginApi from @deepseek-ai/dsh-plugin-api-main.
 - insert:
@@ -53,3 +54,8 @@
 - insert:
     - id: plugin-api-session-branch
       name: '@deepseek-ai/dsh-plugin-api-session-branch'
+- id: tool-skill
+  disabled: true
+- insert:
+    - id: plugin-api-tool-skill
+      name: '@deepseek-ai/dsh-plugin-api-tool-skill'
