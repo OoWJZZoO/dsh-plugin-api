@@ -25,7 +25,7 @@ sub-agent.
   escape plugin apply or kill harness boot.
 - Preserve the existing service lifetime, feature registry, typed disabled
   surfaces, version/assembly state, `pluginApi.routing`, `pluginApi.execution`,
-  `pluginApi.usage`, and all unrelated feature slots.
+  and all unrelated feature slots.
 - Use `node --test` through the repository's `npm test` scripts. Mark each
   completed task in this file before the final Stage 4 commit.
 

@@ -74,7 +74,7 @@ transaction, lease/CAS, scheduler, or provider call is made by recovery.
 The focused evidence is in
 `test/recovery-policy-acceptance.test.mjs`; the consumer migration boundary is
 the explicit `pluginApi.recovery` surface and the existing authoritative
-`pluginApi.execution`, `pluginApi.usage`, `pluginApi.routePolicy`,
+`pluginApi.execution`, `pluginApi.routePolicy`,
 `pluginApi.diagnostics`, session/branch, and checkpoint owners.
 
 The feature deliberately has no client-owned retry controller and no durable

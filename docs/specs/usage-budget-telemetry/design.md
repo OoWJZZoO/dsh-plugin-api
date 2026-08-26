@@ -2,7 +2,7 @@
 
 ## Status
 
-Stage 2 Design 已获批并落地（3278b5c），进入 Stage 3 Tasks；Stage 3 Tasks 已获批（d24f7f8）；Stage 4 已完成（1c9d23d）并合入 M6 Wave C（merge 8ff0b67 / 12c6ce0）。2026-08-26 复审登记：**待弃用**（pending deprecation，功能组件非门面；弃用动工另行指示，弃用前 API 保持不变）。
+Stage 2 Design 已获批并落地（3278b5c），进入 Stage 3 Tasks；Stage 3 Tasks 已获批（d24f7f8）；Stage 4 已完成（1c9d23d）并合入 M6 Wave C（merge 8ff0b67 / 12c6ce0）。2026-08-26 复审登记：**待弃用**（pending deprecation，功能组件非门面；弃用动工另行指示，弃用前 API 保持不变）。2026-08-26 已按用户 ANY 指示执行移除（commit `856746f`）：`pluginApi.usage` 整面删除并登记 removed，本 spec 目录保留作历史存档。
 
 ## Overview
 

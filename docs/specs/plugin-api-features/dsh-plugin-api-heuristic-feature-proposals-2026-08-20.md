@@ -13,7 +13,7 @@
 |---|---|---|---|
 | `execution-observation` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第一批 Wave C） | `docs/specs/execution-observation/goal.md`；`docs/specs/execution-observation/requirements.md`；`docs/specs/execution-observation/design.md`；`docs/specs/execution-observation/tasks.md` |
 | `plugin-diagnostics` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第一批 Wave C） | `docs/specs/plugin-diagnostics/goal.md`；`docs/specs/plugin-diagnostics/requirements.md`；`docs/specs/plugin-diagnostics/design.md`；`docs/specs/plugin-diagnostics/tasks.md` |
-| `usage-budget-telemetry` | 已交付（B 类；**待弃用** pending deprecation，2026-08-26 复审登记，当前不动工） | SPEC3 Stage 4：交付完成（M6 第一批 Wave C）；2026-08-26 复审：登记待弃用（功能组件非门面，见 §6 复审结论） | `docs/specs/usage-budget-telemetry/goal.md`；`docs/specs/usage-budget-telemetry/requirements.md`；`docs/specs/usage-budget-telemetry/design.md`；`docs/specs/usage-budget-telemetry/tasks.md` |
+| `usage-budget-telemetry` | 已移除（2026-08-26 按用户 ANY 指示经 `chore/usage-api-removal` 移除，commit `856746f`；见 §6 执行记录） | SPEC3 Stage 4：交付完成（M6 第一批 Wave C）；2026-08-26 复审：登记待弃用（功能组件非门面，见 §6 复审结论）；同日按用户指示执行移除（见 §6 执行记录） | `docs/specs/usage-budget-telemetry/goal.md`；`docs/specs/usage-budget-telemetry/requirements.md`；`docs/specs/usage-budget-telemetry/design.md`；`docs/specs/usage-budget-telemetry/tasks.md` |
 | `mcp-catalog-lifecycle` | 已交付（R 类；运行时名 `@deepseek-ai/dsh-plugin-api-mcp`） | SPEC3 Stage 4：交付完成（M6 第一批 Wave C） | `docs/specs/mcp-catalog-lifecycle/goal.md`；`docs/specs/mcp-catalog-lifecycle/requirements.md`；`docs/specs/mcp-catalog-lifecycle/design.md`；`docs/specs/mcp-catalog-lifecycle/tasks.md` |
 | `model-route-policy` | 已交付（R 类；运行时名 `@deepseek-ai/dsh-plugin-api-agent-loop`；owner `@deepseek-ai/dsh-agent-loop`） | SPEC3 Stage 4：交付完成（M6 第二批） | `docs/specs/model-route-policy/goal.md`；`docs/specs/model-route-policy/requirements.md`；`docs/specs/model-route-policy/design.md`；`docs/specs/model-route-policy/tasks.md` |
 | `attachment-pipeline` | 已交付（R 类；运行时名 `@deepseek-ai/dsh-plugin-api-attachments`；owner `@deepseek-ai/dsh-attachment-local`） | SPEC3 Stage 4：交付完成（M6 第二批 Wave A） | `docs/specs/attachment-pipeline/goal.md`；`docs/specs/attachment-pipeline/requirements.md`；`docs/specs/attachment-pipeline/design.md`；`docs/specs/attachment-pipeline/tasks.md` |
@@ -229,6 +229,8 @@ record.compareAndSet(key, expectedVersion, value)
 **价值。** 它不仅是 UI 统计，也能成为 route policy、auto-continue、MCP tool exposure 和 workflow 调度的输入。预算 action 为 deny/route 时必须走现有 approval/fail-safe 语义。
 
 **复审结论（2026-08-26）：登记为待弃用（pending deprecation），当前不动工。** 该 feature 与 `memory-interoperability` 同型：单个 cost 插件（如 `dsh-cost-meter`）即可用已交付的 `llm/stream`、session 与 execution observation API 端到端实现成本账本，`pluginApi.usage` 的 ledger/pricing/budget 是会计功能子系统而非门面转译。可能保留的门面化方向仅为 usage sample 规范化与 provider-confirmed/estimated 词汇。弃用动工待用户另行指示，此前 API 保持不变。
+
+**执行记录（2026-08-26）：** 按用户 ANY 指示执行移除——`pluginApi.usage`（`record / settle / pricing.register / query / budget.observe / availability`）整面删除（commit `856746f`，worktree `chore/usage-api-removal`），feature-list §7 与各 spec 状态行同步登记为 removed，spec 目录保留作历史存档。移除后成本账本由单 cost 插件经已交付的 `llm/stream`、session 与 execution observation API 端到端实现。
 
 ### 7. MCP catalog / dynamic tool lifecycle
 
