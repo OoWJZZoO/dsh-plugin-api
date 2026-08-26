@@ -27,8 +27,8 @@
 | `session-branch-sidechain-edit` | 已交付（R 类；owner `@deepseek-ai/dsh-session`，运行时名 `@deepseek-ai/dsh-plugin-api-session-branch`） | SPEC3 Stage 4：交付完成（M6 第四批次 Wave B；批次集成 sync 后合入） | `docs/specs/session-branch-sidechain-edit/goal.md`；`docs/specs/session-branch-sidechain-edit/requirements.md`；`docs/specs/session-branch-sidechain-edit/design.md`；`docs/specs/session-branch-sidechain-edit/tasks.md` |
 | `plugin-profile-management` | 已交付（双面：投影 + 进程外执行器遥控写入） | SPEC3 Stage 4：交付完成（M6 第五批次） | `docs/specs/plugin-profile-management/goal.md`；`docs/specs/plugin-profile-management/requirements.md`；`docs/specs/plugin-profile-management/design.md`；`docs/specs/plugin-profile-management/tasks.md` |
 | `memory-interoperability` | 已明确排除立项（功能组件非门面；由具体 memory 插件基于已交付 API 自行实现） | 不进入 Stage 0 | —（候选分析留档于本文件 §10） |
-| `skill-discovery-activation` | 已立项，待确认（B 类 host-only；R 仅保留后续评估） | SPEC1 Stage 0：Goal 待确认（M6 第六批次 Wave A） | `docs/specs/skill-discovery-activation/goal.md` |
-| `context-provenance` | 已立项，待确认（B/C 边界） | SPEC1 Stage 0：Goal 待确认（M6 第六批次 Wave B） | `docs/specs/context-provenance/goal.md` |
+| `skill-discovery-activation` | 已立项，待确认（B 类 host-only；R 仅保留后续评估） | SPEC1 Stage 0–1：Goal/Requirements 已产出，待批量确认门（M6 第六批次 Wave A） | `docs/specs/skill-discovery-activation/goal.md`；`docs/specs/skill-discovery-activation/requirements.md` |
+| `context-provenance` | 已立项，待确认（B/C 边界） | SPEC1 Stage 0–1：Goal/Requirements 已产出，待批量确认门（M6 第六批次 Wave B） | `docs/specs/context-provenance/goal.md`；`docs/specs/context-provenance/requirements.md` |
 
 其余 2 个候选（`remote-session-channel`、`adapter-decoration`）仍处于候选池，未进入 Stage 0；`memory-interoperability` 已于 2026-08-26 撤出候选池并明确排除立项。
 
