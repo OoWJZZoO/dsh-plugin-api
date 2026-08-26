@@ -159,7 +159,7 @@ test('events guard failure disables only events and keeps facade active', () => 
 
 
 
-  assert.equal(features.length, 27)
+  assert.equal(features.length, 28)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.equal(features[1].name, 'events')
@@ -200,7 +200,8 @@ test('events guard failure disables only events and keeps facade active', () => 
   assert.equal(features[24].name, 'tasks')
   assert.equal(features[24].isActive, true)
   assert.equal(features[25].name, 'toolDiscovery')
-  assert.equal(features[26].name, 'profile')
+  assert.equal(features[26].name, 'context')
+  assert.equal(features[27].name, 'profile')
   assert.equal(features[25].isActive, true)
 
 
@@ -223,7 +224,7 @@ test('web service absence keeps the services feature active while disabling only
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
 
-  assert.equal(features.length, 27)
+  assert.equal(features.length, 28)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
@@ -266,7 +267,8 @@ test('web service absence keeps the services feature active while disabling only
   assert.equal(features[24].name, 'tasks')
   assert.equal(features[24].isActive, true)
   assert.equal(features[25].name, 'toolDiscovery')
-  assert.equal(features[26].name, 'profile')
+  assert.equal(features[26].name, 'context')
+  assert.equal(features[27].name, 'profile')
   assert.equal(features[25].isActive, true)
 
 

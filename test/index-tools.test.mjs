@@ -139,7 +139,7 @@ test('tools active: apply mounts pluginApi.tools and extends the events catalog 
   assert.equal(state.pluginApi.tools.isActive, true)
 
   const features = state.pluginApi.features
-  assert.equal(features.length, 27)
+  assert.equal(features.length, 28)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -153,7 +153,8 @@ test('tools active: apply mounts pluginApi.tools and extends the events catalog 
   assert.deepEqual(features[10], { name: 'execRoute', isActive: true })
   assert.deepEqual(features[11], { name: 'sessionRoute', isActive: true })
   assert.equal(features[25].name, 'toolDiscovery')
-  assert.equal(features[26].name, 'profile')
+  assert.equal(features[26].name, 'context')
+  assert.equal(features[27].name, 'profile')
   assert.equal(features[25].isActive, true)
 
 
@@ -181,12 +182,13 @@ test('tools guard failure disables only tools and keeps the events catalog at ba
   assert.equal(state.pluginApi.isActive, true)
 
   const features = state.pluginApi.features
-  assert.equal(features.length, 27)
+  assert.equal(features.length, 28)
   assert.equal(features[0].name, 'tools')
   assert.equal(features[0].isActive, false)
   assert.match(features[0].reason, /tools service/)
   assert.equal(features[25].name, 'toolDiscovery')
-  assert.equal(features[26].name, 'profile')
+  assert.equal(features[26].name, 'context')
+  assert.equal(features[27].name, 'profile')
   assert.equal(features[25].isActive, false)
   assert.match(features[25].reason, /tools service/)
   assert.deepEqual(features[1], { name: 'events', isActive: true })

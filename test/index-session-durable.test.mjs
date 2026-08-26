@@ -136,6 +136,8 @@ test('apply mounts sessionDurable immediately after session without extending th
 
     'toolDiscovery',
 
+    'context',
+
     'profile',
   ])
   assert.equal(feature(state, 'session').isActive, true)

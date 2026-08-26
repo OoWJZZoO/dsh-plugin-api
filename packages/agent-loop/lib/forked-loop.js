@@ -19,6 +19,10 @@ import { TOOL_ABORTED_BEFORE_DISPATCH, TOOL_RUNTIME_SCHEDULER } from "@deepseek-
 // replacement patch: route policy is an additive loader-row capability. The
 // official package import face and its exported AgentLoop remain unchanged.
 import { ROUTE_POLICY_ACTIVE_SYMBOL, ROUTE_POLICY_COMPONENT_SYMBOL } from "./route-policy.js";
+// replacement patch: assembled-context evidence is an additive evidence-only
+// capability (observes the render boundary, never decides). Internal imports
+// only — the module's exported surface stays identical to the official one.
+import { EVIDENCE_ACTIVE_SYMBOL, emitAssembledEvidence } from "./evidence-slice.js";
 //#region lib/types/runtime-context.js
 /**
 * Durable projection state for dynamic runtime context.
@@ -363,6 +367,9 @@ var ReactLoopAgent = class {
 	routeWindow;
 	routeDecision;
 	routePolicy;
+	// replacement patch: per-session assembled-context evidence sequence
+	// (owner-specific opaque generation, ascending; evidence-only).
+	evidenceSeq = 0;
 	constructor(loopCtx, id, options, session) {
 		this.loopCtx = loopCtx;
 		this.id = id;
@@ -637,6 +644,23 @@ var ReactLoopAgent = class {
 		const { turn, step, abort: { signal } } = this.phase;
 		signal.throwIfAborted();
 		const system = renderPrompt(assembly);
+		// replacement patch: evidence-only assembled-context emission at the
+		// equivalent of the official renderPrompt boundary — observes, never
+		// decides; every failure is contained so the model request is unaffected.
+		this.evidenceSeq += 1;
+		try {
+			emitAssembledEvidence({
+				loopCtx: this.loopCtx,
+				session: this.session,
+				assembly,
+				generation: this.evidenceSeq,
+				log: (message) => {
+					try {
+						this.loopCtx?.logger?.warn?.(message);
+					} catch {}
+				}
+			});
+		} catch {} // evidence-only iron rule: emission can never break dispatch
 		while (true) {
 			const { request, preparedCall } = await this.buildRequest(turn, step, assembly.tools, system, this.session.deriveMessages(), signal);
 			const assembler = new BlockAssembler();
@@ -1065,6 +1089,9 @@ var AgentLoop = class extends Service {
 			package: "@deepseek-ai/dsh-plugin-api-agent-loop",
 			rowId: "plugin-api-agent-loop"
 		};
+		// replacement patch: assembled-context evidence capability marker
+		// (additive; instance-level, never a prototype member).
+		this[EVIDENCE_ACTIVE_SYMBOL] = true;
 		const entry = { maxParallelToolCalls: resolveMaxParallelToolCalls(config.maxParallelToolCalls) };
 		let source = () => entry;
 		this.config = {
