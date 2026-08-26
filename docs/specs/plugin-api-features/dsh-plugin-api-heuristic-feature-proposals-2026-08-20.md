@@ -13,7 +13,7 @@
 |---|---|---|---|
 | `execution-observation` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第一批 Wave C） | `docs/specs/execution-observation/goal.md`；`docs/specs/execution-observation/requirements.md`；`docs/specs/execution-observation/design.md`；`docs/specs/execution-observation/tasks.md` |
 | `plugin-diagnostics` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第一批 Wave C） | `docs/specs/plugin-diagnostics/goal.md`；`docs/specs/plugin-diagnostics/requirements.md`；`docs/specs/plugin-diagnostics/design.md`；`docs/specs/plugin-diagnostics/tasks.md` |
-| `usage-budget-telemetry` | 已交付（B 类） | SPEC3 Stage 4：交付完成（M6 第一批 Wave C） | `docs/specs/usage-budget-telemetry/goal.md`；`docs/specs/usage-budget-telemetry/requirements.md`；`docs/specs/usage-budget-telemetry/design.md`；`docs/specs/usage-budget-telemetry/tasks.md` |
+| `usage-budget-telemetry` | 已交付（B 类；**待弃用** pending deprecation，2026-08-26 复审登记，当前不动工） | SPEC3 Stage 4：交付完成（M6 第一批 Wave C）；2026-08-26 复审：登记待弃用（功能组件非门面，见 §6 复审结论） | `docs/specs/usage-budget-telemetry/goal.md`；`docs/specs/usage-budget-telemetry/requirements.md`；`docs/specs/usage-budget-telemetry/design.md`；`docs/specs/usage-budget-telemetry/tasks.md` |
 | `mcp-catalog-lifecycle` | 已交付（R 类；运行时名 `@deepseek-ai/dsh-plugin-api-mcp`） | SPEC3 Stage 4：交付完成（M6 第一批 Wave C） | `docs/specs/mcp-catalog-lifecycle/goal.md`；`docs/specs/mcp-catalog-lifecycle/requirements.md`；`docs/specs/mcp-catalog-lifecycle/design.md`；`docs/specs/mcp-catalog-lifecycle/tasks.md` |
 | `model-route-policy` | 已交付（R 类；运行时名 `@deepseek-ai/dsh-plugin-api-agent-loop`；owner `@deepseek-ai/dsh-agent-loop`） | SPEC3 Stage 4：交付完成（M6 第二批） | `docs/specs/model-route-policy/goal.md`；`docs/specs/model-route-policy/requirements.md`；`docs/specs/model-route-policy/design.md`；`docs/specs/model-route-policy/tasks.md` |
 | `attachment-pipeline` | 已交付（R 类；运行时名 `@deepseek-ai/dsh-plugin-api-attachments`；owner `@deepseek-ai/dsh-attachment-local`） | SPEC3 Stage 4：交付完成（M6 第二批 Wave A） | `docs/specs/attachment-pipeline/goal.md`；`docs/specs/attachment-pipeline/requirements.md`；`docs/specs/attachment-pipeline/design.md`；`docs/specs/attachment-pipeline/tasks.md` |
@@ -111,7 +111,7 @@ done
 | 3 | Client generation / rebind | client 服务晚绑定、重连、旧 UI 写回污染新状态 | B，必要时 R | 5 | 4 | 4 | 第一梯队 |
 | 4 | Recovery / retry / checkpoint policy | 每个插件重复分类错误、退避和恢复 | B | 5 | 5 | 5 | 第一梯队 |
 | 5 | Context composition / provenance | prompt 注入、压缩和 surface 变更无法解释来源 | B/C | 5 | 4 | 5 | 第一梯队 |
-| 6 | Usage / cost / budget telemetry | usage 只在各插件私自计算，预算不能成为策略输入 | B | 5 | 5 | 3 | 第一梯队 |
+| 6 | Usage / cost / budget telemetry | usage 只在各插件私自计算，预算不能成为策略输入 | B | 5 | 5 | 3 | 第一梯队；已交付后 2026-08-26 登记待弃用 |
 | 7 | MCP catalog / dynamic lifecycle | tools/list、连接和工具 generation 不稳定 | R 优先 | 5 | 5 | 4 | 第一梯队，正式 R 候选 |
 | 8 | Progressive tool discovery | 工具集过大，模型不知道何时暴露哪个工具 | B，必要时 R | 5 | 4 | 4 | 第一梯队 |
 | 9 | Security policy / egress guard | approval、redaction、子进程出站策略互相割裂 | B，横切不 R | 5 | 5 | 5 | 第一梯队 |
@@ -225,6 +225,8 @@ record.compareAndSet(key, expectedVersion, value)
 **通道判断。** B 类即可从 `llm/stream` usage chunk、execution identity 和 session scope 统一实现。若未来官方 provider 给出 authoritative invoice/credit 事件，应允许 source 标记为 provider-confirmed，不能把估算冒充账单。
 
 **价值。** 它不仅是 UI 统计，也能成为 route policy、auto-continue、MCP tool exposure 和 workflow 调度的输入。预算 action 为 deny/route 时必须走现有 approval/fail-safe 语义。
+
+**复审结论（2026-08-26）：登记为待弃用（pending deprecation），当前不动工。** 该 feature 与 `memory-interoperability` 同型：单个 cost 插件（如 `dsh-cost-meter`）即可用已交付的 `llm/stream`、session 与 execution observation API 端到端实现成本账本，`pluginApi.usage` 的 ledger/pricing/budget 是会计功能子系统而非门面转译。可能保留的门面化方向仅为 usage sample 规范化与 provider-confirmed/estimated 词汇。弃用动工待用户另行指示，此前 API 保持不变。
 
 ### 7. MCP catalog / dynamic tool lifecycle
 
@@ -481,7 +483,7 @@ R 类共有的推进条件：
 
 1. `execution-observation`：其他 telemetry、recovery、task、routing 都需要稳定 correlation。
 2. `plugin-diagnostics`：低风险、高覆盖面，能让后续所有 feature 的 fail-safe 可诊断。
-3. `usage-budget-telemetry`：源码证据强，能立即统一 cost-meter 类插件。
+3. `usage-budget-telemetry`：源码证据强，能立即统一 cost-meter 类插件。（2026-08-26 起已登记待弃用，见 §6 复审结论。）
 4. `mcp-catalog-lifecycle`：直接采用 R 评估，不把它压缩成普通 tools register 扩展。
 5. `model-route-policy`：直接采用 R 评估，不继续让多个插件竞争 `agent/request` prepend。
 6. `attachment-pipeline`：与已有 image admission 衔接，向 audio/file/resource 扩展。

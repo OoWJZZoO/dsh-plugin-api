@@ -1,7 +1,7 @@
 # Tasks: usage-budget-telemetry
 
 > feature_name: `usage-budget-telemetry`
-> 状态：Stage 3 Tasks 已批准（Stage 3 边界 `d24f7f8`）；Stage 4 已全部完成（Task 1–12 完成并验证：全量 `npm test` 1182/1187，5 个失败全部为冻结文件顺序断言，见下「Stage 4 执行注记」）；SPEC3 全局终审由 Wave C 整体终审覆盖并通过（无偏差，见文末「Wave C 整合注记」），Stage 4 完成提交 `1c9d23d` 已创建。
+> 状态：Stage 3 Tasks 已批准（Stage 3 边界 `d24f7f8`）；Stage 4 已全部完成（Task 1–12 完成并验证：全量 `npm test` 1182/1187，5 个失败全部为冻结文件顺序断言，见下「Stage 4 执行注记」）；SPEC3 全局终审由 Wave C 整体终审覆盖并通过（无偏差，见文末「Wave C 整合注记」），Stage 4 完成提交 `1c9d23d` 已创建。2026-08-26 复审登记：**待弃用**（pending deprecation，功能组件非门面；弃用动工另行指示，弃用前 API 保持不变）。
 > 上游：`requirements.md`（Stage 1 已批准）、`design.md`（Stage 2 已批准，用户已明确批准）。
 > 工作流：SPEC3（Stage 3–4）。Stage 3 先做对抗性审查再交用户评审；Stage 4 获批后按本清单自主完成全部任务，**不再逐顶层大任务派审**，全部完成后做一次全局终审，通过后才交付结果报告、提交并清理 worktree。
 > 并行契约：`temp/m6-parallel-contract.md`（Wave B `usage-budget-telemetry`，worktree `.worktrees/m6-usage`，分支 `feat/m6-usage`）。
