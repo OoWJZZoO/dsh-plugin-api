@@ -1,0 +1,42 @@
+{
+  "name": "@deepseek-ai/dsh-plugin-api-session-channel-gateway",
+  "description": "Typert gateway replacement for @deepseek-ai/dsh-api-gateway: faithful fork of the official Remote descriptor/RPC dispatch, plus channel method RPC dispatch and a channel remote namespace extension.",
+  "version": "0.1.0-rc.6-0.7",
+  "type": "module",
+  "main": "lib/apply.js",
+  "exports": {
+    ".": "./lib/apply.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "api": "0.7",
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-typert-registry",
+        "@deepseek-ai/dsh-client-connection"
+      ],
+      "immediately": true
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test",
+    "build:client": "node scripts/build-client.mjs"
+  },
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-api-gateway": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-typert-protocol": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-typert-registry": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-client-connection": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-invariants": "^0.1.0-rc.6",
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "devDependencies": {
+    "@deepseek-ai/dsh-app-boot": "^0.1.0-rc.6"
+  }
+}

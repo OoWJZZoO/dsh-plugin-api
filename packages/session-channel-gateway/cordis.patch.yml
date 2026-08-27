@@ -1,0 +1,12 @@
+# Bundle patch for @deepseek-ai/dsh-plugin-api-session-channel-gateway.
+# Replacement boundary: we replace the `typert-gateway` loader row's ctx
+# service/event behavior ONLY; the `@deepseek-ai/dsh-api-gateway` import
+# surface stays official (the replacement composes the official package
+# helpers and runs the official apply on identity mismatch).
+# The official `id: typert-gateway` row has no config block; the replacement
+# row matches that shape.
+- id: typert-gateway
+  disabled: true
+- insert:
+    - id: plugin-api-session-channel-gateway
+      name: '@deepseek-ai/dsh-plugin-api-session-channel-gateway'
