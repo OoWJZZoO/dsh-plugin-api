@@ -57,7 +57,7 @@
 ## 4. R 类硬性规则
 
 R1. **只走官方 patch 机制**：禁用官方行 + 插入替代行；绝不修改 `/usr/lib/node_modules/@deepseek-ai/dsh/**` 或任何官方包文件。
-R2. **替代单位是整行，管理单位是整包**：替代行必须完整提供被替代行的 ctx 服务面与事件面契约（含时序与 payload 形状），在此基础上才能增加接口；一个 replacement 包可以替换同一官方组件插件包内的多个行，并承载该组件范围内的多个相关 feature。
+R2. **替代单位是整行，管理单位是整包**：替代行必须完整提供被替代行的 ctx 服务面与事件面契约（含时序与 payload 形状），在此基础上才能增加接口；一个 replacement 包可以替换同一官方组件插件包内的多个行，并承载该组件范围内的多个相关 feature。一个 feature 也可由分属不同官方组件的多个 replacement 包协同实现，须在 feature-list.md §3.1 报备登记，且每个 replacement 包仍只归属唯一官方组件。
 R3. **包 import 面明确不覆盖**：R 类只替换 `ctx` 服务/事件面；第三方 `import '@deepseek-ai/dsh-*'` 仍解析到官方原包。任何 R 类文档必须显式声明此边界。
 R4. **boot 自检（强制）**：替代包必须在 apply 内断言“官方行已 disabled、替代行已 active、关键契约可用”；失败 = fail-safe（记录日志 + 正常 return），绝不静默双跑。
 R5. **版本锁定**：替代包固定其支持的 runtime 全量版本与被替代官方包的 identity；不匹配时安全停用或显式报错，不做尽力而为的猜测。
@@ -70,10 +70,10 @@ R9. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 
 ### 4.1 组件边界与 facade 组合
 
-- 一个 replacement 包只能对应一个官方组件插件包，不得跨多个官方组件包实现一个 feature。
-- 一个 feature 最多由一个 replacement 包承载；一个 replacement 包可以承载同一官方组件范围内的多个 feature。
-- 一个 feature 可以同时包含 facade translation 与一个 R capability slice；R slice 仍必须归属于唯一官方组件包。
-- facade 可以组合多个官方组件的公开能力；但该 feature 不得依赖跨组件 replacement 才能成立。
+- 一个 replacement 包只能对应一个官方组件插件包；跨多个官方组件包实现的 feature 须在 feature-list.md §3.1 报备登记，其每个 replacement 包仍只归属唯一官方组件。
+- 一个 feature 可由一个 replacement 包承载，也可由分属不同官方组件的多个 replacement 包协同承载（须报备登记）；一个 replacement 包可以承载同一官方组件范围内的多个 feature。
+- 一个 feature 可以同时包含 facade translation 与一个或多个 R capability slice；每个 R slice 仍必须归属于唯一官方组件包。
+- facade 可以组合多个官方组件的公开能力，也可以与跨组件 R 能力组合为同一 feature。
 
 ---
 
@@ -136,7 +136,7 @@ R9. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 
 > 综合 Stage 0 共同问题 NO.6（2026-08-21 确认）。
 
-- **每个官方组件插件包最多一个独立 replacement 包**：replacement 包命名为 `@deepseek-ai/dsh-plugin-api-<domain>`（如 MCP → `@deepseek-ai/dsh-plugin-api-mcp`、session branch → `@deepseek-ai/dsh-plugin-api-session-branch`、attachments → `@deepseek-ai/dsh-plugin-api-attachments`、skill exposure → `@deepseek-ai/dsh-plugin-api-tool-skill`）；一个包可替换该官方组件内多个行并承载多个相关 feature，但不得跨组件，也不得为同一组件引入第二个竞争 replacement 包。
+- **每个官方组件插件包最多一个独立 replacement 包**：replacement 包命名为 `@deepseek-ai/dsh-plugin-api-<domain>`（如 MCP → `@deepseek-ai/dsh-plugin-api-mcp`、session branch → `@deepseek-ai/dsh-plugin-api-session-branch`、attachments → `@deepseek-ai/dsh-plugin-api-attachments`、skill exposure → `@deepseek-ai/dsh-plugin-api-tool-skill`）；一个包可替换该官方组件内多个行并承载多个相关 feature，也可作为跨组件 feature 的组成部分（该 feature 须在 feature-list.md §3.1 报备登记）；不得为同一组件引入第二个竞争 replacement 包。
 - 沿用现有 full/selection install 模式与统一版本协商（见文首"维护修订"条）；辅助包与主包版本不一致时只停用该 R 特性。
 
 ## 10. 客户端半面判定（host-only 或完整 client 复制）

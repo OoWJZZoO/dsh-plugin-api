@@ -34,10 +34,10 @@ agent/dsh-plugin-api/
    - **A 类：官方已 dispatch，只需稳定化**（如 `agent/*`、`tools/*`、`session/*`、`llm/stream`）。
    - **B 类：官方没有 dispatch 点，只能用底层钩子模拟**（如同步 `llm/request` 用 `llm/stream` 重入模拟）。
    - **C 类：不改官方做不到**，只能写 proposal / 等上游（如异步完整请求改写、boot 故障隔离、`WEB_SETTINGS_NAMESPACES` 动态化、客户端 `remote.<ns>` 原生动态发现）。
-   - **R 类（替换类）：官方没有 dispatch 点，且缺失语义天然属于某个官方组件插件包**。经 `docs/standards/capability-strategy.md` 批准登记后，由该组件的唯一 replacement owner 用官方 patch 机制（`disabled: true` + 插入替代行）禁用一个或多个该组件行，并以替代行提供“官方原接口 + 扩展接口”。R 类不 patch 官方包文件，也不再是普通门面转译；R 实现不得跨多个官方组件包。
+   - **R 类（替换类）：官方没有 dispatch 点，且缺失语义天然属于某个官方组件插件包**。经 `docs/standards/capability-strategy.md` 批准登记后，由该组件的唯一 replacement owner 用官方 patch 机制（`disabled: true` + 插入替代行）禁用一个或多个该组件行，并以替代行提供“官方原接口 + 扩展接口”。R 类不 patch 官方包文件，也不再是普通门面转译。跨多个官方组件包实现的 feature 由分属各官方组件的 replacement 包协同承载，每个 replacement 包仍只归属唯一官方组件，须在 `docs/specs/plugin-api-features/feature-list.md` §3.1 报备登记。
 6. 任何插件 apply 抛错当前会杀死整个 harness boot，因此本仓库所有入口必须遵循 **fail-safe**：失败只记录日志并安静停用，绝不抛穿 apply（dsh-read-image 的 G1 模式）。
 7. **R 类 replacement bundle 硬约束（权威细则见 `docs/standards/capability-strategy.md`）**：
-   - 替代单位是整行，管理单位是官方组件插件包：必须完整复刻每个被替代行的 ctx 服务面与事件面契约，之后才可增加接口；一个 replacement 包可承载同一组件内多个相关 feature，但不得跨组件；只替换 ctx 服务/事件面，**不覆盖** `@deepseek-ai/dsh-*` 包 import 面。
+   - 替代单位是整行，管理单位是官方组件插件包：必须完整复刻每个被替代行的 ctx 服务面与事件面契约，之后才可增加接口；一个 replacement 包可承载同一组件内多个相关 feature；跨组件协同实现的 feature 须在 `docs/specs/plugin-api-features/feature-list.md` §3.1 报备登记，其每个 replacement 包仍只归属唯一官方组件；只替换 ctx 服务/事件面，**不覆盖** `@deepseek-ai/dsh-*` 包 import 面。
    - 只走官方 patch 机制：`- id: <官方行>; disabled: true` + `- insert:` 替代行；绝不修改 `/usr/lib/node_modules/@deepseek-ai/dsh/**`。
    - 替代包 apply 内必须做 boot 自检（官方行已 disabled、替代行已 active、关键契约可用）；失败 = fail-safe 提示 + 正常 return，绝不静默双跑。
    - 版本锁定 runtime 全量版本与被替代官方组件包 identity，不匹配时安全停用；组件唯一 owner，必须检测冲突。

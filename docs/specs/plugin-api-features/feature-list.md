@@ -27,7 +27,7 @@
 | **A 类** | 官方已 dispatch / 已提供服务，只需稳定化 | 类型化、只读 payload、priority、错误隔离，不再发明语义 |
 | **B 类** | 官方没有 dispatch 点，只能用底层钩子模拟 | 用官方服务边界 + 底层事件转译，必须幂等收敛 + fail-safe |
 | **C 类** | 不改官方做不到 | 只写 upstream proposal，不写实现；保留公开 API 迁移路径 |
-| **R 类（替换类）** | 官方没有 dispatch 点，且缺失语义天然属于某个官方组件插件包 | 经 `docs/standards/capability-strategy.md` 批准登记后，由该组件的唯一 replacement owner 用官方 patch 机制（`disabled: true` + 插入替代行）禁用一个或多个该组件行并提供“官方原接口 + 扩展接口”；R 实现不得跨组件，且绝不 patch 官方包文件 |
+| **R 类（替换类）** | 官方没有 dispatch 点，且缺失语义天然属于某个官方组件插件包 | 经 `docs/standards/capability-strategy.md` 批准登记后，由该组件的唯一 replacement owner 用官方 patch 机制（`disabled: true` + 插入替代行）禁用一个或多个该组件行并提供“官方原接口 + 扩展接口”；跨组件协同实现的 feature 须在 §3.1 报备登记，且绝不 patch 官方包文件 |
 | 门面基础 | 不属于 A/B/C 的服务/打包/协商能力 | 遵循 AGENTS.md 第 1–2 节硬约束 |
 
 ### 1.3 里程碑建议
@@ -413,12 +413,12 @@ client 半身交付 = 机械校验（语法/import 边界/`dsh.client` 清单一
 
 > 权威细则见 `docs/standards/capability-strategy.md`（含 R1–R9 硬性规则与方案二例外条件）。本节只做登记，不引入实现。
 
-判定规则：按官方组件边界、官方契约是否可完整保留、运行时风险与长期维护成本判断；不采用统一量化评分。高风险、跨组件或无法证明契约保留的能力维持门面转译；横切派发语义永不 R。普通 feature 只需提供与决策相关的最小证据，R、durable mutation、异步重入和 client replacement 才要求完整契约与失败路径证明。
+判定规则：按官方组件边界、官方契约是否可完整保留、运行时风险与长期维护成本判断；不采用统一量化评分。高风险或无法证明契约保留的能力维持门面转译；跨组件 R 是允许形态，但须在 §3.1.1 报备登记；横切派发语义永不 R。普通 feature 只需提供与决策相关的最小证据，R、durable mutation、异步重入和 client replacement 才要求完整契约与失败路径证明。
 
 | B/C 项 | 现转译/现状 | 拟 fork 行 | 工作量 | 价值 | 决策 |
 |---|---|---|---|---|---|
 | L4 同步 `llm/request` | `llm/stream` 重入 + marker + 收敛 | `llm` | 高 | 高 | 维持方案一（R 类候选，暂不排期） |
-| L2 图片准入 | 包装 `apiProxy.sessions` + `llm.resolveModelInfo` | 不适用：跨多个官方组件包的 R 实现被禁止 | 很高 | 高 | 维持方案一 |
+| L2 图片准入 | 包装 `apiProxy.sessions` + `llm.resolveModelInfo` | 跨组件 R（`llm` + `api-gateway`，可报备登记） | 很高 | 高 | 维持方案一（api-gateway 5648 行且 headless 无该行，fork 经济性不成立） |
 | A9/T10 `exec.route` | `tools/pre-execute` prepend + `session.requestContext()` | `tools`（完整 route 还需 `agent-loop` 协同） | 高 | 高 | 维持方案一 |
 | S2 session 上屏 helper | 门面校验后调官方 `Session.append` | `session` | 高 | 高 | 维持方案一 |
 | ST4 host 设置 remote 桥 | 自建 `bindTypertRemote` 等价实现 | `typert-gateway` 或 typert 相关行 | 中 | 中 | R 类观察项，不单独立项 |
@@ -429,6 +429,14 @@ client 半身交付 = 机械校验（语法/import 边界/`dsh.client` 清单一
 | U10 `attachment-pipeline` identity/transform/projection/cleanup | 官方 attachment loader 没有完整 pipeline seam；replacement 在保留 `ctx.attachments` 官方契约的同时增加 bounded pipeline capability | `attachment-local`（`dsh-attachment-local`） | 中–高 | 高 | **本次交付**（运行时名 `plugin-api-attachments`，owner `@deepseek-ai/dsh-attachment-local`；U10 保留为上游提案，replacement 为 current workaround，退役条件见 §3 U10 行） |
 | U11 `model-route-policy` route 收敛/health/circuit/fallback | 官方 `agent-loop` 无有序 route-policy/health/circuit/probe 公共 dispatch 点；replacement 在保留 `ctx.agentLoop` 官方契约的同时增加有序 route 收敛、不可变 attempt decision、health/circuit/probe evidence 与 fallback lineage | `agent-loop`（`dsh-agent-loop`） | 中–高 | 高 | **本次交付**（运行时名 `plugin-api-agent-loop`，owner `@deepseek-ai/dsh-agent-loop`；U11 保留为上游提案，replacement 为 current workaround，退役条件见 §3 U11 行） |
 | U16 `mcp-catalog-lifecycle` | 官方 `dsh-mcp-client` 无 dispatch 点；忠实 host 复刻之上增加只读 server/tool catalog 与 lifecycle 投影 | `mcp-client`（`dsh-mcp-client`，610 行，当前 host-only） | 中 | 高 | **本次交付**（运行时名 `plugin-api-mcp`，owner `@deepseek-ai/dsh-mcp-client`；U16 保留为上游提案，replacement 为 current workaround，退役条件见 §3 U16 行） |
+
+### 3.1.1 跨组件 R 类报备登记
+
+> 一个 feature 由分属多个官方组件插件包的 replacement 包协同实现时在此登记。报备即生效，无需额外批准；每个 replacement 包仍须满足本文与 `capability-strategy.md` 的全部 R 硬性规则（R2 契约复刻、R4 boot 自检、R5 版本锁定、R6 组件 owner 冲突检测、R7 上游提案与退役条件）并只归属唯一官方组件。跨组件登记用于装配与退役核对，不改变各 replacement 包的独立 fail-safe 边界。
+
+| Feature | 协同 replacement 包（运行时名 / 官方组件 owner） | 报备日期 | 设计依据 |
+|---|---|---|---|
+| 暂无 | — | — | — |
 
 ---
 
