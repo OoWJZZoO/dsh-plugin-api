@@ -68,8 +68,9 @@ test('apply mounts profile last with a working composed surface', () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
   const features = state.pluginApi.features
-  assert.equal(features[features.length - 1].name, 'profile')
-  assert.equal(features[features.length - 1].isActive, true)
+  assert.equal(features[features.length - 2].name, 'profile')
+  assert.equal(features[features.length - 2].isActive, true)
+  assert.equal(features[features.length - 1].name, 'sessionChannel')
 
   const profile = state.pluginApi.profile
   assert.equal(typeof profile.inspect, 'function')

@@ -193,3 +193,28 @@
 - 诊断前缀：`session-channel:` + owner id 归因。
 - 共享文件边界：`lib/**` B 只写自己的 `sessionChannel` 分支文件与 guards.js/FEATURE_MOUNTERS 追加项；`packages/full/cordis.patch.yml` **不写**（只提供块 9/10 行文本）；feature-list §3 只追加表尾、§3.1.1 提供行文本由 I 落盘；`packages/{agent-loop, attachments, compaction-events, mcp, profile-manager, session-branch, session-title, tool-skill}/`、既有 spec 制品（goal/requirements/design）与主仓库既有 `test/` 文件冻结不改。
 - 测试文件：`packages/session-channel-connection/test/*.test.mjs`、`packages/session-channel-gateway/test/*.test.mjs`、`test/*session-channel*.test.mjs`（B 门面）。
+
+---
+
+## 9. 维护修订批（2026-08-27，ANY 工作流，用户指示）
+
+> 依据：Stage 4 交付后的只读审查报告（安全偏差 V1–V6 / 功能缺口 F1–F7）。性质：实现回归已获批 RSC-R5/R6/R7/R8/R16/R10 的缺陷修复 + 机制细节回填；EARS 验收边界不变。详见 design.md Status 追注与 Decision Points 8。
+
+已执行（本批完成）：
+
+- [x] 9.1 随机 opaque id/generation：channel/subscription id 与 generation 改为 UUID 派生随机 token（原实现为时间戳+自增计数，可枚举）；generation 兼任占有凭证。（RSC-R5 AC1 执行机制）
+- [x] 9.2 占有凭证门控：`subscribe`/`fetchEvents`/`ack`/`resume`/`heartbeat`/`revoke` 必须出示匹配的 `channelGeneration`（ack/fetchEvents 另需 `subscriptionGeneration`），缺失/不匹配 typed 拒绝；subscribe 校验 session 与 channel 的 scope 绑定。
+- [x] 9.3 身份传播：open/resume 经 verifier 链得到的 canonical deviceId/scope 写入 channel 记录并用于 authorizer 输入与审计 `who`；resume 绑定 canonical deviceId 与 generation。
+- [x] 9.4 拉取式投递落地：新增 `fetchEvents({channelId, channelGeneration, subscriptionId, subscriptionGeneration, cursor?, maxEvents?})` 有界分批拉取（cap 200/次、不推进 watermark）；`subscribe` 响应内联初始重放批；`resume` 窗口内内联重放批；`deliveryMode: 'at-least-once-pull'` 显式声明。cursor/dedupe 回退值由引擎单调序列派生（弃用 Date.now()）。gateway 派发面新增 `sessionChannel/fetchEvents` 端点。
+- [x] 9.5 presence/heartbeat：新增 `heartbeat({channelId, channelGeneration})`，只顺延活跃 channel 的过期时限，revoked/expired 不复活；过期改为所有访问路径惰性执行。
+- [x] 9.6 限流键控修复：方法界按调用方分桶施加——无凭证调用共享 `anonymous` 桶（预认证消耗）、凭证无效计入 `rejected` 共享桶、通过验证按 canonical deviceId 分桶、本地 face 用 `local` 桶；单洪泛者不再锁定其他调用方。
+- [x] 9.7 脱敏 profile 注册：`sessionChannel.redaction.registerProfile({ id, allowlist }) -> disposer`；`subscribe.redactionProfile` 引用未注册 id fail-closed `invalid-input`；secret 字段名单始终优先剔除；capture 取并集、wire 按订阅 profile 过滤。
+- [x] 9.8 插件回调异常呈现收口：verifier/pairing/authorizer 抛错时远端固定通用拒绝文案，异常细节仅进 host 诊断日志（经 onError sink）。
+- [x] 9.9 capabilities bounded 校验（数组 ≤32 项、每项有界字符串），违反即 `invalid-input`。
+- [x] 9.10 spec 回填：goal/requirements/design 三制品追注维护状态；design 公开面补 `fetchEvents`/`heartbeat`/redaction 注册接口、Decision Points 补第 8 条、追溯表更新。
+
+显式遗留项（不在本批范围，防假装完成）：
+
+- [ ] 9.a 服务端主动连续推送（live push）：依赖 connection transport 切片闭环（client 半面 reconnect 后的通道绑定与下行泵）；当前交付为拉取式 + 内联重放批，消费方可轮询 `fetchEvents` 达成同等语义。
+- [ ] 9.b 设备级/profile 授权撤销的管理面：归注册链 owner 自建（design Data Models 修正稿）；门面不代持授权状态。
+- [ ] 9.c 远端浏览器消费的完整 client 形状（Frame schema 文档、dedupe 折叠 helper）：待 I 整合批次随 client 半面统一落盘。

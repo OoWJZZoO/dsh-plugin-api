@@ -134,6 +134,10 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     { name: 'context', isActive: true },
 
     { name: 'profile', isActive: true },
+
+    // The minimal registry stub in this fixture rejects the sessionChannel
+    // feature key, so the mounter degrades to a disabled entry.
+    { name: 'sessionChannel', isActive: false, reason: 'ctx.effect: failed to register cleanup for feature "sessionChannel": dsh-plugin-api feature "sessionChannel" is disabled: cannot mount unknown feature "sessionChannel"' },
   ])
   assert.equal(state.pluginApi.llm.isActive, true)
   assert.equal(typeof state.pluginApi.llm.request.transform, 'function')
@@ -197,7 +201,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-assert.equal(features.length, 28)
+assert.equal(features.length, 29)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })

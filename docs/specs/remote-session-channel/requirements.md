@@ -4,6 +4,8 @@
 
 SPEC1 Stage 0–2 修订稿：原确认稿按"纯 R 单行替换"方向（Stage 2 R no-go 后转入 U21）；2026-08-27 用户指示改为 **B+R 混合设计**——B 类门面 `pluginApi.sessionChannel` 承载认证抽象与 session 游标/重放机械层，`connection`/`gateway` 两个 R 替换包在各官方组件内复刻契约并增加 transport 与 RPC 派发切片。本批仅修订 goal/requirements/design 三份制品，不产出 Tasks；**修订稿已获用户确认（2026-08-27）**。
 
+ANY 维护修订（2026-08-27，用户指示）：Stage 4 只读审查发现实现未满足本文件多条 AC（RSC-R5 AC1/AC3、RSC-R6 AC1/AC2、RSC-R7 AC1、RSC-R16 的调用方维度）。本批修订**不改动任何 EARS 验收条款**——修复属于实现回归已获批边界；对 RSC-R16 的"declared per-method rate limit"补充澄清性读法（按方法声明的界施加于每个调用方桶，匿名调用方共享一个桶），该读法与原文字面一致，不构成边界变更。
+
 ## Introduction
 
 `remote-session-channel` 为跨设备 session 访问定义统一的 channel、授权、传输、游标、确认和恢复语义。实现路径为 **B+R 混合**：认证与 session 机械层由 B 类门面承载（可插拔认证抽象，不依赖任何官方行的 replacement 边界），transport 载波与 channel RPC 派发由两个 R 替换包承载（每包只归属唯一官方组件）。具体 row、runtime identity、client 半面与唯一 owner 在 Stage 2 源码审计中冻结。

@@ -55,12 +55,13 @@ test('healthy apply mounts diagnostics after remote and exposes a working projec
 
   const names = state.pluginApi.features.map((entry) => entry.name)
 assert.equal(names.indexOf('diagnostics'), names.indexOf('workspaceTransactions') + 1, 'diagnostics mounts directly after workspaceTransactions')
-  assert.equal(names[names.length - 6], 'diagnostics', 'diagnostics mounts directly before tasks')
-  assert.equal(names[names.length - 5], 'tasks', 'tasks stays directly before toolDiscovery')
-  assert.equal(names[names.length - 4], 'toolDiscovery', 'tool discovery mounts directly before skillsActivation')
-  assert.equal(names[names.length - 3], 'skillsActivation', 'skills activation mounts directly before context')
-  assert.equal(names[names.length - 2], 'context', 'context mounts directly before profile')
-  assert.equal(names[names.length - 1], 'profile', 'profile is the last FEATURE_MOUNTERS entry')
+  assert.equal(names[names.length - 7], 'diagnostics', 'diagnostics mounts directly before tasks')
+  assert.equal(names[names.length - 6], 'tasks', 'tasks stays directly before toolDiscovery')
+  assert.equal(names[names.length - 5], 'toolDiscovery', 'tool discovery mounts directly before skillsActivation')
+  assert.equal(names[names.length - 4], 'skillsActivation', 'skills activation mounts directly before context')
+  assert.equal(names[names.length - 3], 'context', 'context mounts directly before profile')
+  assert.equal(names[names.length - 2], 'profile', 'profile stays directly before sessionChannel')
+  assert.equal(names[names.length - 1], 'sessionChannel', 'sessionChannel is the last FEATURE_MOUNTERS entry')
 
 
   const diag = state.pluginApi.diagnostics

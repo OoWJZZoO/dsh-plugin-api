@@ -24,6 +24,8 @@ import {
 const CHANNEL_METHODS = Object.freeze([
   'sessionChannel/open',
   'sessionChannel/subscribe',
+  'sessionChannel/fetchEvents',
+  'sessionChannel/heartbeat',
   'sessionChannel/ack',
   'sessionChannel/resume',
   'sessionChannel/revoke',

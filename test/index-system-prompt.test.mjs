@@ -104,7 +104,7 @@ test('systemPrompt guard failure disables only systemPrompt and keeps the facade
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi.features
-assert.equal(features.length, 28)
+assert.equal(features.length, 29)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })

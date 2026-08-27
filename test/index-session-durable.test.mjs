@@ -140,6 +140,8 @@ test('apply mounts sessionDurable immediately after session without extending th
     'context',
 
     'profile',
+
+    'sessionChannel',
   ])
   assert.equal(feature(state, 'session').isActive, true)
   assert.equal(feature(state, 'sessionDurable').isActive, true)
