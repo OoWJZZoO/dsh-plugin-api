@@ -2,7 +2,7 @@
 
 DeepSeek Harness 社区插件 API 门面（主包 `@deepseek-ai/dsh-plugin-api-main`）：把官方 Cordis 扩展点稳定化，给第三方插件一个统一、受支持的 import/inject 入口。仓库路径为 `agent/dsh-plugin-api`（monorepo：主包 + `packages/` 下的辅助 replacement bundles + 全量聚合 bundle）。
 
-> 当前状态：host 能力 + replacement 通道已交付。已交付 replacement bundles：`compaction-events`（压缩事件词汇）、`session-title`（会话标题候选资格策略）、`mcp`（MCP server/tool catalog 与 lifecycle 只读投影）、`attachments`（attachment pipeline/投影）、`agent-loop`（model route policy/health/circuit）。M6 门面投影：`pluginApi.execution` / `usage` / `diagnostics` / `recovery`，以及 marker 门控的 `pluginApi.routePolicy` 与 client 侧 `pluginApi.client.lifecycle`。主包与全部辅助包统一 full version `0.1.0-rc.6-0.5`、`dsh.api: 0.5`；consumer 仍须按 feature availability 做 fail-safe 降级。
+> 当前状态：host 能力 + replacement 通道已交付。已交付 replacement bundles：`compaction-events`（压缩事件词汇）、`session-title`（会话标题候选资格策略）、`mcp`（MCP server/tool catalog 与 lifecycle 只读投影）、`attachments`（attachment pipeline/投影）、`agent-loop`（model route policy/health/circuit）、`session-branch`（会话分支与编辑）、`tool-skill`（skill activation 与动态目录）、`llm`（adapter decoration lifecycle）、`session-channel-connection`（连接层 transport/围栏/resume）、`session-channel-gateway`（channel RPC 派发/remote 命名空间）。M6 门面投影：`pluginApi.execution` / `diagnostics` / `recovery` / `coordination` / `workspaceTransactions` / `tasks` / `security` / `context` / `profile` / `sessionChannel`，以及 marker 门控的 `pluginApi.routePolicy` / `mcp` / `attachments` / `llm.adapters` / `session.branches` / `skills.activation` 与 client 侧 `pluginApi.client.lifecycle`。主包与全部辅助包统一 full version `0.1.0-rc.6-0.7`、`dsh.api: 0.7`；consumer 仍须按 feature availability 做 fail-safe 降级。
 
 ## 安装
 
@@ -27,13 +27,22 @@ dsh plugin --profile <profile> add @deepseek-ai/dsh-plugin-api-compaction-events
 # dsh plugin --profile <profile> add @deepseek-ai/dsh-plugin-api-attachments
 # 需要 model route policy（agent-loop）时：
 # dsh plugin --profile <profile> add @deepseek-ai/dsh-plugin-api-agent-loop
+# 需要会话分支与编辑时：
+# dsh plugin --profile <profile> add @deepseek-ai/dsh-plugin-api-session-branch
+# 需要 skill activation 与动态目录时：
+# dsh plugin --profile <profile> add @deepseek-ai/dsh-plugin-api-tool-skill
+# 需要 adapter decoration lifecycle 时：
+# dsh plugin --profile <profile> add @deepseek-ai/dsh-plugin-api-llm
+# 需要远程会话通道（连接层 + gateway）时：
+# dsh plugin --profile <profile> add @deepseek-ai/dsh-plugin-api-session-channel-connection
+# dsh plugin --profile <profile> add @deepseek-ai/dsh-plugin-api-session-channel-gateway
 ```
 
-`@deepseek-ai/dsh-plugin-api-full` 只做聚合：依赖主包与全部辅助包（含上述五个 replacement bundle），并拥有一份按确定顺序装配主包及所有替代行的 patch；它不新增任何 API，第三方 API 仍完全由主包的 `ctx.pluginApi` 提供。全量安装必须与选择性安装（main + 全部辅助包）装配出同一组主包行与替代行、同一行为；任一辅助包与主包版本不一致时，只停用该辅助包对应的 replacement 特性，不波及主包门面。
+`@deepseek-ai/dsh-plugin-api-full` 只做聚合：依赖主包与全部辅助包（含上述十个 replacement bundle），并拥有一份按确定顺序装配主包及所有替代行的 patch；它不新增任何 API，第三方 API 仍完全由主包的 `ctx.pluginApi` 提供。全量安装必须与选择性安装（main + 全部辅助包）装配出同一组主包行与替代行、同一行为；任一辅助包与主包版本不一致时，只停用该辅助包对应的 replacement 特性，不波及主包门面。
 
 ## 版本协商（主包与辅助包统一）
 
-- 每个包都使用全量唯一版本号 `<runtime全量版本>-<API协议大版本.迭代小版本>`（当前 `0.1.0-rc.6-0.5`），`dsh.api` 仅承载 API 协议版本（当前 `0.5`）。
+- 每个包都使用全量唯一版本号 `<runtime全量版本>-<API协议大版本.迭代小版本>`（当前 `0.1.0-rc.6-0.7`），`dsh.api` 仅承载 API 协议版本（当前 `0.7`）。
 - 主包要求辅助包版本一致（runtime 全量 identity 与 `dsh.api` 都相等）。不一致时**只停用该辅助包对应的 replacement 特性**（其替代行仍提供官方原接口，新增事件/策略 vocabulary 不发布），不波及主包门面或其他能力。
 - 第三方插件用 `ctx.pluginApi.assertCompatible('0.1', 'my-plugin')` 做方向② 协商；不满足时抛出 `PluginApiVersionError`，插件应捕获后自行 fail-safe。
 
@@ -103,7 +112,7 @@ pluginApi.routing.availability // { execution: boolean, session: boolean }
 
 当缺失语义天然属于某个官方 loader 行、且经 `docs/standards/capability-strategy.md` 批准登记时，可发布独立 replacement bundle：用官方 patch 机制（`- id: <官方行>; disabled: true` + `- insert:` 替代行）禁用该官方行，由替代行完整提供原行的 ctx 服务/事件契约并增加接口。replacement 绝不修改官方安装文件；它只替换 ctx 服务/事件面，**不替换** `@deepseek-ai/dsh-*` 包 import 面。
 
-**已交付示例：`@deepseek-ai/dsh-plugin-api-compaction-events`**（源码 `packages/compaction-events/`，row id `plugin-api-compaction-events`）fork 官方 `compaction-basic` 行，在完整保留 `ctx.compaction` 契约的前提下新增 `compaction/*` 事件词汇（`request/started/completed/failed/skipped`）；**`@deepseek-ai/dsh-plugin-api-session-title`**（源码 `packages/session-title/`，row id `plugin-api-session-title`）fork 官方 `session-title` 行并提供 `session-title/candidate` 候选资格策略瀑布；**`@deepseek-ai/dsh-plugin-api-mcp`**（源码 `packages/mcp/`，row id `plugin-api-mcp`）fork 官方 `mcp-client` 行，在忠实复刻官方 host ctx 契约之上提供只读 `ctx.mcpCatalog` catalog/lifecycle 投影；**`@deepseek-ai/dsh-plugin-api-attachments`**（源码 `packages/attachments/`，row id `plugin-api-attachments`）fork 官方 `attachment-local` 行，保留 `ctx.attachments` 官方契约并增加 `pipeline` / `projection`；**`@deepseek-ai/dsh-plugin-api-agent-loop`**（源码 `packages/agent-loop/`，row id `plugin-api-agent-loop`）fork 官方 `agent-loop` 行，保留 `ctx.agentLoop` 官方契约并增加有序 route 收敛与 attempt decision evidence。主包 `pluginApi.events.catalog` 以动态 replacement slice 呈现（仅替代行 active 且版本一致时列出）；R 类 marker-gated 投影（`pluginApi.mcp` / `attachments` / `routePolicy`）仅在对应替代行激活时出现。专项规格见 `docs/specs/` 下对应制品。
+**已交付示例：`@deepseek-ai/dsh-plugin-api-compaction-events`**（源码 `packages/compaction-events/`，row id `plugin-api-compaction-events`）fork 官方 `compaction-basic` 行，在完整保留 `ctx.compaction` 契约的前提下新增 `compaction/*` 事件词汇（`request/started/completed/failed/skipped`）；**`@deepseek-ai/dsh-plugin-api-session-title`**（源码 `packages/session-title/`，row id `plugin-api-session-title`）fork 官方 `session-title` 行并提供 `session-title/candidate` 候选资格策略瀑布；**`@deepseek-ai/dsh-plugin-api-mcp`**（源码 `packages/mcp/`，row id `plugin-api-mcp`）fork 官方 `mcp-client` 行，在忠实复刻官方 host ctx 契约之上提供只读 `ctx.mcpCatalog` catalog/lifecycle 投影；**`@deepseek-ai/dsh-plugin-api-attachments`**（源码 `packages/attachments/`，row id `plugin-api-attachments`）fork 官方 `attachment-local` 行，保留 `ctx.attachments` 官方契约并增加 `pipeline` / `projection`；**`@deepseek-ai/dsh-plugin-api-agent-loop`**（源码 `packages/agent-loop/`，row id `plugin-api-agent-loop`）fork 官方 `agent-loop` 行，保留 `ctx.agentLoop` 官方契约并增加有序 route 收敛与 attempt decision evidence；**`@deepseek-ai/dsh-plugin-api-session-branch`**（源码 `packages/session-branch/`，row id `plugin-api-session-branch`）fork 官方 `session` 行，增加 named branch 与 CAS edit plan；**`@deepseek-ai/dsh-plugin-api-tool-skill`**（源码 `packages/tool-skill/`，row id `plugin-api-tool-skill`）fork 官方 `tool-skill` 行，增加 per-session activation 与动态目录；**`@deepseek-ai/dsh-plugin-api-llm`**（源码 `packages/llm/`，row id `plugin-api-llm`）fork 官方 `llm` 行，增加 adapter decoration lifecycle；**`@deepseek-ai/dsh-plugin-api-session-channel-connection`**（源码 `packages/session-channel-connection/`，row id `plugin-api-session-channel-connection`）与 **`@deepseek-ai/dsh-plugin-api-session-channel-gateway`**（源码 `packages/session-channel-gateway/`，row id `plugin-api-session-channel-gateway`）协同提供远程会话通道。主包 `pluginApi.events.catalog` 以动态 replacement slice 呈现（仅替代行 active 且版本一致时列出）；R 类 marker-gated 投影（`pluginApi.mcp` / `attachments` / `routePolicy` / `llm.adapters` / `session.branches` / `skills.activation`）仅在对应替代行激活时出现。专项规格见 `docs/specs/` 下对应制品。
 
 ## 门面完整性
 

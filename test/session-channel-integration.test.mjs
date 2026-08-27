@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import { mountSessionChannelFeature } from '../lib/session-channel.js'
 import { runFeatureGuard } from '../lib/guards.js'
 import { CONTRACT_SYMBOL } from '../lib/session-channel-shared.js'
+import { createPluginApiService } from '../lib/plugin-api-service.js'
+import { createFeatureRegistry } from '../lib/feature-registry.js'
 
 function createMockSessionApi() {
   const listeners = new Map()
@@ -19,25 +21,22 @@ function createMockSessionApi() {
   }
 }
 
-function createMockService() {
-  return {
-    isActive: true,
-    session: createMockSessionApi(),
-    events: {
-      on(name, listener) { return () => {} },
-      once(name, listener) { return () => {} },
-    },
-    prepareFeature(name, api) {
-      return {
-        commit: () => { this[name] = api; return true },
-        rollback: () => { delete this[name]; return true },
-      }
-    },
-  }
+function createRealService() {
+  const registry = createFeatureRegistry()
+  const ServiceClass = createPluginApiService({ apiVersion: '0.7', registry, coreActive: true })
+  const service = new ServiceClass({
+    reflect: { provide() {} },
+    get() { return undefined },
+    on() { return () => {} },
+    effect() {},
+  })
+  // Pre-mount the session feature so the sessionChannel mounter can resolve it
+  service.mountFeature('session', createMockSessionApi())
+  return service
 }
 
 test('mount: sessionChannel mounts when session feature is available', () => {
-  const service = createMockService()
+  const service = createRealService()
   const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   assert.ok(result, 'mount must succeed when session feature is available')
   assert.equal(typeof result.disposer, 'function')
@@ -45,13 +44,13 @@ test('mount: sessionChannel mounts when session feature is available', () => {
 })
 
 test('mount: sessionChannel returns null when session feature is unavailable', () => {
-  const service = { isActive: true }
+  const service = { isActive: true, session: null, events: null }
   const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   assert.equal(result, null, 'mount must return null when session feature is unavailable')
 })
 
 test('mount: sessionChannel returns idempotent disposer on re-apply', () => {
-  const service = createMockService()
+  const service = createRealService()
   const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => true } })
   assert.ok(result)
   assert.equal(typeof result.disposer, 'function')
@@ -59,7 +58,7 @@ test('mount: sessionChannel returns idempotent disposer on re-apply', () => {
 })
 
 test('mount: disposer cleans up resources', () => {
-  const service = createMockService()
+  const service = createRealService()
   const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   assert.doesNotThrow(() => result.disposer(), 'disposer must not throw')
 })
@@ -84,7 +83,7 @@ test('guard: sessionChannel guard is deterministic', () => {
 })
 
 test('facade: pluginApi.sessionChannel has correct shape', async () => {
-  const service = createMockService()
+  const service = createRealService()
   const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   assert.ok(result, 'mount succeeded')
   assert.ok(result.prepared.commit(), 'prepared transaction commits')
@@ -110,7 +109,7 @@ test('facade: pluginApi.sessionChannel has correct shape', async () => {
 })
 
 test('facade: open fails closed without verifier (typed unavailable)', async () => {
-  const service = createMockService()
+  const service = createRealService()
   const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   result.prepared.commit()
   const api = service.sessionChannel
@@ -121,7 +120,7 @@ test('facade: open fails closed without verifier (typed unavailable)', async () 
 })
 
 test('facade: open succeeds after registering a verifier', async () => {
-  const service = createMockService()
+  const service = createRealService()
   const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   result.prepared.commit()
   const api = service.sessionChannel
@@ -133,7 +132,7 @@ test('facade: open succeeds after registering a verifier', async () => {
 })
 
 test('facade: projection observe returns a snapshot', async () => {
-  const service = createMockService()
+  const service = createRealService()
   const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   result.prepared.commit()
   const api = service.sessionChannel

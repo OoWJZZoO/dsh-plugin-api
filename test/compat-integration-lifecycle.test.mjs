@@ -77,7 +77,7 @@ test('combined host publishes additive immutable compat shapes once without synt
   assert.deepEqual(state.listeners.map(({ name }) => name).sort(), [
     'agent-loop/assembled-context', 'agent/error', 'agent/request', 'approval/request', 'compaction/completed', 'fs/edit-intent', 'fs/write-intent',
     'jobs/changed', 'jobs/done', 'llm/stream', 'llm/stream', 'llm/stream',
-    'session/created', 'session/disposed', 'session/event', 'session/event', 'session/event',
+    'session/created', 'session/disposed', 'session/event', 'session/event', 'session/event', 'session/event',
     'subagent/end', 'subagent/start', 'tools/execute', 'tools/post-execute', 'tools/pre-execute',
     'tools/pre-execute', 'tools/pre-execute', 'tools/pre-execute', 'tools/result', 'workflow/end', 'workflow/start',
   ])
@@ -153,5 +153,5 @@ test('durable retained references, repeated cleanup, and stale cleanup cannot af
   assert.equal(firstCleanup(), false)
   assert.equal(feature(state, 'sessionDurable').isActive, true)
   assert.equal(typeof state.pluginApi.llm.request.transform, 'function')
-  assert.equal(state.listeners.filter(({ name }) => name === 'session/event').length, 3)
+  assert.equal(state.listeners.filter(({ name }) => name === 'session/event').length, 4)
 })

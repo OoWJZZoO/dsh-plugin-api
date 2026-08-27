@@ -140,9 +140,8 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     // entry (the mounter never runs).
     { name: 'llmAdapters', isActive: false, reason: 'loader.entries: loader composition is unavailable; llmAdapters.composition: the adapter decoration replacement composition is not active' },
 
-    // The minimal registry stub in this fixture rejects the sessionChannel
-    // feature key, so the mounter degrades to a disabled entry.
-    { name: 'sessionChannel', isActive: false, reason: 'ctx.effect: failed to register cleanup for feature "sessionChannel": dsh-plugin-api feature "sessionChannel" is disabled: cannot mount unknown feature "sessionChannel"' },
+    // sessionChannel mounts through the real _assignFeature path now.
+    { name: 'sessionChannel', isActive: true },
   ])
   assert.equal(state.pluginApi.llm.isActive, true)
   assert.equal(typeof state.pluginApi.llm.request.transform, 'function')

@@ -485,9 +485,9 @@ client 半身交付 = 机械校验（语法/import 边界/`dsh.client` 清单一
 
 | 状态 | 缺陷 | 已确认事实 | 后续处理边界 |
 |---|---|---|---|
-| open | `pluginApi.sessionChannel` 未经真实 `PluginApiService` 出版 | `FEATURE_MOUNTERS` 与 `KNOWN_FEATURES` 均登记 `sessionChannel`，`mountSessionChannelFeature()` 也准备该 feature；但 `PluginApiService._assignFeature()`、`_readSlot()`、`_disabledSurfaceFor()` 与 `unmountFeature()` 均无对应分支，真实 prepared commit 最终以 `cannot mount unknown feature "sessionChannel"` 降级。 | 在独立维护批补齐出版、disabled/rollback/unmount 全生命周期；不在架构讨论中展开。 |
-| open | `sessionChannel` 测试替身掩盖真实出版缺陷并与总入口断言矛盾 | `test/session-channel-integration.test.mjs` 的假 service 以 `this[name] = api` 实现 `prepareFeature()`，未覆盖真实 `PluginApiService`；`test/index.test.mjs` 则把 unknown-feature 降级固化为预期结果。 | 后续改为真实 service 集成覆盖，并删除对缺陷结果的正向断言；不在架构讨论中展开。 |
-| open | 入门文档与包描述仍停留在旧协议/安装清单 | 当前主包为 `0.1.0-rc.6-0.7`、`dsh.api: 0.7`，但 `README.md` 的状态、版本协商、安装清单和 hello-world 仍主要描述 `0.5`/`0.1`，`package.json.description` 也仍以 `0.5` 描述当前包。 | 后续文档维护批统一从 manifest/现行 bundle 清单校正；不在架构讨论中展开。 |
+| resolved | `pluginApi.sessionChannel` 未经真实 `PluginApiService` 出版 | `FEATURE_MOUNTERS` 与 `KNOWN_FEATURES` 均登记 `sessionChannel`，`mountSessionChannelFeature()` 也准备该 feature；但 `PluginApiService._assignFeature()`、`_readSlot()`、`_disabledSurfaceFor()` 与 `unmountFeature()` 均无对应分支，真实 prepared commit 最终以 `cannot mount unknown feature "sessionChannel"` 降级。 | 已在独立维护批补齐出版、disabled/rollback/unmount 全生命周期（`lib/plugin-api-service.js` `_assignFeature` 新增 `sessionChannel` 分支，`_readSlot`/`_disabledSurfaceFor`/`unmountFeature` 同步增加，`createDisabledSessionChannelApi` 添加到构造器及 getter）。 |
+| resolved | `sessionChannel` 测试替身掩盖真实出版缺陷并与总入口断言矛盾 | `test/session-channel-integration.test.mjs` 的假 service 以 `this[name] = api` 实现 `prepareFeature()`，未覆盖真实 `PluginApiService`；`test/index.test.mjs` 则把 unknown-feature 降级固化为预期结果。 | 已改为真实 `PluginApiService` 集成覆盖，并删除对缺陷结果的正向断言。`test/index.test.mjs` 中 `sessionChannel` 条目从 `isActive: false, reason: '...cannot mount unknown feature...'` 更新为 `isActive: true`。 |
+| resolved | 入门文档与包描述仍停留在旧协议/安装清单 | 当前主包为 `0.1.0-rc.6-0.7`、`dsh.api: 0.7`，但 `README.md` 的状态、版本协商、安装清单和 hello-world 仍主要描述 `0.5`/`0.1`，`package.json.description` 也仍以 `0.5` 描述当前包。 | 已统一从 manifest/现行 bundle 清单校正：`README.md` 版本升至 `0.1.0-rc.6-0.7` / `dsh.api: 0.7`，安装清单补充六个新增 replacement bundle 注释，replacement 描述补充全部十个 bundle；`package.json.description` 更新为 `0.7`。 |
 
 ---
 
