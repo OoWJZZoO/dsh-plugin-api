@@ -1,0 +1,13 @@
+# dsh bundle patch for @deepseek-ai/dsh-plugin-api-llm.
+# Replacement boundary: we replace the `llm` loader row's ctx
+# service/event and plugin behavior face ONLY; the official
+# `@deepseek-ai/dsh-llm` package import face stays official.
+#
+# The replacement row preserves the full official LlmRuntime
+# service/event contract and adds a bounded adapter decoration
+# lifecycle. The patch must never add a second `llm` row.
+- id: llm
+  disabled: true
+- insert:
+    - id: plugin-api-llm
+      name: '@deepseek-ai/dsh-plugin-api-llm'
