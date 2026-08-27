@@ -479,6 +479,16 @@ client 半身交付 = 机械校验（语法/import 边界/`dsh.client` 清单一
 2. 先按 M4 的冻结 A 类直通范围建立独立 spec：核心 namespace 补面、host service catalog 和 client service/event catalog；`T11`、`RB1`、`SV19`、`SV20` 只做已交付状态核验，不重命名或重做。
 3. M4 完成后按 M5 清单补齐冻结后发现的 A 类接口；M6 候选表单经 Stage 0 逐个立项并回填本文后再进入 M-final：仅处理 C 类上游提案、迁移验收与治理收尾，不把 C 类事项混入 A 类直通实现。
 
+### 6.1 已知维护缺陷（架构评审排除项）
+
+> 本节只保存已确认的局部实现、测试与文档缺陷，供后续维护批处理；不改变 §7 的 delivered 历史登记，也不作为当前公开 API 架构与命名空间评审的输入。
+
+| 状态 | 缺陷 | 已确认事实 | 后续处理边界 |
+|---|---|---|---|
+| open | `pluginApi.sessionChannel` 未经真实 `PluginApiService` 出版 | `FEATURE_MOUNTERS` 与 `KNOWN_FEATURES` 均登记 `sessionChannel`，`mountSessionChannelFeature()` 也准备该 feature；但 `PluginApiService._assignFeature()`、`_readSlot()`、`_disabledSurfaceFor()` 与 `unmountFeature()` 均无对应分支，真实 prepared commit 最终以 `cannot mount unknown feature "sessionChannel"` 降级。 | 在独立维护批补齐出版、disabled/rollback/unmount 全生命周期；不在架构讨论中展开。 |
+| open | `sessionChannel` 测试替身掩盖真实出版缺陷并与总入口断言矛盾 | `test/session-channel-integration.test.mjs` 的假 service 以 `this[name] = api` 实现 `prepareFeature()`，未覆盖真实 `PluginApiService`；`test/index.test.mjs` 则把 unknown-feature 降级固化为预期结果。 | 后续改为真实 service 集成覆盖，并删除对缺陷结果的正向断言；不在架构讨论中展开。 |
+| open | 入门文档与包描述仍停留在旧协议/安装清单 | 当前主包为 `0.1.0-rc.6-0.7`、`dsh.api: 0.7`，但 `README.md` 的状态、版本协商、安装清单和 hello-world 仍主要描述 `0.5`/`0.1`，`package.json.description` 也仍以 `0.5` 描述当前包。 | 后续文档维护批统一从 manifest/现行 bundle 清单校正；不在架构讨论中展开。 |
+
 ---
 
 ## 7. 已交付 feature 登记（防过期）
