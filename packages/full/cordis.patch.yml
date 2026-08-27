@@ -7,7 +7,10 @@
 #   5. attachment replacement: disable the official loader row, insert ours;
 #   6. agent-loop replacement: disable the official loader row, insert ours;
 #   7. session-branch replacement: disable the official session row, insert ours;
-#   8. tool-skill replacement: disable the official skill loader row, insert ours.
+#   8. tool-skill replacement: disable the official skill loader row, insert ours;
+#   9. llm replacement: disable the official llm row, insert ours;
+#   10. connection replacement: disable the official connection row, insert ours;
+#   11. typert-gateway replacement: disable the official gateway row, insert ours.
 # The bundle adds no API of its own: third-party plugins keep using
 # ctx.pluginApi from @deepseek-ai/dsh-plugin-api-main.
 - insert:
@@ -59,3 +62,21 @@
 - insert:
     - id: plugin-api-tool-skill
       name: '@deepseek-ai/dsh-plugin-api-tool-skill'
+- id: llm
+  disabled: true
+- insert:
+    - id: plugin-api-llm
+      name: '@deepseek-ai/dsh-plugin-api-llm'
+- id: connection
+  disabled: true
+- insert:
+    - id: plugin-api-session-channel-connection
+      name: '@deepseek-ai/dsh-plugin-api-session-channel-connection'
+      inject: [webRuntime]
+      config:
+        trustedHosts: !!js ctx.webRuntime.trustedHosts
+- id: typert-gateway
+  disabled: true
+- insert:
+    - id: plugin-api-session-channel-gateway
+      name: '@deepseek-ai/dsh-plugin-api-session-channel-gateway'

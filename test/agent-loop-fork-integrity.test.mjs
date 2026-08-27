@@ -7,7 +7,11 @@ import { readFileSync } from 'node:fs'
 import * as official from '@deepseek-ai/dsh-agent-loop'
 import * as replacement from '../packages/agent-loop/lib/forked-loop.js'
 
-const require = createRequire(import.meta.url)
+// Anchor official-package resolution at the DSH install root: workspace
+// installs may expose same-named replacement packages through node_modules
+// symlinks, and this test's intent is to compare against the real official
+// files under /usr/lib.
+const require = createRequire('/usr/lib/node_modules/@deepseek-ai/dsh/package.json')
 const officialEntry = require.resolve('@deepseek-ai/dsh-agent-loop')
 const officialManifestPath = require.resolve('@deepseek-ai/dsh-agent-loop/package.json')
 const officialManifest = JSON.parse(readFileSync(officialManifestPath, 'utf8'))

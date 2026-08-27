@@ -36,9 +36,20 @@ const SESSION_OFFICIAL = { id: 'session', name: '@deepseek-ai/dsh-session', conf
 const SESSION_REPLACEMENT = { id: 'plugin-api-session-branch', name: '@deepseek-ai/dsh-plugin-api-session-branch' }
 const TOOL_SKILL_OFFICIAL = { id: 'tool-skill', name: '@deepseek-ai/dsh-tool-skill', config: {} }
 const TOOL_SKILL_REPLACEMENT = { id: 'plugin-api-tool-skill', name: '@deepseek-ai/dsh-plugin-api-tool-skill' }
+const LLM_OFFICIAL = { id: 'llm', name: '@deepseek-ai/dsh-llm', config: {} }
+const LLM_REPLACEMENT = { id: 'plugin-api-llm', name: '@deepseek-ai/dsh-plugin-api-llm' }
+const CONNECTION_OFFICIAL = { id: 'connection', name: '@deepseek-ai/dsh-client-connection', config: {} }
+const CONNECTION_REPLACEMENT = {
+  id: 'plugin-api-session-channel-connection',
+  name: '@deepseek-ai/dsh-plugin-api-session-channel-connection',
+  inject: ['webRuntime'],
+  config: { trustedHosts: { __jsExpr: 'ctx.webRuntime.trustedHosts' } },
+}
+const GATEWAY_OFFICIAL = { id: 'typert-gateway', name: '@deepseek-ai/dsh-api-gateway', config: {} }
+const GATEWAY_REPLACEMENT = { id: 'plugin-api-session-channel-gateway', name: '@deepseek-ai/dsh-plugin-api-session-channel-gateway' }
 
 const officialBaseLayer = [
-  { insert: [COMPACTION_OFFICIAL, TITLE_OFFICIAL, MCP_OFFICIAL, ATTACHMENT_OFFICIAL, AGENT_LOOP_OFFICIAL, SESSION_OFFICIAL, TOOL_SKILL_OFFICIAL] },
+  { insert: [COMPACTION_OFFICIAL, TITLE_OFFICIAL, MCP_OFFICIAL, ATTACHMENT_OFFICIAL, AGENT_LOOP_OFFICIAL, SESSION_OFFICIAL, TOOL_SKILL_OFFICIAL, LLM_OFFICIAL, CONNECTION_OFFICIAL, GATEWAY_OFFICIAL] },
 ]
 
 const fullLayer = [
@@ -57,6 +68,12 @@ const fullLayer = [
   { insert: [SESSION_REPLACEMENT] },
   { id: 'tool-skill', disabled: true },
   { insert: [TOOL_SKILL_REPLACEMENT] },
+  { id: 'llm', disabled: true },
+  { insert: [LLM_REPLACEMENT] },
+  { id: 'connection', disabled: true },
+  { insert: [CONNECTION_REPLACEMENT] },
+  { id: 'typert-gateway', disabled: true },
+  { insert: [GATEWAY_REPLACEMENT] },
 ]
 
 test('the full package follows the unified full-version and dsh.api policy', () => {
@@ -78,6 +95,9 @@ test('the full package depends on the main facade, the companion executor, and e
     '@deepseek-ai/dsh-plugin-api-session-branch': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-profile-manager': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-tool-skill': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-llm': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-session-channel-connection': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-session-channel-gateway': 'workspace:*',
   })
 })
 
@@ -92,6 +112,9 @@ test('the full patch assembles main and all replacement rows in deterministic or
     AGENT_LOOP_REPLACEMENT,
     SESSION_REPLACEMENT,
     TOOL_SKILL_REPLACEMENT,
+    LLM_REPLACEMENT,
+    CONNECTION_REPLACEMENT,
+    GATEWAY_REPLACEMENT,
   ])
 })
 
@@ -105,6 +128,9 @@ test('composing over an official base disables all official rows and appends the
     { ...AGENT_LOOP_OFFICIAL, disabled: true },
     { ...SESSION_OFFICIAL, disabled: true },
     { ...TOOL_SKILL_OFFICIAL, disabled: true },
+    { ...LLM_OFFICIAL, disabled: true },
+    { ...CONNECTION_OFFICIAL, disabled: true },
+    { ...GATEWAY_OFFICIAL, disabled: true },
     MAIN_ROW,
     COMPACTION_REPLACEMENT,
     TITLE_REPLACEMENT,
@@ -113,6 +139,9 @@ test('composing over an official base disables all official rows and appends the
     AGENT_LOOP_REPLACEMENT,
     SESSION_REPLACEMENT,
     TOOL_SKILL_REPLACEMENT,
+    LLM_REPLACEMENT,
+    CONNECTION_REPLACEMENT,
+    GATEWAY_REPLACEMENT,
   ])
 })
 
@@ -125,10 +154,13 @@ test('the full patch text keeps the deterministic order and adds no extra row', 
   const agentLoopIndex = patchFile.indexOf('id: plugin-api-agent-loop')
   const sessionBranchIndex = patchFile.indexOf('id: plugin-api-session-branch')
   const toolSkillIndex = patchFile.indexOf('id: plugin-api-tool-skill')
+  const llmIndex = patchFile.indexOf('id: plugin-api-llm')
+  const connectionIndex = patchFile.indexOf('id: plugin-api-session-channel-connection')
+  const gatewayIndex = patchFile.indexOf('id: plugin-api-session-channel-gateway')
   assert.ok(
-    mainIndex >= 0 && compactionIndex > mainIndex && titleIndex > compactionIndex && mcpIndex > titleIndex && attachmentIndex > mcpIndex && agentLoopIndex > attachmentIndex && sessionBranchIndex > agentLoopIndex && toolSkillIndex > sessionBranchIndex,
-    'rows must appear main → compaction → session-title → mcp → attachment → agent-loop → session-branch → tool-skill',
+    mainIndex >= 0 && compactionIndex > mainIndex && titleIndex > compactionIndex && mcpIndex > titleIndex && attachmentIndex > mcpIndex && agentLoopIndex > attachmentIndex && sessionBranchIndex > agentLoopIndex && toolSkillIndex > sessionBranchIndex && llmIndex > toolSkillIndex && connectionIndex > llmIndex && gatewayIndex > connectionIndex,
+    'rows must appear main → compaction → session-title → mcp → attachment → agent-loop → session-branch → tool-skill → llm → connection → typert-gateway',
   )
-  assert.equal((patchFile.match(/- insert:/g) ?? []).length, 8, 'exactly main + seven replacement inserts')
-  assert.equal((patchFile.match(/disabled: true/g) ?? []).length, 7, 'exactly seven official rows disabled')
+  assert.equal((patchFile.match(/- insert:/g) ?? []).length, 11, 'exactly main + ten replacement inserts')
+  assert.equal((patchFile.match(/disabled: true/g) ?? []).length, 10, 'exactly ten official rows disabled')
 })

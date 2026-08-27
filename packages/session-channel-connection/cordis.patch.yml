@@ -1,0 +1,15 @@
+# Bundle patch for @deepseek-ai/dsh-plugin-api-session-channel-connection.
+# Replacement boundary: we replace the `connection` loader row's ctx
+# service/event behavior ONLY; the `@deepseek-ai/dsh-client-connection`
+# import surface stays official (the replacement composes the official
+# package helpers and runs the official apply on identity mismatch).
+# The official `id: connection` row has `inject: [webRuntime]` and
+# `config: { trustedHosts }`; the replacement row matches that shape.
+- id: connection
+  disabled: true
+- insert:
+    - id: plugin-api-session-channel-connection
+      name: '@deepseek-ai/dsh-plugin-api-session-channel-connection'
+      inject: [webRuntime]
+      config:
+        trustedHosts: !!js ctx.webRuntime.trustedHosts

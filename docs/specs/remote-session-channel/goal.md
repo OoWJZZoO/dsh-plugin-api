@@ -8,6 +8,8 @@
 
 SPEC1 Stage 0–2 修订稿：本 feature 原按"纯 R 单行替换"方向确认，Stage 2 源码审计得出 R no-go（无官方 auth owner），结论为转 C 类上游提案（U21）。2026-08-27 用户指示改为 **B+R 混合设计**：认证抽象与 session 游标/重放机械层为 B 类门面，transport 载波与 channel RPC 派发为两个 R 替换包（`connection`、`gateway`），跨组件协同在 feature-list §3.1.1 报备登记。本批仅修订 goal/requirements/design 三份制品，不产出 Tasks；**修订稿已获用户确认（2026-08-27）**。
 
+ANY 维护修订（2026-08-27，用户指示）：Stage 4 交付后只读审查发现实现与已确认 Requirements 之间存在安全与完整性偏差（非 open 方法缺少凭证门控、channel id 可预测、已验证身份未传播、限流键控错误）以及投递链路缺失（事件从未投递给订阅者）。本次维护按用户指示执行文档修订与代码修复：**Goals 与验收边界不变**，修复目标是让交付物回归已获批 RSC-R5/R6/R7/R8/R16；机制细节（随机 opaque id、占有凭证门控、拉取式投递端点、按调用方分桶限流、redaction profile 注册）回填至 design.md/tasks.md 对应章节。
+
 ## Goal
 
 为第三方客户端、移动端和远程 Web UI 提供统一的跨设备 session channel 契约，覆盖配对、授权、连接能力协商、事件订阅、确认、心跳、断线恢复和撤销。

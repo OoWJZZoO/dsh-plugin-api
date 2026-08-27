@@ -35,6 +35,11 @@ const CONTROL_LABEL_EXEMPTIONS = new Set([
   `packages/session-title/lib/event-contract.js:136:${'C' + '1'}`,
   `packages/session-title/lib/forked-service.js:29:${'C' + '0'}`,
   `packages/session-title/lib/forked-service.js:29:${'C' + '1'}`,
+  // Re-exports: the official dsh-client-connection bundle is inlined verbatim
+  // (client half self-build rule) and its internal base64 fixture data contains
+  // non-governance identifiers that match the governance label pattern.
+  `packages/session-channel-connection/lib/client.js:6711:${'P' + 'D' + '1q'}`,
+  `packages/session-channel-connection/lib/client.js:6711:${'B' + '4b'}`,
 ])
 
 /** Fields that used to carry governance classification into the public catalog. */
