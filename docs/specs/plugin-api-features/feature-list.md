@@ -406,6 +406,7 @@ client 半身交付 = 机械校验（语法/import 边界/`dsh.client` 清单一
 | U17 | 官方 branch/edit 契约（branch identity、branch graph、edit plan/commit/rollback、restore 验证） | 官方 `dsh-session` 只有低层 `fork` 与 typed 拒绝码，无 branch identity、branch graph、编辑计划与回滚语义；R 类辅助包 `@deepseek-ai/dsh-plugin-api-session-branch`（运行时名 `plugin-api-session-branch`）为 current workaround。**退役条件**：官方提供等价 branch/edit API（branch 身份、graph 查询、CAS edit plan 与内容级 rollback/restore 验证）且消费者迁移后，本包 deprecate 并退役 | session-branch 服务（R 类） |
 | U18 | 官方 session 内动态 skill activation/exposure seam | 官方 `dsh-tool-skill` 的 `skill` 工具、`agent/pre-step` 注入与 `<available_skills>` 目录只查静态 `modelInvocable`/`userInvocable` 布尔，无 per-session/agent/turn 激活、TTL、停用与来源约束，且目录变化时全量重发 catalog；R 类辅助包 `@deepseek-ai/dsh-plugin-api-tool-skill`（运行时名 `plugin-api-tool-skill`，唯一 owner `@deepseek-ai/dsh-tool-skill`）为 current workaround；目录变化告知默认与官方对齐全量重发，注册政策后切换为英文最小更新信息。**退役条件**：官方 `tool-skill` 路径原生提供 activation-aware 目录过滤、加载门控、注入门控（或等价公开 seam）后，消费者迁移官方 seam，本 replacement deprecate/退役 | skill 暴露（R 类） |
 | U19 | 官方 assembled-context evidence seam | 官方 `dsh-agent-loop` 组装/发送点（`renderContextSections`/`renderPrompt`）无 provenance dispatch，无法证明哪些内容实际进入模型请求；R 类切片在既有 `@deepseek-ai/dsh-plugin-api-agent-loop`（唯一 owner `@deepseek-ai/dsh-agent-loop`）上新增 evidence-only 证据发射（identifiers/seq 范围，无 content、不改组装/策略决策）为 current workaround。**退役条件**：官方在组装/发送点提供等价 provenance 证据（或 agent loop 原生消费带 provenance 的 assembled context）后，消费者迁移官方 seam，本 R 切片能力退役、门面保留 | `context-provenance`（R 能力切片） |
+| U20 | 官方 LLM adapter decoration lifecycle | 官方 `dsh-llm` 无稳定 adapter-registration identity、provider generation、metadata-overlay 通道、确定性 decoration 排序、wrapper operation context、取消/撤销语义、identity-bound disposer 与 topology reconciliation 的公开 seam；R 类辅助包 `@deepseek-ai/dsh-plugin-api-llm`（运行时名 `plugin-api-llm`，唯一 owner `@deepseek-ai/dsh-llm`，替换官方 `llm` 行）为 current workaround。**退役条件**：官方 `dsh-llm` 原生提供等价 identity、链排序、metadata 分离、provider unload/reconcile、stale/取消守卫与 disposer 语义后，消费者迁移官方 seam，本 replacement deprecate/退役，replacement patch 移除并恢复官方 `llm` 行 | `adapter-decoration`（R 类） |
 
 ---
 
@@ -430,13 +431,37 @@ client 半身交付 = 机械校验（语法/import 边界/`dsh.client` 清单一
 | U11 `model-route-policy` route 收敛/health/circuit/fallback | 官方 `agent-loop` 无有序 route-policy/health/circuit/probe 公共 dispatch 点；replacement 在保留 `ctx.agentLoop` 官方契约的同时增加有序 route 收敛、不可变 attempt decision、health/circuit/probe evidence 与 fallback lineage | `agent-loop`（`dsh-agent-loop`） | 中–高 | 高 | **本次交付**（运行时名 `plugin-api-agent-loop`，owner `@deepseek-ai/dsh-agent-loop`；U11 保留为上游提案，replacement 为 current workaround，退役条件见 §3 U11 行） |
 | U16 `mcp-catalog-lifecycle` | 官方 `dsh-mcp-client` 无 dispatch 点；忠实 host 复刻之上增加只读 server/tool catalog 与 lifecycle 投影 | `mcp-client`（`dsh-mcp-client`，610 行，当前 host-only） | 中 | 高 | **本次交付**（运行时名 `plugin-api-mcp`，owner `@deepseek-ai/dsh-mcp-client`；U16 保留为上游提案，replacement 为 current workaround，退役条件见 §3 U16 行） |
 
+<!-- ============================================================
+  adapter-decoration 交付登记行文本（供批次整合 owner 落盘，非正式表行）
+  状态：本批次 A 线 Stage 4 交付；§3.1 表 L4 行现状「维持方案一（R 类候选，
+  暂不排期）」由 I 整合时替换为下方行文本。仅提供行文本，不在本文件内联替换。
+============================================================ -->
+| U20 `adapter-decoration` | 官方 `dsh-llm` 无 adapter decoration lifecycle dispatch 点；忠实 fork `llm` 行（1407 行，官方 `0.1.0-rc.6` 导出/成员面逐项保留）复刻完整 `ctx.llm` 契约之上增加 owner/id/generation 装饰注册、priority+epoch 确定性链序、metadata overlay 投影与有界非 durable 审计 | `llm`（`dsh-llm`，1407 行，当前 host-only） | 高 | 高 | **本次交付**（运行时名 `plugin-api-llm`，row id `plugin-api-llm`，唯一 owner `@deepseek-ai/dsh-llm`；U20 保留为上游提案，replacement 为 current workaround，退役条件见 §3 U20 行；主门面 feature key `llmAdapters`，`pluginApi.llm.adapters.decorate` 条件投影，host-only 六项 client 检查全否） |
+<!-- ============================================================ -->
+
 ### 3.1.1 跨组件 R 类报备登记
 
 > 一个 feature 由分属多个官方组件插件包的 replacement 包协同实现时在此登记。报备即生效，无需额外批准；每个 replacement 包仍须满足本文与 `capability-strategy.md` 的全部 R 硬性规则（R2 契约复刻、R4 boot 自检、R5 版本锁定、R6 组件 owner 冲突检测、R7 上游提案与退役条件）并只归属唯一官方组件。跨组件登记用于装配与退役核对，不改变各 replacement 包的独立 fail-safe 边界。
 
 | Feature | 协同 replacement 包（运行时名 / 官方组件 owner） | 报备日期 | 设计依据 |
-|---|---|---|---|
+|---|---|---|---|---|
 | 暂无 | — | — | — |
+
+---
+
+<!-- ============================================================
+  块 8+ 行文本（供 I 落盘 packages/full/cordis.patch.yml）
+  块 8（llm，adapter-decoration A 线）：disable llm + insert plugin-api-llm。
+  约定：注释遵守 full 聚合「确定性装配顺序」风格；行文本可被 I 原样使用。
+============================================================ -->
+<!--
+- id: llm
+  disabled: true
+- insert:
+    - id: plugin-api-llm
+      name: '@deepseek-ai/dsh-plugin-api-llm'
+-->
+<!-- ============================================================ -->
 
 ---
 
