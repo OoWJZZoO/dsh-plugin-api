@@ -2,7 +2,7 @@
 
 ## Status
 
-SPEC1 Stage 0–2 修订稿：原稿（2026-08-27 批量确认门获批）结论为 **R no-go**——源码审计显示无单一官方行拥有完整认证通道语义，feature 转入 C 类上游提案（U21）。2026-08-27 用户指示改为 **B+R 混合设计**：认证抽象与 session 游标/重放机械层由 B 类门面 `pluginApi.sessionChannel` 承载，transport 载波与 channel RPC 派发由 `connection`/`gateway` 两个 R 替换包承载，跨组件协同在 feature-list §3.1.1 报备登记。本批仅修订 goal/requirements/design 三份制品，不产出 Tasks；修订稿待用户确认。
+SPEC1 Stage 0–2 修订稿：原稿（2026-08-27 批量确认门获批）结论为 **R no-go**——源码审计显示无单一官方行拥有完整认证通道语义，feature 转入 C 类上游提案（U21）。2026-08-27 用户指示改为 **B+R 混合设计**：认证抽象与 session 游标/重放机械层由 B 类门面 `pluginApi.sessionChannel` 承载，transport 载波与 channel RPC 派发由 `connection`/`gateway` 两个 R 替换包承载，跨组件协同在 feature-list §3.1.1 报备登记。本批仅修订 goal/requirements/design 三份制品，不产出 Tasks；**修订稿已获用户确认（2026-08-27）**。
 
 本设计复用原稿的源码审计证据（owner 分布与 `trustedHosts` 语义不变），但把实现路径从"纯 R 单行替换"改为"B+R 混合"。原稿的 channel contract 从"只供上游讨论"改为"B 门面可实现的契约"；认证部分以可插拔抽象落实，不伪造 replacement 边界。
 
@@ -493,4 +493,4 @@ latest-wins channel/revocation generation、identity-bound subscription、取消
 4. **认证范式无关**：B 门面提供通用注册接口（verifier/pairing/authorizer），不耦合任何具体范式；强度由第三方注册链决定，门面文档如实声明。
 5. **少包重 B**：只做 `connection` + `gateway` 两个 R 包；session cursor/replay 由 B 门面 B 类实现，不新增 `session` R 包。
 6. **Client half 逐包归属**：两个 R 包各自按 R8 自带 client 半面；B 门面不复制 channel 状态，可选 client publication 经 gateway 包 channel remote 命名空间暴露。
-7. **Stage 2 boundary**：本修订稿待用户确认提交（本批不产出 Tasks）；确认即认可 B+R 方向、U21/U22/U23 新定位与 RSC-R5–RSC-R16 作为可验收需求。
+7. **Stage 2 boundary**：本修订稿已获用户确认（2026-08-27）；B+R 方向、U21/U22/U23 新定位与 RSC-R5–RSC-R16 作为可验收需求均已认可（本批不产出 Tasks）。

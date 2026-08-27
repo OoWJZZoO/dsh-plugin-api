@@ -2,7 +2,7 @@
 
 ## Status
 
-SPEC1 Stage 0–2 修订稿：原确认稿按"纯 R 单行替换"方向（Stage 2 R no-go 后转入 U21）；2026-08-27 用户指示改为 **B+R 混合设计**——B 类门面 `pluginApi.sessionChannel` 承载认证抽象与 session 游标/重放机械层，`connection`/`gateway` 两个 R 替换包在各官方组件内复刻契约并增加 transport 与 RPC 派发切片。本批仅修订 goal/requirements/design 三份制品，不产出 Tasks；修订稿待用户确认。
+SPEC1 Stage 0–2 修订稿：原确认稿按"纯 R 单行替换"方向（Stage 2 R no-go 后转入 U21）；2026-08-27 用户指示改为 **B+R 混合设计**——B 类门面 `pluginApi.sessionChannel` 承载认证抽象与 session 游标/重放机械层，`connection`/`gateway` 两个 R 替换包在各官方组件内复刻契约并增加 transport 与 RPC 派发切片。本批仅修订 goal/requirements/design 三份制品，不产出 Tasks；**修订稿已获用户确认（2026-08-27）**。
 
 ## Introduction
 

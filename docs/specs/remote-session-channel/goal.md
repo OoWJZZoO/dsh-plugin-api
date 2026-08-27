@@ -6,7 +6,7 @@
 
 ## Status
 
-SPEC1 Stage 0–2 修订稿：本 feature 原按"纯 R 单行替换"方向确认，Stage 2 源码审计得出 R no-go（无官方 auth owner），结论为转 C 类上游提案（U21）。2026-08-27 用户指示改为 **B+R 混合设计**：认证抽象与 session 游标/重放机械层为 B 类门面，transport 载波与 channel RPC 派发为两个 R 替换包（`connection`、`gateway`），跨组件协同在 feature-list §3.1.1 报备登记。本批仅修订 goal/requirements/design 三份制品，不产出 Tasks；修订稿待用户确认。
+SPEC1 Stage 0–2 修订稿：本 feature 原按"纯 R 单行替换"方向确认，Stage 2 源码审计得出 R no-go（无官方 auth owner），结论为转 C 类上游提案（U21）。2026-08-27 用户指示改为 **B+R 混合设计**：认证抽象与 session 游标/重放机械层为 B 类门面，transport 载波与 channel RPC 派发为两个 R 替换包（`connection`、`gateway`），跨组件协同在 feature-list §3.1.1 报备登记。本批仅修订 goal/requirements/design 三份制品，不产出 Tasks；**修订稿已获用户确认（2026-08-27）**。
 
 ## Goal
 
