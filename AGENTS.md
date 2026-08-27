@@ -157,7 +157,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 - **requirements**：每条需求是否 EARS、可测试、无实现细节；是否覆盖 host/client 两面；是否把“外部可实现 vs 必须上游”标注清楚。
 - **design**：是否说明每个钩子的引出机制（官方事件直接绑定 / 底层钩子模拟 / 标记为 upstream proposal）；是否有失败路径与 guard 策略。
 - **tasks**：是否与 requirements 一一对应；是否包含测试任务；是否有迁移验收任务（见第 5 节）。
-- **standards（强制，docs/standards 对照，职责分工）**：requirements/design 必须按领域对照 `docs/standards/` 六册全局规范（`README.md` 为索引：capability-strategy / api-shape / identity-and-lifecycle / durable-state-and-scope / visibility-and-redaction / concurrency-and-cancellation）并显式声明各分册的适用性与对齐结论（含“不适用”）。**负责写文档/实现的代理在开工（Stage 0–3 文档编写或 Stage 4 实现）前阅读适用分册一次即可，不需要再做交付自查**；按 standards 分册比对交付物的审查职责由**对抗性审查代理**承担（§3.2：SPEC3 的 Stage 3 与 Stage 4 审查均已将 `docs/standards/` 适用分册纳入核对范围）。分工边界：实现代理负责“实现前读懂一次”，审查代理负责“按 standard 比对交付”；该分工不豁免实现方的基本质量义务（§3.0 工程质量优先）。教训来源：`coordination-lease` 交付后审计发现 generation 全局单调序号、bridge 重启重铸 generation、审计时间缺失、面放置与 scope 词汇等偏差，均因实现与审查两侧都未对照 standards 所致。
+- **standards（强制，docs/standards 对照，职责分工）**：requirements/design 必须按领域对照 `docs/standards/` 六册全局规范（`README.md` 为索引：capability-strategy / api-shape / identity-and-lifecycle / durable-state-and-scope / visibility-and-redaction / concurrency-and-cancellation），M7 API 重构及其后续相关工作还必须对照 `docs/standards/refactor/` 的适用分册，并显式声明各分册的适用性与对齐结论（含“不适用”）。**负责写文档/实现的代理在开工（Stage 0–3 文档编写或 Stage 4 实现）前阅读适用分册一次即可，不需要再做交付自查**；按 standards 分册比对交付物的审查职责由**对抗性审查代理**承担（§3.2：SPEC3 的 Stage 3 与 Stage 4 审查均已将 `docs/standards/` 适用分册纳入核对范围）。分工边界：实现代理负责“实现前读懂一次”，审查代理负责“按 standard 比对交付”；该分工不豁免实现方的基本质量义务（§3.0 工程质量优先）。教训来源：`coordination-lease` 交付后审计发现 generation 全局单调序号、bridge 重启重铸 generation、审计时间缺失、面放置与 scope 词汇等偏差，均因实现与审查两侧都未对照 standards 所致。
 
 ### 3.5 并行开发工作流
 
@@ -168,7 +168,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 ## 4. 核心设计决策（已讨论，作为 constitution 输入）
 
 1. 插件作者的**推荐、受支持**入口是主门面包 `@deepseek-ai/dsh-plugin-api-main`（仓库/项目名仍为 `dsh-plugin-api`；运行时通过 `ctx.pluginApi` 服务解析符号），由门面提供稳定性、版本协商与 fail-safe 保障。第三方插件**可以**绕过门面直接与 `dsh-tools`/`dsh-llm` 等内部包交互，但该路径被明确标记为 **unsupported escape hatch**：无兼容承诺、官方内部变化时可能破坏、自担风险。门面不强制、不拦截这种直连，也不为其提供任何保障。
-2. 版本协商（**主包与全部辅助包统一适用**）：全量唯一版本号定义为 **`<runtime全量版本（含 rc 等后缀）>-<API协议大版本.迭代小版本>`**（如 `0.1.0-rc.6-0.5`，写入各自 `package.json.version`）：runtime 部分记录该包为哪个官方 runtime 构建，API 协议部分是门面的世代号（`package.json.dsh.api` 仅承载后者）。方向 ①（runtime↔包）要求 runtime 部分与实际安装的官方 runtime 完整 identity 精确相等，含 patch 与 prerelease；方向 ②（插件↔门面，`assertCompatible`）独立比较 API 协议 `major.minor`。任一方向不匹配时安全停用/显式报错。API 协议 minor 按**数字递增**：`0.9` 之后是 `0.10`，永不进位为 `1.0`；**协议 `1.0` 保留给正式发布**，标志着公开发布（此前均为纯本地开发期契约，见 §3.0.1）。**主包要求辅助包版本一致**：每个辅助包的 runtime 全量部分与 API 协议版本必须与主包完全一致（同一官方 runtime identity、同一 `dsh.api` `major.minor`），主包/装配层必须校验该一致性；任何辅助包与主包版本不一致时，**只停用该辅助包对应的 R 类特性**（其替代行与相关 catalog slice/feature 按 fail-safe 降级并显式报错），不得连带停用主包门面或其他无关特性，也绝不静默混跑。
+2. 版本协商（主包与全部辅助包统一适用）：全量唯一版本号采用 **`<A>-<B>.<C>.<D>`**（如 `0.1.0-rc.6-0.5.0`，写入各自 `package.json.version`）：`A` 是官方 runtime 的全量 identity（含 patch 与 prerelease），`B` 是 API 向后兼容保证世代，`C` 是同一 `B` 内的向后兼容增量，`D` 是包本地内部维护版本；`package.json.dsh.api` 只承载 `B.C`。runtime↔包要求 `A` 精确匹配；插件↔门面比较 `B.C`，同一 `B` 内实际 `C >= required C`，不同 `B` 不兼容。主包、全部辅助包和全量聚合包共享 `A.B.C`，`D` 可不同；主包与辅助包装配要求 `A.B.C` 三段完全一致，错配时只停用相关辅助/R 类能力，不连带停用主包或无关能力。`services.*` 因 runtime `A` 不可用时保留路径并报告 `disabled/unavailable`。wire protocol 与 durable record 的 revision/schema version 独立于 `B.C.D`。
 3. 事件 API 保留 Cordis 的 `ctx.on` + `emit/serial/parallel/waterfall`，只增加稳定类型、只读 payload 与 `priority`（lowest/low/normal/high/highest/monitor）。
 4. 需要优先“转译”的语义钩子：
    - 同步 `llm/request`（基于 `llm/stream` 重入，必须幂等收敛）
@@ -179,7 +179,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 5. client bundle 允许打包一份 zod，用于生成满足 `dsh-api-remotes` 校验的真 codec；其余依赖尽量保持 peerDependencies 以共享宿主实例。
 6. **能力上限策略（权威细则 `docs/standards/capability-strategy.md`）**：采用方案一（门面转译）+ 方案三（replacement bundle）双通道。B 类是否转 R 按组件边界、契约可保留性、风险和维护成本判断，不采用统一量化门槛；高风险或无法证明官方契约保留时维持门面转译；横切派发语义（priority / deepFreeze / fault containment）永不 R。方案二（修改运行时源码）不作为插件分发通道，仅 boot 胶水级 C 类（如 U4）可作部署/运维例外，且必须人工批准、可逆、升级重放、不受 `dsh.api` 版本承诺。任何新增 R 类都须走 spec coding Stage 0–4。
 7. **包策略与安装模式（constitution 级）**：
-   - 辅助包拥有与主包一致的版本协商规则（官方 runtime 全量版本 + `dsh.api` API 协议版本），且主包要求辅助包版本一致（见第 2 条）；辅助包与主包版本不一致时，仅停用该辅助包相关的 R 类特性，不波及主包门面与其他能力。
+   - 辅助包与主包遵循同一版本模型（官方 runtime 全量 identity `A` + `dsh.api` 的 `B.C` + 包本地维护号 `D`），且装配要求 `A.B.C` 完全一致（见第 2 条）；`D` 可按包独立变化。`A.B.C` 不一致时，仅停用该辅助包相关的 R 类特性，不波及主包门面与其他能力。
    - 只提供两种明确的安装模式：
      ```bash
      # 默认全量
@@ -191,7 +191,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
      ```
    - `@deepseek-ai/dsh-plugin-api-full` 是**全量聚合 bundle**：依赖主包与全部辅助包，并拥有一份按确定顺序装配主包及所有替代行的 patch。它不新增任何 API；第三方 API 仍完全由主包的 `ctx.pluginApi` 提供。全量安装必须与选择性安装（main + 全部辅助包）装配出同一组主包行与替代行、同一行为，不得双跑或改变替代行语义。
    - 选择性安装的最小组合是仅 `@deepseek-ai/dsh-plugin-api-main`；需要哪个官方组件的 R 类能力就显式添加该组件对应的 replacement 包。辅助包只作为替代行参与装配，不提供第三方直接 import 的 API 面；其替代行约束仍遵守 §2 第 7 条。
-   - 全量聚合 bundle 与全部辅助包同样遵循全量唯一版本号规则，且其 `version`/`dsh.api` 与主包完全一致；版本不一致时同样只停用相关 R 类特性。
+   - 全量聚合 bundle 与全部辅助包同样遵循 `<A>-<B>.<C>.<D>` 版本模型，并与主包共享 `A.B.C`；各包 `D` 可以不同。`A.B.C` 不一致时同样只停用相关 R 类特性。
 
 ## 5. 验收对象（spec 需求的现实来源）
 
@@ -220,7 +220,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
   ```
   运行时可见的名字必须使用中立、面向能力/语义的命名（例如包名 `@deepseek-ai/dsh-plugin-api-compaction-events`，行/feature 名只表达能力、不带 `r1` 之类治理后缀）；既有实现若违反本规则，必须在后续获批维护任务中清理，不得继续新增此类泄漏。
 - 临时验证脚本放 `temp/`，用完即删。
-- 治理文档 `docs/standards/capability-strategy.md` 是 A/B/C/R 分类与能力上限策略的权威来源；修订能力边界时，必须同步 AGENTS.md §2/§4 与 `docs/specs/plugin-api-features/feature-list.md`。全局 feature 设计规范统一收于 `docs/standards/`（见 §8），新增全局规范落盘该目录并在此登记。
+- 治理文档 `docs/standards/capability-strategy.md` 是 A/B/C/R 分类与能力上限策略的权威来源；修订能力边界时，必须同步 AGENTS.md §2/§4 与 `docs/specs/plugin-api-features/feature-list.md`。全局 feature 设计规范统一收于 `docs/standards/`（见 §8），新增全局规范落盘该目录并在此登记；M7 API 重构规范入口为 `docs/standards/refactor/README.md`。
 
 ## 7. 关键链接
 
@@ -249,4 +249,4 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 
 > 已交付 feature 的逐项登记表（范围、状态、Spec 目录、关键约束/设计）自 2026-08-21 起迁至 `docs/specs/plugin-api-features/feature-list.md` §7，本文不再保留登记表，避免双源漂移。规则不变：每个 feature 在 Stage 4 交付后，必须在该节追加条目并同步对应状态；公开 API 形状或里程碑状态变化时同步更新，防止文档过期过时（§3.0.1 中"登记为 delivered"即指该登记表）。
 > 本文件自身**不记录任何 feature 的进度/里程碑状态**（进度以各 feature spec 目录的状态行与 feature-list §7 登记为准）；修改本文件时不得引入"当前完成了xxx"式的进度表述。
-> 全局 feature 设计规范统一收于 `docs/standards/`（`README.md` 为索引；分册：`capability-strategy.md` 能力策略、`api-shape.md` API 形状、`identity-and-lifecycle.md` 身份与生命周期、`durable-state-and-scope.md` 持久状态与作用域、`visibility-and-redaction.md` 可见性、`concurrency-and-cancellation.md` 并发与取消；`stage0-common-questions.md` 已弃用作溯源）；新增全局规范落盘该目录并在 §6 登记。
+> 全局 feature 设计规范统一收于 `docs/standards/`（`README.md` 为索引；现行分册：`capability-strategy.md` 能力策略、`api-shape.md` API 形状、`identity-and-lifecycle.md` 身份与生命周期、`durable-state-and-scope.md` 持久状态与作用域、`visibility-and-redaction.md` 可见性、`concurrency-and-cancellation.md` 并发与取消；M7 API 重构规范入口为 `refactor/README.md`，其下按领域拆分；`stage0-common-questions.md` 已弃用作溯源）；新增全局规范落盘该目录并在 §6 登记。

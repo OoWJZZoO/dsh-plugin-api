@@ -16,6 +16,7 @@
 | `durable-state-and-scope.md` | 持久状态与作用域 | session / workspace / profile 分层、durable mutation 契约、operation 能力声明、失败分类与 retry 边界 |
 | `visibility-and-redaction.md` | 可见性 | 默认最小暴露、policy 显式提升、脱敏覆盖边界 |
 | `concurrency-and-cancellation.md` | 并发与取消 | AbortSignal 传播、终态裁决、stale result 隔离、disposer 所有权、并发策略与 retry 边界 |
+| `refactor/README.md` | M7 API 重构 | 公共 API 形状、组合与 authority、能力边界、版本协议、插件私有状态、多插件排序和 SDK 后续参考；按领域拆分为子分册 |
 | `stage0-common-questions.md` | 历史溯源（已弃用） | 溯源映射 + 历史问答快照，不再作为 feature 设计入口或权威 |
 
-现行权威分册为前六项；`stage0-common-questions.md` 仅供追溯历史决议。
+现行权威分册为前六项及 M7 重构分册；`stage0-common-questions.md` 仅供追溯历史决议。

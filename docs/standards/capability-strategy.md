@@ -4,7 +4,7 @@
 > 本文与 `AGENTS.md` §2 / §4 共同构成 A/B/C/R 分类与能力上限决策的权威依据；两者冲突时以 `AGENTS.md` 铁律为准。
 > 配套登记：`docs/specs/plugin-api-features/feature-list.md`。
 >
-> **维护修订（包政策推行）**：R 类辅助包与主包采用同一全量唯一版本规则（`<runtime全量版本>-<API协议大版本.迭代小版本>`，`dsh.api` 仅承载协议版本），主包校验辅助包版本一致；不一致时**只停用该辅助包对应的 R 类特性**（替代行仍提供官方原接口，新增事件/策略面不发布），不得停用主包或其他能力。R 类运行时命名不得携带治理后缀（如 `r1`、分类字母、需求编号）：已交付辅助包现行名为 `packages/compaction-events/`（row `plugin-api-compaction-events`）、`packages/session-title/`（row `plugin-api-session-title`）与 `packages/agent-loop/`（row `plugin-api-agent-loop`）。安装模式为全量聚合 bundle `@deepseek-ai/dsh-plugin-api-full`（确定性 patch 装配）或选择性安装主包 + 所需辅助包。
+> **维护修订（包政策推行）**：R 类辅助包、主包与全量聚合包采用 `<A>-<B>.<C>.<D>` 版本模型：共享 runtime 全量 identity `A` 与 API 合同 `B.C`，包本地维护号 `D` 可以不同；`dsh.api` 仅承载 `B.C`。主包校验辅助包 `A.B.C` 完全一致；不一致时**只停用该辅助包对应的 R 类特性**（替代行仍提供官方原接口，新增事件/策略面不发布），不得停用主包或其他能力。完整版本与协议规则见 `refactor/versioning-and-protocols.md`。R 类运行时命名不得携带治理后缀（如 `r1`、分类字母、需求编号）：已交付辅助包现行名为 `packages/compaction-events/`（row `plugin-api-compaction-events`）、`packages/session-title/`（row `plugin-api-session-title`）与 `packages/agent-loop/`（row `plugin-api-agent-loop`）。安装模式为全量聚合 bundle `@deepseek-ai/dsh-plugin-api-full`（确定性 patch 装配）或选择性安装主包 + 所需辅助包。
 
 ---
 
@@ -139,7 +139,7 @@ R9. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 > 综合 Stage 0 共同问题 NO.6（2026-08-21 确认）。
 
 - **每个官方组件插件包最多一个独立 replacement 包**：replacement 包命名为 `@deepseek-ai/dsh-plugin-api-<domain>`（如 MCP → `@deepseek-ai/dsh-plugin-api-mcp`、session branch → `@deepseek-ai/dsh-plugin-api-session-branch`、attachments → `@deepseek-ai/dsh-plugin-api-attachments`、skill exposure → `@deepseek-ai/dsh-plugin-api-tool-skill`）；一个包可替换该官方组件内多个行并承载多个相关 feature，也可作为跨组件 feature 的组成部分（该 feature 须在 feature-list.md §3.1 报备登记）；不得为同一组件引入第二个竞争 replacement 包。
-- 沿用现有 full/selection install 模式与统一版本协商（见文首"维护修订"条）；辅助包与主包版本不一致时只停用该 R 特性。
+- 沿用现有 full/selection install 模式与 `<A>-<B>.<C>.<D>` 版本模型（见文首“维护修订”条）；辅助包与主包 `A.B.C` 不一致时只停用该 R 特性，包本地 `D` 可以不同。
 
 ## 10. 客户端半面判定（host-only 或完整 client 复制）
 
