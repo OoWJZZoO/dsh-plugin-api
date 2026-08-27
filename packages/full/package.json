@@ -22,7 +22,10 @@
     "@deepseek-ai/dsh-plugin-api-agent-loop": "workspace:*",
     "@deepseek-ai/dsh-plugin-api-session-branch": "workspace:*",
     "@deepseek-ai/dsh-plugin-api-profile-manager": "workspace:*",
-    "@deepseek-ai/dsh-plugin-api-tool-skill": "workspace:*"
+    "@deepseek-ai/dsh-plugin-api-tool-skill": "workspace:*",
+    "@deepseek-ai/dsh-plugin-api-llm": "workspace:*",
+    "@deepseek-ai/dsh-plugin-api-session-channel-connection": "workspace:*",
+    "@deepseek-ai/dsh-plugin-api-session-channel-gateway": "workspace:*"
   },
   "devDependencies": {
     "@deepseek-ai/dsh-app-boot": "^0.1.0-rc.6"

@@ -6,6 +6,8 @@ SPEC1 Stage 0–2 修订稿：原稿（2026-08-27 批量确认门获批）结论
 
 本设计复用原稿的源码审计证据（owner 分布与 `trustedHosts` 语义不变），但把实现路径从"纯 R 单行替换"改为"B+R 混合"。原稿的 channel contract 从"只供上游讨论"改为"B 门面可实现的契约"；认证部分以可插拔抽象落实，不伪造 replacement 边界。
 
+ANY 维护修订（2026-08-27，用户指示）：Stage 4 审查发现交付物与本设计的偏差已在 goal.md Status 追注列明；本批把修复所需的机制细节回填进本设计对应章节（§B Facade 公开面的 `fetchEvents`/`heartbeat`、占有凭证门控模型、拉取式投递模式、redaction profile 注册、按调用方分桶限流），并修正一处与 ownership 边界矛盾的表述（B 门面 `revoke` 的 scope 是 channel 代次围栏，profile 授权记录撤销由注册链执行——DeviceAuthorization 记录本来就归注册链 owner 持有，见 Data Models 一节，此前"撤销为 profile 级并递增 authorization generation"的句子归注册链职责）。已获批验收边界不变。**遗留项（显式登记，不假装完成）**：(a) 服务端主动连续推送（live push）依赖 connection transport 切片闭环，本轮交付为拉取式消费 + subscribe/resume 内联重放批；(b) 设备级撤销仍完全由注册链自身管理面承担。
+
 ## Overview
 
 `remote-session-channel` 的目标是跨设备 pairing、授权、transport negotiation、session subscription、ack、heartbeat、断线恢复、replay 和 revoke 的统一契约。源码审计（沿用原稿，安装版本 `0.1.0-rc.6`）显示当前运行时没有一个官方组件 row 同时拥有这些语义：
@@ -121,6 +123,22 @@ sessionChannel.revoke({
   reason
 }, signal?)
   -> Revoked | typed denied/error result
+
+sessionChannel.fetchEvents({
+  channelId,
+  channelGeneration,
+  subscriptionId,
+  subscriptionGeneration,
+  cursor?,
+  maxEvents?
+}, signal?)
+  -> { frames, deliveryMode } | typed resync-required/stale/denied/error result
+
+sessionChannel.heartbeat({
+  channelId,
+  channelGeneration
+}, signal?)
+  -> { lastHeartbeatAt, expiresAt } | typed stale/expired/denied/error result
 ```
 
 只读投影/事件面（read-only projection/event face）：
@@ -161,22 +179,27 @@ sessionChannel.auth.registerAuthorizer({
 - **组合策略（默认 fail-closed AND）**：多个 verifier/authorizer 注册时，默认全部通过（AND）才放行；同一 `id` 重复注册替换旧链；按注册顺序调用。希望 OR/自定义组合的第三方可注册单个 verifier 在内部实现自己的组合，门面不限制范式。
 - **配对→验证交接契约**：`approve(pendingToken)` 返回的 `deviceCredential` 是 `verify(deviceCredential, context)` 的输入；`pendingToken` 是配对提供方内部不透明值，门面不解释其内容。配对状态迁移由注册链 owner 完成，门面只接收最终验证结果。
 - **信任模型声明**：门面文档必须写明——认证强度由第三方注册链决定，门面不提供内置安全保证；`trustedHosts`/`authority: trusted-host`/任何 carrier 信任都不是设备认证。
+- **占有凭证门控（possession fencing，门面强制）**：在注册链之外，门面对每个 channel 操作强制执行"持有即凭证"检查——`open` 成功返回的 `channelGeneration` 是 122-bit 随机 opaque token，同时充当该次 open 调用方的占有凭证；`subscribe`/`fetchEvents`/`ack`/`resume`/`heartbeat`/`revoke` 必须出示与记录一致的 `channelGeneration`（ack/fetchEvents 还须出示 `subscriptionGeneration`），不匹配或缺失一律 typed 拒绝。这是对 RSC-R5 AC1"validate device authorization, token binding, requested capabilities and channel scope"的执行机制：只有 `open` 响应的接收者才获得该 channel 的操作资格。channel/subscription id 同样使用随机 opaque token（不可枚举），仅作路由定位、不作认证。
+- **身份传播**：verifier 链在 `open`/`resume` 返回的 canonical `deviceId` 与 `scope` 必须写入 channel 记录并用于后续 authorizer 输入与审计 `who`；调用方自声明的 device 字符串只是 label，不得作为已验证身份。
+- **authorizer 无注册时逐方法授权缺省**：verifier 链仍然硬性 fail-closed；作者化链未注册时，对已通过占有门控的方法调用隐式允许——这与信任模型声明一致（强度由注册方决定），信任模型文档必须如实写明这一点。
+- **插件回调失败呈现**：verifier/pairing/authorizer 回调抛错时，门面向远端固定返回通用拒绝文案，异常细节只进 host 端诊断日志，不上 wire。
 - 门面可用官方 `approval`、`userQuestions`、`credentials`、`settings` 作为注册方的构建材料，但不强制；注册方也可完全自建。
 
 ### Session 游标/重放机械层（B 类实现）
 
 门面基于官方 session 事件流（`pluginApi.session` 生命周期事件、`sessionEventTypes`、官方 `sessions` 服务）实现 channel 级消费语义：
 
-- **游标与订阅**：`subscribe` 从请求 cursor 之后开始投递；`ack` 在同一 channel generation 内单调推进 watermark；游标越界/超出保留窗口返回 `resync-required`，不伪造缺失事件。
-- **投递与去重**：at-least-once；每个事件带稳定 event id + dedupe key；重连后重复帧由客户端按 key 折叠。
-- **重放窗口**：有界保留窗口；`resume` 验证 token/device/session/generation 后在窗口内从 cursor 重放；窗口外返回有界、已脱敏的 snapshot resync。
-- **presence/heartbeat**：只更新本 channel generation，不复活已撤销/过期通道。
+- **投递模式（已交付 = 拉取式）**：`subscribe` 从请求 cursor 之后开始投递——响应内联携带有界初始重放批（`frames`，cap 200，含 eventId/dedupeKey/cursor/kind/payload/emittedAt）；持续的逐帧消费经 `fetchEvents` 以调用方游标分批拉取（每次有界、不推进 watermark；watermark 只由 `ack` 单调推进），投递模式显式声明为 `at-least-once-pull`。服务端主动连续推送依赖 connection transport 切片闭环，作为遗留项登记在 Status 追注中，本设计不为它虚构已交付状态。
+- **游标与订阅**：cursor 由引擎单调派发（per-engine 严格递增序列），`subscribe` 校验请求 cursor 在保留窗口内；`ack` 在同一 channel generation 内单调推进 watermark；游标越界/超出保留窗口返回 `resync-required`，不伪造缺失事件。订阅被强制绑定到其 channel 的 session scope（传入不一致 session 是 typed `session-denied`）。
+- **投递与去重**：at-least-once；每个事件带稳定 event id + dedupe key（服务端回退 id 也由单调序列保证唯一，不使用时钟值），重复帧由客户端按 key 折叠。
+- **重放窗口**：有界保留窗口；`resume` 验证 token/device/session/generation 后在窗口内从 cursor 重放（响应内联 frames 批）；窗口外返回有界、已脱敏的 snapshot resync。
+- **presence/heartbeat**：`heartbeat({channelId, channelGeneration})` 只更新本 channel generation 的活跃时间并顺延过期时限，绝不复活 revoked/expired 通道；通道过期惰性执行于所有访问路径（无后台清扫器）。
 
 ### 代次围栏、脱敏、审计、取消
 
 - **代次围栏**：channel/revocation generation 采用 latest-wins；旧代 subscribe/ack/heartbeat/replay/transport 回调失去提交资格。连接层代次围栏由 connection R 包提供（见下），channel 级围栏由门面维护。
-- **脱敏**：host 序列化前按 session scope、per-method authorization 与受众 redaction profile 脱敏；redaction 失败 fail-closed 省略字段；token/凭证/未脱敏日志/无关 session 数据永不上 wire。
-- **审计**：channel 生命周期/授权变更 append bounded audit（who/what/when/generation），不含原始 token 与 session 内容。
+- **脱敏**：host 序列化前按 session scope、per-method authorization 与受众 redaction profile 脱敏；redaction 失败 fail-closed 省略字段；token/凭证/未脱敏日志/无关 session 数据永不上 wire。**受众 profile 注册（已交付机制）**：门面提供 `sessionChannel.redaction.registerProfile({ id, allowlist })` -> disposer，第三方注册具名 allowlist（叠加在缺省安全字段集之上、secret 字段名单始终优先剔除）；`subscribe.redactionProfile` 引用未注册 id 时 fail-closed 返回 `invalid-input`，绝不回退到更宽的暴露。capture 侧以"缺省集 + 全部已注册 profile 的并集（剔除 secret）"保留有界重放材料，wire 侧按订阅声明的单一 profile 过滤——未知/失败一律省略。
+- **审计**：channel 生命周期/授权变更 append bounded audit（who/what/when/generation），不含原始 token 与 session 内容；`who` 使用验证后的 canonical deviceId（无法验证时 `anonymous`），不采信调用方自声明 label。
 - **取消**：`AbortSignal`/revoke 取消传播到订阅、当前 transport 与 replay；已提交终态不被重写；disposer 幂等且只撤销本 channel identity 拥有的资源。
 - **终态词汇**：`success|error|aborted|denied|superseded`；timeout 归 `error`+reason；cursor gap 是 typed `resync-required`，不是成功空重放。
 
@@ -263,7 +286,7 @@ DeviceAuthorization {
 }
 ```
 
-配对材料与 resume 凭证材料是认证注册链的私有安全值；记录只存该 owner 所需的最小 hash/reference，原始配对码、bearer token、私钥不得进入 session 事件、诊断或 browser projection。撤销为 profile 级并递增 authorization generation，旧 channel 无法重获资格。
+配对材料与 resume 凭证材料是认证注册链的私有安全值；记录只存该 owner 所需的最小 hash/reference，原始配对码、bearer token、私钥不得进入 session 事件、诊断或 browser projection。授权记录的（profile/设备级）撤销由注册链 owner 在其自身管理面执行并递增 authorization generation，旧 channel 无法重获资格；B 门面的 `revoke` 只承担 channel 代次围栏（见 Decision Points 8），不代持注册链的授权状态。
 
 ### Session-scoped channel and replay records（B 门面）
 
@@ -336,6 +359,8 @@ channel 操作使用共享终态词汇 `success|error|aborted|denied|superseded`
 ### 逐方法限流
 
 B 门面对每个 channel 方法声明有界 rate limit：调用方超限时返回 bounded typed `rate-limited`，不创建 channel、不推进 cursor；未显式声明的方法使用文档化默认界，绝不 fail-open（RSC-R16）。
+
+**键控（调用方分桶，已交付机制）**：声明的方法界施加于"每个调用方桶"，而不是全局共享窗口——单个洪泛者不得耗尽其他调用方的预算（RSC-R16 用户故事的直接要求）。分桶规则：无任何凭证的调用共享一个 `anonymous` 桶（预认证，保护注册链回调不被无成本刷探）；出示凭证但未通过验证的调用计入 `rejected` 共享桶；通过验证的调用按 canonical deviceId 分桶；`observe` 等本地 face 计入 `local` 桶。桶数量有界（每方法 ≤ 已验证设备数 + 固定常量），无内存放大面。
 
 ### R 包激活 gate
 
@@ -462,18 +487,18 @@ latest-wins channel/revocation generation、identity-bound subscription、取消
 | RSC-R2 | R Slices (per-package fidelity) | Each R package preserves its own official row contract; B 门面 inert 时 R 包不发布 channel 能力；fidelity 不可证明时对应切片暂停并登记为 C 类 |
 | RSC-R3 | R 包激活 gate / B 门面激活 gate | Boot 自检 + fail-safe 正常 return；无竞争 owner；门面缺钩子则 inert |
 | RSC-R4 | Assembly & registration; R4/R5 | 逐包版本/owner 锁定；跨包版本一致，不一致只停用本 feature R 特性 |
-| RSC-R5 | B Facade: auth abstraction + channel lifecycle | 注册链验证后才建 channel；无 verifier fail-closed `unavailable`；revoke/expire 使旧 generation 失效；不固定范式 |
-| RSC-R6 | B Facade: session cursor/replay mechanics | subscribe/ack/dedupe/resync-required 语义按官方 session 事件流实现 |
-| RSC-R7 | B Facade + connection R slice | resume 验证链 + 窗口内重放；窗口外 bounded snapshot；transport 只协商已通告且已授权 |
-| RSC-R8 | B Facade: redaction/audit + client-half §4 | 序列化前脱敏；fail-closed；bounded audit（who/what/when/generation）；client 半面 host 脱敏、client 只做形状再校验（RSC-R8 AC4） |
+| RSC-R5 | B Facade: auth abstraction + channel lifecycle | 注册链验证后才建 channel；无 verifier fail-closed `unavailable`；revoke/expire 使旧 generation 失效；不固定范式。维护批：验证后 canonical 身份写入记录、占有凭证门控（generation 配对）、capabilities bounded 校验 |
+| RSC-R6 | B Facade: session cursor/replay mechanics | subscribe/ack/dedupe/resync-required 语义按官方 session 事件流实现。维护批：投递经拉取式 `fetchEvents` + subscribe/resume 内联 frames 批落地，deliveryMode 显式 `at-least-once-pull` |
+| RSC-R7 | B Facade + connection R slice | resume 验证链 + 窗口内重放；窗口外 bounded snapshot；transport 只协商已通告且已授权。维护批：resume 绑定 canonical deviceId 与 generation 占有校验 |
+| RSC-R8 | B Facade: redaction/audit + client-half §4 | 序列化前脱敏；fail-closed；bounded audit（who/what/when/generation）；client 半面 host 脱敏、client 只做形状再校验（RSC-R8 AC4）。维护批：redaction profile 注册接口 + audit who 采用验证身份 |
 | RSC-R9 | Error handling: concurrency/cancellation + timeout + child isolation | latest-wins generation、取消传播、幂等 disposer、stale guards；timeout 归 `error`+reason（AC5）；子订阅失败不撤销父设备（AC6） |
-| RSC-R10 | Data models / Retry and replay | 单 scope 分档、有界重试、能力声明 |
+| RSC-R10 | Data models / Retry and replay | 单 scope 分档、有界重试、能力声明。维护批：capabilities bounded 校验、过期惰性执行于访问路径 |
 | RSC-R11 | Client-half audit | 两个 R 包各自 R8 client 半面；B 门面不复制 channel 状态 |
 | RSC-R12 | Upstream proposals (U21/U22/U23) | 上游等价契约出现后按 per-package 退役条件（U21 → B 门面退役，U22 → connection R 退役，U23 → gateway R 退役） |
 | RSC-R13 | Architecture / R Slices / B+R boundary | 一个 B 门面 + 两个 R 包；无 owner 语义进 B 可插拔抽象，有 owner 语义进对应 R 包 |
 | RSC-R14 | Assembly & registration + shared vocabulary | 共享 channel identity/generation 词汇与 feature-list §3.1.1 登记；缺失 slice 报 `unavailable`；共享终态词汇（AC4） |
-| RSC-R15 | B Facade: auth abstraction + trust model + composition | `trustedHosts`/carrier 不作认证；无注册链 fail-closed；门面不宣称内置安全保证；接口范式无关；fail-closed AND 组合策略（AC5）；认证失败不泄露存在性（AC6） |
-| RSC-R16 | Error handling: typed failures / B 门面 rate limiting | Per-method 有界限流；超限返回 `rate-limited`，不建 channel/不推进 cursor；未声明时用文档化默认界且不 fail-open |
+| RSC-R15 | B Facade: auth abstraction + trust model + composition | `trustedHosts`/carrier 不作认证；无注册链 fail-closed；门面不宣称内置安全保证；接口范式无关；fail-closed AND 组合策略（AC5）；认证失败不泄露存在性（AC6）。维护批：插件回调异常细节不上 wire，固定通用拒绝文案 |
+| RSC-R16 | Error handling: typed failures / B 门面 rate limiting | Per-method 有界限流；超限返回 `rate-limited`，不建 channel/不推进 cursor；未声明时用文档化默认界且不 fail-open。维护批：方法界按调用方分桶施加（anonymous/rejected 共享桶 + 已验证设备独立桶），单个洪泛者不得锁定其他调用方 |
 
 ## Upstream Proposal and Retirement
 
@@ -494,3 +519,4 @@ latest-wins channel/revocation generation、identity-bound subscription、取消
 5. **少包重 B**：只做 `connection` + `gateway` 两个 R 包；session cursor/replay 由 B 门面 B 类实现，不新增 `session` R 包。
 6. **Client half 逐包归属**：两个 R 包各自按 R8 自带 client 半面；B 门面不复制 channel 状态，可选 client publication 经 gateway 包 channel remote 命名空间暴露。
 7. **Stage 2 boundary**：本修订稿已获用户确认（2026-08-27）；B+R 方向、U21/U22/U23 新定位与 RSC-R5–RSC-R16 作为可验收需求均已认可（本批不产出 Tasks）。
+8. **维护批决策（2026-08-27，ANY，用户指示）**：(a) channel/subscription id 与 generation 一律随机 opaque token（UUID 派生），generation 同时充当占有凭证；(b) 投递以拉取式 `fetchEvents` + subscribe/resume 内联重放批交付，服务端主动推送登记为遗留项不虚构完成；(c) B 门面 `revoke` 固定为 channel 代次围栏语义（profile 授权撤销归注册链 owner），修正原稿"profile 级"的越权表述；(d) 限流按调用方分桶；(e) redaction profile 经注册接口提供，未注册 id fail-closed。以上均为回归已获批 Requirements 的机制固化，不新增验收边界。
