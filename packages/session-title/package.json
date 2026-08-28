@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-plugin-api-session-title",
   "description": "Replacement bundle for @deepseek-ai/dsh-session-title: forked SessionTitleService plus a stable session-title/candidate eligibility waterfall.",
-  "version": "0.1.0-rc.6-0.7",
+  "version": "0.1.0-rc.6-0.1.0",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -10,7 +10,7 @@
     "./package.json": "./package.json"
   },
   "dsh": {
-    "api": "0.7",
+    "api": "0.1",
     "bundle": {
       "patch": "./cordis.patch.yml"
     }

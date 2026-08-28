@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-plugin-api-session-branch",
   "description": "Replacement bundle for @deepseek-ai/dsh-session: faithful thin-delegate of the sessions service/event face plus a branch/edit contract over the official session log.",
-  "version": "0.1.0-rc.6-0.7",
+  "version": "0.1.0-rc.6-0.1.0",
   "type": "module",
   "main": "lib/apply.js",
   "exports": {
@@ -9,7 +9,7 @@
     "./package.json": "./package.json"
   },
   "dsh": {
-    "api": "0.7",
+    "api": "0.1",
     "bundle": {
       "patch": "./cordis.patch.yml"
     }

@@ -40,7 +40,7 @@ function replacementEntry({ disabled = false, id = 'plugin-api-llm', rowName = '
 function activeService({ ctx, provider = null, registry }) {
   const reg = registry ?? createFeatureRegistry()
   const ServiceClass = createPluginApiService({
-    apiVersion: '0.7',
+    apiVersion: '0.1',
     registry: reg,
     coreActive: true,
   })
@@ -118,7 +118,7 @@ test('pluginApi.llm.adapters exists but throws typed errors while the registry i
 test('pluginApi.llm.adapters throws PluginApiInactiveError when the facade is inactive', () => {
   const registry = createFeatureRegistry()
   const ctx = makeCtx()
-  const ServiceClass = createPluginApiService({ apiVersion: '0.7', registry, coreActive: false })
+  const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: false })
   const service = new ServiceClass(ctx)
   assert.throws(
     () => service.llm.adapters.decorate({}),
@@ -277,13 +277,13 @@ test('resolveMarkedLlmDecoration resolves the replacement facet when the marker,
     package: '@deepseek-ai/dsh-plugin-api-llm',
     rowId: 'plugin-api-llm',
     runtime: '0.1.0-rc.6',
-    api: '0.7',
+    api: '0.1',
   }
   const attached = makeReplacementFacet()
   root[LLM_DECORATION_FACET] = attached.facet
   const facet = resolveMarkedLlmDecoration(ctx, {
     readManifest: (name) => {
-      if (name === '@deepseek-ai/dsh-plugin-api-llm') return { version: '0.1.0-rc.6-0.7', api: '0.7' }
+      if (name === '@deepseek-ai/dsh-plugin-api-llm') return { version: '0.1.0-rc.6-0.1.0', api: '0.1' }
       return undefined
     },
   })
@@ -297,12 +297,12 @@ test('resolveMarkedLlmDecoration returns null when the official row is enabled',
     package: '@deepseek-ai/dsh-plugin-api-llm',
     rowId: 'plugin-api-llm',
     runtime: '0.1.0-rc.6',
-    api: '0.7',
+    api: '0.1',
   }
   const attached = makeReplacementFacet()
   root[LLM_DECORATION_FACET] = attached.facet
   const facet = resolveMarkedLlmDecoration(ctx, {
-    readManifest: (name) => (name === '@deepseek-ai/dsh-plugin-api-llm' ? { version: '0.1.0-rc.6-0.7', api: '0.7' } : undefined),
+    readManifest: (name) => (name === '@deepseek-ai/dsh-plugin-api-llm' ? { version: '0.1.0-rc.6-0.1.0', api: '0.1' } : undefined),
   })
   assert.equal(facet, null)
 })
@@ -310,11 +310,11 @@ test('resolveMarkedLlmDecoration returns null when the official row is enabled',
 test('resolveMarkedLlmDecoration returns null on a marker mismatch', () => {
   const ctx = makeCtx({ entries: [llmEntry({ disabled: true }), replacementEntry()] })
   const root = ctx
-  root[LLM_COMPONENT_MARKER] = { package: 'someone-else', rowId: 'plugin-api-llm', runtime: '0.1.0-rc.6', api: '0.7' }
+  root[LLM_COMPONENT_MARKER] = { package: 'someone-else', rowId: 'plugin-api-llm', runtime: '0.1.0-rc.6', api: '0.1' }
   const attached = makeReplacementFacet()
   root[LLM_DECORATION_FACET] = attached.facet
   const facet = resolveMarkedLlmDecoration(ctx, {
-    readManifest: (name) => (name === '@deepseek-ai/dsh-plugin-api-llm' ? { version: '0.1.0-rc.6-0.7', api: '0.7' } : undefined),
+    readManifest: (name) => (name === '@deepseek-ai/dsh-plugin-api-llm' ? { version: '0.1.0-rc.6-0.1.0', api: '0.1' } : undefined),
   })
   assert.equal(facet, null)
 })
@@ -328,7 +328,7 @@ test('mountLlmAdaptersFeature disables the feature on an auxiliary manifest mism
     service: {},
     featureRegistry: registry,
     logger: { error: (message) => diagnostics.push(message) },
-    facadeContract: { runtime: '0.1.0-rc.6', api: '0.7' },
+    facadeContract: { runtime: '0.1.0-rc.6', api: '0.1' },
     auxiliaryManifests: { llm: { version: '0.1.0-rc.6-0.8', api: '0.8' } },
   })
   assert.equal(registry.isActive('llmAdapters'), false, 'a version mismatch must not mount the feature')
@@ -350,8 +350,8 @@ test('mountLlmAdaptersFeature mounts the feature and installs the resolver on a 
     service,
     featureRegistry: registry,
     logger: { error: () => {} },
-    facadeContract: { runtime: '0.1.0-rc.6', api: '0.7' },
-    auxiliaryManifests: { llm: { version: '0.1.0-rc.6-0.7', api: '0.7' } },
+    facadeContract: { runtime: '0.1.0-rc.6', api: '0.1' },
+    auxiliaryManifests: { llm: { version: '0.1.0-rc.6-0.1.0', api: '0.1' } },
   })
   assert.equal(registry.isActive('llmAdapters'), true, 'a matching contract must mount the feature')
   assert.equal(providerInstalled, true, 'the decoration-facet resolver must be installed')
@@ -365,8 +365,8 @@ test('mountLlmAdaptersFeature disables the feature when the official row is enab
     service: {},
     featureRegistry: registry,
     logger: { error: () => {} },
-    facadeContract: { runtime: '0.1.0-rc.6', api: '0.7' },
-    auxiliaryManifests: { llm: { version: '0.1.0-rc.6-0.7', api: '0.7' } },
+    facadeContract: { runtime: '0.1.0-rc.6', api: '0.1' },
+    auxiliaryManifests: { llm: { version: '0.1.0-rc.6-0.1.0', api: '0.1' } },
   })
   assert.equal(registry.isActive('llmAdapters'), false)
 })

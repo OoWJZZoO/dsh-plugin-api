@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-plugin-api-session-channel-connection",
   "description": "Connection carrier replacement for @deepseek-ai/dsh-client-connection: faithful fork of the official HTTP/WebSocket transport, plus transport negotiation, connection-layer channel generation fencing, and carrier-level resume re-attachment.",
-  "version": "0.1.0-rc.6-0.7",
+  "version": "0.1.0-rc.6-0.1.0",
   "type": "module",
   "main": "lib/apply.js",
   "exports": {
@@ -10,7 +10,7 @@
     "./package.json": "./package.json"
   },
   "dsh": {
-    "api": "0.7",
+    "api": "0.1",
     "client": {
       "platform": "web",
       "inject": [],

@@ -4,7 +4,7 @@
  *
  * The replacement follows the shared main-facade policy: the full unique
  * version is `<runtime full version>-<api protocol major.minor>` (e.g.
- * `0.1.0-rc.6-0.7`), and each package's `dsh.api` carries only the protocol
+ * `0.1.0-rc.6-0.1.0`), and each package's `dsh.api` carries only the protocol
  * part. The auxiliary package must agree with the installed main facade on
  * both the runtime identity and the API protocol; on mismatch only this
  * package's replacement capability is disabled.
@@ -13,7 +13,7 @@
  */
 
 const RUNTIME_VERSION = '0.1.0-rc.6'
-const API_PROTOCOL = '0.7'
+const API_PROTOCOL = '0.1'
 
 export const MAIN_PACKAGE_NAME = '@deepseek-ai/dsh-plugin-api-main'
 export const OWN_PACKAGE_NAME = '@deepseek-ai/dsh-plugin-api-llm'
@@ -26,8 +26,11 @@ export const OFFICIAL_PACKAGE_NAME = '@deepseek-ai/dsh-llm'
  */
 export function parseFullVersion(version) {
   if (typeof version !== 'string') return null
-  const match = /^(.+)-(\d+\.\d+)$/.exec(version.trim())
-  return match ? { runtime: match[1], api: match[2] } : null
+  const match = /^(.+)-(\d+\.\d+)(?:\.(\d+))?$/.exec(version.trim())
+    if (!match) return null
+  const parsed = { runtime: match[1], api: match[2] }
+  if (match[3] !== undefined) parsed.maintenance = match[3]
+  return parsed
 }
 
 /**

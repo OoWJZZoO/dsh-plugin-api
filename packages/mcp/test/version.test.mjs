@@ -9,7 +9,7 @@ import {
 } from '../lib/version.js'
 
 test('parseFullVersion accepts <runtime>-<api.major>.<api.minor>', () => {
-  assert.deepEqual(parseFullVersion('0.1.0-rc.6-0.7'), { runtime: '0.1.0-rc.6', api: '0.7' })
+  assert.deepEqual(parseFullVersion('0.1.0-rc.6-0.1.0'), { runtime: '0.1.0-rc.6', api: '0.1', maintenance: '0' })
   assert.deepEqual(parseFullVersion('0.1.0-rc.6-0.10'), { runtime: '0.1.0-rc.6', api: '0.10' })
 })
 
@@ -18,7 +18,7 @@ test('parseFullVersion treats prerelease and numeric-increment suffixes correctl
   const v = parseFullVersion('0.1.0-rc.6-0.10')
   assert.equal(v.api, '0.10')
   // runtime part keeps its own rc suffix untouched
-  assert.equal(parseFullVersion('0.1.0-rc.6-0.7').runtime, '0.1.0-rc.6')
+  assert.equal(parseFullVersion('0.1.0-rc.6-0.1.0').runtime, '0.1.0-rc.6')
 })
 
 test('parseFullVersion returns null for malformed input', () => {
@@ -37,10 +37,10 @@ test('parseFullVersion keeps protocol major open (release protocol 1.x stays a v
 
 test('fullVersionContractsMatch requires equal runtime, api and dsh.api agreement', () => {
   const consistent = {
-    ownVersion: '0.1.0-rc.6-0.7',
-    ownApi: '0.7',
-    mainVersion: '0.1.0-rc.6-0.7',
-    mainApi: '0.7',
+    ownVersion: '0.1.0-rc.6-0.1.0',
+    ownApi: '0.1',
+    mainVersion: '0.1.0-rc.6-0.1.0',
+    mainApi: '0.1',
   }
   assert.equal(fullVersionContractsMatch(consistent), true)
 
@@ -76,5 +76,5 @@ test('runtimeIdentityMatches locks the exact prerelease runtime identity', () =>
 
 test('locked constants are exposed for assembly checks', () => {
   assert.equal(RUNTIME_VERSION, '0.1.0-rc.6')
-  assert.equal(API_PROTOCOL, '0.7')
+  assert.equal(API_PROTOCOL, '0.1')
 })

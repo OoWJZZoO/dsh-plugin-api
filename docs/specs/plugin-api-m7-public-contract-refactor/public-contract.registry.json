@@ -1,0 +1,737 @@
+{
+  "$comment": "Public contract registry for the dsh-plugin-api facade (single source of truth for the public contract during the pre-release refactor). Spec/governance artifact: build-time and test-time data only, never a runtime registry service. Governance tokens, requirement numbers, and feature identifiers are not runtime-visible and must not leak into lib/, packages/, test/, package metadata, or runtime strings.",
+  "schemaVersion": 1,
+  "contractBaseline": {
+    "packageVersion": "0.1.0-rc.6-0.1.0",
+    "runtime": "0.1.0-rc.6",
+    "api": "0.1",
+    "maintenance": "0",
+    "dshApi": "0.1",
+    "frozen": true
+  },
+  "vocabulary": {
+    "runtime": [
+      "host",
+      "client",
+      "both"
+    ],
+    "effect": [
+      "read",
+      "subscribe",
+      "register",
+      "decide",
+      "mutate",
+      "execute"
+    ],
+    "composition": [
+      "pure",
+      "additive",
+      "ordered",
+      "coordinated",
+      "exclusive"
+    ],
+    "availability": [
+      "active",
+      "degraded",
+      "unavailable"
+    ],
+    "status": [
+      "removed",
+      "disabled",
+      "advanced",
+      "recommended"
+    ],
+    "terminal": [
+      "success",
+      "error",
+      "aborted",
+      "denied",
+      "superseded"
+    ],
+    "priority": [
+      "lowest",
+      "low",
+      "normal",
+      "high",
+      "highest",
+      "monitor"
+    ],
+    "scope": [
+      "profile",
+      "workspace",
+      "session"
+    ],
+    "implementationChannel": [
+      "facade",
+      "passthrough",
+      "proposal",
+      "replacement"
+    ],
+    "deletionCategory": [
+      "rename",
+      "remove",
+      "retain-unavailable"
+    ]
+  },
+  "hostDomainTree": [
+    "isActive",
+    "apiVersion",
+    "assertCompatible",
+    "capabilities",
+    "events",
+    "llm",
+    "agents",
+    "executions",
+    "sessions",
+    "tools",
+    "skills",
+    "prompts",
+    "attachments",
+    "mcp",
+    "tasks",
+    "coordination",
+    "workspaces",
+    "security",
+    "diagnostics",
+    "settings",
+    "profiles",
+    "remotes",
+    "storage",
+    "services"
+  ],
+  "clientDomainTree": [
+    "isActive",
+    "apiVersion",
+    "assertCompatible",
+    "capabilities",
+    "connection",
+    "events",
+    "remotes",
+    "settings",
+    "slots",
+    "lifecycle",
+    "codec",
+    "services"
+  ],
+  "members": [
+    {
+      "publicPath": "apiVersion",
+      "proposedTargetPath": "apiVersion",
+      "runtime": "host",
+      "effect": "read",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "recommended",
+      "inventorySource": "plugin-api-service.js root metadata"
+    },
+    {
+      "publicPath": "isActive",
+      "proposedTargetPath": "isActive",
+      "runtime": "host",
+      "effect": "read",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "recommended",
+      "inventorySource": "plugin-api-service.js root metadata"
+    },
+    {
+      "publicPath": "assertCompatible",
+      "proposedTargetPath": "assertCompatible",
+      "runtime": "host",
+      "effect": "read",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "recommended",
+      "inventorySource": "plugin-api-service.js root metadata"
+    },
+    {
+      "publicPath": "features",
+      "proposedTargetPath": "capabilities",
+      "runtime": "host",
+      "effect": "read",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js features getter; deletion candidate per design (replaced by capabilities query surface)"
+    },
+    {
+      "publicPath": "llm",
+      "proposedTargetPath": "llm",
+      "runtime": "host",
+      "effect": "read",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js llm getter; members modelInfo/prepareCall/stream/providers/requestTransforms/admissionPolicies/adapters/request"
+    },
+    {
+      "publicPath": "events",
+      "proposedTargetPath": "events",
+      "runtime": "host",
+      "effect": "subscribe",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js events getter; catalog/on/once/emit/serial/parallel/bail/waterfall"
+    },
+    {
+      "publicPath": "execution",
+      "proposedTargetPath": "executions",
+      "runtime": "host",
+      "effect": "read",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js execution getter; observe/get/history/onChange/visibility/availability"
+    },
+    {
+      "publicPath": "recovery",
+      "proposedTargetPath": "executions.recovery",
+      "runtime": "host",
+      "effect": "read",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js recovery getter"
+    },
+    {
+      "publicPath": "coordination",
+      "proposedTargetPath": "coordination",
+      "runtime": "host",
+      "effect": "mutate",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js coordination getter"
+    },
+    {
+      "publicPath": "workspaceTransactions",
+      "proposedTargetPath": "workspaces.transactions",
+      "runtime": "host",
+      "effect": "mutate",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js workspaceTransactions getter"
+    },
+    {
+      "publicPath": "tasks",
+      "proposedTargetPath": "tasks",
+      "runtime": "host",
+      "effect": "read",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js tasks getter"
+    },
+    {
+      "publicPath": "profile",
+      "proposedTargetPath": "profiles",
+      "runtime": "host",
+      "effect": "read",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js profile getter; inspect/health/planDiff/apply/snapshot"
+    },
+    {
+      "publicPath": "security",
+      "proposedTargetPath": "security",
+      "runtime": "host",
+      "effect": "decide",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js security getter; policy/redaction/egress/audit"
+    },
+    {
+      "publicPath": "context",
+      "proposedTargetPath": "prompts.provenance",
+      "runtime": "host",
+      "effect": "register",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js context getter; contribute/compose/inspect/mapping/observe/policy"
+    },
+    {
+      "publicPath": "mcp",
+      "proposedTargetPath": "mcp",
+      "runtime": "host",
+      "effect": "read",
+      "composition": "pending-audit",
+      "implementationChannel": "replacement",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js mcp conditional surface; catalog provider via replacement row"
+    },
+    {
+      "publicPath": "attachments",
+      "proposedTargetPath": "attachments",
+      "runtime": "host",
+      "effect": "register",
+      "composition": "pending-audit",
+      "implementationChannel": "replacement",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js attachments conditional surface; pipeline/projection via replacement row"
+    },
+    {
+      "publicPath": "routePolicy",
+      "proposedTargetPath": "llm.routing",
+      "runtime": "host",
+      "effect": "decide",
+      "composition": "pending-audit",
+      "implementationChannel": "replacement",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js routePolicy conditional surface; policy/candidates/health/circuit/decisions via agent-loop replacement"
+    },
+    {
+      "publicPath": "tools",
+      "proposedTargetPath": "tools",
+      "runtime": "host",
+      "effect": "register",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js tools getter; register/restrict/guard/get/schemas/execute/presentAs/toolAbortedError/executionMode/defineTool/routeOf"
+    },
+    {
+      "publicPath": "agent",
+      "proposedTargetPath": "agents",
+      "runtime": "host",
+      "effect": "execute",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js agent getter; get/list/roots/create/resume/register/provider/availability/routeOf"
+    },
+    {
+      "publicPath": "session",
+      "proposedTargetPath": "sessions",
+      "runtime": "host",
+      "effect": "execute",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js session getter; on/once/get/list/fork/header/events/seq/surface/requestHeader/requestContext/deriveMessages/appendMessage/durable/branches"
+    },
+    {
+      "publicPath": "sessionChannel",
+      "proposedTargetPath": "sessions.channels",
+      "runtime": "host",
+      "effect": "mutate",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js sessionChannel getter; open/subscribe/fetchEvents/heartbeat/ack/resume/revoke/observe/auth"
+    },
+    {
+      "publicPath": "skills",
+      "proposedTargetPath": "skills.activation",
+      "runtime": "host",
+      "effect": "register",
+      "composition": "pending-audit",
+      "implementationChannel": "replacement",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js skills getter; activation surface via tool-skill replacement"
+    },
+    {
+      "publicPath": "systemPrompt",
+      "proposedTargetPath": "prompts",
+      "runtime": "host",
+      "effect": "register",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js systemPrompt getter; section/context/variable/tools/suppressRuntimeContext/render/assemble"
+    },
+    {
+      "publicPath": "settings",
+      "proposedTargetPath": "settings",
+      "runtime": "host",
+      "effect": "register",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js settings getter; register/scope/describe/installSettingsSection/remote"
+    },
+    {
+      "publicPath": "services",
+      "proposedTargetPath": "services",
+      "runtime": "host",
+      "effect": "execute",
+      "composition": "pending-audit",
+      "implementationChannel": "passthrough",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js services namespace; static whitelist (see servicesWhitelist)"
+    },
+    {
+      "publicPath": "routing",
+      "proposedTargetPath": "llm.routing",
+      "runtime": "host",
+      "effect": "read",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js routing getter; forExecution/current/on/once/wait/availability"
+    },
+    {
+      "publicPath": "remote",
+      "proposedTargetPath": "remotes",
+      "runtime": "host",
+      "effect": "register",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js remote getter; publish/isActive"
+    },
+    {
+      "publicPath": "diagnostics",
+      "proposedTargetPath": "diagnostics",
+      "runtime": "host",
+      "effect": "register",
+      "composition": "pending-audit",
+      "implementationChannel": "facade",
+      "status": "advanced",
+      "inventorySource": "plugin-api-service.js diagnostics getter; register/get/onChange"
+    }
+  ],
+  "servicesWhitelist": [
+    {
+      "key": "fs",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "codeRuntime",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "workspaces",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "subagents",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "workflows",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "approval",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "userQuestions",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "attachments",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "skills",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "storage",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "sessionProjections",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "sessionQuery",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "sessionTitle",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "sessionTelemetry",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "sessionReferences",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "tokenMeter",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "agentDefaultModel",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "web",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "compaction",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "jobs",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "shellEnv",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "typert",
+      "members": "member-level audit pending (Task 6.2/7.8)",
+      "composition": "pending-audit",
+      "channel": "passthrough",
+      "status": "advanced"
+    }
+  ],
+  "eventCatalog": [],
+  "oldToTargetMapping": [
+    {
+      "oldPath": "agent",
+      "targetPath": "agents"
+    },
+    {
+      "oldPath": "session",
+      "targetPath": "sessions"
+    },
+    {
+      "oldPath": "sessionChannel",
+      "targetPath": "sessions.channels"
+    },
+    {
+      "oldPath": "execution",
+      "targetPath": "executions"
+    },
+    {
+      "oldPath": "recovery",
+      "targetPath": "executions.recovery"
+    },
+    {
+      "oldPath": "routing",
+      "targetPath": "llm.routing"
+    },
+    {
+      "oldPath": "routePolicy",
+      "targetPath": "llm.routing"
+    },
+    {
+      "oldPath": "systemPrompt",
+      "targetPath": "prompts"
+    },
+    {
+      "oldPath": "context",
+      "targetPath": "prompts.provenance"
+    },
+    {
+      "oldPath": "workspaceTransactions",
+      "targetPath": "workspaces.transactions"
+    },
+    {
+      "oldPath": "profile",
+      "targetPath": "profiles"
+    },
+    {
+      "oldPath": "features",
+      "targetPath": "capabilities"
+    },
+    {
+      "oldPath": "remote",
+      "targetPath": "remotes"
+    },
+    {
+      "oldPath": "skills",
+      "targetPath": "skills.activation"
+    },
+    {
+      "oldPath": "tools.discovery",
+      "targetPath": "tools.discovery"
+    },
+    {
+      "oldPath": "ctx.pluginApi.client",
+      "targetPath": "ctx.pluginApi(root)"
+    }
+  ],
+  "deletionReport": [
+    {
+      "path": "pluginApi.features",
+      "category": "remove",
+      "status": "approved",
+      "link": "docs/specs/plugin-api-m7-public-contract-refactor/deletion-report.md#b1"
+    },
+    {
+      "path": "agent.routeOf",
+      "category": "remove",
+      "status": "approved",
+      "link": "deletion-report.md#b2"
+    },
+    {
+      "path": "tools.routeOf",
+      "category": "remove",
+      "status": "approved",
+      "link": "deletion-report.md#b2"
+    },
+    {
+      "path": "pluginApi.reportExecRouteDiagnosticsOnce",
+      "category": "remove",
+      "status": "approved",
+      "link": "deletion-report.md#b3"
+    },
+    {
+      "path": "services.*(audit-removal-candidates)",
+      "category": "remove",
+      "status": "pending-second-approval",
+      "note": "B4 batch: member list finalized in Task 6.2 and re-approved before deletion"
+    }
+  ],
+  "statusByPath": {
+    "pluginApi.features": "removed",
+    "agent.routeOf": "removed",
+    "tools.routeOf": "removed",
+    "pluginApi.reportExecRouteDiagnosticsOnce": "removed"
+  },
+  "inventory": {
+    "completedAt": "Task 1.4, Stage 4",
+    "hostClientEnumeration": "current public surface from lib/plugin-api-service.js (roots), lib/client-runtime.js (client root), lib/services.js (SERVICE_DEFINITIONS), lib/official-service-definitions.js",
+    "knownFeatures31": [
+      "llm/admission",
+      "llm/request",
+      "llm",
+      "events",
+      "tools",
+      "agent",
+      "agentExtension",
+      "execRoute",
+      "sessionRoute",
+      "diagnostics",
+      "session",
+      "sessionBranch",
+      "sessionDurable",
+      "systemPrompt",
+      "officialPassthrough",
+      "settings",
+      "settingsRemote",
+      "remote",
+      "typert",
+      "services",
+      "execution",
+      "recovery",
+      "coordination",
+      "workspaceTransactions",
+      "tasks",
+      "security",
+      "toolDiscovery",
+      "skillsActivation",
+      "context",
+      "profile",
+      "sessionChannel"
+    ]
+  },
+  "clientRoot": {
+    "publicRoot": "ctx.pluginApi.client",
+    "proposedTarget": "ctx.pluginApi (direct root members)",
+    "runtime": "client",
+    "members": [
+      "defineManifest",
+      "connection",
+      "codec",
+      "services",
+      "events",
+      "mountRemote",
+      "mountRemoteContribution",
+      "settingsScope",
+      "slots",
+      "remote",
+      "lifecycle",
+      "features"
+    ],
+    "officialLeaves": [
+      "locale",
+      "modules",
+      "sessions",
+      "workspaces",
+      "chatFileMentions",
+      "layout",
+      "theme",
+      "appShell",
+      "sessionLogDownload",
+      "cordisInspect",
+      "dynamicCordisRunner",
+      "inputTriggers",
+      "commandUi",
+      "modelDirectories",
+      "conversation",
+      "conversationEvents",
+      "conversationViews",
+      "timer"
+    ],
+    "note": ".client root getter is removed; direct root per target tree; pure official leaves move under services.* (design Client Surface Assembly).",
+    "status": "advanced"
+  }
+}

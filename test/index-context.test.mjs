@@ -12,7 +12,7 @@ const ROUTE_POLICY_COMPONENT_MARKER = Symbol.for('dsh-plugin-api.agent-loop.cont
 function createServicePlatform(host) {
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({
-    apiVersion: '0.7',
+    apiVersion: '0.1',
     registry,
     coreActive: () => true,
   })
@@ -148,11 +148,11 @@ test('evidence resolver gates: marker, loader composition, and version contract 
     package: '@deepseek-ai/dsh-plugin-api-agent-loop',
     rowId: 'plugin-api-agent-loop',
     runtime: '0.1.0-rc.6',
-    api: '0.7',
+    api: '0.1',
   }
   const fakeReader = (name) => ({
-    version: '0.1.0-rc.6-0.7',
-    api: '0.7',
+    version: '0.1.0-rc.6-0.1.0',
+    api: '0.1',
   })
   const baseCtx = () => {
     const ctx = {
@@ -281,7 +281,7 @@ test('inactive core keeps the context face typed-inactive', () => {
   const host = createHost()
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({
-    apiVersion: '0.7',
+    apiVersion: '0.1',
     registry,
     coreActive: () => false,
   })

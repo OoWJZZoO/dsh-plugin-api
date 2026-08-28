@@ -41,14 +41,14 @@ function markedService(calls = []) {
   return service
 }
 
-function createMountHarness({ services = new Map(), marker = false, manifest = null, facadeContract = { runtime: '0.1.0-rc.6', api: '0.7' } } = {}) {
+function createMountHarness({ services = new Map(), marker = false, manifest = null, facadeContract = { runtime: '0.1.0-rc.6', api: '0.1' } } = {}) {
   const registry = {
     snapshot: () => [],
     isActive: () => false,
     disable() {},
     mount() {},
   }
-  const Service = createPluginApiService({ apiVersion: '0.7', registry, coreActive: true })
+  const Service = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
   const ctx = {
     fiber: { uid: 1, state: 2 },
     reflect: { provide() { return () => {} } },
@@ -76,7 +76,7 @@ test('replacement active: pluginApi.skills.activation forwards operations and av
   const calls = []
   const { service, featureRegistry, logger, auxiliaryManifests, facadeContract } = createMountHarness({
     marker: markedService(calls),
-    manifest: { version: '0.1.0-rc.6-0.7', api: '0.7' },
+    manifest: { version: '0.1.0-rc.6-0.1.0', api: '0.1' },
   })
   const mounted = mountSkillsActivationFeature({
     ctx: service.ctx, service, featureRegistry, logger, auxiliaryManifests, facadeContract,
@@ -106,7 +106,7 @@ test('replacement active: pluginApi.skills.activation forwards operations and av
 
 test('no replacement marker: mount succeeds but operations reject with the typed disabled error', () => {
   const { service, featureRegistry, logger, auxiliaryManifests, facadeContract } = createMountHarness({
-    manifest: { version: '0.1.0-rc.6-0.7', api: '0.7' },
+    manifest: { version: '0.1.0-rc.6-0.1.0', api: '0.1' },
   })
   const mounted = mountSkillsActivationFeature({
     ctx: service.ctx, service, featureRegistry, logger, auxiliaryManifests, facadeContract,

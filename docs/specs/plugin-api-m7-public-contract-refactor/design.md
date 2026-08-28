@@ -356,7 +356,7 @@ The report is shown to the human maintainer and the implementation pauses until 
 
 ```js
 {
-  publicPath: 'llm.routing.ofExecution',
+  publicPath: 'llm.routing.forExecution',
   capability: 'llm.routing',
   runtime: 'host',
   effect: 'read',
@@ -463,7 +463,7 @@ success | error | aborted | denied | superseded
 - `llm.admissionPolicies.register` uses a fixed decision algebra; deny/ask/allow is not determined by listener accident.
 - `llm.adapters` forwards the existing replacement-owned decoration facet only when its component gates pass; the facade keeps no second decoration registry.
 - `llm.routing` is the semantic route plane. Execution route, committed session route, policy, candidates, health and decisions have separate records and do not silently share mutation authority.
-- Current sync `llm/request` re-entry via `llm/stream`, `llm.admissionPolicies` wrapping, and `llm.routing.ofExecution` route capture remain facade translation unless an approved future component seam changes the capability decision.
+- Current sync `llm/request` re-entry via `llm/stream`, `llm.admissionPolicies` wrapping, and `llm.routing.forExecution` route capture remain facade translation unless an approved future component seam changes the capability decision.
 
 ### Agents, Executions, Sessions
 

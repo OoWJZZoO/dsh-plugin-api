@@ -26,12 +26,15 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 8. **Composable Profile**：成员完成 composition/authority 审计且 registry 记录完整才可 `status: 'recommended'` 并进入默认 profile；未完成审计不得标 recommended；profile 是 registry 标记与测试证据，非运行时服务（design §Composable Profile）。
 9. **治理魔法字母禁令（AGENTS.md §6）**：`lib/`、`packages/`、`test/`、`scripts/`、`package.json`、`cordis.patch.yml`、运行时可见字符串不得出现治理编号/分类字母/带治理后缀的行 id（如 `A11`、`compaction-events-r1`、`M7`、`SPEC*` 等）；仅 `docs/**` 允许。
 10. **fail-safe**：所有入口失败只记录日志并安静停用/回退，绝不抛穿 apply/boot；官方包文件任何情况下不修改。
+11. **本地开发阶段删除/消费者策略（人类澄清，2026-08-28，已批准落盘）**：
+    - ① `services.*` 中经审计确认无独立长期价值的成员，本地开发阶段**当下直接删除 PATH**（经 Task 3/6.2 批准后）；「保留 PATH + typed `disabled/unavailable`」是**发布并进入运维阶段后**、因 runtime identity 失配或可选安装导致的已保留成员不可用策略，不是当前删除的替代形态。
+    - ② 两个本地消费者（`dsh-read-image`、`dsh-pro-ex-ability-anchor`）仅作测试用途、非真实依赖：已批准删除项**不必保留兼容**；迁移只须保证消费者改用替代 path（如 `agent.routeOf`/`tools.routeOf` → `llm.routing.forExecution`），不承担兼容保留义务（本地开发阶段，AGENTS.md §3.0.1）。
 
 ## 任务清单
 
 按 design §Implementation Sequence 的 1–9 串行顺序执行；一个顶层任务内所有子项、实现文件与测试作为整体交付；测试先于/伴随实现（TDD）。
 
-- [ ] **1. 基线冻结与清点（requirements §1、§10、§15）**
+- [x] **1. 基线冻结与清点（requirements §1、§10、§15）**
   - **1.1 版本解析升级**：改造 `lib/version.js` 使完整版本解析为 `<A>-<B>.<C>.<D>` 单记录 `{ runtime, api, maintenance }`（design §Version And Assembly Adapter 冻结形状；当前只解析 `<runtime>-<B.C>`）；保留导出兼容：第三方协商只比较 `B.C`（同一 `B` 内 `实际 C >= required C`），runtime 匹配用 `A` 全量 identity 精确匹配；wire/durable 合同不依赖包版本。
   - **1.2 元数据基线冻结**：主包与全部本地辅助/full 包（`packages/*` 各 `package.json`，含 `full/`）统一 `version: 0.1.0-rc.6-0.1.0`、`dsh.api: "0.1"`（存在该字段处）；此后任何任务不得再 bump。同步更新主包 `version.test.mjs` 与 `package-policy.test.mjs`（或既有等价测试）断言冻结值与非 bump 检查。
   - **1.3 Registry 骨架**：创建 `docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json`：contract baseline（冻结 `0.1.0-rc.6-0.1.0` / `dsh.api 0.1`）、host/client domain tree（冻结决策 3/4 的目标树）、空成员区、removed/disabled/advanced/recommended 状态词汇、old-to-target 映射区、实现通道词汇（facade/passthrough/proposal/replacement）。
@@ -39,15 +42,15 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
   - **1.5 基线测试**：版本解析（`0.1.0-rc.6-0.1.0` → `{runtime:'0.1.0-rc.6', api:'0.1', maintenance:'0'}`；`B.C` 协商边界：同 B 大 C 通过、异 B 拒绝、D 不参与协商）、包元数据冻结断言、registry 骨架可解析为 JSON。
   - **要求**：本顶层任务完成后，版本面与 registry 骨架成为后续全部任务的共同基线；1.2 的冻结一旦提交，后续任何包版本改动即违规。
 
-- [ ] **2. 契约校验与快照基础设施（requirements §1、§5、§15、§16）**
+- [x] **2. 契约校验与快照基础设施（requirements §1、§5、§15、§16）**
   - **2.1 纯校验器**：创建 `scripts/registry-validate.mjs`（纯 Node，零 harness 依赖）：校验 registry 必填字段、publicPath/capability 唯一性、路径深度（除 `services.*` 外最多两层领域后接方法，第三层仅强领域关系）、domain/member 一致性、status 词表 ∈ {removed, disabled, advanced, recommended}、availability 词表、composition 词表、terminal/priority/scope 词表；失败输出可定位条目并非零退出。
   - **2.2 快照/矩阵生成器**：创建 `scripts/registry-snapshot.mjs`（纯 Node）：从 registry 生成 host/client 表面快照、services fixtures、capability/disabled-surface fixtures、组合测试矩阵输入（供 Task 7 测试使用）；快照仅含中立能力/领域名，不得输出治理编号。
   - **2.3 校验测试**：创建 `test/registry.test.mjs`：对 registry 跑 2.1 校验器（好/坏用例：重复 publicPath、重复 capability、非法 depth、非法词表、缺必填字段）；对 2.2 快照断言与 registry 一致（同一事实源，无手写漂移）。
   - **2.4 治理 token 扫描扩展**：扩展/复用既有 `test/governance-token-audit.test.mjs`：扫描 `lib/**`、`packages/**`（代码与 patch、package.json）、`scripts/**`、`test/**`、仓库根 `package.json`、各 `packages/*/cordis.patch.yml`（或复用既有扫描的完整清单）中是否泄漏治理编号/分类字母/带治理后缀行 id（冻结决策 9 的清单）；新增负向断言：registry 快照与生成 fixture 也通过扫描。
   - **要求**：本顶层任务交付后，registry 的机器校验与快照生成成为标准流程；Task 4–7 每步改 registry 后必须重跑 2.1/2.2 + 对应测试。
 
-- [ ] **3. 删除报告与人类门（requirements §4、§15；design §Deletion Report Gate）**
-  - **3.1 删除清单编制**：创建 `docs/specs/plugin-api-m7-public-contract-refactor/deletion-report.md`，按 §4 与 design 逐项列出候选删除：历史 feature-shaped/替换-shaped 公共根（含 `agent`、`session`、`execution`、`routing`、`routePolicy`、`systemPrompt`、`context`、`workspaceTransactions`、`sessionChannel` 等旧根与重复 delegate，如 `agent.routeOf` / `tools.routeOf`）、`features` 快照、无独立长期价值的 `services.*` 成员、及其他清点为 duplicate/historical/unsupported-authority/no-value 的成员。**清单每项应标注类别：`rename`（旧路径归并入目标 namespace，由 Task 4 cutover 处理）、`remove`（无替代的实质删除，由 Task 6 减法处理）、`retain-unavailable`（保留路径但呈现 typed unavailable）。** 每项记录：确切旧 path/成员、类别（duplicate/historical/unsupported authority/no-value surface）、当前仓库与消费者引用、受影响的 package/patch/client/文档面、目标替代 path 或明确无替代、预期 typed 失败/availability 后果、registry 理由、所需测试与迁移更新。
+- [x] **3. 删除报告与人类门（requirements §4、§15；design §Deletion Report Gate）**
+  - **3.1 删除清单编制**：创建 `docs/specs/plugin-api-m7-public-contract-refactor/deletion-report.md`，按 §4 与 design 逐项列出候选删除：历史 feature-shaped/替换-shaped 公共根（含 `agent`、`session`、`execution`、`routing`、`routePolicy`、`systemPrompt`、`context`、`workspaceTransactions`、`sessionChannel` 等旧根与重复 delegate，如 `agent.routeOf` / `tools.routeOf`）、`features` 快照、无独立长期价值的 `services.*` 成员、及其他清点为 duplicate/historical/unsupported-authority/no-value 的成员。**清单每项应标注类别：`rename`（旧路径归并入目标 namespace，由 Task 4 cutover 处理）、`remove`（无替代的实质删除，由 Task 6 减法处理，本地开发阶段直接删 PATH，见冻结决策 11①）、`retain-unavailable`（仅属发布运维阶段已保留成员的不可用策略，见冻结决策 11①，不是当下的删除替代）。** 每项记录：确切旧 path/成员、类别（duplicate/historical/unsupported authority/no-value surface）、当前仓库与消费者引用、受影响的 package/patch/client/文档面、目标替代 path 或明确无替代、预期 typed 失败/availability 后果、registry 理由、所需测试与迁移更新。
   - **3.2 人类批准门（阻塞）**：将 3.1 报告呈交人类维护者，逐项取得明确批准（批准/驳回/修改每一项）；未获批准的项目不得进入删除实现；获批项目登记进 registry 的 removed 状态与 old-to-target 映射。**若某删除项的改变会动摇已确认的 Goal 或 Requirements 验收边界，则该删除项不得仅在删除报告中批准，必须另行呈交人类维护者就边界变更做出独立决策；在收到该独立决策前，不得推进该删除项的实施。** 在收到全部批准前，不得开始 Task 4 中对已报备删除项的实现/测试改动。
   - **3.3 删除门测试**：创建/扩展测试断言：approved 删除项已登记（registry removed 状态与删除报告链接）、未经批准的候选不得处于 removed、删除报备与 §15「deletion approval 链接」验收一致。
   - **要求**：3.2 是人类裁决点；本任务完成 = 报告产出 + 人类批准齐备 + registry 登记同步。
@@ -69,7 +72,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 
 - [ ] **6. 公共面减法（requirements §2、§4、§5、§9；design 完成定义与 §capability-and-services 减法规则）**
   - **6.1 成员级减法执行**：对 Task 3 批准的删除项，在目标树稳定后执行最终移除（registry removed 定稿、运行时不再发布、快照/类型/文档/测试同步更新）；未批准项保留并保持其 availability 呈现，不得以别名/隐藏分支留存（§4）。
-  - **6.2 services 减法**：按 §9 与 `capability-and-services.md` 逐成员审计 `services.*`：删除无独立长期价值成员（经批准）；仅因 runtime identity 差异不稳定的成员保留 path 且呈现 typed `disabled/unavailable`（§5、§9），绝不静默移除公共路径；已有一等领域 API 覆盖的重复入口移除。
+  - **6.2 services 减法**：按 §9 与 `capability-and-services.md` 逐成员审计 `services.*`：删除无独立长期价值成员（经批准；本地开发阶段**直接删除 PATH**，见冻结决策 11①）；已有一等领域 API 覆盖的重复入口移除；仅对**批准保留**的成员落实 member-level `disabled/unavailable` 呈现（§5、§9，发布运维阶段策略：runtime identity 失配 / 可选安装差异）；未经批准任何成员不得从公共 path 消失。
   - **6.3 减法后验证**：快照/disabled-surface 形状与 registry 一致（§15①）；组合测试输入（2.2）重生成；负向断言：已删除 path 在公共面与 registry 快照中都不存在、runtime-unavailable path 仍存在且 typed。
   - **要求**：减法后公共面 = 目标树 ∩ 保留成员；所有减法项可回溯到批准记录。
 
@@ -85,9 +88,9 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
   - **要求**：加固只给最终保留成员的最小机制，不建通用权限系统/全局 owner graph/全局排序依赖图/通用 migration 平台（goal Out Of Scope）；全部组合矩阵与领域测试全绿。
 
 - [ ] **8. 消费者与装配对账（requirements §13、§14；design §Consumer And Boot Acceptance）**
-  - **8.1 消费者迁移——`dsh-read-image`**（工作区外仓库 `agent/dsh-read-image`）：迁移为只使用目标领域 facade path（image admission、request transformation、settings/remote、execution route access），删除对应私有 monkey-patch、raw `llm/stream` 重入 owner、私有 route 遍历（设计 §Current-State Findings 8 与 §14 验收）；迁移后其 hack 代码不得以 dormant fallback 或 unsupported escape hatch 留存（§14 末三条）。
+  - **8.1 消费者迁移——`dsh-read-image`**（工作区外仓库 `agent/dsh-read-image`）：迁移为只使用目标领域 facade path（image admission、request transformation、settings/remote、execution route access），删除对应私有 monkey-patch、raw `llm/stream` 重入 owner、私有 route 遍历（设计 §Current-State Findings 8 与 §14 验收）；`agent.routeOf`/`tools.routeOf` 属已批准删除项（删除报告 B2），其用途改走替代 path `llm.routing.forExecution`（冻结决策 11②：不保留兼容，仅找替代）；迁移后其 hack 代码不得以 dormant fallback 或 unsupported escape hatch 留存（§14 末三条）。
   - **8.2 消费者迁移——`dsh-pro-ex-ability-anchor`**（工作区外仓库 `agent/dsh-pro-ex-ability-anchor`）：迁移 session append、prompt 事件、settings remote、services、panel client 到目标 path；移除手写协议胶水；panel 不再使用 `ctx.pluginApi.client`（§3、§14）。
-  - **8.3 迁移契约外行为**：任一消费者需要批准契约外的行为时，保留既有官方 path 或单独 proposal，不得隐式拓宽 M7 公共契约（§14）。
+  - **8.3 迁移契约外行为**：任一消费者需要批准契约外的行为时，保留既有官方 path 或单独 proposal，不得隐式拓宽 M7 公共契约（§14）；已批准删除项按冻结决策 11② 处理（不保留兼容，改用替代 path）。
   - **8.4 装配等价与安装模式**：验证 full bundle（`packages/full/cordis.patch.yml`）与 main+全部辅助包选择性安装装配出同一组主包行/替代行/行为，无双跑、无替代行语义改变（§13）；main-only 安装下缺失可选能力显式 unavailable 且不影响无关能力；辅助包 `A.B.C` 错配只停用该能力、官方行不处于「disabled 且无功能替代」空洞、主门面与无关包保持 active；卸载恢复官方行；反向受支持插件顺序行为确定（§13、§15⑤）。
   - **8.5 消费者验收测试**：两个消费者的 headless 冒烟与文档化 dev boot 在冻结基线 `0.1.0-rc.6-0.1.0` 上通过、无 activation 错误（§14）；保留相关 message ordering、route absence、prompt 组合、provenance、client remote/slot、typed unavailable/failure 行为（§14）。
   - **要求**：迁移以真实消费者仓库代码为准，in-facade fixture 或 synthetic substitute 不满足迁移验收（§14）；消费者仓库的改动与验证记录在最终报告列出。

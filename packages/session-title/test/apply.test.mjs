@@ -5,7 +5,7 @@ import { SESSION_TITLE_ACTIVE_SYMBOL } from '../lib/forked-service.js'
 
 const DEFAULT_CONFIG = { fallbackMaxWords: 5, fallbackMaxBytes: 40, maxTitleBytes: 80 }
 const CUSTOM_CONFIG = { fallbackMaxWords: 9, fallbackMaxBytes: 30, maxTitleBytes: 90 }
-const CONSISTENT = { version: '0.1.0-rc.6-0.7', api: '0.7' }
+const CONSISTENT = { version: '0.1.0-rc.6-0.1.0', api: '0.1' }
 
 class FakeForkedService {
   constructor(ctx, config) {
@@ -107,13 +107,13 @@ test('plugin entry exports the expected name and inject list', () => {
 })
 
 test('full version contract helpers parse and compare full unique versions', () => {
-  assert.deepEqual(parseFullVersion('0.1.0-rc.6-0.7'), { runtime: '0.1.0-rc.6', api: '0.7' })
+  assert.deepEqual(parseFullVersion('0.1.0-rc.6-0.1.0'), { runtime: '0.1.0-rc.6', api: '0.1', maintenance: '0' })
   assert.equal(fullVersionContractsMatch({
-    ownVersion: '0.1.0-rc.6-0.7', ownApi: '0.7',
-    mainVersion: '0.1.0-rc.6-0.7', mainApi: '0.7',
+    ownVersion: '0.1.0-rc.6-0.1.0', ownApi: '0.1',
+    mainVersion: '0.1.0-rc.6-0.1.0', mainApi: '0.1',
   }), true)
   assert.equal(fullVersionContractsMatch({
-    ownVersion: '0.1.0-rc.6-0.7', ownApi: '0.7',
+    ownVersion: '0.1.0-rc.6-0.1.0', ownApi: '0.1',
     mainVersion: '0.1.0-rc.6-0.4', mainApi: '0.4',
   }), false)
 })

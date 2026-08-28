@@ -28,7 +28,7 @@ test('pluginApi.attachments is a marker-gated dynamic surface outside FEATURE_MO
   const ctx = new Context()
   const provider = makePipeline()
   const Service = createPluginApiService({
-    apiVersion: '0.7',
+    apiVersion: '0.1',
     registry: { snapshot: () => [], isActive: () => false },
     coreActive: true,
     attachmentsProvider: () => provider,
@@ -43,7 +43,7 @@ test('unavailable attachment marker returns typed unavailable results without to
   const ctx = new Context()
   let called = false
   const Service = createPluginApiService({
-    apiVersion: '0.7',
+    apiVersion: '0.1',
     registry: { snapshot: () => [], isActive: () => false },
     coreActive: false,
     attachmentsProvider: () => { called = true; return null },

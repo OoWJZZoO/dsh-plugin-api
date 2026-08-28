@@ -11,8 +11,8 @@ const VERSIONS = {
   '@deepseek-ai/dsh-llm': '0.1.0-rc.6',
   '@deepseek-ai/dsh-attachment': '0.1.0-rc.6',
   '@deepseek-ai/dsh-attachment-local': '0.1.0-rc.6',
-  '@deepseek-ai/dsh-plugin-api-attachments': '0.1.0-rc.6-0.7',
-  '@deepseek-ai/dsh-plugin-api-main': '0.1.0-rc.6-0.7',
+  '@deepseek-ai/dsh-plugin-api-attachments': '0.1.0-rc.6-0.1.0',
+  '@deepseek-ai/dsh-plugin-api-main': '0.1.0-rc.6-0.1.0',
 }
 
 function makeContext({ entries = [], pluginError = null, provider = null, pipeline = null } = {}) {
@@ -44,7 +44,7 @@ function makeContext({ entries = [], pluginError = null, provider = null, pipeli
 function goodEnv() {
   return {
     readPackageVersion: (name) => VERSIONS[name],
-    readPackageApi: () => '0.7',
+    readPackageApi: () => '0.1',
   }
 }
 

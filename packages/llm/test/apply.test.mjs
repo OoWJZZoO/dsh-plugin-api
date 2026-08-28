@@ -13,7 +13,7 @@ import {
   parseFullVersion,
 } from '../lib/version.js'
 
-const CONSISTENT = { version: '0.1.0-rc.6-0.7', api: '0.7' }
+const CONSISTENT = { version: '0.1.0-rc.6-0.1.0', api: '0.1' }
 const RUNTIME = '0.1.0-rc.6'
 
 const OFFICIAL_MEMBERS = [
@@ -126,14 +126,14 @@ test('package entry exports the loader-facing named exports', () => {
 })
 
 test('parseFullVersion and fullVersionContractsMatch follow the main facade rule', () => {
-  assert.deepEqual(parseFullVersion('0.1.0-rc.6-0.7'), { runtime: '0.1.0-rc.6', api: '0.7' })
+  assert.deepEqual(parseFullVersion('0.1.0-rc.6-0.1.0'), { runtime: '0.1.0-rc.6', api: '0.1', maintenance: '0' })
   assert.equal(parseFullVersion('0.1.0-rc.6'), null)
   assert.equal(
-    fullVersionContractsMatch({ ownVersion: '0.1.0-rc.6-0.7', ownApi: '0.7', mainVersion: '0.1.0-rc.6-0.7', mainApi: '0.7' }),
+    fullVersionContractsMatch({ ownVersion: '0.1.0-rc.6-0.1.0', ownApi: '0.1', mainVersion: '0.1.0-rc.6-0.1.0', mainApi: '0.1' }),
     true,
   )
   assert.equal(
-    fullVersionContractsMatch({ ownVersion: '0.1.0-rc.6-0.8', ownApi: '0.8', mainVersion: '0.1.0-rc.6-0.7', mainApi: '0.7' }),
+    fullVersionContractsMatch({ ownVersion: '0.1.0-rc.6-0.8', ownApi: '0.8', mainVersion: '0.1.0-rc.6-0.1.0', mainApi: '0.1' }),
     false,
   )
 })

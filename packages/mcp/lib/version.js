@@ -13,7 +13,7 @@
  */
 
 const RUNTIME_VERSION = '0.1.0-rc.6'
-const API_PROTOCOL = '0.7'
+const API_PROTOCOL = '0.1'
 
 export const MAIN_PACKAGE_NAME = '@deepseek-ai/dsh-plugin-api-main'
 export const OWN_PACKAGE_NAME = '@deepseek-ai/dsh-plugin-api-mcp'
@@ -26,8 +26,11 @@ export const OFFICIAL_PACKAGE_NAME = '@deepseek-ai/dsh-mcp-client'
  */
 export function parseFullVersion(version) {
   if (typeof version !== 'string') return null
-  const match = /^(.+)-(\d+\.\d+)$/.exec(version.trim())
-  return match ? { runtime: match[1], api: match[2] } : null
+  const match = /^(.+)-(\d+\.\d+)(?:\.(\d+))?$/.exec(version.trim())
+    if (!match) return null
+  const parsed = { runtime: match[1], api: match[2] }
+  if (match[3] !== undefined) parsed.maintenance = match[3]
+  return parsed
 }
 
 /**

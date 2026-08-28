@@ -7,7 +7,7 @@ import { createPluginApiService } from '../lib/plugin-api-service.js'
 
 function createService(coreActive = true) {
   const registry = createFeatureRegistry()
-  const ServiceClass = createPluginApiService({ apiVersion: '0.7', registry, coreActive })
+  const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive })
   const ctx = { reflect: { provide() {} } }
   return { registry, service: new ServiceClass(ctx) }
 }
@@ -59,7 +59,7 @@ test('helper slots follow the service active state after reconciliation', () => 
   let active = true
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({
-    apiVersion: '0.7',
+    apiVersion: '0.1',
     registry,
     coreActive: () => active,
   })

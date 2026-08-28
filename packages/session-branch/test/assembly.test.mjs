@@ -14,12 +14,13 @@ test('package.json carries the unified full version and dsh.api protocol', async
   assert.equal(pkg.name, '@deepseek-ai/dsh-plugin-api-session-branch')
   assert.equal(pkg.type, 'module')
   assert.equal(pkg.main, 'lib/apply.js')
-  assert.equal(pkg.version, '0.1.0-rc.6-0.7')
-  assert.equal(pkg.dsh.api, '0.7')
+  assert.equal(pkg.version, '0.1.0-rc.6-0.1.0')
+  assert.equal(pkg.dsh.api, '0.1')
   assert.equal(pkg.dsh.bundle.patch, './cordis.patch.yml')
   assert.equal(pkg.peerDependencies['@deepseek-ai/dsh-session'], '0.1.0-rc.6')
+  assert.match(pkg.version, /-0\.1\.0$/)
   // version suffix must match the declared dsh.api
-  assert.match(pkg.version, /-0\.7$/)
+  
 })
 
 test('patch file uses only the official disabled + insert form with the single replacement row', async () => {

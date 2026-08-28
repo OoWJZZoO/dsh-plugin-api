@@ -22,14 +22,17 @@ const sessionChannelGateway = readPackage('..', 'packages', 'session-channel-gat
 const full = readPackage('..', 'packages', 'full', 'package.json')
 
 test('main, auxiliary, and full packages all share the unified full-version + dsh.api policy', () => {
+  const VERSION_RE = /^(.+)-(\d+\.\d+)\.(\d+)$/
   for (const pkg of [main, compaction, sessionTitle, mcp, attachments, routePolicy, sessionBranch, profileManager, toolSkill, llm, sessionChannelConnection, sessionChannelGateway, full]) {
-    assert.match(pkg.version, /^(.+)-(\d+\.\d+)$/, `${pkg.name}: full unique version shape`)
-    assert.equal(pkg.version.match(/^(.+)-(\d+\.\d+)$/)[2], pkg.dsh.api, `${pkg.name}: version suffix must equal dsh.api`)
+    assert.match(pkg.version, VERSION_RE, `${pkg.name}: full unique version shape`)
+    const match = pkg.version.match(VERSION_RE)
+    assert.equal(match[2], pkg.dsh.api, `${pkg.name}: version suffix must equal dsh.api`)
+    assert.equal(match[3], '0', `${pkg.name}: frozen baseline shares maintenance component 0`)
     assert.equal(pkg.dsh.api, main.dsh.api, `${pkg.name}: API protocol must equal the main package`)
-    assert.equal(pkg.version.match(/^(.+)-\d+\.\d+$/)[1], main.version.match(/^(.+)-\d+\.\d+$/)[1], `${pkg.name}: runtime part must equal the main package`)
+    assert.equal(match[1], main.version.match(VERSION_RE)[1], `${pkg.name}: runtime part must equal the main package`)
   }
-  assert.equal(main.version, '0.1.0-rc.6-0.7')
-  assert.equal(main.dsh.api, '0.7')
+  assert.equal(main.version, '0.1.0-rc.6-0.1.0')
+  assert.equal(main.dsh.api, '0.1')
 })
 
 test('the auxiliary packages do not declare the main package as a runtime dependency', () => {

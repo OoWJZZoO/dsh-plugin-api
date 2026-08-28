@@ -20,7 +20,7 @@ import {
  * terminal outcomes deterministically.
  */
 function createFakeExecutor({
-  handshakeShapes = { builtForRuntime: '0.1.0-rc.6', apiProtocol: '0.7' },
+  handshakeShapes = { builtForRuntime: '0.1.0-rc.6', apiProtocol: '0.1' },
   progressStages = ['prepare', 'validate', 'commit'],
   outcome = 'success',
   resultCode,
@@ -37,7 +37,7 @@ function createFakeExecutor({
     'const write = (obj) => process.stdout.write(JSON.stringify(obj) + "\\n")',
     'const env = process.env',
     'if (command === "handshake") {',
-    '  write({ type: "result", outcome: env.FAKE_HANDSHAKE_OUTCOME ?? "success", result: { builtForRuntime: env.FAKE_RUNTIME ?? "0.1.0-rc.6", apiProtocol: env.FAKE_API ?? "0.7" } })',
+    '  write({ type: "result", outcome: env.FAKE_HANDSHAKE_OUTCOME ?? "success", result: { builtForRuntime: env.FAKE_RUNTIME ?? "0.1.0-rc.6", apiProtocol: env.FAKE_API ?? "0.1" } })',
     '  process.exit(0)',
     '}',
     'const handleBearing = command === "quick-write" || command === "snapshot-validate"',
@@ -79,7 +79,7 @@ function baseOptions(fake, extra = {}) {
   return {
     logger: { warn() {}, error() {} },
     installedRuntime: '0.1.0-rc.6',
-    facadeApi: '0.7',
+    facadeApi: '0.1',
     env: {
       ...BASE_ENV,
       DSH_PLUGIN_API_PROFILE_EXECUTOR: fake.script,

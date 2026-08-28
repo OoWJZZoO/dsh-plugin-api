@@ -17,7 +17,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import vm from 'node:vm'
@@ -236,9 +236,25 @@ test('host regression: the boundary-era and current hosts agree on every pre-exi
   try {
     cpSync(path.join(REPO_ROOT, 'lib'), path.join(tmp, 'lib'), { recursive: true })
     // The host reads its own manifest and the auxiliary package manifests
-    // during the core guard, so the archived tree needs those too.
+    // during the core guard, so the archived tree needs those too. The
+    // boundary-era library files are paired with the boundary-era package
+    // metadata: the version-baseline change makes newer metadata unparseable
+    // by the boundary-era version parsing, so mixing eras would invalidate the
+    // pre-existing-face comparison.
     cpSync(path.join(REPO_ROOT, 'package.json'), path.join(tmp, 'package.json'))
     cpSync(path.join(REPO_ROOT, 'packages'), path.join(tmp, 'packages'), { recursive: true })
+    writeFileSync(path.join(tmp, 'package.json'), gitShow(BOUNDARY_SHA, 'package.json'))
+    for (const pkgDir of readdirSync(path.join(REPO_ROOT, 'packages'))) {
+      try {
+        writeFileSync(
+          path.join(tmp, 'packages', pkgDir, 'package.json'),
+          gitShow(BOUNDARY_SHA, `packages/${pkgDir}/package.json`),
+        )
+      } catch {
+        // packages that did not exist at the boundary commit keep the
+        // current metadata; the boundary-era host never reads them.
+      }
+    }
     for (const rel of BOUNDARY_CHANGED_LIB_FILES) {
       writeFileSync(path.join(tmp, 'lib', rel), gitShow(BOUNDARY_SHA, `lib/${rel}`))
     }

@@ -21,8 +21,11 @@ export const LOCKED_OWNER_PACKAGE = '@deepseek-ai/dsh-tool-skill'
  */
 export function parseFullVersion(version) {
   if (typeof version !== 'string') return null
-  const match = /^(.+)-(\d+\.\d+)$/.exec(version.trim())
-  return match ? { runtime: match[1], api: match[2] } : null
+  const match = /^(.+)-(\d+\.\d+)(?:\.(\d+))?$/.exec(version.trim())
+    if (!match) return null
+  const parsed = { runtime: match[1], api: match[2] }
+  if (match[3] !== undefined) parsed.maintenance = match[3]
+  return parsed
 }
 
 /**

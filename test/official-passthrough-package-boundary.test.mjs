@@ -17,11 +17,13 @@ test('package protocol metadata stays mutually consistent and atomic while the c
     assert.equal(pkg.version, MAIN.version, `${path} version must equal the main package version`)
     assert.equal(pkg.dsh?.api, MAIN.dsh?.api, `${path} dsh.api must equal the main package dsh.api`)
   }
-  // The full unique version is `<runtime>-<api protocol>`; both parts must be
-  // present and the runtime part must equal the installed facade runtime.
-  const match = /^(.+)-(0\.\d+)$/.exec(MAIN.version)
+  // The full unique version is `<runtime>-<api generation>.<api increment>.<maintenance>`;
+  // the runtime part must be present and the api part must equal the installed
+  // facade dsh.api.
+  const match = /^(.+)-(\d+\.\d+)\.(\d+)$/.exec(MAIN.version)
   assert.ok(match, `version ${MAIN.version} must carry the runtime and api protocol parts`)
   assert.equal(match[2], MAIN.dsh?.api, 'the api protocol part must agree with dsh.api')
+  assert.equal(match[3], '0', 'the frozen baseline shares maintenance component 0')
   assert.ok(match[1].length > 0)
   assert.equal(typeof MAIN.dsh?.client?.inject, 'object')
 })

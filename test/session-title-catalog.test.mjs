@@ -9,8 +9,8 @@ import { createSessionTitleEventsCatalogSlice, SESSION_TITLE_CONTRACT_SYMBOL } f
 import { createServicesNamespace } from '../lib/services.js'
 
 const AUX_NAME = '@deepseek-ai/dsh-plugin-api-session-title'
-const MATCHING_CONTRACT = { runtime: '0.1.0-rc.6', api: '0.7' }
-const MATCHING_MANIFEST = { version: '0.1.0-rc.6-0.7', api: '0.7' }
+const MATCHING_CONTRACT = { runtime: '0.1.0-rc.6', api: '0.1' }
+const MATCHING_MANIFEST = { version: '0.1.0-rc.6-0.1.0', api: '0.1' }
 
 function makeDispatchCtx() {
   const hooks = new Map()

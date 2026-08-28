@@ -33,8 +33,8 @@ function createFakeCtx(options = {}) {
   return { ctx, state }
 }
 
-const MATCHING_VERSION = '0.1.0-rc.6-0.7'
-const MATCHING_API = '0.7'
+const MATCHING_VERSION = '0.1.0-rc.6-0.1.0'
+const MATCHING_API = '0.1'
 const MISMATCH_VERSION = '0.1.0-rc.6-0.8'
 const MISMATCH_API = '0.8'
 
@@ -138,7 +138,7 @@ test('APPLY: existing gateway without our symbol → conflict inert', () => {
 test('APPLY: outer try/catch stays inert', () => {
   const apply = createSessionChannelGatewayApply({
     readPackageVersion: () => { throw new Error('boom') },
-    readPackageApi: () => '0.7',
+    readPackageApi: () => '0.1',
     forkedApply: () => {},
   })
   const { ctx, state } = createFakeCtx({ entries: [DISABLED_OFFICIAL(), REPLACEMENT_ENTRY()] })

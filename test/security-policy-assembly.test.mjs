@@ -188,7 +188,7 @@ test('re-apply is idempotent for the security feature', () => {
 
 test('pluginApi service exposes the security disabled surface until mounted', () => {
   const registry = { snapshot: () => [], isActive: () => false }
-  const ServiceClass = createPluginApiService({ apiVersion: '0.7', registry, coreActive: false })
+  const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: false })
   const state = {}
   const ctx = {
     reflect: { provide(name, value) { if (name === 'pluginApi') state.pluginApi = value } },

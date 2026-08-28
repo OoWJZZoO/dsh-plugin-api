@@ -16,8 +16,8 @@ import {
   ROUTE_POLICY_COMPONENT_SYMBOL,
 } from '../lib/route-policy.js'
 
-const VERSION = '0.1.0-rc.6-0.7'
-const API = '0.7'
+const VERSION = '0.1.0-rc.6-0.1.0'
+const API = '0.1'
 
 function hasContentLikeKeys(value, seen = new Set()) {
   if (value === null || typeof value !== 'object') return false

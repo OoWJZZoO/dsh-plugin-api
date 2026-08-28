@@ -34,6 +34,6 @@
 - 每个保留公共成员都有明确的 capability、runtime、effect、composition，以及适用时的 authority map、scope、resource 和失败语义。
 - Composable Profile 边界明确且可测试，推荐面不存在未登记的 singleton、silent last-wins 或高层 authority 旁路。
 - host/client 遵循统一的领域 API 与低层 `services.*` passthrough 分层规则，公共契约由同一 registry 约束。
-- 发布前不保留的 API 已直接删除；仅因 runtime identity 不可用的 `services.*` 成员保留路径并呈现可识别的 `disabled/unavailable` 状态。任何不保留的公共 API 删除在执行删除前必须向人类报备，明确列出删除项、影响范围、替代路径（如有）和删除理由；报备不等于默认保留，批准后仍按公共面减法原则执行。
+- 发布前不保留的 API 已直接删除。本地开发阶段（API 未发布），`services.*` 中经审计确认无独立长期价值的成员同样**直接删除 PATH**（删除前按本条报备批准）；「保留路径并呈现可识别的 `disabled/unavailable` 状态」仅适用于**发布并进入运维阶段后**、因 runtime identity 失配或可选安装缺失而不可用的已保留成员。任何不保留的公共 API 删除在执行删除前必须向人类报备，明确列出删除项、影响范围、替代路径（如有）和删除理由；报备不等于默认保留，批准后仍按公共面减法原则执行。
 - 组合测试覆盖顺序、冲突、失败、重载、scope、claim、generation、stale disposer 和 cleanup；消费者迁移与 headless/dev boot 验收通过。
 - 所有实现、测试、规格和登记均按 Stage 4 全局终审通过后提交，工作区恢复干净。

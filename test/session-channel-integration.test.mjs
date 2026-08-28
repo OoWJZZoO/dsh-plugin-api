@@ -23,7 +23,7 @@ function createMockSessionApi() {
 
 function createRealService() {
   const registry = createFeatureRegistry()
-  const ServiceClass = createPluginApiService({ apiVersion: '0.7', registry, coreActive: true })
+  const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
   const service = new ServiceClass({
     reflect: { provide() {} },
     get() { return undefined },

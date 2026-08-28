@@ -78,10 +78,10 @@ const fullLayer = [
 
 test('the full package follows the unified full-version and dsh.api policy', () => {
   assert.equal(pkg.name, '@deepseek-ai/dsh-plugin-api-full')
-  assert.equal(pkg.version, '0.1.0-rc.6-0.7')
-  assert.equal(pkg.dsh.api, '0.7')
-  assert.match(pkg.version, /^(.+)-(\d+\.\d+)$/)
-  assert.equal(pkg.version.match(/^(.+)-(\d+\.\d+)$/)[2], pkg.dsh.api)
+  assert.equal(pkg.version, '0.1.0-rc.6-0.1.0')
+  assert.equal(pkg.dsh.api, '0.1')
+  assert.match(pkg.version, /^(.+)-(\d+\.\d+)\.(\d+)$/)
+  assert.equal(pkg.version.match(/^(.+)-(\d+\.\d+)\.(\d+)$/)[2], pkg.dsh.api)
 })
 
 test('the full package depends on the main facade, the companion executor, and every auxiliary package at workspace-consistent versions', () => {

@@ -43,14 +43,14 @@ function markedSessions(branches) {
   return sessions
 }
 
-function createMountHarness({ services = new Map(), marker = false, manifest = null, facadeContract = { runtime: '0.1.0-rc.6', api: '0.7' } } = {}) {
+function createMountHarness({ services = new Map(), marker = false, manifest = null, facadeContract = { runtime: '0.1.0-rc.6', api: '0.1' } } = {}) {
   const registry = {
     snapshot: () => [],
     isActive: () => false,
     disable() {},
     mount() {},
   }
-  const Service = createPluginApiService({ apiVersion: '0.7', registry, coreActive: true })
+  const Service = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
   const ctx = {
     fiber: { uid: 1, state: 2 },
     reflect: { provide() { return () => {} } },
@@ -74,7 +74,7 @@ test('replacement active: pluginApi.session.branches forwards operations and ava
   const calls = []
   const { service, featureRegistry, logger, auxiliaryManifests, facadeContract } = createMountHarness({
     marker: makeMarkerBranches(calls),
-    manifest: { version: '0.1.0-rc.6-0.7', api: '0.7' },
+    manifest: { version: '0.1.0-rc.6-0.1.0', api: '0.1' },
   })
   const mounted = mountSessionBranchFeature({
     ctx: service.ctx, service, featureRegistry, logger, auxiliaryManifests, facadeContract,
@@ -93,7 +93,7 @@ test('replacement active: pluginApi.session.branches forwards operations and ava
 
 test('no replacement marker: mount succeeds but operations reject with the typed disabled error', () => {
   const { service, featureRegistry, logger, auxiliaryManifests, facadeContract } = createMountHarness({
-    manifest: { version: '0.1.0-rc.6-0.7', api: '0.7' },
+    manifest: { version: '0.1.0-rc.6-0.1.0', api: '0.1' },
   })
   const mounted = mountSessionBranchFeature({
     ctx: service.ctx, service, featureRegistry, logger, auxiliaryManifests, facadeContract,
@@ -131,7 +131,7 @@ test('version mismatch or absent auxiliary: the facade feature is disabled and n
 })
 
 test('facade inactive: branch add-on rejects with inactive/feature-disabled typing and availability is honest', () => {
-  const { service } = createMountHarness({ manifest: { version: '0.1.0-rc.6-0.7', api: '0.7' } })
+  const { service } = createMountHarness({ manifest: { version: '0.1.0-rc.6-0.1.0', api: '0.1' } })
   // never mounted: sessionBranch slot stays on the disabled surface
   assert.deepEqual(service.session.branches.availability(), Object.freeze({ active: false, contract: false }))
   assert.throws(() => service.session.branches.create('p1', 0, { kind: 'retry' }), (error) => {
@@ -184,7 +184,7 @@ test('pluginApi.session identity is preserved with the branches add-on (no leaka
   const calls = []
   const { service, featureRegistry, logger, auxiliaryManifests, facadeContract } = createMountHarness({
     marker: makeMarkerBranches(calls),
-    manifest: { version: '0.1.0-rc.6-0.7', api: '0.7' },
+    manifest: { version: '0.1.0-rc.6-0.1.0', api: '0.1' },
   })
   const mounted = mountSessionBranchFeature({
     ctx: service.ctx, service, featureRegistry, logger, auxiliaryManifests, facadeContract,

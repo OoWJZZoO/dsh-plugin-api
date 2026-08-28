@@ -26,7 +26,7 @@ export function runHandshake(manifest, _storage) {
   }
   const version = typeof manifest.version === 'string' ? manifest.version : undefined
   const apiProtocol = typeof manifest.dsh?.api === 'string' ? manifest.dsh.api.trim() : undefined
-  const builtForRuntime = typeof version === 'string' ? version.match(/^(.+)-\d+\.\d+$/)?.[1] : undefined
+  const builtForRuntime = typeof version === 'string' ? version.match(/^(.+)-\d+\.\d+(?:\.\d+)?$/)?.[1] : undefined
   if (typeof builtForRuntime !== 'string' || typeof apiProtocol !== 'string') {
     return {
       outcome: 'error',
