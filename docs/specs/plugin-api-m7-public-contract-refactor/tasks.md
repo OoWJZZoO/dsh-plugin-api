@@ -56,7 +56,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
   - **3.3 删除门测试**：创建/扩展测试断言：approved 删除项已登记（registry removed 状态与删除报告链接）、未经批准的候选不得处于 removed、删除报备与 §15「deletion approval 链接」验收一致。
   - **要求**：3.2 是人类裁决点；本任务完成 = 报告产出 + 人类批准齐备 + registry 登记同步。
 
-- [ ] **4. Host namespace cutover（requirements §2、§4、§5、§8、§9、§12、§13）**
+- [x] **4. Host namespace cutover（requirements §2、§4、§5、§8、§9、§12、§13）**
   - **4.1 领域组装改造**：重构 `lib/plugin-api-service.js`（及需要的主干文件 `lib/index.js` 装配顺序）为以目标领域为单位的 builder 组装：根元数据（isActive/apiVersion/assertCompatible/capabilities）、每个目标 domain 一个 surface；既有 feature mounter 只发布内部 owner slot，公共 domain getter 只解析分配给该 domain 的当前 slot（冻结决策 3 的归并全部落实：`agents`、`sessions`（含 branches/channels）、`executions`（含 recovery）、`llm`（含 requestTransforms/admissionPolicies/adapters/routing）、`prompts`（含 provenance）、`tools`（含 discovery）、`skills.activation`、`attachments`、`mcp`、`tasks`、`coordination`、`workspaces.transactions`、`security`、`diagnostics`、`settings`、`profiles`、`remotes`、`storage`、`services`）；保留 lazy getter 以维持 caller-fiber identity 捕获，但绝不复活旧公共 path；disabled surface 使用目标成员形状与 typed 错误（§5）。
   - **4.2 capability 查询面**：实现 `pluginApi.capabilities.get/list/require`（design §Capability Query Surface 冻结形状）：读 registry-backed 能力描述与当前 availability；不暴露内部 mounter 快照、包名、替代行或可写 registry 对象；旧 `features` 快照按 Task 3 批准结果处理（批准删除则移除，未批准则从推荐面摘除并保留至批准）。
   - **4.3 装配通道落实**：经 Task 3 批准后，在同一个 cutover 边界内移除旧公共路径、重复 delegate、feature-shaped/replacement-shaped 公共根（§4「same migration boundary」）；只发布目标 path；每删除项在 registry 标 removed 并链接删除报告。
@@ -64,7 +64,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
   - **4.5 宿主面测试同步**：在同一 cutover 内更新既有宿主测试（`plugin-api-service-*.test.mjs`、`index-*.test.mjs`、`host-namespace-integration.test.mjs`、快照/cardinality 测试等）：目标 namespace 与成员基数（§15①）、旧 path 不存在（负向断言）、`.capabilities` 形状、disabled/unavailable 形状与 typed 错误（§5）、inactive core 统一错误、官方 passthrough 契约保持（§9）。
   - **要求**：cutover 后宿主公共面只包含目标树且无兼容 alias；`npm test` 中宿主相关测试与本任务新增测试全绿；registry 与快照一致。
 
-- [ ] **5. Client namespace cutover（requirements §3、§5、§14；design §Client Surface Assembly）**
+- [x] **5. Client namespace cutover（requirements §3、§5、§14；design §Client Surface Assembly）**
   - **5.1 client 根改组**：改造 `lib/client-runtime.js`：移除公共 `.client` 根 getter，直接发布根成员 `isActive / apiVersion / assertCompatible / capabilities / connection / events / remotes / settings / slots / lifecycle / codec / services`；纯官方 client 直通挪入 `services.*`（含 conversation、conversation events/views、timer、command UI、model directories 等按 registry 登记）；`defineManifest` 保持静态导出、不进运行时根；现有 caller-bound 构造与 leaf lease 保留在根 builder 之后。
   - **5.2 client 类型**：导出/维护 `ClientPluginApi`（与 `HostPluginApi` 分离；运行时可选属性探测不做类型级环境区分，§3）；host/client 同一领域词表与 owner/generation/stale-disposer/composition 合约（§3）。
   - **5.3 client bundle 重建**：按仓库既有 client bundle 构建流程重建并检入 `lib/client.js`（约含真实 codec、manifest、module-loader identity）；断言 bundle 中无 `.client` 公共成员、纯官方直通只经 `services.*`（§3、§5）；治理 token 扫描通过。

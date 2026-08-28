@@ -4,12 +4,14 @@
  */
 import { Context } from '@deepseek-ai/cordis'
 import { CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS } from '../lib/client-official-passthrough.js'
+import { PluginApiFeatureDisabledError, PluginApiInactiveError } from '../lib/errors.js'
 
 export const CORDIS_TRACKER = Symbol.for('cordis.tracker')
 export const LEAF_KEY = (surfaceKey) => surfaceKey.slice('client.'.length)
 export const DESCRIPTOR_BY_SURFACE = new Map(CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => [d.surfaceKey, d]))
 export const DESCRIPTOR_BY_KEY = new Map(CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => [LEAF_KEY(d.surfaceKey), d]))
 export const OTHERS = CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => d.surfaceKey)
+export { PluginApiFeatureDisabledError, PluginApiInactiveError }
 
 /**
  * Raw module loader fake with the public RC.6 contract: three-argument
@@ -249,5 +251,43 @@ export async function settleAll() {
   await new Promise((resolve) => setImmediate(resolve))
 }
 
-export const leafState = (api, surfaceKey) => api.client.features
-  .find((f) => f.name === DESCRIPTOR_BY_SURFACE.get(surfaceKey).featureName).isActive
+/**
+ * Side-effect-free probe member per leaf: the fixture providers expose these
+ * methods/properties with no state mutation beyond a harmless last-* field, so
+ * probing leaves the official behaviors asserted by the leaf tests untouched.
+ */
+const PROBE_MEMBER = Object.freeze({
+  'client.inputTriggers': 'sessionOf',
+  'client.commandUi': 'popupFor',
+  'client.modelDirectories': 'directoryFor',
+  'client.conversation': 'input',
+  'client.conversationEvents': 'entries',
+  'client.conversationViews': 'entries',
+  'client.timer': 'timeout',
+})
+
+/**
+ * Check whether a client leaf is active. Probes the leaf facade under
+ * `api.services.*`: a disabled or inactive leaf typed-fails on any member
+ * access (PluginApiFeatureDisabledError / PluginApiInactiveError), while an
+ * active leaf resolves the member (property) or the member call succeeds
+ * (method). The probe member is chosen to be side-effect free.
+ */
+export const leafState = (api, surfaceKey) => {
+  const descriptor = DESCRIPTOR_BY_SURFACE.get(surfaceKey)
+  const face = descriptor ? api.services[surfaceKey.slice('client.'.length)] : undefined
+  if (!face) return false
+  const memberName = PROBE_MEMBER[surfaceKey]
+  if (!(memberName in descriptor.members)) return false
+  try {
+    const value = face[memberName]
+    if (descriptor.members[memberName] === 'method') value()
+    return true
+  } catch (error) {
+    // Code-based checks stay valid across the bundle's vm realm, where the
+    // typed error classes are not identical to the lib/errors.js classes.
+    const code = error?.code ?? error?.name
+    if (code === 'PLUGIN_API_FEATURE_DISABLED' || code === 'PLUGIN_API_INACTIVE') return false
+    throw error
+  }
+}

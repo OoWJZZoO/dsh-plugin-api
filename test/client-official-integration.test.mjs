@@ -15,6 +15,7 @@ import { readFileSync } from 'node:fs'
 import vm from 'node:vm'
 
 const bundle = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
+import { CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS } from '../lib/client-official-passthrough.js'
 
 function loadClientBundle() {
   let handoff
@@ -149,13 +150,14 @@ test('joined client surface exposes exact services, event, and llm faces with id
   const dispose = artifact.apply(ctx)
   const api = ctx.get('pluginApi')
 
-  assert.ok(api?.client)
-  assert.deepEqual(Object.keys(api.client.services), ['isActive', ...SERVICE_NAMES])
-  assert.equal(api.client.services.isActive, true)
-  assert.deepEqual(Object.keys(api.client.events), ['isActive', 'localeChange', 'themeChange', 'connectionReset', 'commandExecuted', 'on'])
+  assert.ok(api)
+  const passthroughNames = CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => d.serviceName)
+  assert.deepEqual(Object.keys(api.services), ['isActive', ...SERVICE_NAMES, ...passthroughNames])
+  assert.equal(api.services.isActive, true)
+  assert.deepEqual(Object.keys(api.events), ['isActive', 'localeChange', 'themeChange', 'connectionReset', 'commandExecuted', 'on'])
 
   for (const name of SERVICE_NAMES) {
-    const face = api.client.services[name]
+    const face = api.services[name]
     assert.deepEqual(Object.keys(face), ['isActive', ...SERVICE_MEMBERS[name]])
     assert.equal(face.isActive, true)
     for (const member of SERVICE_MEMBERS[name]) {
@@ -170,9 +172,9 @@ test('joined client surface exposes exact services, event, and llm faces with id
     }
   }
 
-  assert.equal(api.client.connection.isActive, true)
-  assert.equal(typeof api.client.connection.api.settings.describe, 'function')
-  const llm = api.client.connection.api.llm
+  assert.equal(api.connection.isActive, true)
+  assert.equal(typeof api.connection.api.settings.describe, 'function')
+  const llm = api.connection.api.llm
   assert.deepEqual(Object.keys(llm), ['providers', 'models', 'discoverModels'])
   assert.equal(llm.isActive, undefined, 'the llm face carries only the approved members')
   assert.equal(typeof llm.providers, 'function')
@@ -188,7 +190,7 @@ test('llm connection delegates receiver, payload, signal, and Promise identity',
   const ctx = createCtx({ providers: {}, connection })
   const dispose = artifact.apply(ctx)
   const api = ctx.get('pluginApi')
-  const face = api.client.connection.api.llm
+  const face = api.connection.api.llm
 
   const signal = new AbortController().signal
   const promise = face.providers({ routes: ['x'] })
@@ -211,7 +213,7 @@ test('client events subscribe through the live source with identity, order, and 
   const ctx = createCtx({ providers: {} })
   const dispose = artifact.apply(ctx)
   const api = ctx.get('pluginApi')
-  const events = api.client.events
+  const events = api.events
 
   const delivered = []
   const first = { id: 1 }
@@ -247,11 +249,11 @@ test('a malformed provider disables only its owning leaf while unrelated leaves 
   const dispose = artifact.apply(ctx)
   const api = ctx.get('pluginApi')
 
-  const locale = api.client.services.locale
+  const locale = api.services.locale
   assert.equal(locale.isActive, false)
   assert.throws(() => locale.setLocale('en'), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.locale')
-  assert.equal(api.client.services.modules.isActive, true)
-  assert.equal(api.client.services.isActive, true, 'a disabled leaf keeps the namespace publishable')
+  assert.equal(api.services.modules.isActive, true)
+  assert.equal(api.services.isActive, true, 'a disabled leaf keeps the namespace publishable')
   dispose()
 })
 
@@ -264,10 +266,10 @@ test('absent optional providers fail open: faces publish in disabled shape and t
   const dispose = artifact.apply(ctx)
   const api = ctx.get('pluginApi')
 
-  assert.ok(api?.client)
-  assert.equal(api.client.services.isActive, true, 'the services namespace reflects root activity, not per-leaf providers')
+  assert.ok(api)
+  assert.equal(api.services.isActive, true, 'the services namespace reflects root activity, not per-leaf providers')
   for (const name of SERVICE_NAMES) {
-    const face = api.client.services[name]
+    const face = api.services[name]
     assert.equal(face.isActive, false)
     const valueMember = SERVICE_MEMBERS[name].find((member) => VALUE_MEMBERS[name]?.has(member))
     if (valueMember) {
@@ -276,10 +278,10 @@ test('absent optional providers fail open: faces publish in disabled shape and t
     const methodMember = SERVICE_MEMBERS[name].find((member) => !VALUE_MEMBERS[name]?.has(member))
     assert.throws(() => face[methodMember](), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === `client.${name}`)
   }
-  const llm = api.client.connection.api.llm
+  const llm = api.connection.api.llm
   assert.deepEqual(Object.keys(llm), ['providers', 'models', 'discoverModels'])
   assert.throws(() => llm.providers(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.connection')
-  assert.equal(api.client.connection.isActive, true, 'the existing connection face is independent of the llm face')
+  assert.equal(api.connection.isActive, true, 'the existing connection face is independent of the llm face')
   dispose()
 })
 
@@ -290,9 +292,9 @@ test('the joined facade keeps connection.isActive when the connection service is
   const dispose = artifact.apply(ctx)
   const api = ctx.get('pluginApi')
 
-  assert.equal(api.client.connection.isActive, false, 'the existing connection face degrades through its own path')
-  assert.throws(() => api.client.connection.api.settings.describe(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'clientConnection')
-  assert.throws(() => api.client.connection.api.llm.providers(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.connection')
+  assert.equal(api.connection.isActive, false, 'the existing connection face degrades through its own path')
+  assert.throws(() => api.connection.api.settings.describe(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'clientConnection')
+  assert.throws(() => api.connection.api.llm.providers(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.connection')
   dispose()
 })
 
@@ -303,7 +305,7 @@ test('reapply reuses the active facade and disposal fully unregisters the surfac
   const dispose = artifact.apply(ctx)
   assert.equal(artifact.apply(ctx), dispose, 'reapply reuses the live facade')
   const api = ctx.get('pluginApi')
-  assert.equal(api.client.services.modules.isActive, true)
+  assert.equal(api.services.modules.isActive, true)
 
   assert.equal(await dispose(), true)
   assert.equal(ctx.get('pluginApi'), undefined, 'the provided pluginApi is unregistered on disposal')
@@ -311,7 +313,7 @@ test('reapply reuses the active facade and disposal fully unregisters the surfac
 
   const dispose2 = artifact.apply(ctx)
   const api2 = ctx.get('pluginApi')
-  assert.ok(api2?.client)
-  assert.equal(api2.client.services.modules.isActive, true)
+  assert.ok(api2)
+  assert.equal(api2.services.modules.isActive, true)
   dispose2()
 })

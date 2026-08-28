@@ -1,14 +1,15 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { Context } from '@deepseek-ai/cordis'
-import { apply, CLIENT_OFFICIAL_LEAVES } from '../lib/client-runtime.js'
+import { apply } from '../lib/client-runtime.js'
 import { CLIENT_ENTRY_URL, CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS } from '../lib/client-official-passthrough.js'
-import { PluginApiFeatureDisabledError, PluginApiInactiveError } from '../lib/errors.js'
+import { PluginApiInactiveError } from '../lib/errors.js'
 import {
   bootFixture,
   CORDIS_TRACKER,
   DESCRIPTOR_BY_SURFACE,
   leafState,
+  PluginApiFeatureDisabledError,
   settleAll,
 } from './official-passthrough-fixture.mjs'
 
@@ -20,26 +21,31 @@ test('the root and all seven pending shells are observable synchronously while t
   const dispose = apply(ctx)
   assert.equal(typeof dispose, 'function')
   const api = ctx.get('pluginApi')
-  assert.ok(api?.client)
-  assert.equal(api.client.connection.isActive, true)
-  assert.equal(typeof api.client.slots.register, 'function')
-  assert.equal(typeof api.client.codec, 'object')
-  const features = api.client.features
-  assert.deepEqual(features.slice(0, 10).map((f) => f.name), [
-    'clientManifest', 'clientConnection', 'clientCodec', 'clientOfficialServices',
-    'clientRemoteContribution', 'clientSettingsRemote', 'clientSettingsScope',
-    'clientSlots', 'clientSlotEvents', 'clientRemoteEvents',
-  ])
-  assert.equal(features[10].name, 'clientLifecycle')
-  assert.equal(features[10].isActive, true)
-  assert.deepEqual(features.slice(11).map((f) => f.name).sort(), [...CLIENT_OFFICIAL_LEAVES].sort())
-  for (const feature of features) assert.equal(typeof feature.isActive, 'boolean')
+  assert.ok(api)
+  assert.equal(api.connection.isActive, true)
+  assert.equal(typeof api.slots.register, 'function')
+  assert.equal(typeof api.codec, 'object')
+  // Top-level capability paths match the published root members.
+  const expectedPaths = ['isActive', 'apiVersion', 'assertCompatible', 'capabilities', 'connection',
+    'events', 'remotes', 'settings', 'slots', 'lifecycle', 'codec', 'services']
+  assert.deepEqual([...api.capabilities.list()].sort(), [...expectedPaths].sort())
+  for (const path of expectedPaths) {
+    assert.equal(api.capabilities.get(path).status, 'active', `${path} must be reported as active`)
+  }
+  // All seven official leaves are published under services.* as pending shells.
+  for (const descriptor of CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS) {
+    const leafName = descriptor.serviceName
+    assert.ok(api.services[leafName], `services.${leafName} must be published as a pending shell`)
+    assert.equal(leafState(api, descriptor.surfaceKey), false, `${descriptor.surfaceKey} must be inactive while pending`)
+  }
   // Pending leaves typed-fail with their surface key.
-  assert.throws(() => api.client.conversation.send('x'), (error) =>
+  assert.throws(() => api.services.conversation.send('x'), (error) =>
     error instanceof PluginApiFeatureDisabledError && error.feature === 'client.conversation')
   for (const descriptor of CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS) loader.resolvePending(descriptor.moduleId)
   await settleAll()
-  for (const feature of ctx.get('pluginApi').client.features.slice(11)) assert.equal(feature.isActive, true)
+  for (const surfaceKey of CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => d.surfaceKey)) {
+    assert.equal(leafState(ctx.get('pluginApi'), surfaceKey), true, `${surfaceKey} must be active after resolving`)
+  }
   await dispose()
 })
 
@@ -85,7 +91,7 @@ test('an import that settles without a matching loadCache identity disables only
   const api = ctx.get('pluginApi')
   assert.equal(leafState(api, 'client.timer'), false)
   assert.ok(logs.some((line) => line.includes('client.timer') && line.includes('invalid-export')))
-  assert.throws(() => api.client.timer.setTimeout(() => {}, 1), (error) =>
+  assert.throws(() => api.services.timer.setTimeout(() => {}, 1), (error) =>
     error instanceof PluginApiFeatureDisabledError && error.feature === 'client.timer')
   for (const surfaceKey of ['client.inputTriggers', 'client.commandUi', 'client.modelDirectories', 'client.conversation',
     'client.conversationEvents', 'client.conversationViews']) {
@@ -115,23 +121,26 @@ test('caller-scoped resolution: the provider sees the consuming context and rece
   const api = ctx.get('pluginApi')
   const childA = ctx.extend()
   const childB = ctx.extend()
-  assert.equal(await api.client.conversation.send('from-root'), ctx)
-  assert.equal(await childA.get('pluginApi').client.conversation.send('from-A'), childA)
-  assert.equal(await childB.get('pluginApi').client.conversation.send('from-B'), childB)
-  assert.equal(await api.client.conversation.send('again'), ctx, 'readings through separate compositions stay caller-scoped')
+  assert.equal(await api.services.conversation.send('from-root'), ctx)
+  assert.equal(await childA.get('pluginApi').services.conversation.send('from-A'), childA)
+  assert.equal(await childB.get('pluginApi').services.conversation.send('from-B'), childB)
+  assert.equal(await api.services.conversation.send('again'), ctx, 'readings through separate compositions stay caller-scoped')
 })
 
 test('each client getter read creates a fresh composition while member identities stay stable', async () => {
   const { ctx } = bootFixture()
   apply(ctx)
   const api = ctx.get('pluginApi')
-  const first = api.client
-  const second = api.client
-  assert.notEqual(first, second, 'every client read must create a fresh caller-bound composition')
+  // The root identity is stable across reads; the composition is created per
+  // member access (caller-bound services differ across reads).
+  const first = api
+  const second = api
+  assert.equal(first, second, 'the root identity is stable across reads')
   assert.equal(first.codec, second.codec)
   assert.equal(first.connection, second.connection)
-  assert.notEqual(first.conversation, second.conversation)
-  assert.equal(first.features.length, 18)
+  assert.notEqual(first.services.conversation, second.services.conversation)
+  // Top-level capabilities list contains the expected paths.
+  assert.equal(api.capabilities.list().length, 12)
 })
 
 test('cache invalidation retires only the affected leaf, typed-fails old references, logs once, and never rebinds', async () => {
@@ -141,7 +150,7 @@ test('cache invalidation retires only the affected leaf, typed-fails old referen
   const api = ctx.get('pluginApi')
   const inputDescriptor = DESCRIPTOR_BY_SURFACE.get('client.inputTriggers')
   assert.equal(leafState(api, 'client.inputTriggers'), true)
-  const retained = api.client.inputTriggers
+  const retained = api.services.inputTriggers
   loader.invalidate(inputDescriptor.moduleId)
   assert.throws(() => retained.registerSource({}), (error) =>
     error instanceof PluginApiFeatureDisabledError
@@ -149,7 +158,7 @@ test('cache invalidation retires only the affected leaf, typed-fails old referen
     && /invalid-export/.test(error.message))
   assert.equal(leafState(api, 'client.inputTriggers'), false)
   assert.equal(logs.filter((line) => line.includes('client.inputTriggers')).length, 1, 'retirement must log once')
-  assert.equal(await api.client.conversation.send('ok'), providerValue, 'sibling leaves remain fully usable')
+  assert.equal(await api.services.conversation.send('ok'), providerValue, 'sibling leaves remain fully usable')
   // A reborn namespace in the cache must not silently rebind the retired leaf.
   loader.loadCache.set(inputDescriptor.moduleId, {
     exports: { InputTriggerService: class InputTriggerService {
@@ -172,9 +181,11 @@ test('disposal during an in-flight import retires the root generation and ignore
     assert.equal(await dispose(), true)
     for (const descriptor of CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS) loader.resolvePending(descriptor.moduleId)
     await settleAll()
-    assert.equal(api.client.features[10].isActive, false)
-    for (const feature of api.client.features.slice(11)) assert.equal(feature.isActive, false)
-    assert.throws(() => api.client.conversation.send('x'), (error) => error instanceof PluginApiInactiveError)
+    // After disposal all leaves are inactive.
+    for (const surfaceKey of CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => d.surfaceKey)) {
+      assert.equal(leafState(api, surfaceKey), false, `${surfaceKey} must be inactive after disposal`)
+    }
+    assert.throws(() => api.services.conversation.send('x'), (error) => error instanceof PluginApiInactiveError)
     assert.equal(unhandled, 0)
   } finally {
     process.off('unhandledRejection', onUnhandled)
@@ -191,10 +202,12 @@ test('a clean apply after disposal creates a new root generation and old referen
   assert.notEqual(secondDispose, firstDispose)
   await settleAll()
   const secondApi = ctx.get('pluginApi')
-  assert.equal(secondApi.client.features[10].isActive, true)
-  for (const feature of secondApi.client.features.slice(11)) assert.equal(feature.isActive, true)
-  assert.throws(() => firstApi.client.conversation.send('old'), (error) => error instanceof PluginApiInactiveError)
-  assert.equal(await secondApi.client.conversation.send('new'), providerValue)
+  // All seven official leaves are published under services.* and are active.
+  for (const surfaceKey of CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => d.surfaceKey)) {
+    assert.equal(leafState(secondApi, surfaceKey), true, `${surfaceKey} must be active on the new generation`)
+  }
+  assert.throws(() => firstApi.services.conversation.send('old'), (error) => error instanceof PluginApiInactiveError)
+  assert.equal(await secondApi.services.conversation.send('new'), providerValue)
 })
 
 test('an absent module loader disables all seven leaves with missing-service while the existing client face publishes', async () => {
@@ -204,18 +217,19 @@ test('an absent module loader disables all seven leaves with missing-service whi
   const dispose = apply(ctx)
   assert.equal(typeof dispose, 'function')
   const api = ctx.get('pluginApi')
-  assert.ok(api?.client)
-  assert.equal(typeof api.client.slots.register, 'function', 'existing client faces stay published without the module loader')
-  assert.equal(api.client.features.length, 18)
-  assert.equal(api.client.features[10].isActive, false)
-  for (const feature of api.client.features.slice(11)) assert.equal(feature.isActive, false)
+  assert.ok(api)
+  assert.equal(typeof api.slots.register, 'function', 'existing client faces stay published without the module loader')
+  // All seven official leaves are published under services.* and are disabled.
+  for (const surfaceKey of CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => d.surfaceKey)) {
+    assert.equal(leafState(api, surfaceKey), false, `${surfaceKey} must be disabled without the module loader`)
+  }
   for (const surfaceKey of ['client.inputTriggers', 'client.commandUi', 'client.modelDirectories', 'client.conversation',
     'client.conversationEvents', 'client.conversationViews', 'client.timer']) {
     assert.ok(logs.some((line) => line.includes(surfaceKey) && line.includes('missing-service')), `missing diagnostic for ${surfaceKey}`)
   }
-  assert.throws(() => api.client.timer.setTimeout(() => {}, 1), (error) =>
+  assert.throws(() => api.services.timer.setTimeout(() => {}, 1), (error) =>
     error instanceof PluginApiFeatureDisabledError && error.feature === 'client.timer')
-  assert.throws(() => api.client.conversation.send('x'), (error) => error.feature === 'client.conversation')
+  assert.throws(() => api.services.conversation.send('x'), (error) => error.feature === 'client.conversation')
   await dispose()
 })
 
@@ -224,28 +238,28 @@ test('independence fixture: a raw modules service plus seven valid namespaces ac
   const dispose = apply(ctx)
   await settleAll()
   const api = ctx.get('pluginApi')
-  assert.equal(api.client.modules, undefined, 'no client.modules facade is invented')
-  assert.equal(api.client.features.length, 18)
-  assert.equal(api.client.features[10].isActive, true)
-  for (const feature of api.client.features.slice(11)) assert.equal(feature.isActive, true, `${feature.name} must activate`)
-  const input = api.client.inputTriggers
+  // All seven official leaves are published under services.* and are active.
+  for (const surfaceKey of CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => d.surfaceKey)) {
+    assert.equal(leafState(api, surfaceKey), true, `${surfaceKey} must activate`)
+  }
+  const input = api.services.inputTriggers
   const source = { id: 1 }
   const unregisterSource = input.registerSource(source)
   assert.deepEqual(input.sessionOf('actx').menu, 'actx')
   unregisterSource()
   assert.equal(input.sessionOf('actx').menu, 'actx') // opaque controller identity stays official
-  const ui = api.client.commandUi
+  const ui = api.services.commandUi
   assert.equal(ui.register('c1')(), 'c1')
   assert.equal(ui.decorate('d1')(), 'd1')
   assert.deepEqual(ui.popupFor('pctx'), { actx: 'pctx' })
-  assert.deepEqual(api.client.modelDirectories.directoryFor('sid'), { sessionId: 'sid' })
-  const conversation = api.client.conversation
+  assert.deepEqual(api.services.modelDirectories.directoryFor('sid'), { sessionId: 'sid' })
+  const conversation = api.services.conversation
   assert.equal(typeof conversation.input, 'object')
   assert.equal(await conversation.send('hi'), providerValue)
   assert.deepEqual(await conversation.updateQueue('qi', 'action'), { id: 'q1', action: 'replace' }, 'the fixture queue promise value is forwarded')
   assert.equal(await conversation.cancel(), undefined)
   assert.equal(await conversation.loadOlder(), 1)
-  const events = api.client.conversationEvents
+  const events = api.services.conversationEvents
   const definition = { id: 'def' }
   const unregisterDef = events.register(definition)
   assert.deepEqual(events.entries(), [definition])
@@ -254,10 +268,10 @@ test('independence fixture: a raw modules service plus seven valid namespaces ac
   events.registerFallback({ id: 'fb' })
   assert.equal(events.fallbackEntry().id, 'fb')
   events.subscribe(() => {})
-  const views = api.client.conversationViews
+  const views = api.services.conversationViews
   views.register({ id: 'view' })
   assert.deepEqual(views.entries().map((entry) => entry.id), ['view'])
-  const timer = api.client.timer
+  const timer = api.services.timer
   assert.equal(typeof timer.setTimeout(() => {}, 1), 'function')
   assert.equal(await timer.timeout(10), 10)
   const iterator = timer.interval(10)
@@ -288,7 +302,7 @@ test('a rejected import disables only its leaf and never becomes an unhandled re
       'client.conversationEvents', 'client.conversationViews', 'client.timer']) {
       assert.equal(leafState(api, surfaceKey), true)
     }
-    assert.throws(() => api.client.modelDirectories.directoryFor('x'), (error) =>
+    assert.throws(() => api.services.modelDirectories.directoryFor('x'), (error) =>
       error instanceof PluginApiFeatureDisabledError && error.feature === 'client.modelDirectories')
     assert.equal(unhandled, 0)
   } finally {

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 
 import { validateRegistry } from '../scripts/registry-validate.mjs'
 import { buildSnapshots } from '../scripts/registry-snapshot.mjs'
+import { CLIENT_CAPABILITY_PATHS } from '../lib/client-runtime.js'
 
 const REGISTRY_PATH = fileURLToPath(new URL('../docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json', import.meta.url))
 const registry = JSON.parse(readFileSync(REGISTRY_PATH, 'utf8'))
@@ -15,6 +16,19 @@ test('the current registry validates cleanly', () => {
   const result = validateRegistry(registry)
   assert.deepEqual(result.errors, [], 'registry must pass the pure validator')
   assert.equal(result.ok, true)
+})
+
+test('the client runtime root member inventory stays in sync with the registry', () => {
+  assert.deepEqual(
+    [...CLIENT_CAPABILITY_PATHS].sort(),
+    [...registry.clientDomainTree].sort(),
+    'CLIENT_CAPABILITY_PATHS must mirror registry clientDomainTree',
+  )
+  assert.deepEqual(
+    [...registry.clientRoot.members].sort(),
+    [...registry.clientDomainTree].sort(),
+    'registry clientRoot.members must mirror clientDomainTree',
+  )
 })
 
 test('validator rejects duplicate public paths', () => {
@@ -77,7 +91,7 @@ test('snapshots derive every surface from the same registry', () => {
   }
   assert.ok(Array.isArray(snapshots.clientSurface.roots))
   assert.ok(snapshots.clientSurface.roots.includes('connection'))
-  assert.equal(snapshots.clientSurface.clientRoot.publicRoot, 'ctx.pluginApi.client')
+  assert.equal(snapshots.clientSurface.clientRoot.publicRoot, 'ctx.pluginApi (direct root members)')
   assert.ok(snapshots.servicesFixture.keys.includes('fs'))
   assert.ok(snapshots.servicesFixture.keys.length >= 21)
   assert.ok(snapshots.compositionMatrix.byComposition !== undefined)

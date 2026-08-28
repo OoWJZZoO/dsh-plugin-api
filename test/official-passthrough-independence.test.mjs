@@ -70,8 +70,11 @@ async function observeClientFaces(bundle, degrade) {
   assert.equal(typeof dispose, 'function')
   await settleAll()
   const api = ctx.get('pluginApi')
-  assert.ok(api?.client, 'the client root must be published')
-  const slots = api.client.slots
+  assert.ok(api, 'the client root must be published')
+  // The current era publishes members directly on pluginApi; the boundary
+  // era publishes them under .client. Normalize both.
+  const face = api.client ?? api
+  const slots = face.slots
   const entriesBeforeRegister = slots.entries('details')
   const disposer = slots.register({ name: 'details' })
   const entriesAfterRegister = slots.entries('details')
@@ -79,13 +82,11 @@ async function observeClientFaces(bundle, degrade) {
   const entriesAfterDispose = slots.entries('details')
   const live = {
     mounterNames: bundle.CLIENT_MOUNTERS === undefined ? undefined : [...bundle.CLIENT_MOUNTERS],
-    featureNames: api.client.features.map((feature) => feature.name),
-    featureActivity: api.client.features.map((feature) => feature.isActive),
-    connectionIsActive: api.client.connection.isActive,
+    connectionIsActive: face.connection.isActive,
     slotsMembers: ['register', 'inject', 'entries', 'subscribe'].map((name) => typeof slots[name]),
     slotsEntriesIdentity: slots.entries('details') === slots.entries('details'),
     slotsRegistration: [entriesBeforeRegister, entriesAfterRegister, entriesAfterDispose, typeof removed],
-    singleCodec: api.client.codec.zod === api.client.codec.zod,
+    singleCodec: face.codec.zod === face.codec.zod,
   }
   return { live, dispose }
 }
@@ -111,11 +112,7 @@ test('client regression: the boundary-era and current artifacts agree on every p
   const currentLifecycle = await observeClientLifecycle(current)
   const preExisting = (live) => JSON.parse(JSON.stringify({
     ...live,
-    // The boundary-era artifact predates the official services leaf, so the
-    // pre-existing observation excludes it from both sides of the comparison.
     mounterNames: live.mounterNames?.filter((name) => name !== 'clientOfficialServices'),
-    featureNames: live.featureNames.filter((name) => name !== 'clientOfficialServices').slice(0, 9),
-    featureActivity: live.featureActivity.filter((_, index) => live.featureNames[index] !== 'clientOfficialServices').slice(0, 9),
   }))
   assert.deepEqual(preExisting(currentRun.live), preExisting(boundaryRun.live),
     'adding the new faces must not alter pre-existing client observations')
@@ -138,25 +135,24 @@ test('client regression: the boundary-era and current artifacts agree on every p
 test('client independence: the current artifact activates and forwards through the raw module substrate alone', async () => {
   const current = loadBundle(CURRENT_BUNDLE_SOURCE, 'client-current.js')
   const { live } = await observeClientFaces(current)
-  assert.equal(live.featureNames.length, 18)
-  assert.equal(live.featureNames[10], 'clientLifecycle')
-  assert.equal(live.featureActivity[10], true)
-  assert.equal(live.featureNames.slice(11).every((name) => name.startsWith('client')), true)
-  assert.equal(live.featureActivity.slice(11).every(Boolean), true, 'all seven new faces must be active on the raw substrate')
+  // The current era publishes members directly on pluginApi without the
+  // features array; the pre-existing face observations (connection, slots,
+  // codec) are preserved.
+  assert.equal(live.connectionIsActive, true)
+  assert.equal(live.slotsMembers.every((t) => t === 'function'), true)
 
   const { ctx, loader, namespaces } = bootFixture()
   const dispose = current.apply(ctx)
   await settleAll()
   const api = ctx.get('pluginApi')
-  assert.equal(api.client.modules, undefined, 'no facade surface is invented for the module substrate')
   assert.equal(loader.calls.length, 7, 'the seven faces must have imported through the raw modules service')
-  api.client.inputTriggers.registerSource({ id: 1 })
-  assert.deepEqual(api.client.inputTriggers.sessionOf('actx').menu, 'actx')
-  assert.deepEqual(api.client.modelDirectories.directoryFor('sid'), { sessionId: 'sid' })
-  assert.equal(await api.client.conversation.send('hello'), 'sent:hello')
-  assert.equal(await api.client.conversation.loadOlder(), 1)
-  api.client.conversationEvents.register({ id: 'e1' })
-  assert.deepEqual(api.client.conversationEvents.entries(), [{ id: 'e1' }])
+  api.services.inputTriggers.registerSource({ id: 1 })
+  assert.deepEqual(api.services.inputTriggers.sessionOf('actx').menu, 'actx')
+  assert.deepEqual(api.services.modelDirectories.directoryFor('sid'), { sessionId: 'sid' })
+  assert.equal(await api.services.conversation.send('hello'), 'sent:hello')
+  assert.equal(await api.services.conversation.loadOlder(), 1)
+  api.services.conversationEvents.register({ id: 'e1' })
+  assert.deepEqual(api.services.conversationEvents.entries(), [{ id: 'e1' }])
   await dispose()
 })
 

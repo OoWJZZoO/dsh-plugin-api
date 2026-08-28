@@ -15,7 +15,7 @@ test('input triggers: source registration, opaque controller identity, and exact
   const { ctx, namespaces } = bootFixture()
   apply(ctx)
   await settleAll()
-  const face = apiOf(ctx).client.inputTriggers
+  const face = apiOf(ctx).services.inputTriggers
   assert.equal(leafState(apiOf(ctx), 'client.inputTriggers'), true)
   const Instance = namespaces.get('@deepseek-ai/dsh-client-ui-input-trigger').InputTriggerService
   const provider = ctx.get('inputTriggers')
@@ -37,7 +37,7 @@ test('command ui: register, decorate, and popupFor with excluded concrete member
   const { ctx, namespaces } = bootFixture()
   apply(ctx)
   await settleAll()
-  const face = apiOf(ctx).client.commandUi
+  const face = apiOf(ctx).services.commandUi
   const provider = ctx.get('commandUi')
   const contribution = { id: 'c' }
   const decoration = { id: 'd' }
@@ -57,7 +57,7 @@ test('model directories: directoryFor returns the live per-session directory ide
   const { ctx } = bootFixture()
   apply(ctx)
   await settleAll()
-  const face = apiOf(ctx).client.modelDirectories
+  const face = apiOf(ctx).services.modelDirectories
   const provider = ctx.get('modelDirectories')
   const first = face.directoryFor('session-1')
   assert.equal(first, provider.lastDirectory, 'the live directory is returned as-is, never a snapshot')
@@ -68,7 +68,7 @@ test('conversation: live input/blocks properties and the four scope-addressed Pr
   const { ctx } = bootFixture()
   apply(ctx)
   await settleAll()
-  const face = apiOf(ctx).client.conversation
+  const face = apiOf(ctx).services.conversation
   const provider = ctx.get('conversation')
   // Live reads: each access resolves through the provider, so provider-side
   // mutations are visible and the returned value is the provider's own.
@@ -95,7 +95,7 @@ test('conversation events: ordered live entries, subscriptions, fallback, and di
   const { ctx } = bootFixture()
   apply(ctx)
   await settleAll()
-  const face = apiOf(ctx).client.conversationEvents
+  const face = apiOf(ctx).services.conversationEvents
   const provider = ctx.get('conversationEvents')
   const seen = []
   const subscribeDisposer = face.subscribe(() => seen.push([...provider.definitions]))
@@ -125,7 +125,7 @@ test('conversation views: ordered live entries and exact subscription disposers'
   const { ctx } = bootFixture()
   apply(ctx)
   await settleAll()
-  const face = apiOf(ctx).client.conversationViews
+  const face = apiOf(ctx).services.conversationViews
   const provider = ctx.get('conversationViews')
   const seen = []
   face.subscribe(() => seen.push([...provider.definitions]))
@@ -141,7 +141,7 @@ test('timer: the complete overload contract with disposer, Promise, and iterator
   const { ctx } = bootFixture()
   apply(ctx)
   await settleAll()
-  const face = apiOf(ctx).client.timer
+  const face = apiOf(ctx).services.timer
   const provider = ctx.get('timer')
   const callback = () => {}
   // Callback overloads return the official disposer.

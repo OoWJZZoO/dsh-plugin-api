@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import vm from 'node:vm'
+import { leafState as leafProbe } from './official-passthrough-fixture.mjs'
 
 const bundle = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
 
@@ -82,12 +83,12 @@ test('official client artifact registers, composes all client leaves, and suppor
   const dispose = artifact.apply(ctx)
   assert.equal(typeof dispose, 'function')
   const api = ctx.get('pluginApi')
-  assert.ok(api?.client)
+  assert.ok(api)
   assert.equal(api[Symbol.for('@deepseek-ai/dsh-plugin-api/client-pluginApi')], true,
     'the published root carries the client brand symbol')
-  assert.equal(api.client.codec.zod, api.client.codec.zod, 'one zod value is shared by the public bundle')
-  assert.equal(api.client.connection.isActive, true)
-  assert.equal(typeof api.client.slots.on, 'function')
+  assert.equal(api.codec.zod, api.codec.zod, 'one zod value is shared by the public bundle')
+  assert.equal(api.connection.isActive, true)
+  assert.equal(typeof api.slots.on, 'function')
   assert.equal(artifact.apply(ctx), dispose, 'reapply reuses the active client facade')
   assert.equal(await dispose(), true)
   assert.equal(ctx.get('pluginApi'), undefined)
@@ -102,27 +103,16 @@ test('bundle publishes the seven official passthrough leaves, disabled without a
   const ctx = createCtx()
   const dispose = artifact.apply(ctx)
   const api = ctx.get('pluginApi')
-  assert.ok(api?.client)
-  const features = api.client.features
-  assert.equal(features.length, 18, 'the existing ten client features, lifecycle feature, plus the seven passthrough leaves')
-  assert.deepEqual([...features].slice(0, 10).map((f) => f.name), [
-    'clientManifest', 'clientConnection', 'clientCodec', 'clientOfficialServices',
-    'clientRemoteContribution', 'clientSettingsRemote', 'clientSettingsScope',
-    'clientSlots', 'clientSlotEvents', 'clientRemoteEvents',
-  ])
-  assert.equal(features[10].name, 'clientLifecycle')
-  assert.equal(features[10].isActive, false, 'lifecycle is disabled when its core module evidence is absent')
-  assert.throws(() => api.client.lifecycle.registerFace({}), (error) =>
+  assert.ok(api)
+  assert.throws(() => api.lifecycle.registerFace({}), (error) =>
     error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'clientLifecycle')
   const leaves = ['inputTriggers', 'commandUi', 'modelDirectories', 'conversation', 'conversationEvents', 'conversationViews', 'timer']
   for (const leaf of leaves) {
-    assert.ok(api.client[leaf], `client.${leaf} must be published`)
+    assert.ok(api.services[leaf], `services.${leaf} must be published`)
   }
-  for (const feature of features.slice(11)) {
-    assert.equal(feature.isActive, false, `${feature.name} is unavailable without the module loader`)
-  }
-  // A fake-context call still reports the typed surface-keyed error.
-  const call = () => api.client.timer.setTimeout(() => {}, 1)
+  // A fake-context call still reports the typed surface-keyed error (the
+  // leaf lands disabled without the module loader).
+  const call = () => api.services.timer.setTimeout(() => {}, 1)
   assert.throws(call, (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.timer')
   await dispose()
 })
@@ -153,7 +143,7 @@ test('bundle mountRemote mounts through gateway-style dynamic namespace publicat
   }
   // The bundle fixture's $mount publishes remote[namespace] as a dynamic
   // property (the gateway exposes Cordis dynamic services, not own properties).
-  const dispose = await api.client.mountRemote(contribution)
+  const dispose = await api.remotes.mountRemote(contribution)
   assert.equal(typeof dispose, 'function')
   assert.equal(await dispose(), true)
   assert.equal(await dispose(), false)
@@ -170,9 +160,23 @@ const FEATURE_TO_LEAF = {
   clientRemoteEvents: 'remoteEvents',
 }
 
+/** True when the thunk completes; false only when it typed-fails as disabled. */
+function probe(thunk) {
+  try { thunk(); return true } catch (error) { return error.code === 'PLUGIN_API_FEATURE_DISABLED' || error.code === 'PLUGIN_API_INACTIVE' ? false : true }
+}
+
 function leafState(api) {
   const state = {}
-  for (const { name, isActive } of api.client.features) state[FEATURE_TO_LEAF[name] ?? name] = isActive
+  for (const leaf of ['inputTriggers', 'commandUi', 'modelDirectories', 'conversation', 'conversationEvents', 'conversationViews', 'timer']) {
+    state[leaf] = leafProbe(api, `client.${leaf}`)
+  }
+  state.connection = api.connection.isActive
+  state.remoteContribution = probe(() => api.remotes.mountRemote({ package: 'probe', descriptors: [] }))
+  state.settingsScope = api.settings.scope.isActive
+  state.slots = probe(() => api.slots.register({ name: 'details' }))
+  state.remoteEvents = probe(() => api.remotes.$on('probe', () => {}))
+  state.slotEvents = typeof api.slots.on === 'function'
+  state.settingsRemote = typeof api.settings.remote.mountRemoteContribution === 'function'
   return state
 }
 
@@ -188,8 +192,8 @@ test('missing an optional browser service disables only its owning leaf while th
     const ctx = createCtx({ omit: [service] })
     const dispose = artifact.apply(ctx)
     const api = ctx.get('pluginApi')
-    assert.ok(api?.client, `missing ${service} must not prevent the facade from publishing`)
-    assert.equal(api.client.features.find((f) => f.name === 'clientManifest').isActive, true)
+    assert.ok(api, `missing ${service} must not prevent the facade from publishing`)
+    assert.equal(api.isActive, true)
     const state = leafState(api)
     assert.equal(state[leaf], false, `leaf ${leaf} should be disabled when ${service} is missing`)
     for (const other of ['connection', 'remoteContribution', 'settingsRemote', 'settingsScope', 'slots', 'slotEvents', 'remoteEvents']) {
@@ -215,7 +219,7 @@ test('malformed or throwing optional services also disable only the owning leaf'
     ctx.get = (name) => (name === service ? value : get(name))
     const dispose = artifact.apply(ctx)
     const api = ctx.get('pluginApi')
-    assert.ok(api?.client, `malformed ${service} must not block facade publication`)
+    assert.ok(api, `malformed ${service} must not block facade publication`)
     const state = leafState(api)
     for (const leaf of affected[service]) assert.equal(state[leaf], false, `leaf ${leaf} should be disabled for malformed ${service}`)
     assert.equal(state.connection, service === 'connection' ? false : true)
@@ -225,8 +229,9 @@ test('malformed or throwing optional services also disable only the owning leaf'
   const ctx = createCtx({ throwGet: ['slots'] })
   const dispose = artifact.apply(ctx)
   const api = ctx.get('pluginApi')
-  assert.ok(api?.client)
-  assert.equal(api.client.features.find((f) => f.name === 'clientSlots').isActive, false)
-  assert.equal(api.client.features.find((f) => f.name === 'clientConnection').isActive, true)
+  assert.ok(api)
+  assert.equal(probe(() => api.slots.register({ name: 'details' })), false,
+    'the slots face stays registered in its disabled shape when ctx.get throws')
+  assert.equal(api.connection.isActive, true)
   dispose()
 })

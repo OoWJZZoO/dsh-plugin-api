@@ -73,6 +73,28 @@ export function validateRegistry(registry) {
     errors.push('clientDomainTree must be a non-empty array')
   }
 
+  const clientRoot = registry.clientRoot
+  if (!isPlainRecord(clientRoot)) {
+    errors.push('clientRoot section must be an object')
+  } else if (!Array.isArray(clientRoot.members)) {
+    errors.push('clientRoot.members must be an array of root member names')
+  } else {
+    const tree = new Set(registry.clientDomainTree)
+    const members = new Set(clientRoot.members)
+    for (const name of clientRoot.members) {
+      if (typeof name !== 'string' || name.trim().length === 0) {
+        errors.push(`clientRoot.members entry ${JSON.stringify(name)} must be a non-empty string`)
+      } else if (!tree.has(name)) {
+        errors.push(`clientRoot.members entry ${JSON.stringify(name)} is absent from clientDomainTree`)
+      }
+    }
+    for (const name of registry.clientDomainTree) {
+      if (!members.has(name)) {
+        errors.push(`clientDomainTree entry ${JSON.stringify(name)} is absent from clientRoot.members`)
+      }
+    }
+  }
+
   const seenPaths = new Set()
   if (!Array.isArray(registry.members)) {
     errors.push('members must be an array')

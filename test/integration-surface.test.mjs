@@ -29,6 +29,7 @@ import {
   CLIENT_CONNECTION_CONTRACT,
   CONTRACT_CARDINALITIES,
 } from './official-passthrough-contracts.mjs'
+import { CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS } from '../lib/client-official-passthrough.js'
 
 function noOp() {}
 
@@ -266,11 +267,12 @@ test('bundled client services: all approved service faces with exact member surf
   const artifact = loadClientBundle()
   const dispose = artifact.apply(ctx)
   const api = ctx.get('pluginApi')
-  const services = api.client.services
+  const services = api.services
 
   assert.equal(services.isActive, true)
   const names = CLIENT_SERVICE_CONTRACTS.map((entry) => entry.name)
-  assert.deepEqual(Object.keys(services), ['isActive', ...names], 'client services namespace in approved order')
+  const passthroughNames = CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((descriptor) => descriptor.serviceName)
+  assert.deepEqual(Object.keys(services), ['isActive', ...names, ...passthroughNames], 'client services namespace in approved order')
   assert.equal(
     names.reduce((total, name) => total + CLIENT_SERVICE_CONTRACTS.find((entry) => entry.name === name).members.length, 0),
     CONTRACT_CARDINALITIES.clientServiceMembers,
@@ -289,7 +291,7 @@ test('bundled client events: the four approved events with slim isActive/on face
   const { ctx } = createClientCtx({ connection: createLlmConnection() })
   const artifact = loadClientBundle()
   const dispose = artifact.apply(ctx)
-  const events = ctx.get('pluginApi').client.events
+  const events = ctx.get('pluginApi').events
 
   const faceNames = {
     'locale/change': 'localeChange',
@@ -316,7 +318,7 @@ test('bundled client connection: the nested llm face exposes its three approved 
   const { ctx } = createClientCtx({ connection: createLlmConnection() })
   const artifact = loadClientBundle()
   const dispose = artifact.apply(ctx)
-  const connection = ctx.get('pluginApi').client.connection
+  const connection = ctx.get('pluginApi').connection
 
   assert.equal(connection.isActive, true)
   assert.equal(typeof connection.rpc.call, 'function')

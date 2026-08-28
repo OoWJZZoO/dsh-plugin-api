@@ -26,7 +26,7 @@ function firstMethod(descriptor) {
 }
 
 function callLeaf(api, surfaceKey, descriptor) {
-  const face = api.client[surfaceKey.slice('client.'.length)]
+  const face = api.services[surfaceKey.slice('client.'.length)]
   return () => face[firstMethod(descriptor)]()
 }
 
@@ -142,7 +142,7 @@ test('every inventory member is exposed with its declared kind and nothing else 
   await settleAll()
   const api = ctx.get('pluginApi')
   for (const descriptor of CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS) {
-    const face = api.client[descriptor.surfaceKey.slice('client.'.length)]
+    const face = api.services[descriptor.surfaceKey.slice('client.'.length)]
     for (const [member, kind] of Object.entries(descriptor.members)) {
       if (kind === 'method') assert.equal(typeof face[member], 'function', `${descriptor.surfaceKey}.${member}`)
       else assert.notEqual(face[member], undefined, `${descriptor.surfaceKey}.${member} live value`)

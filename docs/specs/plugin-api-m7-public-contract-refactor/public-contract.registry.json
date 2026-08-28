@@ -886,6 +886,30 @@
   {
    "oldPath": "ctx.pluginApi.client",
    "targetPath": "ctx.pluginApi(root)"
+  },
+  {
+   "oldPath": "ctx.pluginApi.client.mountRemote",
+   "targetPath": "ctx.pluginApi.remotes.mountRemote"
+  },
+  {
+   "oldPath": "ctx.pluginApi.client.mountRemoteContribution",
+   "targetPath": "ctx.pluginApi.remotes.mountRemoteContribution"
+  },
+  {
+   "oldPath": "ctx.pluginApi.client.settingsScope",
+   "targetPath": "ctx.pluginApi.settings.scope"
+  },
+  {
+   "oldPath": "ctx.pluginApi.client.remote",
+   "targetPath": "ctx.pluginApi.remotes"
+  },
+  {
+   "oldPath": "ctx.pluginApi.client.features",
+   "targetPath": "ctx.pluginApi.capabilities"
+  },
+  {
+   "oldPath": "ctx.pluginApi.client.defineManifest",
+   "targetPath": "static module export (client-manifest)"
   }
  ],
  "deletionReport": [
@@ -1008,7 +1032,13 @@
   "pluginApi.remote": "removed",
   "agent.routeOf": "removed",
   "tools.routeOf": "removed",
-  "pluginApi.reportExecRouteDiagnosticsOnce": "removed"
+  "pluginApi.reportExecRouteDiagnosticsOnce": "removed",
+  "pluginApi.client.mountRemote": "removed",
+  "pluginApi.client.mountRemoteContribution": "removed",
+  "pluginApi.client.settingsScope": "removed",
+  "pluginApi.client.remote": "removed",
+  "pluginApi.client.features": "removed",
+  "pluginApi.client.defineManifest": "removed"
  },
  "inventory": {
   "completedAt": "Task 1.4, Stage 4",
@@ -1048,22 +1078,22 @@
   ]
  },
  "clientRoot": {
-  "publicRoot": "ctx.pluginApi.client",
+  "publicRoot": "ctx.pluginApi (direct root members)",
   "proposedTarget": "ctx.pluginApi (direct root members)",
   "runtime": "client",
   "members": [
-   "defineManifest",
+   "isActive",
+   "apiVersion",
+   "assertCompatible",
+   "capabilities",
    "connection",
-   "codec",
-   "services",
    "events",
-   "mountRemote",
-   "mountRemoteContribution",
-   "settingsScope",
+   "remotes",
+   "settings",
    "slots",
-   "remote",
    "lifecycle",
-   "features"
+   "codec",
+   "services"
   ],
   "officialLeaves": [
    "locale",
