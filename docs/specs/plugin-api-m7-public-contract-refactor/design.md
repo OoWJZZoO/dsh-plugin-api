@@ -3,13 +3,14 @@
 > feature_name: `plugin-api-m7-public-contract-refactor`
 > 阶段：Stage 2 Design（已获用户明确批准）
 > 上游：已批准的 `requirements.md`
-> 目标：在不修改官方 DSH 包文件的前提下，把现有按历史 feature 堆叠的门面重组为领域优先的 host/client 公共契约，并在公共面稳定后完成最小必要的组合与 authority 加固。
+> 目标：在不修改官方 DSH 包文件的前提下，把现有按历史 feature 累积的门面重组为领域优先的 host/client 公共契约，并在公共面稳定后完成最小必要的组合与 authority 加固。
+> 本文档中 "M7" 均指本 feature：`plugin-api-m7-public-contract-refactor`。
 
 ## Overview
 
 M7 采用一次公共形状切换、内部实现分层保留的设计。
 
-- 对外只有目标 domain-first namespace；旧 public path、兼容 alias、feature-shaped root 和 replacement-shaped root 不再发布。
+- 对外只有目标 domain-first namespace；旧 public path、兼容 alias、feature-shaped root（按内部 feature/mounter 命名的公共根）和 replacement-shaped root（按 replacement 包组织方式命名的公共根）不再发布。
 - 对内继续保留现有 feature mounter、guard、slot、prepared mount transaction 等成熟机制，除非它们阻碍最终公共契约。
 - `feature-registry` 只表示内部 mounter 的启用/停用状态，不直接等同于 capability registry，也不承担 owner、claim 或业务冲突仲裁。
 - `public contract registry` 是公共 API、capability、类型、disabled surface、服务白名单、组合矩阵和迁移文档的单一事实源；它是构建期/测试期数据，不建设新的运行时 registry 服务。
@@ -103,6 +104,8 @@ The registry contains:
 - old-to-target path mapping;
 - implementation channel (`facade`, `passthrough`, `proposal`, or `replacement`), without runtime classification tokens;
 - migration and deletion-report references.
+
+Per-member hook exposure mechanism (direct official event binding, low-level hook simulation, upstream proposal, or registered replacement projection) is recorded by the registry in the `implementationChannel` field of each public member entry; the design body does not repeat the full per-member classification. §Domain Composition Rules states domain composition semantics and representative conclusions only, and §Error Handling And Lifecycle covers failure paths and guards.
 
 A small validator/generator is allowed to produce:
 
@@ -232,7 +235,7 @@ pluginApi.capabilities.list({ prefix: 'llm.' })
 pluginApi.capabilities.require(['llm.routing', 'sessions.channels'])
 ```
 
-This surface reads registry-backed capability descriptors and current availability. It does not expose internal mounter snapshots, package names, replacement rows, or writable live registry objects. The old `features` snapshot is a deletion candidate because the target contract uses capability descriptors; its removal must be listed in the deletion report and approved before implementation.
+This surface reads registry-backed capability descriptors and current availability. It does not expose internal mounter snapshots, package names, replacement rows, or writable live registry objects. The old `features` snapshot is a candidate for the deletion report (see §Deletion Report Gate) because the target contract uses capability descriptors; its removal must be listed in that report and approved before implementation.
 
 ## Components And Interfaces
 
@@ -266,7 +269,7 @@ Changes are isolated behind these responsibilities:
 - version utilities: parse full package versions and compare API `B.C` contracts;
 - registry validator/snapshot fixtures: verify public shape against the design registry.
 
-The implementation must not make `PluginApiService` call private official package state. Official services continue to be obtained through injected/context service boundaries, and replacement facets remain marker- and loader-gated.
+The implementation must not make `PluginApiService` access private official package state. Official services continue to be obtained through injected/context service boundaries, and replacement facets remain marker- and loader-gated.
 
 ### Internal Client Adapter
 
@@ -322,7 +325,7 @@ main and all local auxiliary/full packages: 0.1.0-rc.6-0.1.0
 dsh.api:                                0.1
 ```
 
-M7 chooses the same maintenance component for the local package set even though the general standard permits package-local maintenance values to differ. After this cutover no M7 task may modify any package version or `dsh.api` value. A required deviation stops the sequence and is reported to the human maintainer.
+M7 requires the local package set (main, auxiliary, and full aggregation packages) to share the same maintenance component `D=0` in this baseline, even though the general standard permits package-local maintenance values to differ. After this cutover no M7 task may modify any package version or `dsh.api` value. A required deviation stops the sequence and is reported to the human maintainer.
 
 Runtime matching compares the full `runtime` identity. Plugin negotiation compares only `api` generation/increment using the standard same-generation, actual-increment-at-least-required rule. Wire and durable contracts are independent of this package version.
 
@@ -452,7 +455,7 @@ success | error | aborted | denied | superseded
 
 ### Events
 
-`events.on` and `events.once` are observe-only by default. Canonical dispatch is available only to the producer authority recorded for that event. Custom events use `events.define` and an owner-scoped publisher handle. Ordinary listener order is fixed priority plus successful registration order; no global dependency graph is added.
+`events.on` and `events.once` are observe-only by default. Canonical dispatch is available only to the producer authority recorded for that event. Custom events use `events.define` and an owner-scoped publisher handle. Ordinary listener order is fixed priority plus successful registration order, with the priority vocabulary `lowest`/`low`/`normal`/`high`/`highest`/`monitor` (see `docs/standards/refactor/ordering.md`); no global dependency graph is added.
 
 ### LLM
 
@@ -460,7 +463,7 @@ success | error | aborted | denied | superseded
 - `llm.admissionPolicies.register` uses a fixed decision algebra; deny/ask/allow is not determined by listener accident.
 - `llm.adapters` forwards the existing replacement-owned decoration facet only when its component gates pass; the facade keeps no second decoration registry.
 - `llm.routing` is the semantic route plane. Execution route, committed session route, policy, candidates, health and decisions have separate records and do not silently share mutation authority.
-- Current L4 request re-entry, L2 admission wrapping, and A9/T10 route capture remain facade translation unless an approved future component seam changes the capability decision.
+- Current sync `llm/request` re-entry via `llm/stream`, `llm.admissionPolicies` wrapping, and `llm.routing.ofExecution` route capture remain facade translation unless an approved future component seam changes the capability decision.
 
 ### Agents, Executions, Sessions
 
@@ -494,6 +497,14 @@ success | error | aborted | denied | superseded
 - profile reads are projections; writes use validation/CAS/claim where applicable;
 - remotes use owner-scoped service keys and reject cross-owner same-key conflicts;
 - storage is only a thin owner-scoped private binding over official storage domain services, with exactly one of `profile`, `workspace`, or `session` scope; it is never shared domain state, secret storage, or a transaction platform.
+
+### Composable Profile
+
+The default Composable Profile is the set of public members third-party plugins may rely on as safely composable without additional arbitration, covering pure queries, additive registrations, ordered transforms, and coordinated mutations with explicit claim as defined by `docs/standards/refactor/composition-and-authority.md` §3.
+
+- A member SHALL enter the default Composable Profile only after its composition and authority audit records are complete in the registry; members with incomplete audits SHALL NOT be labelled `recommended` and SHALL NOT enter the profile. `status: 'recommended'` in a public member entry therefore implies profile membership.
+- The profile boundary is a registry marker and a test/evidence fixture, not a runtime service; the composition matrix (see §Composition Matrix) exercises every applicable shared primitive inside the profile.
+- Members outside the default profile remain available with their declared composition mode and conflict rules; explicit bypasses (for example direct session mutation outside branch/channel guarantees) are registered as such and are not silent.
 
 ## Error Handling And Lifecycle
 
@@ -638,6 +649,8 @@ The same matrix applies to client slot/remote/settings/lifecycle primitives wher
 | `durable-state-and-scope.md` | Applicable | Single scope per record, operation capability, retry/attempt split, fail-closed mutation, local decoder only. |
 | `visibility-and-redaction.md` | Applicable | Minimum exposure, secret policy, diagnostic provenance, host-first redaction, browser-half narrower visibility. |
 | `concurrency-and-cancellation.md` | Applicable | Signal propagation, commit eligibility, stale-result guard, disposer ownership, replacement/client lifecycle and retry boundaries. |
+
+> 本表仅声明各分册的适用性与对齐结论；具体设计内容在各对应章节体现。
 
 ## Key Decisions And Tradeoffs
 

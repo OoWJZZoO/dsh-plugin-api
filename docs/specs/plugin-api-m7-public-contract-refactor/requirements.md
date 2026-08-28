@@ -36,7 +36,7 @@
 ### Acceptance Criteria
 
 - **WHEN M7 inventory starts THEN the refactor SHALL record every current host/client public path and member, its proposed target path, runtime side, effect, capability, implementation class, and migration disposition.**
-- **WHEN a public member is recorded THEN the registry SHALL record `publicPath`, `capability`, `runtime`, `effect`, `composition`, `stateOwner`, `scope`, `resourceKey`, `identitySource`, `conflictRule`, `lifecycle`, and `bypasses` whenever the field applies.**
+- **WHEN a public member is added to the registry THEN the registry SHALL include `publicPath`, `capability`, `runtime`, `effect`, `composition`, `stateOwner`, `scope`, `resourceKey`, `identitySource`, `conflictRule`, `lifecycle`, and `bypasses` whenever the field applies.**
 - **WHEN an existing member has no stable authority, scope, resource, or failure description THEN the registry SHALL mark the gap as unresolved and SHALL NOT classify the member as recommended until the gap is resolved or the member is removed.**
 - **WHEN registry construction completes THEN the registry SHALL distinguish public capability path, internal feature/mounter key, and package/installation identity as independent identities.**
 - **WHEN types, disabled surfaces, capability snapshots, services audit tables, API references, or composition fixtures are generated or checked THEN they SHALL derive their public shape from the same registry rather than maintaining an untracked duplicate.**
@@ -50,7 +50,7 @@
 
 ### Acceptance Criteria
 
-- **WHEN the target host surface is published THEN the facade SHALL expose the approved domain tree rooted at `pluginApi`, including `events`, `llm`, `agents`, `executions`, `sessions`, `tools`, `skills`, `prompts`, `attachments`, `mcp`, `tasks`, `coordination`, `workspaces`, `security`, `diagnostics`, `settings`, `profiles`, `remotes`, `storage`, and `services`.**
+- **WHEN the target host surface is published THEN the facade SHALL expose the approved domain tree rooted at `pluginApi`, including `events`, `llm`, `agents`, `executions`, `sessions`, `tools`, `skills`, `prompts`, `attachments`, `mcp`, `tasks`, `coordination`, `workspaces`, `security`, `diagnostics`, `settings`, `profiles`, `remotes`, `storage`, and `services` (see `docs/standards/refactor/public-api-shape.md` §2 for the authoritative tree).**
 - **WHEN an existing capability is assigned to a target domain THEN the public path SHALL follow semantic domain ownership rather than the current official component, replacement bundle, delivery batch, or internal feature name.**
 - **WHEN routing is exposed THEN the public semantic path SHALL be `llm.routing`; historical root-level routing authority and duplicate route query paths SHALL NOT remain as competing recommended authorities.**
 - **WHEN execution observation or recovery is exposed THEN the public semantic path SHALL be `executions` and `executions.recovery`; a standalone historical `execution` root SHALL NOT remain as a competing recommended namespace.**
@@ -69,7 +69,7 @@
 
 ### Acceptance Criteria
 
-- **WHEN the client plugin is active THEN the browser context SHALL provide an environment-specific `ctx.pluginApi` whose public semantic members are rooted directly at `ctx.pluginApi` and SHALL NOT require `ctx.pluginApi.client.*`.**
+- **WHEN the client plugin is active THEN the facade SHALL expose an environment-specific `ctx.pluginApi` on the browser context whose public semantic members are rooted directly at `ctx.pluginApi`, and the surface SHALL NOT require a `ctx.pluginApi.client.*` sub-namespace.**
 - **WHEN a client capability has a host semantic counterpart THEN host and client SHALL use the same domain vocabulary, owner model, generation model, stale-disposer behavior, and composition contract unless the registry explicitly records a client-only boundary.**
 - **WHEN a client capability is a pure official browser passthrough THEN it SHALL be exposed under `ctx.pluginApi.services.*` using the official service key and SHALL not be reclassified as a facade-owned semantic capability.**
 - **WHEN client APIs are typed THEN the package SHALL expose distinct `HostPluginApi` and `ClientPluginApi` types, and runtime optional-property probing SHALL NOT be the type-level environment distinction.**
@@ -85,7 +85,7 @@
 
 ### Acceptance Criteria
 
-- **WHEN the target namespace map is approved THEN the refactor SHALL migrate each retained public member directly to its target path and SHALL NOT create a temporary compatibility alias.**
+- **WHEN the target namespace map is approved THEN the migration process SHALL place each retained public member directly at its target path and SHALL NOT create a temporary compatibility alias.**
 - **WHEN namespace migration executes THEN old public paths, duplicate delegates, feature-shaped public roots, and replacement-shaped public roots SHALL be removed from the recommended surface in the same migration boundary.**
 - **WHEN a public member is a candidate for substantial removal THEN the refactor SHALL produce a deletion report before changing implementation or tests; the report SHALL list the exact path/member, current consumers, affected package/install surfaces, replacement path if any, rationale, and expected failure or availability change.**
 - **WHEN a deletion report is ready THEN the refactor SHALL notify the human maintainer and SHALL NOT perform the reported public deletion until the human explicitly approves that report.**
@@ -188,9 +188,9 @@
 ### Acceptance Criteria
 
 - **WHEN the M7 version baseline is applied THEN the main package, every M7 auxiliary/replacement package, and the full aggregation package SHALL use `0.1.0-rc.6-0.1.0`, and each package SHALL declare `dsh.api: 0.1` where that metadata applies.**
-- **WHEN the version baseline is applied THEN runtime identity `0.1.0-rc.6`, API generation/increment `0.1`, and package maintenance component `0` SHALL remain represented according to `<A>-<B>.<C>.<D>` semantics.**
+- **WHEN the version baseline is applied THEN runtime identity `0.1.0-rc.6` (A), API generation `0` (B), compatible increment `1` (C), and package maintenance component `0` (D) SHALL remain represented according to `<A>-<B>.<C>.<D>` semantics.**
 - **WHEN any M7 implementation, test, documentation, or package task executes after the baseline is applied THEN no package version or `dsh.api` version SHALL be bumped, advanced, or independently rewritten during this feature.**
-- **WHEN a third-party plugin negotiates with the facade THEN it SHALL compare API generation and compatible increment without requiring knowledge of package maintenance component `D`; capability presence SHALL remain separate from protocol compatibility.**
+- **WHEN a third-party plugin negotiates with the facade THEN the facade SHALL expose the API generation and compatible increment as `B.C` so that the plugin can compare them without requiring knowledge of package maintenance component `D`; capability presence SHALL remain separate from protocol compatibility.**
 - **WHEN a package is checked against the installed runtime THEN runtime identity SHALL match the full audited runtime identity, and mismatch SHALL produce safe disablement or explicit unavailability rather than silent acceptance.**
 - **WHEN a wire protocol crosses host/client or process boundaries THEN it SHALL use the revision of its actual protocol family and SHALL NOT use the package version as a wire schema version.**
 - **WHEN a durable record crosses an upgrade boundary THEN it SHALL use a record-specific schema ID and integer version; local decoders/upcasters SHALL be used only where a real old-read requirement exists.**
@@ -206,7 +206,7 @@
 ### Acceptance Criteria
 
 - **WHEN a plugin-private durable store is retained THEN it SHALL be owner-scoped, explicitly bound to exactly one of `profile`, `workspace`, or `session`, and SHALL NOT act as shared domain state or authority.**
-- **WHEN a private durable record is written THEN it SHALL contain a schema ID, integer version, owner, scope, identity, and data envelope, and unknown future versions SHALL fail with `unsupported-schema`.**
+- **WHEN a private durable record is written THEN the record envelope SHALL contain a schema ID, integer version, owner, scope, identity, and data envelope, and unknown future versions SHALL fail with `unsupported-schema`.**
 - **WHEN a plugin is disabled, reloaded, or uninstalled THEN its storage handles SHALL close without deleting data; permanent deletion SHALL require an explicit purge operation.**
 - **WHEN an API exposes execution identity THEN the refactor SHALL keep execution identity independent from event sequence and shall not change it across internal retry attempts.**
 - **WHEN generation is used THEN it SHALL be an owner-specific opaque token; any ordering requirement SHALL use owner-local revision and SHALL NOT compare generations across owners.**
@@ -259,7 +259,7 @@
 
 ### Acceptance Criteria
 
-- **WHEN `dsh-read-image` is migrated THEN it SHALL use only the approved target-domain facade paths for image admission, request transformation, settings/remote, and execution route access, and SHALL remove its corresponding private monkey-patch, raw re-entry owner, and private route traversal.**
+- **WHEN `dsh-read-image` is migrated THEN the migrated code SHALL use only the approved target-domain facade paths for image admission, request transformation, settings/remote, and execution route access, and SHALL remove its corresponding private monkey-patch, raw re-entry owner, and private route traversal.**
 - **WHEN `dsh-pro-ex-ability-anchor` is migrated THEN it SHALL use the target session/prompt/client facade paths for the approved surface append, prompt event, settings remote, and client slot/bundle contracts, and SHALL remove the migrated hand-authored protocol glue.**
 - **WHEN either consumer requires behavior outside the approved finite facade contract THEN the migration SHALL preserve an existing supported official path or record a separate proposal and SHALL NOT widen the M7 public contract implicitly.**
 - **WHEN consumer migration is accepted THEN the actual consumer repository code path SHALL use the facade; an in-facade fixture or synthetic substitute alone SHALL NOT satisfy migration acceptance.**
