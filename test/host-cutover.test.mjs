@@ -101,7 +101,7 @@ test('removed old roots are typed-unavailable through their replacement shapes (
 test('target host namespace is published with singular roots and plural collections', () => {
   const { service, registry } = createService()
   mountReady(service, registry)
-  for (const root of ['events', 'llm', 'agents', 'executions', 'sessions', 'tools', 'skills', 'prompts', 'attachments', 'mcp', 'tasks', 'coordination', 'workspaces', 'security', 'diagnostics', 'settings', 'profiles', 'remotes', 'services', 'capabilities']) {
+  for (const root of ['events', 'llm', 'agents', 'executions', 'sessions', 'tools', 'skills', 'prompts', 'attachments', 'mcp', 'tasks', 'coordination', 'workspaces', 'security', 'diagnostics', 'settings', 'profiles', 'remotes', 'storage', 'services', 'capabilities']) {
     assert.ok(root in service, `${root} root must be published`)
   }
   // nested domains
@@ -146,7 +146,7 @@ test('the published host root matches the registry-driven capability surface', (
   // Root metadata plus every registry member's top-level domain is published;
   // the registry snapshot is the single source of truth for the member set.
   const publishedRoots = new Set(Object.keys(service).filter((key) => typeof service[key] !== 'function' || ['isActive', 'assertCompatible'].includes(key)))
-  for (const root of ['events', 'llm', 'agents', 'executions', 'sessions', 'tools', 'skills', 'prompts', 'attachments', 'mcp', 'tasks', 'coordination', 'workspaces', 'security', 'diagnostics', 'settings', 'profiles', 'remotes', 'services', 'capabilities']) {
+  for (const root of ['events', 'llm', 'agents', 'executions', 'sessions', 'tools', 'skills', 'prompts', 'attachments', 'mcp', 'tasks', 'coordination', 'workspaces', 'security', 'diagnostics', 'settings', 'profiles', 'remotes', 'storage', 'services', 'capabilities']) {
     assert.ok(publishedRoots.has(root), `${root} must be published by the registry-driven surface`)
   }
   // Removed old roots never appear.

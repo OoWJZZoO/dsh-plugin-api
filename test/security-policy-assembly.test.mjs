@@ -71,10 +71,11 @@ test('the FEATURE_MOUNTERS tail order pins stay intact (remote..profile at the e
   // llmAdapters appends another between profile and sessionChannel (final
   // batch integration); the remote..profile relative order pins shift by
   // exactly those two entries.
-  assert.equal(names[names.length - 13], 'remote', 'remote stays directly before execution')
-  assert.equal(names[names.length - 12], 'execution', 'execution stays directly before recovery')
-  assert.equal(names[names.length - 11], 'recovery', 'recovery stays directly before coordination')
-  assert.equal(names[names.length - 10], 'coordination', 'coordination stays directly before workspaceTransactions')
+  assert.equal(names[names.length - 14], 'remote', 'remote stays directly before execution')
+  assert.equal(names[names.length - 13], 'execution', 'execution stays directly before recovery')
+  assert.equal(names[names.length - 12], 'recovery', 'recovery stays directly before coordination')
+  assert.equal(names[names.length - 11], 'coordination', 'coordination stays directly before workspaceTransactions')
+  assert.equal(names[names.length - 10], 'storage', 'storage mounts directly before workspaceTransactions')
   assert.equal(names[names.length - 9], 'workspaceTransactions', 'workspaceTransactions stays directly before diagnostics')
   assert.equal(names[names.length - 8], 'diagnostics', 'diagnostics stays directly before tasks')
   assert.equal(names[names.length - 7], 'tasks', 'tasks stays directly before toolDiscovery')

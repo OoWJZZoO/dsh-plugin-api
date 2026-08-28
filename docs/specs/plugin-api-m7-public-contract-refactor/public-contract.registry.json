@@ -753,6 +753,26 @@
     "none"
    ],
    "availability": "active"
+  },
+  {
+   "publicPath": "storage",
+   "capability": "storage",
+   "runtime": "host",
+   "effect": "mutate",
+   "composition": "coordinated",
+   "stateOwner": "storage binding",
+   "scope": "profile | workspace | session",
+   "resourceKey": "domain unit (owner-scoped, scope-bound)",
+   "identitySource": "caller context + official storage domain facility",
+   "conflictRule": "same unit already-open is an explicit conflict; unknown future version is unsupported-schema",
+   "lifecycle": "facility lifetime; handle close never deletes, explicit purge deletes",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active",
+   "implementationChannel": "facade",
+   "status": "advanced",
+   "inventorySource": "thin owner-scoped private binding over the official storage domain facility (requirements §11, design §Domain Composition Rules); unit name namespaced per owner+scope"
   }
  ],
  "servicesWhitelist": [
@@ -1316,8 +1336,8 @@
   {
    "path": "services.*(audit-removal-candidates)",
    "category": "remove",
-   "status": "pending-second-approval",
-   "note": "B4 second-approval list (deletion-report.md B4 追加清单, 2026-08-28): members approval.setPolicy, agentDefaultModel.saveSelection, planMode.set, permissionPresets.set, permissionPresets.selectFor, credentials.set, credentials.unset, sessionProjectionCache.write; whole keys compaction, workflows. Pending explicit human approval before any deletion executes."
+   "status": "approved",
+   "note": "B4 second-approval list approved 2026-08-28 (deletion-report.md 批准记录): members approval.setPolicy, planMode.set, permissionPresets.set, permissionPresets.selectFor, credentials.set, credentials.unset, sessionProjectionCache.write; whole keys compaction, workflows. agentDefaultModel.saveSelection vetoed and retained. Deferred wrapped-B-class interface obligations recorded in deletion-report.md."
   }
  ],
  "statusByPath": {
@@ -1347,39 +1367,7 @@
  "inventory": {
   "completedAt": "Task 1.4, Stage 4",
   "hostClientEnumeration": "current public surface from lib/plugin-api-service.js (roots), lib/client-runtime.js (client root), lib/services.js (SERVICE_DEFINITIONS), lib/official-service-definitions.js",
-  "knownFeatures31": [
-   "llm/admission",
-   "llm/request",
-   "llm",
-   "events",
-   "tools",
-   "agent",
-   "agentExtension",
-   "execRoute",
-   "sessionRoute",
-   "diagnostics",
-   "session",
-   "sessionBranch",
-   "sessionDurable",
-   "systemPrompt",
-   "officialPassthrough",
-   "settings",
-   "settingsRemote",
-   "remote",
-   "typert",
-   "services",
-   "execution",
-   "recovery",
-   "coordination",
-   "workspaceTransactions",
-   "tasks",
-   "security",
-   "toolDiscovery",
-   "skillsActivation",
-   "context",
-   "profile",
-   "sessionChannel"
-  ],
+  "knownFeatures31": "Task 1.4 inventory snapshot (31 features); runtime KNOWN_FEATURES includes storage since Task 7 (32)",
   "compositionAudit": "Task 7.1 finalization (2026-08-28): primary composition modes + authority records per retained member; events advanced (owner-scoped custom publisher not implemented); recommended only fundamentals + capabilities"
  },
  "clientRoot": {

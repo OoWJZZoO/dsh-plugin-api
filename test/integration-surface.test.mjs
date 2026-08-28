@@ -1,6 +1,6 @@
 /**
  * Neutral integration verification for the official passthrough surfaces
- * (task statement: nine host event names, 48 service keys, exact service
+ * (task statement: nine host event names, 46 service keys, exact service
  * member lists, and all approved client public faces). Every assertion here
  * is driven by the reviewed contract fixtures and the real integrated facade paths
  * (host `apply` and the bundled client `apply`); no inventory identifiers or

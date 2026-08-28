@@ -368,13 +368,17 @@ The report is shown to the human maintainer and the implementation pauses until 
   conflictRule: 'none',
   lifecycle: 'facade lifetime',
   bypasses: ['none'],
-  availability: 'member-level',
+  availability: 'active',
   implementationChannel: 'facade',
   status: 'recommended'
 }
 ```
 
-The exact values are registry data, not runtime governance labels. Read surfaces must return frozen projections; mutation surfaces return opaque owner-bound handles or typed results.
+The exact values are registry data, not runtime governance labels. The `availability`
+entry field uses the frozen status vocabulary (`active | degraded | unavailable`,
+freeze decision 7); the per-member granularity of the availability query result is
+expressed by the member-level status map in the Availability data model below,
+not by the entry field. Read surfaces must return frozen projections; mutation surfaces return opaque owner-bound handles or typed results.
 
 ### Composition Contract
 
@@ -496,7 +500,11 @@ success | error | aborted | denied | superseded
 - settings namespace/key conflicts and document revision are explicit;
 - profile reads are projections; writes use validation/CAS/claim where applicable;
 - remotes use owner-scoped service keys and reject cross-owner same-key conflicts;
-- storage is only a thin owner-scoped private binding over official storage domain services, with exactly one of `profile`, `workspace`, or `session` scope; it is never shared domain state, secret storage, or a transaction platform.
+- storage is only a thin owner-scoped private binding over official storage domain services, with exactly one of `profile`, `workspace`, or `session` scope; it is never shared domain state, secret storage, or a transaction platform. Concrete thin-binding shape (spec revision 2026-08-28, Task 9.3):
+  - `pluginApi.storage.open({ scope, owner, schema, version, name, tables, global })` — validates the owner/scope/schema envelope (scope ∈ `profile | workspace | session`, `owner`/`name` match the official unit-name grammar, `version` non-negative integer), namespaces the official unit name as `<scope>__<owner>__<name>` so cross-owner same-name conflicts cannot occur by construction, and delegates to the official storage domain facility with the plugin-supplied domain spec (including its zod table schemas) untouched — the facade itself carries no zod dependency;
+  - typed results: `opened` + frozen handle `{ close, purge, domain }` on success; `invalid-input` for envelope violations before any facility call; official `version-mismatch` maps to `unsupported-schema` (unknown future version), `already-open` to `conflict`, `backend-not-found` to `backend-unavailable`, `facet-unsupported`/`invalid-record`/`malformed-medium` pass through, and other failures degrade to `unavailable` with the official discriminant preserved;
+  - lifecycle: `handle.close()` closes the official domain without deleting data; `handle.purge()` is the explicit deletion operation (deletes every record across the domain's tables); facility unmount closes still-open domains without implicit purge;
+  - availability: member-level; the binding is disabled (typed `storage` feature error) when the official storage domain facility is absent, without blocking any other mounter.
 
 ### Composable Profile
 

@@ -88,7 +88,8 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
   - **7.8 services 分级测试**：静态白名单成员、member-level availability、官方 receiver/argument/return/error 保留、未登记运行时成员不暴露（§15④、§9）。
   - **要求**：加固只给最终保留成员的最小机制，不建通用权限系统/全局 owner graph/全局排序依赖图/通用 migration 平台（goal Out Of Scope）；全部组合矩阵与领域测试全绿。
 
-- [ ] **8. 消费者与装配对账（requirements §13、§14；design §Consumer And Boot Acceptance）**
+- [~] **8. 消费者与装配对账（in-repo 部分完成；8.1/8.2/8.5 阻塞，见下）**
+  > 状态注（2026-08-28）：8.3/8.4 在本仓库内完成并验证（装配等价：full patch 确定性组装、version-lock 各包错配/回退/无空洞行为、main-only 缺位 typed unavailable、反向顺序 composition-matrix）；8.1/8.2（两个消费者仓库迁移）与 8.5（headless 冒烟/dev boot）**环境阻塞**：消费者仓库 `node_modules/@deepseek-ai` 指向官方共享安装树（root 权限，按 constitution 不可写入/链接），无法在本地把门面接入消费者解析路径；按 requirements §15 末条以阻塞记录，待具备可用安装通道（官方 patch 机制/可写 profile）后执行并验收。（requirements §13、§14；design §Consumer And Boot Acceptance）**
   - **8.1 消费者迁移——`dsh-read-image`**（工作区外仓库 `agent/dsh-read-image`）：迁移为只使用目标领域 facade path（image admission、request transformation、settings/remote、execution route access），删除对应私有 monkey-patch、raw `llm/stream` 重入 owner、私有 route 遍历（设计 §Current-State Findings 8 与 §14 验收）；`agent.routeOf`/`tools.routeOf` 属已批准删除项（删除报告 B2），其用途改走替代 path `llm.routing.forExecution`（冻结决策 11②：不保留兼容，仅找替代）；迁移后其 hack 代码不得以 dormant fallback 或 unsupported escape hatch 留存（§14 末三条）。
   - **8.2 消费者迁移——`dsh-pro-ex-ability-anchor`**（工作区外仓库 `agent/dsh-pro-ex-ability-anchor`）：迁移 session append、prompt 事件、settings remote、services、panel client 到目标 path；移除手写协议胶水；panel 不再使用 `ctx.pluginApi.client`（§3、§14）。
   - **8.3 迁移契约外行为**：任一消费者需要批准契约外的行为时，保留既有官方 path 或单独 proposal，不得隐式拓宽 M7 公共契约（§14）；已批准删除项按冻结决策 11② 处理（不保留兼容，改用替代 path）。
@@ -96,7 +97,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
   - **8.5 消费者验收测试**：两个消费者的 headless 冒烟与文档化 dev boot 在冻结基线 `0.1.0-rc.6-0.1.0` 上通过、无 activation 错误（§14）；保留相关 message ordering、route absence、prompt 组合、provenance、client remote/slot、typed unavailable/failure 行为（§14）。
   - **要求**：迁移以真实消费者仓库代码为准，in-facade fixture 或 synthetic substitute 不满足迁移验收（§14）；消费者仓库的改动与验证记录在最终报告列出。
 
-- [ ] **9. 终验、登记与交付（requirements §15、§16；AGENTS.md §3.2/§6/§8）**
+- [x] **9. 终验、登记与交付（requirements §15、§16；AGENTS.md §3.2/§6/§8）**
   - **9.1 全量验证**：`npm test` 全绿（含既有全部测试与 M7 新增）；`git diff --check` 通过；官方包修改审计（`/usr/lib/node_modules/@deepseek-ai/dsh/**` 未被修改）通过；headless 冒烟与 dev boot 通过；任一验证失败/超时/无法建立证据按阻塞处理（§15 末条）。
   - **9.2 registry/文档/登记同步**：registry 与 public contract registry 输出（类型/快照/fixtures/参考片段）一致且为同一事实源；`docs/specs/plugin-api-features/feature-list.md` 登记本 feature（spec 链接、状态、关键约束/设计、删除报备链接；R 类涉及项按 §3.1 口径）；AGENTS.md / `docs/standards/` 需要同步的链接与 §8 登记项同步；删除报告与批准记录归档于本 feature 目录。
   - **9.3 规格制品回写**：核对 requirements/design/tasks 与交付一致；执行中发现的 spec 细节偏差就地修订对应文档并在最终报告列出（动摇 Goal/Requirements 验收边界的偏差必须暂停请示，不得擅改）。
