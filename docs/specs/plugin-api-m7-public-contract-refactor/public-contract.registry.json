@@ -302,7 +302,7 @@
       "composition": "pending-audit",
       "implementationChannel": "facade",
       "status": "advanced",
-      "inventorySource": "plugin-api-service.js agent getter; get/list/roots/create/resume/register/provider/availability/routeOf"
+      "inventorySource": "plugin-api-service.js agent getter; get/list/roots/create/resume/register/providers/availability/routeOf"
     },
     {
       "publicPath": "session",
@@ -733,5 +733,27 @@
     ],
     "note": ".client root getter is removed; direct root per target tree; pure official leaves move under services.* (design Client Surface Assembly).",
     "status": "advanced"
+  },
+  "namingDecisions": {
+    "approvedAt": "2026-08-28",
+    "authority": "docs/standards/refactor/public-api-shape.md §2 (human ruling; overrides design.md data-model example)",
+    "llmRoutingLeaves": [
+      "forExecution",
+      "current",
+      "on",
+      "once",
+      "wait",
+      "policies",
+      "candidates",
+      "health",
+      "circuit",
+      "decisions"
+    ],
+    "notes": [
+      "llm.routing leaf is forExecution, not ofExecution (design.md data-model example was aligned to forExecution).",
+      "routePolicy surface merges into llm.routing; its policy leaf becomes plural policies (policies.register).",
+      "agents surface uses plural providers; the current singular provider leaf is renamed during cutover.",
+      "sessions tree leaves are gated by registry backing; unimplemented leaves (create/append) are not invented."
+    ]
   }
 }
