@@ -77,7 +77,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
   - **6.3 减法后验证**：快照/disabled-surface 形状与 registry 一致（§15①）；组合测试输入（2.2）重生成；负向断言：已删除 path 在公共面与 registry 快照中都不存在、runtime-unavailable path 仍存在且 typed。
   - **要求**：减法后公共面 = 目标树 ∩ 保留成员；所有减法项可回溯到批准记录。
 
-- [ ] **7. 组合与 authority 加固（requirements §6、§7、§8、§11、§12；design §Domain Composition Rules / §Error Handling And Lifecycle / §Data Models / §Composable Profile）**
+- [x] **7. 组合与 authority 加固（requirements §6、§7、§8、§11、§12；design §Domain Composition Rules / §Error Handling And Lifecycle / §Data Models / §Composable Profile）**
   - **7.1 成员登记定稿**：对每个保留成员在 registry 定稿 composition mode（pure/additive/ordered/coordinated/exclusive 五选一）、stateOwner、scope、resourceKey、identitySource、conflictRule、lifecycle、bypasses、availability 粒度（§6 AC 逐条）；未完成 composition/authority 审计的成员不得 `status: 'recommended'`、不得进入默认 Composable Profile（§6 末条、design §Composable Profile）；`recommended` 成员集合与 profile 一致并生成 profile fixture 供测试。
   - **7.2 owner/generation/disposer 最小机制**：owner 从实际调用方/插件装配身份派生（不接受调用方伪造 owner）；注册/策略/订阅类成员落实 owner 归因、同 key 冲突显式、identity-bound disposer（owner+key+generation）；stale disposer 返回 typed no-op、不删新 generation/他人资源；generation 为 owner-specific opaque token、不跨 owner 比较、无全局单调序号；`latest-wins` 仅限同 owner 同 key（§6、§11、`identity-and-lifecycle.md` §2）。
   - **7.3 事件与决策面**：`events` 区分 observe-only consumer 与 producer authority；自定义事件经 owner-scoped `events.define` 获取能力受限 publisher handle，拒绝可派发任意 canonical 事件名的全局入口；普通监听固定 priority 词表 + 同 priority 成功注册顺序；语义 policy 用领域 reducer/固定阶段而非裸 waterfall；无全局依赖图（§7、`ordering.md`）。

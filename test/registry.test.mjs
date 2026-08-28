@@ -31,6 +31,28 @@ test('the client runtime root member inventory stays in sync with the registry',
   )
 })
 
+test('every retained member has a finalized composition record with authority fields', () => {
+  const requiredFields = ['composition', 'stateOwner', 'scope', 'resourceKey', 'identitySource', 'conflictRule', 'lifecycle', 'bypasses', 'availability']
+  for (const member of registry.members) {
+    assert.notEqual(member.composition, 'pending-audit', `${member.publicPath} must have a finalized composition mode`)
+    for (const field of requiredFields) {
+      assert.ok(member[field] !== undefined && member[field] !== '', `${member.publicPath}.${field} must be recorded`)
+    }
+  }
+})
+
+test('the composable profile fixture matches the recommended members and audits are complete', () => {
+  const snapshots = buildSnapshots(registry)
+  const recommended = registry.members.filter((m) => m.status === 'recommended').map((m) => m.publicPath).sort()
+  assert.deepEqual(snapshots.composableProfile.members, recommended, 'profile fixture mirrors the registry marker')
+  assert.ok(recommended.length >= 4, 'the fundamentals and capabilities are in the default profile')
+  for (const path of recommended) {
+    const member = registry.members.find((m) => m.publicPath === path)
+    assert.ok(member.composition && member.composition !== 'pending-audit', `${path} must be audited before recommendation`)
+    assert.ok(member.effect === 'read', `${path} must be read-only to be recommended`)
+  }
+})
+
 test('validator rejects duplicate public paths', () => {
   const copy = structuredClone(registry)
   copy.members.push(structuredClone(copy.members[0]))
@@ -123,6 +145,15 @@ test('registry snapshots contain no governance tokens or catalog fields', () => 
   }
 })
 
+test('services whitelist members never claim recommended profile status', () => {
+  for (const entry of registry.servicesWhitelist) {
+    assert.equal(entry.status, 'advanced',
+      `services.${entry.key} stays an advanced passthrough: passthrough members claim no default composition guarantee`)
+    assert.equal(entry.channel, 'passthrough')
+    assert.ok(entry.composition !== undefined && entry.composition !== '', `services.${entry.key} declares a composition classification`)
+  }
+})
+
 test('the snapshot CLI writes files and the validate CLI accepts the registry', async () => {
   const tmp = mkdtempSync(join(tmpdir(), 'm7-registry-cli-'))
   try {
@@ -132,7 +163,7 @@ test('the snapshot CLI writes files and the validate CLI accepts the registry', 
     const outDir = join(tmp, 'snap')
     execFileSync(process.execPath, ['scripts/registry-snapshot.mjs', REGISTRY_PATH, outDir], { cwd: root, encoding: 'utf8' })
     const files = readdirSync(outDir).sort()
-    assert.deepEqual(files, ['capabilityFixture.json', 'clientSurface.json', 'compositionMatrix.json', 'hostSurface.json', 'servicesFixture.json'])
+    assert.deepEqual(files, ['capabilityFixture.json', 'clientSurface.json', 'composableProfile.json', 'compositionMatrix.json', 'hostSurface.json', 'servicesFixture.json'])
     const capabilityFixture = JSON.parse(readFileSync(join(outDir, 'capabilityFixture.json'), 'utf8'))
     const targetPaths = new Set(registry.members.filter((m) => m.runtime === 'host' || m.runtime === 'both').map((m) => m.publicPath))
     for (const entry of capabilityFixture.capabilities) {

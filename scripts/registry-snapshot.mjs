@@ -7,7 +7,9 @@
  * - client surface snapshot (target tree + client root record);
  * - services fixture (static whitelist);
  * - composition matrix input (members grouped by declared composition mode;
- *   members awaiting audit are excluded until they are finalized).
+ *   members awaiting audit are excluded until they are finalized);
+ * - composable profile fixture (recommended members; the registry marker for
+ *   default-profile membership per design §Composable Profile).
  *
  * Snapshots contain neutral capability/domain names only and never carry
  * governance classification tokens.
@@ -36,6 +38,11 @@ export function buildSnapshots(registry) {
     ;(byComposition[mode] ??= []).push(member.publicPath)
   }
 
+  const recommended = members
+    .filter((member) => member.status === 'recommended')
+    .map((member) => member.publicPath)
+    .sort()
+
   return {
     hostSurface: {
       roots: [...hostDomainTree].sort(),
@@ -61,6 +68,9 @@ export function buildSnapshots(registry) {
     },
     compositionMatrix: {
       byComposition,
+    },
+    composableProfile: {
+      members: recommended,
     },
   }
 }

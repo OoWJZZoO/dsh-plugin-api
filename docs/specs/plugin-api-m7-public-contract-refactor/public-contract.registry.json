@@ -118,321 +118,641 @@
    "publicPath": "apiVersion",
    "capability": "apiVersion",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "pure",
    "effect": "read",
    "implementationChannel": "facade",
    "status": "recommended",
-   "inventorySource": "plugin-api-service.js root metadata"
+   "inventorySource": "plugin-api-service.js root metadata",
+   "stateOwner": "facade root",
+   "scope": "facade",
+   "resourceKey": "frozen baseline",
+   "identitySource": "package baseline metadata",
+   "conflictRule": "none",
+   "lifecycle": "facade lifetime",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "isActive",
    "capability": "isActive",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "pure",
    "effect": "read",
    "implementationChannel": "facade",
    "status": "recommended",
-   "inventorySource": "plugin-api-service.js root metadata"
+   "inventorySource": "plugin-api-service.js root metadata",
+   "stateOwner": "facade root",
+   "scope": "facade",
+   "resourceKey": "root activity",
+   "identitySource": "host apply lifecycle",
+   "conflictRule": "none",
+   "lifecycle": "facade lifetime",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "assertCompatible",
    "capability": "assertCompatible",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "pure",
    "effect": "read",
    "implementationChannel": "facade",
    "status": "recommended",
-   "inventorySource": "plugin-api-service.js root metadata"
+   "inventorySource": "plugin-api-service.js root metadata",
+   "stateOwner": "facade root",
+   "scope": "facade",
+   "resourceKey": "negotiation call",
+   "identitySource": "caller-supplied requirement + facade declared api",
+   "conflictRule": "none",
+   "lifecycle": "facade lifetime",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "capabilities",
    "capability": "capabilities",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "pure",
    "effect": "read",
    "implementationChannel": "facade",
-   "status": "advanced",
-   "inventorySource": "plugin-api-service.js capabilities query surface (get/list/require); replaces the removed features snapshot; registry-backed capability descriptors + current availability"
+   "status": "recommended",
+   "inventorySource": "plugin-api-service.js capabilities query surface (get/list/require); replaces the removed features snapshot; registry-backed capability descriptors + current availability",
+   "stateOwner": "registry",
+   "scope": "facade",
+   "resourceKey": "capability path",
+   "identitySource": "public-contract registry",
+   "conflictRule": "none",
+   "lifecycle": "frozen with baseline",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "events",
    "capability": "events",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "additive",
    "effect": "subscribe",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js events getter; catalog/on/once/emit/serial/parallel/bail/waterfall"
+   "inventorySource": "plugin-api-service.js events getter; catalog/on/once/emit/serial/parallel/bail/waterfall",
+   "stateOwner": "events facade",
+   "scope": "facade",
+   "resourceKey": "event name + listener",
+   "identitySource": "caller context",
+   "conflictRule": "same-priority successful registration order",
+   "lifecycle": "facade lifetime; disposer per listener",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "llm",
    "capability": "llm",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "pure",
    "effect": "read",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js llm getter; modelInfo/prepareCall/stream/providers/requestTransforms/admissionPolicies/adapters/routing"
+   "inventorySource": "plugin-api-service.js llm getter; modelInfo/prepareCall/stream/providers/requestTransforms/admissionPolicies/adapters/routing",
+   "stateOwner": "llm facade",
+   "scope": "facade",
+   "resourceKey": "llm namespace",
+   "identitySource": "feature registry",
+   "conflictRule": "none",
+   "lifecycle": "facade lifetime",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "llm.routing",
    "capability": "llm.routing",
    "runtime": "host",
    "effect": "read",
-   "composition": "pending-audit",
+   "composition": "ordered",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "llm.routing merged semantic route plane; forExecution/current/on/once/wait + policies/candidates/health/circuit/decisions (routePolicy merged; leaf naming freeze 2026-08-28)"
+   "inventorySource": "llm.routing merged semantic route plane; forExecution/current/on/once/wait + policies/candidates/health/circuit/decisions (routePolicy merged; leaf naming freeze 2026-08-28)",
+   "stateOwner": "routing facade",
+   "scope": "execution",
+   "resourceKey": "execution identity / route record",
+   "identitySource": "caller context + execution registry",
+   "conflictRule": "policy registration order; decision immutable within attempt",
+   "lifecycle": "facade lifetime; attempt-scoped decisions",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "agents",
    "capability": "agents",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "additive",
    "effect": "execute",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js agents getter (was agent); get/list/roots/create/resume/register/providers/initiators/options/availability; providers plural per naming freeze 2026-08-28"
+   "inventorySource": "plugin-api-service.js agents getter (was agent); get/list/roots/create/resume/register/providers/initiators/options/availability; providers plural per naming freeze 2026-08-28",
+   "stateOwner": "agents facade",
+   "scope": "facade",
+   "resourceKey": "agent key / provider key",
+   "identitySource": "caller context; owner-derived",
+   "conflictRule": "same-key explicit conflict; singleton provider requires claim",
+   "lifecycle": "facade lifetime; identity-bound disposer",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "executions",
    "capability": "executions",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "pure",
    "effect": "read",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js executions getter (was execution); observe/get/history/onChange/visibility/availability + nested recovery"
+   "inventorySource": "plugin-api-service.js executions getter (was execution); observe/get/history/onChange/visibility/availability + nested recovery",
+   "stateOwner": "execution observer",
+   "scope": "execution",
+   "resourceKey": "execution identity",
+   "identitySource": "plugin-generated execution identity",
+   "conflictRule": "none",
+   "lifecycle": "observation lifetime; disposer per observer",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "executions.recovery",
    "capability": "executions.recovery",
    "runtime": "host",
    "effect": "read",
-   "composition": "pending-audit",
+   "composition": "exclusive",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "executions.recovery (was recovery root); classify/evaluate/consume/capability/policy/adapters/visibility/availability"
+   "inventorySource": "executions.recovery (was recovery root); classify/evaluate/consume/capability/policy/adapters/visibility/availability",
+   "stateOwner": "recovery facade",
+   "scope": "execution",
+   "resourceKey": "decision identity",
+   "identitySource": "recovery policy records",
+   "conflictRule": "consume once; expected-attempt gating; one authority",
+   "lifecycle": "decision-scoped; consume is terminal",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "sessions",
    "capability": "sessions",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "additive",
    "effect": "execute",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js sessions getter (was session); base+durable+branches+channels"
+   "inventorySource": "plugin-api-service.js sessions getter (was session); base+durable+branches+channels",
+   "stateOwner": "sessions facade",
+   "scope": "session",
+   "resourceKey": "session id",
+   "identitySource": "caller context; owner-derived append",
+   "conflictRule": "same-key explicit conflict",
+   "lifecycle": "facade lifetime; disposer per registration",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "sessions.branches",
    "capability": "sessions.branches",
    "runtime": "host",
    "effect": "mutate",
-   "composition": "pending-audit",
+   "composition": "coordinated",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "sessions.branches; create/graph/plan/preview/commit/rollback/restore"
+   "inventorySource": "sessions.branches; create/graph/plan/preview/commit/rollback/restore",
+   "stateOwner": "branch facade",
+   "scope": "session",
+   "resourceKey": "branch key",
+   "identitySource": "caller context; branch owner",
+   "conflictRule": "CAS/fencing on generation; cross-owner same-key rejected",
+   "lifecycle": "branch generation; stale disposer typed no-op",
+   "bypasses": [
+    "direct session mutation must route through branch authority or stay outside the profile"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "sessions.channels",
    "capability": "sessions.channels",
    "runtime": "host",
    "effect": "mutate",
-   "composition": "pending-audit",
+   "composition": "coordinated",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "sessions.channels (was sessionChannel root); open/subscribe/fetchEvents/heartbeat/ack/resume/revoke/observe/auth"
+   "inventorySource": "sessions.channels (was sessionChannel root); open/subscribe/fetchEvents/heartbeat/ack/resume/revoke/observe/auth",
+   "stateOwner": "channel facade",
+   "scope": "session",
+   "resourceKey": "channel key",
+   "identitySource": "caller context; authenticated owner",
+   "conflictRule": "CAS/fencing on generation; cross-owner same-key rejected",
+   "lifecycle": "channel generation; stale disposer typed no-op",
+   "bypasses": [
+    "direct session mutation must route through channel authority or stay outside the profile"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "tools",
    "capability": "tools",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "additive",
    "effect": "register",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js tools getter; register/restrict/guard/get/schemas/execute/presentAs/toolAbortedError/executionMode/defineTool + discovery; routeOf removed per approved deletion B2"
+   "inventorySource": "plugin-api-service.js tools getter; register/restrict/guard/get/schemas/execute/presentAs/toolAbortedError/executionMode/defineTool + discovery; routeOf removed per approved deletion B2",
+   "stateOwner": "tools facade",
+   "scope": "facade",
+   "resourceKey": "tool key",
+   "identitySource": "caller context; owner-derived",
+   "conflictRule": "same-key explicit conflict",
+   "lifecycle": "facade lifetime; identity-bound disposer",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "skills",
    "capability": "skills",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "additive",
    "effect": "register",
    "implementationChannel": "replacement",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js skills getter; activation surface via tool-skill replacement"
+   "inventorySource": "plugin-api-service.js skills getter; activation surface via tool-skill replacement",
+   "stateOwner": "skills facade",
+   "scope": "facade",
+   "resourceKey": "skill key / activation",
+   "identitySource": "caller context; owner-derived",
+   "conflictRule": "same-key explicit conflict; activation owned",
+   "lifecycle": "facade lifetime; identity-bound disposer",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "prompts",
    "capability": "prompts",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "additive",
    "effect": "register",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js prompts getter (was systemPrompt); section/context/variable/tools/suppressRuntimeContext/render/assemble + nested provenance"
+   "inventorySource": "plugin-api-service.js prompts getter (was systemPrompt); section/context/variable/tools/suppressRuntimeContext/render/assemble + nested provenance",
+   "stateOwner": "prompts facade",
+   "scope": "assembly",
+   "resourceKey": "section/context/variable key",
+   "identitySource": "caller context; owner-derived",
+   "conflictRule": "declared provider order",
+   "lifecycle": "facade lifetime; identity-bound disposer",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "prompts.provenance",
    "capability": "prompts.provenance",
    "runtime": "host",
    "effect": "register",
-   "composition": "pending-audit",
+   "composition": "additive",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "prompts.provenance (was context root); contribute/compose/inspect/mapping/observe/policy"
+   "inventorySource": "prompts.provenance (was context root); contribute/compose/inspect/mapping/observe/policy",
+   "stateOwner": "provenance facade",
+   "scope": "session",
+   "resourceKey": "contribution/mapping key",
+   "identitySource": "caller context; owner-derived",
+   "conflictRule": "contribution owner separate from projection owner",
+   "lifecycle": "facade lifetime; identity-bound disposer",
+   "bypasses": [
+    "contribution cannot bypass prompt policy"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "attachments",
    "capability": "attachments",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "coordinated",
    "effect": "register",
    "implementationChannel": "replacement",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js attachments conditional surface; pipeline/projection via replacement row"
+   "inventorySource": "plugin-api-service.js attachments conditional surface; pipeline/projection via replacement row",
+   "stateOwner": "attachment pipeline",
+   "scope": "session",
+   "resourceKey": "attachment content identity",
+   "identitySource": "pipeline records",
+   "conflictRule": "generation + cleanup/cancellation possession",
+   "lifecycle": "generation-scoped; stale completion superseded",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "mcp",
    "capability": "mcp",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "pure",
    "effect": "read",
    "implementationChannel": "replacement",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js mcp conditional surface; catalog provider via replacement row"
+   "inventorySource": "plugin-api-service.js mcp conditional surface; catalog provider via replacement row",
+   "stateOwner": "mcp catalog",
+   "scope": "facade",
+   "resourceKey": "catalog projection",
+   "identitySource": "mcp client records",
+   "conflictRule": "none",
+   "lifecycle": "read-only projection; generation-aware",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "tasks",
    "capability": "tasks",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "coordinated",
    "effect": "read",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js tasks getter; register/start/claim/reassign/settle/attach/get/observe/history"
+   "inventorySource": "plugin-api-service.js tasks getter; register/start/claim/reassign/settle/attach/get/observe/history",
+   "stateOwner": "task facade",
+   "scope": "task",
+   "resourceKey": "task/attempt identity",
+   "identitySource": "caller context; task registry",
+   "conflictRule": "claim/fencing; one terminal outcome",
+   "lifecycle": "attempt-scoped; terminal outcomes immutable",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "coordination",
    "capability": "coordination",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "coordinated",
    "effect": "mutate",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js coordination getter; availability/acquire/heartbeat/release/takeover/compareAndSet/watch"
+   "inventorySource": "plugin-api-service.js coordination getter; availability/acquire/heartbeat/release/takeover/compareAndSet/watch",
+   "stateOwner": "coordination facade",
+   "scope": "workspace",
+   "resourceKey": "resource key",
+   "identitySource": "caller context; owner-derived",
+   "conflictRule": "generation compare-and-set; fencing; superseded on old generation",
+   "lifecycle": "lease-scoped; heartbeat/expiry",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "workspaces.transactions",
    "capability": "workspaces.transactions",
    "runtime": "host",
    "effect": "mutate",
-   "composition": "pending-audit",
+   "composition": "coordinated",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "workspaces.transactions (was workspaceTransactions root); prepare/record/preview/commit/rollback/recover/get/observe"
+   "inventorySource": "workspaces.transactions (was workspaceTransactions root); prepare/record/preview/commit/rollback/recover/get/observe",
+   "stateOwner": "workspace facade",
+   "scope": "workspace",
+   "resourceKey": "workspace identity",
+   "identitySource": "transaction records",
+   "conflictRule": "transaction condition; preflight conflict detection",
+   "lifecycle": "transaction-scoped; commit/rollback",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "security",
    "capability": "security",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "ordered",
    "effect": "decide",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js security getter; policy/redaction/egress/audit"
+   "inventorySource": "plugin-api-service.js security getter; policy/redaction/egress/audit",
+   "stateOwner": "security facade",
+   "scope": "request",
+   "resourceKey": "policy key",
+   "identitySource": "caller context; owner-derived",
+   "conflictRule": "fixed reducer stages; fail closed",
+   "lifecycle": "facade lifetime; identity-bound disposer",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "diagnostics",
    "capability": "diagnostics",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "pure",
    "effect": "register",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js diagnostics getter; register/get/onChange"
+   "inventorySource": "plugin-api-service.js diagnostics getter; register/get/onChange",
+   "stateOwner": "diagnostics facade",
+   "scope": "facade",
+   "resourceKey": "health projection",
+   "identitySource": "registered diagnostics records",
+   "conflictRule": "none",
+   "lifecycle": "observation lifetime; disposer per observer",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "settings",
    "capability": "settings",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "coordinated",
    "effect": "register",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js settings getter; register/scope/describe/installSettingsSection/remote"
+   "inventorySource": "plugin-api-service.js settings getter; register/scope/describe/installSettingsSection/remote",
+   "stateOwner": "settings facade",
+   "scope": "settings namespace",
+   "resourceKey": "namespace/key",
+   "identitySource": "caller context; owner-derived",
+   "conflictRule": "namespace/key explicit conflict; document revision",
+   "lifecycle": "facade lifetime; disposer per registration",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "profiles",
    "capability": "profiles",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "coordinated",
    "effect": "read",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js profiles getter (was profile); inspect/health/planDiff/apply/snapshot"
+   "inventorySource": "plugin-api-service.js profiles getter (was profile); inspect/health/planDiff/apply/snapshot",
+   "stateOwner": "profile facade",
+   "scope": "profile",
+   "resourceKey": "profile identity",
+   "identitySource": "caller context; profile records",
+   "conflictRule": "validation + CAS/claim on writes",
+   "lifecycle": "session-scoped; disposer per handle",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "remotes",
    "capability": "remotes",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "additive",
    "effect": "register",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js remotes getter (was remote); publish/isActive"
+   "inventorySource": "plugin-api-service.js remotes getter (was remote); publish/isActive",
+   "stateOwner": "remote facade",
+   "scope": "facade",
+   "resourceKey": "namespace + service key",
+   "identitySource": "caller context; owner-derived",
+   "conflictRule": "cross-owner same-key rejected",
+   "lifecycle": "facade lifetime; disposer per publication",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "services",
    "capability": "services",
    "runtime": "host",
-   "composition": "pending-audit",
+   "composition": "pure",
    "effect": "execute",
    "implementationChannel": "passthrough",
    "status": "advanced",
-   "inventorySource": "plugin-api-service.js services namespace; static whitelist (see servicesWhitelist)"
+   "inventorySource": "plugin-api-service.js services namespace; static whitelist (see servicesWhitelist)",
+   "stateOwner": "host assembly",
+   "scope": "facade",
+   "resourceKey": "whitelist member",
+   "identitySource": "static services whitelist",
+   "conflictRule": "none (1:1 passthrough)",
+   "lifecycle": "facade lifetime; member-level availability",
+   "bypasses": [
+    "advanced passthrough: no default composition guarantee"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "llm.requestTransforms",
    "capability": "llm.requestTransforms",
    "runtime": "host",
    "effect": "register",
-   "composition": "pending-audit",
+   "composition": "ordered",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "llm.requestTransforms.register (was llm.request); owner-scoped ordered request transform registration"
+   "inventorySource": "llm.requestTransforms.register (was llm.request); owner-scoped ordered request transform registration",
+   "stateOwner": "llm facade",
+   "scope": "request",
+   "resourceKey": "transform registration",
+   "identitySource": "caller context; owner-derived",
+   "conflictRule": "priority then registration order; at-most-once on re-entry",
+   "lifecycle": "facade lifetime; identity-bound disposer",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "llm.admissionPolicies",
    "capability": "llm.admissionPolicies",
    "runtime": "host",
    "effect": "register",
-   "composition": "pending-audit",
+   "composition": "ordered",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "llm.admissionPolicies.register (was llm.admission); fixed decision algebra admission policy registration"
+   "inventorySource": "llm.admissionPolicies.register (was llm.admission); fixed decision algebra admission policy registration",
+   "stateOwner": "llm facade",
+   "scope": "request",
+   "resourceKey": "policy registration",
+   "identitySource": "caller context; owner-derived",
+   "conflictRule": "fixed decision algebra (deny/ask/allow), not listener order",
+   "lifecycle": "facade lifetime; identity-bound disposer",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "llm.adapters",
    "capability": "llm.adapters",
    "runtime": "host",
    "effect": "register",
-   "composition": "pending-audit",
+   "composition": "additive",
    "implementationChannel": "replacement",
    "status": "advanced",
-   "inventorySource": "llm.adapters.decorate/snapshot; replacement-owned decoration facet forwarded by the facade"
+   "inventorySource": "llm.adapters.decorate/snapshot; replacement-owned decoration facet forwarded by the facade",
+   "stateOwner": "replacement component",
+   "scope": "llm adapter",
+   "resourceKey": "adapter decoration",
+   "identitySource": "component claim",
+   "conflictRule": "component gates then registration order",
+   "lifecycle": "replacement lifecycle; disposer per adapter",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   },
   {
    "publicPath": "tools.discovery",
    "capability": "tools.discovery",
    "runtime": "host",
    "effect": "register",
-   "composition": "pending-audit",
+   "composition": "additive",
    "implementationChannel": "facade",
    "status": "advanced",
-   "inventorySource": "tools.discovery; catalog/search/activate/deactivate/audit"
+   "inventorySource": "tools.discovery; catalog/search/activate/deactivate/audit",
+   "stateOwner": "discovery facade",
+   "scope": "facade",
+   "resourceKey": "discovery key",
+   "identitySource": "caller context; owner-derived",
+   "conflictRule": "same-key explicit conflict",
+   "lifecycle": "facade lifetime; identity-bound disposer",
+   "bypasses": [
+    "none"
+   ],
+   "availability": "active"
   }
  ],
  "servicesWhitelist": [
@@ -1059,7 +1379,8 @@
    "context",
    "profile",
    "sessionChannel"
-  ]
+  ],
+  "compositionAudit": "Task 7.1 finalization (2026-08-28): primary composition modes + authority records per retained member; events advanced (owner-scoped custom publisher not implemented); recommended only fundamentals + capabilities"
  },
  "clientRoot": {
   "publicRoot": "ctx.pluginApi (direct root members)",
