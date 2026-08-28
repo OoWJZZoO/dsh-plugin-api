@@ -72,3 +72,51 @@
 - B4：Task 6.2 追加清单 + 二批批准 + 同批测试更新。
 - C1：services member-level 测试（Task 7.8）；C2：Composable Profile fixture 测试（Task 7.1）。
 - 消费者：pro-ex-anchor 的 `session→sessions`、`remote→remotes`、client 直接根迁移在 Task 8.2 完成并在 Task 8.5 验收。
+---
+
+## B4 追加清单（Task 6.2 审计产出，2026-08-28）——待第二次人类批准
+
+> 审计依据：`docs/standards/refactor/capability-and-services.md` §2（发布前减法候选）与 §5（成员分级）。逐成员核对 48 个 `services.*` 白名单成员；仓库内引用面仅为白名单/契约枚举（`official-service-definitions`、`services-definitions.test.mjs`、`compat-integration-cardinality.test.mjs`、M4 交付报告），无独立消费者代码；消费者约束：`dsh-pro-ex-ability-anchor` 使用 `shellEnv`/`jobs`/`sessionTitle`（不列入）。批准后按冻结决策 11①**直接删除 PATH**（不做 unavailable 占位）；删除后成员访问 → 成员不存在（`undefined`），整键删除后该 key 不在 `services` namespace。
+
+### A 类——裸 singleton setter / 共享 mutation 无 owner 协调（§2 首条、§5）
+
+| # | 删除成员 | 保留成员 | 理由 | 影响面 |
+|---|---|---|---|---|
+| B4-1 | `services.approval.setPolicy` | request、overrideOf | 裸 singleton 审批策略 setter，无 owner/claim 机制；`services.*` 不承载组合保证 | lib/services.js、services 测试、contracts |
+| B4-2 | `services.agentDefaultModel.saveSelection` | currentSelection | 裸 singleton 默认模型 setter | 同上 |
+| B4-3 | `services.planMode.set` | get | 裸 singleton 模式 setter | 同上 |
+| B4-4 | `services.permissionPresets.set`、`selectFor` | current、resolve、optionOf | 裸 singleton 权限预设 setter/选择 | 同上 |
+| B4-5 | `services.credentials.set`、`unset` | resolve、describe | 共享凭据 mutation 无 owner 协调且涉密 | 同上 |
+| B4-6 | `services.sessionProjectionCache.write` | cachedSnapshot、coldSnapshot | 直接 cache 写，绕过 sessionProjections authority | 同上 |
+
+### B 类——官方等价 seam 已承载 / 无独立消费者（§2 末条、§2 第四条）
+
+| # | 删除成员 | 保留成员 | 理由 | 影响面 |
+|---|---|---|---|---|
+| B4-7 | `services.compaction`（整键：compactIfNeeded、compactNow、compactRegion） | —（整键删除） | compaction 决策/事件语义已由 replacement 包（`@deepseek-ai/dsh-plugin-api-compaction-events`，替换官方 `compaction-basic` 行并注册 fork 引擎）承载；raw 控制面无独立消费者 | lib/services.js、services 测试、contracts、registry servicesWhitelist |
+| B4-8 | `services.workflows`（整键：start） | —（整键删除） | 单方法、无真实消费者、只减少样板 | 同上 |
+
+> 请求批准：以上 8 项逐项批准/驳回/修改；未获批项目保持现状（availability 与 `pending-audit` 呈现不变），不进入减法实施（Task 6.1/6.3）。
+
+## 批准记录（B4 第二次批准门，2026-08-28）
+
+人类逐项裁决（8 项）：
+
+| # | 删除项 | 裁决 |
+|---|---|---|
+| B4-1 | `services.approval.setPolicy` | **批准删除**（request/overrideOf 保留） |
+| B4-2 | `services.agentDefaultModel.saveSelection` | **驳回删除，保留**（currentSelection 一并保留） |
+| B4-3 | `services.planMode.set` | **批准删除**；功能不删减——后续须提供可追溯、可记录封装的 B 类接口（待实现，见下） |
+| B4-4 | `services.permissionPresets.set`/`selectFor` | **批准删除**；后续须提供可追溯、可记录封装的 B 类接口（待实现） |
+| B4-5 | `services.credentials.set`/`unset` | **批准删除**；后续须提供可追溯、可记录封装的 B 类接口（待实现） |
+| B4-6 | `services.sessionProjectionCache.write` | **批准删除**（cachedSnapshot/coldSnapshot 保留） |
+| B4-7 | `services.compaction`（整键） | **批准删除**；`packages/compaction-events` 后续必须新增「可主动发起 compact 事件」的 API（待实现） |
+| B4-8 | `services.workflows`（整键） | **批准删除**；功能不删减——后续须提供可追溯、可记录封装的 B 类接口且拓展能力（待实现） |
+
+## 后续 B 类接口义务（人类裁决登记，待实现，不在本 feature 交付范围）
+
+- **planMode 写入面**：删除 `services.planMode.set` 后，后续提供可追溯、可记录封装的 B 类接口（owner/audit 语义）。
+- **permissionPresets 写入面**：删除 `set`/`selectFor` 后，后续提供可追溯、可记录封装接口（预设选择 + 记录）。
+- **credentials 写入面**：删除 `set`/`unset` 后，后续提供可追溯、可记录封装接口（含安全/脱敏）。
+- **compaction 主动触发面**：`packages/compaction-events` 后续新增「可主动发起 compact 事件」的 API（替代删除的 raw 触发语义）。
+- **workflows 能力面**：删除 `services.workflows` 后，后续提供可追溯、可记录封装的 B 类接口并拓展能力（workflow 编排语义）。

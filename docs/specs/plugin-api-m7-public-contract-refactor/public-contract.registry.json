@@ -469,17 +469,9 @@
    "status": "advanced"
   },
   {
-   "key": "workflows",
-   "capability": "services.workflows",
-   "members": "member-level audit pending (Task 6.2/7.8)",
-   "composition": "pure",
-   "channel": "passthrough",
-   "status": "advanced"
-  },
-  {
    "key": "approval",
    "capability": "services.approval",
-   "members": "member-level audit pending (Task 6.2/7.8)",
+   "members": "removed via Task 6.2 (B4-1): setPolicy",
    "composition": "pure",
    "channel": "passthrough",
    "status": "advanced"
@@ -581,14 +573,6 @@
    "status": "advanced"
   },
   {
-   "key": "compaction",
-   "capability": "services.compaction",
-   "members": "member-level audit pending (Task 6.2/7.8)",
-   "composition": "pure",
-   "channel": "passthrough",
-   "status": "advanced"
-  },
-  {
    "key": "jobs",
    "capability": "services.jobs",
    "members": "member-level audit pending (Task 6.2/7.8)",
@@ -647,7 +631,7 @@
   {
    "key": "credentials",
    "capability": "services.credentials",
-   "members": "member-level audit pending (Task 6.2/7.8)",
+   "members": "removed via Task 6.2 (B4-5): set, unset",
    "composition": "pure",
    "channel": "passthrough",
    "status": "advanced"
@@ -703,7 +687,7 @@
   {
    "key": "permissionPresets",
    "capability": "services.permissionPresets",
-   "members": "member-level audit pending (Task 6.2/7.8)",
+   "members": "removed via Task 6.2 (B4-4): set, selectFor",
    "composition": "pure",
    "channel": "passthrough",
    "status": "advanced"
@@ -711,7 +695,7 @@
   {
    "key": "planMode",
    "capability": "services.planMode",
-   "members": "member-level audit pending (Task 6.2/7.8)",
+   "members": "removed via Task 6.2 (B4-3): set",
    "composition": "pure",
    "channel": "passthrough",
    "status": "advanced"
@@ -743,7 +727,7 @@
   {
    "key": "sessionProjectionCache",
    "capability": "services.sessionProjectionCache",
-   "members": "member-level audit pending (Task 6.2/7.8)",
+   "members": "removed via Task 6.2 (B4-6): write",
    "composition": "pure",
    "channel": "passthrough",
    "status": "advanced"
@@ -1013,7 +997,7 @@
    "path": "services.*(audit-removal-candidates)",
    "category": "remove",
    "status": "pending-second-approval",
-   "note": "B4 batch: member list finalized in Task 6.2 and re-approved before deletion"
+   "note": "B4 second-approval list (deletion-report.md B4 追加清单, 2026-08-28): members approval.setPolicy, agentDefaultModel.saveSelection, planMode.set, permissionPresets.set, permissionPresets.selectFor, credentials.set, credentials.unset, sessionProjectionCache.write; whole keys compaction, workflows. Pending explicit human approval before any deletion executes."
   }
  ],
  "statusByPath": {

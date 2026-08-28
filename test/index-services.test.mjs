@@ -97,22 +97,21 @@ test('apply mounts an active frozen services namespace when all 48 official serv
   assert.equal(state.pluginApi.isActive, true)
   assert.equal(state.pluginApi.services[servicesNamespaceBrand], true)
   assert.ok(Object.isFrozen(state.pluginApi.services))
-  assert.equal(Object.keys(state.pluginApi.services).length, 48)
+  assert.equal(Object.keys(state.pluginApi.services).length, 46)
   assert.equal(state.pluginApi.services.fs.isActive, true)
-  assert.equal(state.pluginApi.services.compaction.isActive, true)
   assert.equal(state.pluginApi.services.jobs.isActive, true)
   assert.equal(state.pluginApi.services.shellEnv.isActive, true)
 })
 
-test('apply mounts services when compaction is the only complete capability service', () => {
-  const compaction = completeService(SERVICE_DEFINITIONS.find((def) => def.key === 'compaction'))
-  const { ctx, state } = createMockCtx({ services: { compaction } })
+test('apply mounts services when codeRuntime is the only complete capability service', () => {
+  const codeRuntime = completeService(SERVICE_DEFINITIONS.find((def) => def.key === 'codeRuntime'))
+  const { ctx, state } = createMockCtx({ services: { codeRuntime } })
 
   assert.doesNotThrow(() => apply(ctx))
 
   const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'services')
   assert.equal(feature.isActive, true)
-  assert.equal(state.pluginApi.services.compaction.isActive, true)
+  assert.equal(state.pluginApi.services.codeRuntime.isActive, true)
   assert.throws(
     () => state.pluginApi.services.fs.readText({}),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.fs',
@@ -122,7 +121,7 @@ test('apply mounts services when compaction is the only complete capability serv
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.web',
   )
   for (const def of SERVICE_DEFINITIONS) {
-    if (def.key !== 'compaction') {
+    if (def.key !== 'codeRuntime') {
       assert.equal(state.pluginApi.services[def.key].isActive, false, `${def.key} is locally disabled`)
     }
   }
@@ -140,8 +139,8 @@ test('apply mounts services when jobs and shellEnv are the only complete capabil
   assert.equal(state.pluginApi.services.jobs.isActive, true)
   assert.equal(state.pluginApi.services.shellEnv.isActive, true)
   assert.throws(
-    () => state.pluginApi.services.compaction.compactNow({}, {}),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.compaction',
+    () => state.pluginApi.services.fs.readText({}, {}),
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.fs',
   )
   for (const def of SERVICE_DEFINITIONS) {
     if (def.key !== 'jobs' && def.key !== 'shellEnv') {
@@ -225,25 +224,25 @@ test('apply degrades a missing capability service per-service while keeping the 
   assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((f) => f.name === 'services').isActive, true)
 })
 
-test('apply degrades hostile compaction construction while another capability remains active', () => {
+test('apply degrades hostile fs construction while another capability remains active', () => {
+  const jobs = completeService(SERVICE_DEFINITIONS.find((def) => def.key === 'jobs'))
   const fs = completeService(SERVICE_DEFINITIONS.find((def) => def.key === 'fs'))
-  const compaction = completeService(SERVICE_DEFINITIONS.find((def) => def.key === 'compaction'))
-  Object.defineProperty(compaction, 'compactNow', {
+  Object.defineProperty(fs, 'readText', {
     get() {
       throw new Error('hostile member getter')
     },
   })
-  const { ctx, state } = createMockCtx({ services: { fs, compaction } })
+  const { ctx, state } = createMockCtx({ services: { fs, jobs } })
 
   assert.doesNotThrow(() => apply(ctx))
 
   const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'services')
   assert.equal(feature.isActive, true)
-  assert.equal(state.pluginApi.services.fs.isActive, true)
-  assert.equal(state.pluginApi.services.compaction.isActive, false)
+  assert.equal(state.pluginApi.services.jobs.isActive, true)
+  assert.equal(state.pluginApi.services.fs.isActive, false)
   assert.throws(
-    () => state.pluginApi.services.compaction.compactNow(),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.compaction',
+    () => state.pluginApi.services.fs.readText(),
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.fs',
   )
 })
 

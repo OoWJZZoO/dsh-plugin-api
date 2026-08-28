@@ -9,7 +9,7 @@ import {
 import { PluginApiFeatureDisabledError, PluginApiInactiveError } from '../lib/errors.js'
 
 const def = SERVICE_DEFINITIONS.find((d) => d.key === 'fs')
-const compactionDef = SERVICE_DEFINITIONS.find((d) => d.key === 'compaction')
+const approvalDef = SERVICE_DEFINITIONS.find((d) => d.key === 'approval')
 const jobsDef = SERVICE_DEFINITIONS.find((d) => d.key === 'jobs')
 const shellEnvDef = SERVICE_DEFINITIONS.find((d) => d.key === 'shellEnv')
 
@@ -83,12 +83,12 @@ test('per-service degradation facade does not call into official services', () =
   assert.equal(officialCalls, 0)
 })
 
-test('compaction degraded facade reports services.compaction without official calls', () => {
+test('approval degraded facade reports services.approval without official calls', () => {
   let calls = 0
   const services = createServicesNamespace({
     ctx: {
       get(name) {
-        if (name === 'compaction') return undefined
+        if (name === 'approval') return undefined
         if (name === 'fs') {
           return {
             get sandboxMode() { return 'sandboxed' },
@@ -112,21 +112,21 @@ test('compaction degraded facade reports services.compaction without official ca
     active: true,
   })
 
-  assert.equal(services.compaction.isActive, false)
-  for (const name of compactionDef.members.map((member) => member.name)) {
+  assert.equal(services.approval.isActive, false)
+  for (const name of approvalDef.members.map((member) => member.name)) {
     assert.throws(
-      () => services.compaction[name](),
-      (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.compaction',
+      () => services.approval[name](),
+      (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.approval',
     )
   }
   assert.equal(calls, 0)
 })
 
-test('throwing compaction lookup degrades only compaction as degraded', () => {
+test('throwing approval lookup degrades only approval as degraded', () => {
   const services = createServicesNamespace({
     ctx: {
       get(name) {
-        if (name === 'compaction') throw new Error('lookup failed')
+        if (name === 'approval') throw new Error('lookup failed')
         if (name === 'fs') {
           return {
             sandboxMode: 'sandboxed',
@@ -151,29 +151,28 @@ test('throwing compaction lookup degrades only compaction as degraded', () => {
   })
 
   assert.equal(services.fs.isActive, true)
-  assert.equal(services.compaction.isActive, false)
+  assert.equal(services.approval.isActive, false)
   assert.throws(
-    () => services.compaction.compactIfNeeded(),
-    (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.compaction',
+    () => services.approval.request(),
+    (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.approval',
   )
 })
 
-test('mounted active and degraded compaction facades prioritize inactive core errors', () => {
+test('mounted active and degraded approval facades prioritize inactive core errors', () => {
   let active = true
   let officialCalls = 0
   const complete = {
-    compactIfNeeded() { officialCalls += 1 },
-    compactNow() { officialCalls += 1 },
-    compactRegion() { officialCalls += 1 },
+    request() { officialCalls += 1 },
+    overrideOf() { officialCalls += 1 },
   }
   const activeServices = createServicesNamespace({
-    ctx: { get: (name) => (name === 'compaction' ? complete : undefined) },
+    ctx: { get: (name) => (name === 'approval' ? complete : undefined) },
     active: () => active,
   })
   const disabledServices = createServicesNamespace({
     ctx: {
       get(name) {
-        if (name === 'compaction') return undefined
+        if (name === 'approval') return undefined
         if (name === 'fs') return { resolve() {}, processPath() {}, fileUrl() {}, contains() {}, stat() {}, lstat() {}, readText() {}, streamText() {}, readBytes() {}, listDir() {}, writeText() {}, editText() {}, sandboxMode: 'x' }
         return undefined
       },
@@ -182,9 +181,9 @@ test('mounted active and degraded compaction facades prioritize inactive core er
   })
 
   active = false
-  for (const name of compactionDef.members.map((member) => member.name)) {
-    assert.throws(() => activeServices.compaction[name](), PluginApiInactiveError)
-    assert.throws(() => disabledServices.compaction[name](), PluginApiInactiveError)
+  for (const name of approvalDef.members.map((member) => member.name)) {
+    assert.throws(() => activeServices.approval[name](), PluginApiInactiveError)
+    assert.throws(() => disabledServices.approval[name](), PluginApiInactiveError)
   }
   assert.equal(officialCalls, 0)
 })

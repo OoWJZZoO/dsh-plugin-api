@@ -71,7 +71,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
   - **5.4 client 测试同步**：更新/新增 `client*.test.mjs`：直接 `ctx.pluginApi` 根且无公开 `.client` 成员、host/client 词表一致、remote/slot/settings/lifecycle/reconnect/HMR/owner-local generation/stale cleanup/callback 失败、host 脱敏先于序列化 + client 形状校验、检入 bundle 形状与 manifest、官方 client leaves 只经声明 `services.*` 暴露。
   - **要求**：client cutover 后浏览器面无 `.client` 公共路径；client 相关测试全绿；检入 bundle 与 registry 一致。消费者 panel 的迁移在 Task 8 统一处理（依赖本任务完成）。
 
-- [ ] **6. 公共面减法（requirements §2、§4、§5、§9；design 完成定义与 §capability-and-services 减法规则）**
+- [x] **6. 公共面减法（requirements §2、§4、§5、§9；design 完成定义与 §capability-and-services 减法规则）**
   - **6.1 成员级减法执行**：对 Task 3 批准的删除项，在目标树稳定后执行最终移除（registry removed 定稿、运行时不再发布、快照/类型/文档/测试同步更新）；未批准项保留并保持其 availability 呈现，不得以别名/隐藏分支留存（§4）。
   - **6.2 services 减法**：按 §9 与 `capability-and-services.md` 逐成员审计 `services.*`：删除无独立长期价值成员（经批准；本地开发阶段**直接删除 PATH**，见冻结决策 11①）；已有一等领域 API 覆盖的重复入口移除；仅对**批准保留**的成员落实 member-level `disabled/unavailable` 呈现（§5、§9，发布运维阶段策略：runtime identity 失配 / 可选安装差异）；未经批准任何成员不得从公共 path 消失。
   - **6.3 减法后验证**：快照/disabled-surface 形状与 registry 一致（§15①）；组合测试输入（2.2）重生成；负向断言：已删除 path 在公共面与 registry 快照中都不存在、runtime-unavailable path 仍存在且 typed。

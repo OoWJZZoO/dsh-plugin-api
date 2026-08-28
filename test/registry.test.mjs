@@ -93,7 +93,9 @@ test('snapshots derive every surface from the same registry', () => {
   assert.ok(snapshots.clientSurface.roots.includes('connection'))
   assert.equal(snapshots.clientSurface.clientRoot.publicRoot, 'ctx.pluginApi (direct root members)')
   assert.ok(snapshots.servicesFixture.keys.includes('fs'))
-  assert.ok(snapshots.servicesFixture.keys.length >= 21)
+  assert.equal(snapshots.servicesFixture.keys.length, 46, 'snapshot services fixture matches the reduced whitelist')
+  assert.ok(!snapshots.servicesFixture.keys.includes('compaction'), 'removed compaction key is absent from the snapshot')
+  assert.ok(!snapshots.servicesFixture.keys.includes('workflows'), 'removed workflows key is absent from the snapshot')
   assert.ok(snapshots.compositionMatrix.byComposition !== undefined)
 })
 

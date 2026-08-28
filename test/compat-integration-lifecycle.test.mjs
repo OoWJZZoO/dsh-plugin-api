@@ -92,7 +92,7 @@ test('combined host publishes additive immutable compat shapes once without synt
     assert.equal(first.events.catalog[excluded], undefined)
   }
   for (const view of views) assert.ok(Object.isFrozen(view))
-  assert.equal(Object.keys(first.services).length, 48)
+  assert.equal(Object.keys(first.services).length, 46)
   assert.equal(first.services.jobs.isActive, true)
   assert.equal(first.services.shellEnv.isActive, true)
 })
@@ -114,8 +114,8 @@ test('combined host preserves core-inactive → feature-disabled → guard-disab
   assert.equal(feature(active.state, 'llm/admission').isActive, false)
   assert.throws(() => active.state.pluginApi.llm.admissionPolicies.register({}), PluginApiFeatureDisabledError)
   assert.throws(() => active.state.pluginApi.settings.scope('consumer'), PluginApiServiceUnavailableError)
-  assert.equal(active.state.pluginApi.services.compaction.isActive, false)
-  assert.throws(() => active.state.pluginApi.services.compaction.compactNow(), /compaction/)
+  assert.equal(active.state.pluginApi.services.apiProxy.isActive, false)
+  assert.throws(() => active.state.pluginApi.services.apiProxy.respond(), /apiProxy/)
 })
 
 test('throwing mandatory substrate and logger disable only dependent compat surfaces while boot continues', () => {

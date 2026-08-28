@@ -31,10 +31,11 @@ const URI_HELPERS = {
 test('namespace exposes exactly the approved keys and nothing else', () => {
   const services = createServicesNamespace({ ctx: fullCtx(), active: true, uriHelpers: URI_HELPERS })
   assert.deepEqual(Object.keys(services), SERVICES_NAMESPACE_KEYS)
-  assert.equal(Object.keys(services).length, 48)
-  assert.ok('compaction' in services)
+  assert.equal(Object.keys(services).length, 46)
   assert.ok('jobs' in services)
   assert.ok('shellEnv' in services)
+  assert.ok(!('compaction' in services), 'removed compaction key is absent from the namespace')
+  assert.ok(!('workflows' in services), 'removed workflows key is absent from the namespace')
 })
 
 test('namespace and every facade are frozen (read-only at runtime)', () => {
@@ -45,15 +46,13 @@ test('namespace and every facade are frozen (read-only at runtime)', () => {
     assert.equal(services[key].isActive, true)
   }
 
-  const compaction = services.compaction
-  assert.deepEqual(Object.keys(compaction), [
+  const approval = services.approval
+  assert.deepEqual(Object.keys(approval), [
     'isActive',
-    'compactIfNeeded',
-    'compactNow',
-    'compactRegion',
+    'request',
+    'overrideOf',
   ])
-  assert.equal('summarize' in compaction, false)
-  assert.equal('config' in compaction, false)
+  assert.equal('setPolicy' in approval, false, 'the approved removal keeps the singleton setter off the facade')
 
   const jobs = services.jobs
   assert.deepEqual(Object.keys(jobs), [
@@ -77,11 +76,11 @@ test('namespace and every facade are frozen (read-only at runtime)', () => {
   assert.ok(!('keyOwners' in shellEnv))
 
   assert.throws(() => { services.extra = true }, TypeError)
-  assert.throws(() => { delete services.compaction }, TypeError)
+  assert.throws(() => { delete services.jobs }, TypeError)
   assert.throws(() => { Object.defineProperty(services, 'extra', { value: true }) }, TypeError)
-  assert.throws(() => { compaction.extra = true }, TypeError)
-  assert.throws(() => { delete compaction.compactNow }, TypeError)
-  assert.throws(() => { Object.defineProperty(compaction, 'extra', { value: true }) }, TypeError)
+  assert.throws(() => { approval.extra = true }, TypeError)
+  assert.throws(() => { delete approval.request }, TypeError)
+  assert.throws(() => { Object.defineProperty(approval, 'extra', { value: true }) }, TypeError)
   assert.throws(() => { jobs.extra = true }, TypeError)
   assert.throws(() => { delete jobs.start }, TypeError)
   assert.throws(() => { Object.defineProperty(jobs, 'extra', { value: true }) }, TypeError)
@@ -89,9 +88,9 @@ test('namespace and every facade are frozen (read-only at runtime)', () => {
   assert.throws(() => { delete shellEnv.register }, TypeError)
   assert.throws(() => { Object.defineProperty(shellEnv, 'extra', { value: true }) }, TypeError)
   assert.equal(services.extra, undefined)
-  assert.equal(services.compaction, compaction)
-  assert.equal(compaction.extra, undefined)
-  assert.equal(typeof compaction.compactNow, 'function')
+  assert.equal(services.approval, approval)
+  assert.equal(approval.extra, undefined)
+  assert.equal(typeof approval.request, 'function')
   assert.equal(services.jobs, jobs)
   assert.equal(jobs.extra, undefined)
   assert.equal(typeof jobs.start, 'function')
@@ -102,33 +101,32 @@ test('namespace and every facade are frozen (read-only at runtime)', () => {
   assert.equal(typeof shellEnv.collect, 'function')
 })
 
-test('compaction facade does not mutate the official service target', () => {
-  const compaction = {
-    compactIfNeeded() {},
-    compactNow() {},
-    compactRegion() {},
-    summarize() {},
-    config: { mode: 'basic' },
+test('approval facade does not mutate the official service target', () => {
+  const approval = {
+    request() {},
+    overrideOf() {},
+    setPolicy() {},
+    config: { mode: 'strict' },
     providerState: { active: true },
   }
   const services = createServicesNamespace({
     ctx: fullCtx({
       get(name, byService) {
-        return name === 'compaction' ? compaction : byService[name]
+        return name === 'approval' ? approval : byService[name]
       },
     }),
     active: true,
     uriHelpers: URI_HELPERS,
   })
 
-  assert.equal(services.compaction.isActive, true)
-  assert.equal('summarize' in services.compaction, false)
-  assert.equal('config' in services.compaction, false)
-  assert.equal('providerState' in services.compaction, false)
-  assert.equal(Object.isFrozen(compaction), false)
-  assert.equal(typeof compaction.summarize, 'function')
-  assert.deepEqual(compaction.config, { mode: 'basic' })
-  assert.deepEqual(compaction.providerState, { active: true })
+  assert.equal(services.approval.isActive, true)
+  assert.equal('setPolicy' in services.approval, false, 'the removed singleton setter stays off the facade')
+  assert.equal('config' in services.approval, false)
+  assert.equal('providerState' in services.approval, false)
+  assert.equal(Object.isFrozen(approval), false)
+  assert.equal(typeof approval.setPolicy, 'function')
+  assert.deepEqual(approval.config, { mode: 'strict' })
+  assert.deepEqual(approval.providerState, { active: true })
 })
 
 test('jobs facade does not mutate the official service target', () => {
@@ -220,19 +218,18 @@ test('complete jobs and shellEnv services alone yield active facades while stati
 
   assert.equal(services.jobs.isActive, true)
   assert.equal(services.shellEnv.isActive, true)
-  for (const key of ['fs', 'compaction', 'web', 'sessionQuery']) {
+  for (const key of ['fs', 'web', 'sessionQuery']) {
     assert.equal(services[key].isActive, false, `${key} stays degraded-disabled`)
   }
 })
 
-test('hostile compaction member inspection degrades locally without interrupting other facades', () => {
+test('hostile member inspection degrades locally without interrupting other facades', () => {
   const loggerMessages = []
-  const compaction = {
-    compactIfNeeded() {},
-    compactNow() {},
-    compactRegion() {},
+  const credentials = {
+    resolve() {},
+    describe() {},
   }
-  Object.defineProperty(compaction, 'compactNow', {
+  Object.defineProperty(credentials, 'describe', {
     get() {
       throw new Error('hostile member getter')
     },
@@ -240,7 +237,7 @@ test('hostile compaction member inspection degrades locally without interrupting
   const services = createServicesNamespace({
     ctx: fullCtx({
       get(name, byService) {
-        return name === 'compaction' ? compaction : byService[name]
+        return name === 'credentials' ? credentials : byService[name]
       },
     }),
     active: true,
@@ -248,29 +245,28 @@ test('hostile compaction member inspection degrades locally without interrupting
     uriHelpers: URI_HELPERS,
   })
 
-  assert.equal(services.compaction.isActive, false)
+  assert.equal(services.credentials.isActive, false)
   assert.equal(services.fs.isActive, true)
   assert.throws(
-    () => services.compaction.compactNow(),
-    (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.compaction',
+    () => services.credentials.resolve(),
+    (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.credentials',
   )
   assert.equal(loggerMessages.length, 1)
 })
 
-test('an incomplete compaction target is one sealed definition-level degraded facade while all static peers remain active', () => {
+test('an incomplete target is one sealed definition-level degraded facade while all static peers remain active', () => {
   let officialCalls = 0
   const incomplete = {
-    compactIfNeeded() { officialCalls += 1 },
-    compactNow() { officialCalls += 1 },
-    // `compactRegion` is deliberately absent: the whole declared definition,
+    cachedSnapshot() { officialCalls += 1 },
+    // `coldSnapshot` is deliberately absent: the whole declared definition,
     // not only the missing member, must degrade to degraded.
     backendOnly() { officialCalls += 1 },
-    scheduler: { queued: true },
+    cacheTier: { queued: true },
   }
   const services = createServicesNamespace({
     ctx: fullCtx({
       get(name, byService) {
-        return name === 'compaction' ? incomplete : byService[name]
+        return name === 'sessionProjectionCache' ? incomplete : byService[name]
       },
     }),
     active: true,
@@ -278,24 +274,24 @@ test('an incomplete compaction target is one sealed definition-level degraded fa
   })
 
   assert.deepEqual(Object.keys(services), SERVICES_NAMESPACE_KEYS)
-  assert.equal(services.compaction.isActive, false)
-  assert.deepEqual(Object.keys(services.compaction), [
+  assert.equal(services.sessionProjectionCache.isActive, false)
+  assert.deepEqual(Object.keys(services.sessionProjectionCache), [
     'isActive',
-    'compactIfNeeded',
-    'compactNow',
-    'compactRegion',
+    'cachedSnapshot',
+    'coldSnapshot',
   ])
-  assert.equal('backendOnly' in services.compaction, false)
-  assert.equal('scheduler' in services.compaction, false)
-  for (const name of ['compactIfNeeded', 'compactNow', 'compactRegion']) {
+  assert.equal('write' in services.sessionProjectionCache, false, 'the removed cache writer stays off the facade')
+  assert.equal('backendOnly' in services.sessionProjectionCache, false)
+  assert.equal('cacheTier' in services.sessionProjectionCache, false)
+  for (const name of ['cachedSnapshot', 'coldSnapshot']) {
     assert.throws(
-      () => services.compaction[name]({ marker: name }),
-      (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.compaction',
+      () => services.sessionProjectionCache[name]({ marker: name }),
+      (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.sessionProjectionCache',
     )
   }
   assert.equal(officialCalls, 0)
   for (const key of SERVICES_NAMESPACE_KEYS) {
-    if (key !== 'compaction') assert.equal(services[key].isActive, true, `${key} stays active`)
+    if (key !== 'sessionProjectionCache') assert.equal(services[key].isActive, true, `${key} stays active`)
   }
 })
 

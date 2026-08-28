@@ -320,7 +320,7 @@ export const SERVICE_DEFINITION_CONTRACTS = freeze([
   {
     key: 'credentials',
     ctxService: 'credentials',
-    members: [method('resolve'), method('describe'), method('set'), method('unset')],
+    members: [method('resolve'), method('describe')],
   },
   { key: 'directoryPicker', ctxService: 'directoryPicker', members: [method('capability')] },
   {
@@ -354,9 +354,9 @@ export const SERVICE_DEFINITION_CONTRACTS = freeze([
   {
     key: 'permissionPresets',
     ctxService: 'permissionPresets',
-    members: [method('current'), method('selectFor'), method('resolve'), method('optionOf'), method('set')],
+    members: [method('current'), method('resolve'), method('optionOf')],
   },
-  { key: 'planMode', ctxService: 'planMode', members: [method('get'), method('set')] },
+  { key: 'planMode', ctxService: 'planMode', members: [method('get')] },
   { key: 'sandbox', ctxService: 'sandbox', members: [method('confine')] },
   {
     key: 'sandboxPolicy',
@@ -383,7 +383,7 @@ export const SERVICE_DEFINITION_CONTRACTS = freeze([
   {
     key: 'sessionProjectionCache',
     ctxService: 'sessionProjectionCache',
-    members: [method('cachedSnapshot'), method('write'), method('coldSnapshot')],
+    members: [method('cachedSnapshot'), method('coldSnapshot')],
   },
   { key: 'shell', ctxService: 'shell', members: [method('resolve'), method('run'), method('start')] },
   { key: 'spillStore', ctxService: 'spillStore', members: [method('saveText')] },
@@ -453,5 +453,5 @@ export const CONTRACT_CARDINALITIES = freeze({
   clientConnectionMembers: 3,
   serviceDefinitionInputs: 28,
   additionalServiceKeys: 27,
-  finalServiceKeys: 48,
+  finalServiceKeys: 46,
 })

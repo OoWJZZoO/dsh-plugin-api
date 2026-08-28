@@ -77,7 +77,6 @@ const SERVICES_KEYS = [
   'codeRuntime',
   'workspaces',
   'subagents',
-  'workflows',
   'approval',
   'userQuestions',
   'attachments',
@@ -91,7 +90,6 @@ const SERVICES_KEYS = [
   'tokenMeter',
   'agentDefaultModel',
   'web',
-  'compaction',
   'jobs',
   'shellEnv',
   'agentLoop',
@@ -173,7 +171,7 @@ test('durable observation retains its independent exact five-kind catalog', () =
   assert.deepEqual(Object.keys(DURABLE_EVENT_DESCRIPTORS), DURABLE_KIND_NAMES)
 })
 
-test('services namespace retains its independent exact 48-key static allowlist', () => {
-  assert.equal(SERVICES_NAMESPACE_KEYS.length, 48)
+test('services namespace retains its independent exact 46-key static allowlist', () => {
+  assert.equal(SERVICES_NAMESPACE_KEYS.length, 46)
   assert.deepEqual(SERVICES_NAMESPACE_KEYS, SERVICES_KEYS)
 })

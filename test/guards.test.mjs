@@ -237,14 +237,13 @@ test('services feature guard passes when all 21 official services are present', 
   assert.deepEqual(result.problems, [])
 })
 
-test('services feature guard passes when only compaction is present', () => {
+test('services feature guard passes when only approval is present', () => {
   const result = runFeatureGuard('services', {
     get(name) {
-      if (name !== 'compaction') return undefined
+      if (name !== 'approval') return undefined
       return {
-        compactIfNeeded() {},
-        compactNow() {},
-        compactRegion() {},
+        request() {},
+        overrideOf() {},
       }
     },
   }, {})

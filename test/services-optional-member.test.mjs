@@ -34,20 +34,19 @@ test('optional method flush is present and delegates when the official service h
   assert.deepEqual(calls, ['turn'])
 })
 
-test('incomplete compaction service disables the whole three-method facade', () => {
-  const def = SERVICE_DEFINITIONS.find((d) => d.key === 'compaction')
+test('incomplete member set disables the whole facade of a retained service', () => {
+  const def = SERVICE_DEFINITIONS.find((d) => d.key === 'sessionProjectionCache')
   const facade = buildActiveFacade(def, {
-    compactIfNeeded() {},
-    compactNow: 'not callable',
-    compactRegion() {},
+    cachedSnapshot() {},
+    coldSnapshot: 'not callable',
   }, {})
 
   assert.equal(facade.isActive, false)
-  for (const name of ['compactIfNeeded', 'compactNow', 'compactRegion']) {
+  for (const name of ['cachedSnapshot', 'coldSnapshot']) {
     assert.equal(typeof facade[name], 'function')
     assert.throws(
       () => facade[name](),
-      (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.compaction',
+      (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'services.sessionProjectionCache',
     )
   }
 })

@@ -7,7 +7,6 @@ const EXPECTED_KEYS = [
   'codeRuntime',
   'workspaces',
   'subagents',
-  'workflows',
   'approval',
   'userQuestions',
   'attachments',
@@ -21,7 +20,6 @@ const EXPECTED_KEYS = [
   'tokenMeter',
   'agentDefaultModel',
   'web',
-  'compaction',
   'jobs',
   'shellEnv',
   'agentLoop',
@@ -53,9 +51,11 @@ const EXPECTED_KEYS = [
   'webServer',
 ]
 
-test('SERVICE_DEFINITIONS declares exactly the 48 capability namespace keys', () => {
+test('SERVICE_DEFINITIONS declares exactly the 46 capability namespace keys', () => {
   assert.deepEqual(SERVICES_NAMESPACE_KEYS, EXPECTED_KEYS)
-  assert.equal(SERVICE_DEFINITIONS.length, 48)
+  assert.equal(SERVICE_DEFINITIONS.length, 46)
+  assert.equal(SERVICE_DEFINITIONS.some((d) => d.key === 'compaction'), false, 'compaction is removed with its replacement-owned semantics')
+  assert.equal(SERVICE_DEFINITIONS.some((d) => d.key === 'workflows'), false, 'workflows is removed pending a future wrapped surface')
 })
 
 test('capability namespace contains only its approved static service definitions', () => {
@@ -67,10 +67,9 @@ test('capability namespace contains only its approved static service definitions
 test('official service name mapping matches the design table', () => {
   const mapping = Object.fromEntries(SERVICE_DEFINITIONS.map((def) => [def.key, def.ctxService]))
   assert.equal(mapping.workspaces, 'workspaceRegistry')
-  assert.equal(mapping.workflows, 'workflowEngine')
   assert.equal(mapping.sessionReferences, 'sessionReferenceResolver')
   for (const def of SERVICE_DEFINITIONS) {
-    if (!['workspaces', 'workflows', 'sessionReferences'].includes(def.key)) {
+    if (!['workspaces', 'sessionReferences'].includes(def.key)) {
       assert.equal(def.ctxService, def.key)
     }
   }
@@ -108,16 +107,34 @@ test('sessionReferences exposes service methods and the two forwarded URI helper
   assert.deepEqual(forwardNames, ['encodeSessionReferenceUri', 'decodeSessionReferenceUri'])
 })
 
-test('compaction exposes exactly the public abstract operations', () => {
-  const def = SERVICE_DEFINITIONS.find((d) => d.key === 'compaction')
-  assert.ok(def)
-  assert.equal(def.ctxService, 'compaction')
-  assert.equal('pkg' in def, false)
-  assert.deepEqual(def.members, [
-    { kind: 'method', name: 'compactIfNeeded' },
-    { kind: 'method', name: 'compactNow' },
-    { kind: 'method', name: 'compactRegion' },
-  ])
+test('approved subtraction: writable singleton setters are gone from the whitelist', () => {
+  const memberNames = (key) => SERVICE_DEFINITIONS.find((d) => d.key === key)?.members.map((m) => m.name) ?? []
+  for (const [key, gone] of [
+    ['approval', ['setPolicy']],
+    ['planMode', ['set']],
+    ['permissionPresets', ['set', 'selectFor']],
+    ['credentials', ['set', 'unset']],
+    ['sessionProjectionCache', ['write']],
+  ]) {
+    for (const name of gone) {
+      assert.equal(memberNames(key).includes(name), false, `services.${key}.${name} must be removed`)
+    }
+  }
+  // The vetoed member stays: agentDefaultModel.saveSelection is retained.
+  assert.equal(memberNames('agentDefaultModel').includes('saveSelection'), true,
+    'agentDefaultModel.saveSelection stays per the second approval decision')
+  // Retained read/query members survive next to the removed setters.
+  for (const [key, kept] of [
+    ['approval', ['request', 'overrideOf']],
+    ['planMode', ['get']],
+    ['permissionPresets', ['current', 'resolve', 'optionOf']],
+    ['credentials', ['resolve', 'describe']],
+    ['sessionProjectionCache', ['cachedSnapshot', 'coldSnapshot']],
+  ]) {
+    for (const name of kept) {
+      assert.equal(memberNames(key).includes(name), true, `services.${key}.${name} must be retained`)
+    }
+  }
 })
 
 test('jobs exposes exactly the nine public abstract JobRegistry operations', () => {

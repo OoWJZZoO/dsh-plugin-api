@@ -119,94 +119,57 @@ test('active facade propagates official method rejections unchanged', async () =
   }
 })
 
-test('compaction delegates exact optional argument lists and preserves value identities', () => {
-  const def = SERVICE_DEFINITIONS.find((entry) => entry.key === 'compaction')
+test('retained facade delegates exact argument lists and preserves value identities', () => {
+  const def = SERVICE_DEFINITIONS.find((entry) => entry.key === 'sessionProjectionCache')
   const calls = []
   const results = {
-    compactIfNeeded: { kind: 'if-needed' },
-    compactNow: { kind: 'now' },
-    compactRegion: { kind: 'region' },
+    cachedSnapshot: { kind: 'cached' },
+    coldSnapshot: { kind: 'cold' },
   }
   const service = {
-    compactIfNeeded(...args) {
+    cachedSnapshot(...args) {
       assert.equal(this, service)
-      calls.push({ name: 'compactIfNeeded', args })
-      return results.compactIfNeeded
+      calls.push({ name: 'cachedSnapshot', args })
+      return results.cachedSnapshot
     },
-    compactNow(...args) {
+    coldSnapshot(...args) {
       assert.equal(this, service)
-      calls.push({ name: 'compactNow', args })
-      return results.compactNow
-    },
-    compactRegion(...args) {
-      assert.equal(this, service)
-      calls.push({ name: 'compactRegion', args })
-      return results.compactRegion
+      calls.push({ name: 'coldSnapshot', args })
+      return results.coldSnapshot
     },
   }
   const facade = buildActiveFacade(def, service)
-  const agent = { id: 'agent' }
-  const trigger = { kind: 'automatic' }
-  const signal = { aborted: false }
-  const commandId = { id: 'command' }
-  const start = { event: 10 }
-  const end = { event: 20 }
+  const sessionId = { id: 'session' }
+  const floor = { event: 10 }
 
-  assert.equal(facade.compactIfNeeded(agent, trigger, signal), results.compactIfNeeded)
-  assert.equal(facade.compactNow(agent, signal), results.compactNow)
-  assert.equal(facade.compactNow(agent, signal, commandId), results.compactNow)
-  assert.equal(facade.compactRegion(start, end, agent), results.compactRegion)
-  assert.equal(facade.compactRegion(start, end, agent, signal), results.compactRegion)
+  assert.equal(facade.cachedSnapshot(sessionId), results.cachedSnapshot)
+  assert.equal(facade.coldSnapshot(sessionId, floor), results.coldSnapshot)
 
-  assert.deepEqual(calls.map((call) => call.name), [
-    'compactIfNeeded',
-    'compactNow',
-    'compactNow',
-    'compactRegion',
-    'compactRegion',
-  ])
-  assert.equal(calls[0].args.length, 3)
-  assert.equal(calls[0].args[0], agent)
-  assert.equal(calls[0].args[1], trigger)
-  assert.equal(calls[0].args[2], signal)
+  assert.deepEqual(calls.map((call) => call.name), ['cachedSnapshot', 'coldSnapshot'])
+  assert.equal(calls[0].args.length, 1)
+  assert.equal(calls[0].args[0], sessionId)
   assert.equal(calls[1].args.length, 2)
-  assert.equal(calls[1].args[0], agent)
-  assert.equal(calls[1].args[1], signal)
-  assert.equal(calls[2].args.length, 3)
-  assert.equal(calls[2].args[0], agent)
-  assert.equal(calls[2].args[1], signal)
-  assert.equal(calls[2].args[2], commandId)
-  assert.equal(calls[3].args.length, 3)
-  assert.equal(calls[3].args[0], start)
-  assert.equal(calls[3].args[1], end)
-  assert.equal(calls[3].args[2], agent)
-  assert.equal(calls[4].args.length, 4)
-  assert.equal(calls[4].args[0], start)
-  assert.equal(calls[4].args[1], end)
-  assert.equal(calls[4].args[2], agent)
-  assert.equal(calls[4].args[3], signal)
+  assert.equal(calls[1].args[0], sessionId)
+  assert.equal(calls[1].args[1], floor)
 })
 
-test('compaction propagates official throws and rejections unchanged', async () => {
-  const def = SERVICE_DEFINITIONS.find((entry) => entry.key === 'compaction')
-  const thrown = new Error('compaction throw')
-  const rejected = new Error('compaction rejection')
+test('retained facade propagates official throws and rejections unchanged', async () => {
+  const def = SERVICE_DEFINITIONS.find((entry) => entry.key === 'sessionProjectionCache')
+  const thrown = new Error('cache throw')
+  const rejected = new Error('cache rejection')
   const rejectedPromise = Promise.reject(rejected)
   const service = {
-    compactIfNeeded() {
+    cachedSnapshot() {
       throw thrown
     },
-    compactNow() {
+    coldSnapshot() {
       return rejectedPromise
-    },
-    compactRegion() {
-      return null
     },
   }
   const facade = buildActiveFacade(def, service)
 
-  assert.throws(() => facade.compactIfNeeded(), (error) => error === thrown)
-  assert.equal(facade.compactNow(), rejectedPromise)
+  assert.throws(() => facade.cachedSnapshot(), (error) => error === thrown)
+  assert.equal(facade.coldSnapshot(), rejectedPromise)
   await assert.rejects(rejectedPromise, (error) => error === rejected)
 })
 

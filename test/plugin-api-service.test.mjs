@@ -253,9 +253,9 @@ test('default services namespace exposes the approved disabled facades before mo
   const service = instantiate(ServiceClass, mockCtx())
 
   assert.equal(typeof service.services, 'object')
-  assert.equal(Object.keys(service.services).length, 48)
+  assert.equal(Object.keys(service.services).length, 46)
   assert.ok(Object.isFrozen(service.services))
-  assert.equal(service.services.compaction.isActive, false)
+  assert.equal(service.services.approval.isActive, false)
   assert.equal(service.services.jobs.isActive, false)
   assert.equal(service.services.shellEnv.isActive, false)
   for (const key of Object.keys(service.services)) {
@@ -278,7 +278,7 @@ test('default services namespace throws feature-disabled error with feature code
     },
   )
   assert.throws(
-    () => service.services.compaction.compactNow({}, {}),
+    () => service.services.approval.request({}, {}),
     (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
       assert.equal(error.feature, 'services')
@@ -319,7 +319,7 @@ test('inert service services namespace throws inactive error before touching off
     },
   )
   assert.throws(
-    () => service.services.compaction.compactRegion(0, 1, {}, {}),
+    () => service.services.approval.request({}, {}),
     (error) => {
       assert.ok(error instanceof PluginApiInactiveError)
       assert.equal(error.code, 'PLUGIN_API_INACTIVE')

@@ -10,19 +10,19 @@ const EXPECTED_DEFINITIONS = [
   ['apiProxy', 'apiProxy', [['downloads', 'getter'], ['respond', 'method']]],
   ['clientModules', 'clientModules', [['graph', 'method'], ['clientPath', 'method'], ['rebuilt', 'method'], ['onRebuilt', 'method'], ['onGraphChanged', 'method']]],
   ['commands', 'commands', [['register', 'method'], ['list', 'method'], ['find', 'method'], ['execute', 'method']]],
-  ['credentials', 'credentials', [['resolve', 'method'], ['describe', 'method'], ['set', 'method'], ['unset', 'method']]],
+  ['credentials', 'credentials', [['resolve', 'method'], ['describe', 'method']]],
   ['directoryPicker', 'directoryPicker', [['capability', 'method']]],
   ['e2b', 'e2b', [['cwd', 'getter'], ['runtimeRoot', 'getter'], ['getSandbox', 'method']]],
   ['goals', 'goals', [['get', 'method'], ['disarm', 'method'], ['create', 'method'], ['edit', 'method'], ['pause', 'method'], ['resume', 'method'], ['complete', 'method'], ['block', 'method'], ['clear', 'method'], ['remoteExportCreate', 'method']]],
   ['invariants', 'invariants', [['register', 'method']]],
   ['lsp', 'lsp', [['registerProvider', 'method'], ['query', 'method']]],
   ['messageFeedback', 'messageFeedback', [['list', 'method'], ['put', 'method'], ['delete', 'method']]],
-  ['permissionPresets', 'permissionPresets', [['current', 'method'], ['selectFor', 'method'], ['resolve', 'method'], ['optionOf', 'method'], ['set', 'method']]],
-  ['planMode', 'planMode', [['get', 'method'], ['set', 'method']]],
+  ['permissionPresets', 'permissionPresets', [['current', 'method'], ['resolve', 'method'], ['optionOf', 'method']]],
+  ['planMode', 'planMode', [['get', 'method']]],
   ['sandbox', 'sandbox', [['confine', 'method']]],
   ['sandboxPolicy', 'sandboxPolicy', [['defaultMode', 'getter'], ['workspaceRoot', 'getter'], ['resolve', 'method'], ['overrideOf', 'method']]],
   ['sessionPersistence', 'sessionPersistence', [['locate', 'method'], ['supportsRawArtifacts', 'getter'], ['readRaw', 'method'], ['create', 'method'], ['append', 'method'], ['prepare', 'method'], ['load', 'method'], ['inspect', 'method'], ['readFrom', 'method'], ['list', 'method'], ['listSnapshots', 'method']]],
-  ['sessionProjectionCache', 'sessionProjectionCache', [['cachedSnapshot', 'method'], ['write', 'method'], ['coldSnapshot', 'method']]],
+  ['sessionProjectionCache', 'sessionProjectionCache', [['cachedSnapshot', 'method'], ['coldSnapshot', 'method']]],
   ['shell', 'shell', [['resolve', 'method'], ['run', 'method'], ['start', 'method']]],
   ['spillStore', 'spillStore', [['saveText', 'method']]],
   ['storageDomain', 'storageDomain', [['open', 'method'], ['get', 'method'], ['closeAll', 'method']]],
@@ -104,7 +104,7 @@ test('the fragment has the exact static service and member contract', () => {
   assert.equal(OFFICIAL_SERVICE_DEFINITIONS.length, 28)
   assert.equal(
     OFFICIAL_SERVICE_DEFINITIONS.reduce((count, definition) => count + definition.members.length, 0),
-    113,
+    107,
   )
   assert.equal(new Set(OFFICIAL_SERVICE_DEFINITIONS.map((definition) => definition.key)).size, 28)
 
