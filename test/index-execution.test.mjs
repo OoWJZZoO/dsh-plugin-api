@@ -56,9 +56,9 @@ function emit(state, name, ...args) {
 test('healthy apply activates the execution feature with one set of source listeners', () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
-  const feature = state.pluginApi.features.find((entry) => entry.name === 'execution')
+  const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'execution')
   assert.equal(feature?.isActive, true)
-  assert.equal(typeof state.pluginApi.execution.observe, 'function')
+  assert.equal(typeof state.pluginApi.executions.observe, 'function')
   for (const name of ['tools/pre-execute', 'tools/result', 'agent/request', 'llm/stream', 'session/created']) {
     assert.ok(state.listeners.some((l) => l.name === name), `expected execution listener ${name}`)
   }
@@ -70,7 +70,7 @@ test('execution source events produce a committed projection through the mounted
   const exec = { agent: { session: { id: 's1' } } }
   emit(state, 'tools/pre-execute', exec, () => {})
   emit(state, 'tools/result', exec, { value: 1 })
-  const page = state.pluginApi.execution.history('s1')
+  const page = state.pluginApi.executions.history('s1')
   assert.equal(page.items.length, 1)
   assert.equal(page.items[0].outcome, 'success')
 })
@@ -82,7 +82,7 @@ test('repeated apply retains the active execution feature without duplicate list
   apply(ctx)
   const after = state.listeners.filter((l) => l.name === 'tools/pre-execute').length
   assert.equal(after, before)
-  const feature = state.pluginApi.features.find((entry) => entry.name === 'execution')
+  const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'execution')
   assert.equal(feature?.isActive, true)
 })
 
@@ -91,7 +91,7 @@ test('a missing ctx.on disables execution without throwing through apply', () =>
   ctx.on = undefined
   assert.doesNotThrow(() => apply(ctx))
   assert.ok(state.pluginApi)
-  const feature = state.pluginApi.features.find((entry) => entry.name === 'execution')
+  const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'execution')
   assert.ok(feature)
   assert.equal(feature.isActive, false)
 })

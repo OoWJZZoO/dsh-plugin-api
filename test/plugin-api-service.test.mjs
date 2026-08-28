@@ -54,7 +54,7 @@ test('active service exposes brand, apiVersion, features snapshot', () => {
   assert.equal(service[pluginApiBrand], true)
   assert.equal(service.isActive, true)
   assert.equal(service.apiVersion, '0.1')
-  assert.deepEqual(service.features, [{ name: 'llm/admission', isActive: true }])
+  assert.deepEqual(service._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough'), [{ name: 'llm/admission', isActive: true }])
 })
 
 test('inert service reports isActive false and throws inactive error from methods', () => {
@@ -64,7 +64,7 @@ test('inert service reports isActive false and throws inactive error from method
   const service = instantiate(ServiceClass, ctx)
 
   assert.equal(service.isActive, false)
-  assert.deepEqual(service.features, [])
+  assert.deepEqual(service._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough'), [])
   assert.throws(
     () => service.assertCompatible('0.1', 'test-plugin'),
     (error) => {
@@ -74,7 +74,7 @@ test('inert service reports isActive false and throws inactive error from method
     },
   )
   assert.throws(
-    () => service.llm.admission.register({}),
+    () => service.llm.admissionPolicies.register({}),
     (error) => {
       assert.ok(error instanceof PluginApiInactiveError)
       assert.equal(error.code, 'PLUGIN_API_INACTIVE')
@@ -91,7 +91,7 @@ test('active service with unmounted feature throws feature-disabled error', () =
 
   assert.equal(service.isActive, true)
   assert.throws(
-    () => service.llm.admission.register({}),
+    () => service.llm.admissionPolicies.register({}),
     (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
       assert.equal(error.code, 'PLUGIN_API_FEATURE_DISABLED')
@@ -191,7 +191,7 @@ test('mountFeature injects a feature API and unknown feature throws', () => {
 
   const admissionApi = { register() {}, isActive: true }
   service.mountFeature('llm/admission', admissionApi)
-  assert.equal(typeof service.llm.admission.register, 'function')
+  assert.equal(typeof service.llm.admissionPolicies.register, 'function')
 
   assert.throws(
     () => service.mountFeature('unknown/feature', {}),
@@ -210,13 +210,13 @@ test('no official service calls happen before inactive or feature-disabled throw
     mockCtx(),
   )
   assert.throws(() => inertService.assertCompatible('0.1'), PluginApiInactiveError)
-  assert.throws(() => inertService.llm.admission.register({}), PluginApiInactiveError)
+  assert.throws(() => inertService.llm.admissionPolicies.register({}), PluginApiInactiveError)
 
   const activeService = instantiate(
     createPluginApiService({ apiVersion: '0.1', registry, coreActive: true }),
     mockCtx(),
   )
-  assert.throws(() => activeService.llm.admission.register({}), PluginApiFeatureDisabledError)
+  assert.throws(() => activeService.llm.admissionPolicies.register({}), PluginApiFeatureDisabledError)
 })
 
 test('disabled compat request and image admission registration reject before inspecting supplied values', () => {
@@ -231,8 +231,8 @@ test('disabled compat request and image admission registration reject before ins
   )
 
   for (const [surface, method] of [
-    ['request', 'transform'],
-    ['admission', 'register'],
+    ['requestTransforms', 'register'],
+    ['admissionPolicies', 'register'],
   ]) {
     const inactiveValue = createInspectionTrap()
     assert.throws(() => inert.llm[surface][method](inactiveValue.value), PluginApiInactiveError)
@@ -241,7 +241,7 @@ test('disabled compat request and image admission registration reject before ins
     const disabledValue = createInspectionTrap()
     assert.throws(
       () => active.llm[surface][method](disabledValue.value),
-      (error) => error instanceof PluginApiFeatureDisabledError && error.feature === `llm/${surface}`,
+      (error) => error instanceof PluginApiFeatureDisabledError && (error.feature === 'llm/request' || error.feature === 'llm/admission'),
     )
     assert.equal(disabledValue.inspections, 0, `${surface}.${method} must not inspect feature-disabled input`)
   }

@@ -116,8 +116,55 @@ test('the snapshot CLI writes files and the validate CLI accepts the registry', 
     const outDir = join(tmp, 'snap')
     execFileSync(process.execPath, ['scripts/registry-snapshot.mjs', REGISTRY_PATH, outDir], { cwd: root, encoding: 'utf8' })
     const files = readdirSync(outDir).sort()
-    assert.deepEqual(files, ['clientSurface.json', 'compositionMatrix.json', 'hostSurface.json', 'servicesFixture.json'])
+    assert.deepEqual(files, ['capabilityFixture.json', 'clientSurface.json', 'compositionMatrix.json', 'hostSurface.json', 'servicesFixture.json'])
+    const capabilityFixture = JSON.parse(readFileSync(join(outDir, 'capabilityFixture.json'), 'utf8'))
+    const targetPaths = new Set(registry.members.filter((m) => m.runtime === 'host' || m.runtime === 'both').map((m) => m.publicPath))
+    for (const entry of capabilityFixture.capabilities) {
+      assert.ok(targetPaths.has(entry.publicPath), `capability fixture covers ${entry.publicPath}`)
+      assert.equal(entry.capability, entry.publicPath)
+    }
   } finally {
     rmSync(tmp, { recursive: true, force: true })
+  }
+})
+
+test('the runtime capability descriptor table mirrors the registry host member set', async () => {
+  const { CAPABILITY_PATHS } = await import('../lib/capability-descriptors.js')
+  const registryTargets = new Set(
+    registry.members
+      .filter((member) => member.runtime === 'host' || member.runtime === 'both')
+      .map((member) => member.publicPath),
+  )
+  // The runtime table derives from the same registry members; every
+  // registered host member must be queryable and no extra capability may
+  // exist without a registry record.
+  for (const path of CAPABILITY_PATHS) {
+    assert.ok(registryTargets.has(path), `runtime capability ${path} must be a registry host member`)
+  }
+  for (const path of registryTargets) {
+    assert.ok(CAPABILITY_PATHS.includes(path), `registry host member ${path} must be queryable through capabilities`)
+  }
+})
+
+test('the services whitelist mirrors the runtime service definitions', async () => {
+  const { SERVICE_DEFINITIONS, SERVICES_NAMESPACE_KEYS } = await import('../lib/services.js')
+  const whitelist = registry.servicesWhitelist
+  assert.deepEqual(whitelist.map((entry) => entry.key), SERVICES_NAMESPACE_KEYS)
+  for (const entry of whitelist) {
+    const def = SERVICE_DEFINITIONS.find((d) => d.key === entry.key)
+    assert.ok(def, `whitelist key ${entry.key} must resolve to a runtime definition`)
+    assert.equal(entry.capability, def.capability, `whitelist ${entry.key} carries the public capability path`)
+    assert.equal(entry.composition, def.composition ?? 'pending-audit', `whitelist ${entry.key} matches the runtime composition metadata`)
+  }
+})
+
+test('approved deletions are recorded as removed with a deletion-report link', () => {
+  for (const entry of registry.deletionReport) {
+    assert.ok(['remove', 'rename'].includes(entry.category), `deletion entry ${entry.path} has a known category`)
+    assert.ok(['approved', 'pending-second-approval'].includes(entry.status), `deletion entry ${entry.path} has a known status`)
+    assert.ok(typeof entry.link === 'string' || typeof entry.note === 'string', `deletion entry ${entry.path} links the report`)
+  }
+  for (const [path, status] of Object.entries(registry.statusByPath)) {
+    assert.equal(status, 'removed', `statusByPath ${path} must be removed`)
   }
 })

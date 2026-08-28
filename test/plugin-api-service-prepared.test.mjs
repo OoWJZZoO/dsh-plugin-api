@@ -33,9 +33,9 @@ test('prepareFeature captures the candidate without publishing anything', () => 
   const prepared = service.prepareFeature('llm/request', api)
 
   // Public facade unchanged before commit.
-  assert.notEqual(service.llm.request, api)
+  assert.notEqual(service.llm.requestTransforms, api)
   assert.throws(
-    () => service.llm.request.transform({}),
+    () => service.llm.requestTransforms.register({}),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
   )
   assert.ok(prepared)
@@ -47,10 +47,10 @@ test('commit publishes exactly once through the same assignment path', () => {
   const prepared = service.prepareFeature('llm/request', api)
 
   assert.equal(prepared.commit(), true)
-  assert.equal(service.llm.request.transform, service.llm.request.transform)
-  assert.ok(Object.isFrozen(service.llm.request))
+  assert.equal(service.llm.requestTransforms.register, service.llm.requestTransforms.register)
+  assert.ok(Object.isFrozen(service.llm.requestTransforms))
   assert.equal(prepared.commit(), false, 'commit is idempotent')
-  assert.equal(typeof service.llm.request.transform, 'function')
+  assert.equal(typeof service.llm.requestTransforms.register, 'function')
 })
 
 test('rollback discards an uncommitted candidate and leaves the disabled surface', () => {
@@ -59,7 +59,7 @@ test('rollback discards an uncommitted candidate and leaves the disabled surface
 
   assert.equal(prepared.rollback(), true)
   assert.throws(
-    () => service.llm.request.transform({}),
+    () => service.llm.requestTransforms.register({}),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
   )
   assert.equal(prepared.commit(), false, 'commit after rollback is refused')
@@ -71,11 +71,11 @@ test('rollback after commit restores the disabled facade surface', () => {
   const api = { transform() {}, isActive: true }
   const prepared = service.prepareFeature('llm/request', api)
   prepared.commit()
-  assert.equal(typeof service.llm.request.transform, 'function')
+  assert.equal(typeof service.llm.requestTransforms.register, 'function')
 
   assert.equal(prepared.rollback(), true)
   assert.throws(
-    () => service.llm.request.transform({}),
+    () => service.llm.requestTransforms.register({}),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
   )
   assert.equal(prepared.rollback(), false)
@@ -91,17 +91,17 @@ test('a stale transaction cannot alter a later mount', () => {
   // A later transaction publishes over the first one.
   const second = service.prepareFeature('llm/request', secondApi)
   second.commit()
-  assert.equal(typeof service.llm.request.transform, 'function')
+  assert.equal(typeof service.llm.requestTransforms.register, 'function')
 
   // The stale transaction's rollback must not disturb the newer mount.
   first.rollback()
-  assert.equal(typeof service.llm.request.transform, 'function', 'stale rollback leaves the newer API in place')
-  assert.equal(typeof service.llm.request.transform, 'function')
+  assert.equal(typeof service.llm.requestTransforms.register, 'function', 'stale rollback leaves the newer API in place')
+  assert.equal(typeof service.llm.requestTransforms.register, 'function')
 
   // The owner transaction still rolls back cleanly.
   second.rollback()
   assert.throws(
-    () => service.llm.request.transform({}),
+    () => service.llm.requestTransforms.register({}),
     (error) => error instanceof PluginApiFeatureDisabledError,
   )
 })
@@ -121,20 +121,20 @@ test('admission and request prepared surfaces roll back to their disabled shapes
   const admissionApi = { register() {} }
   const admissionPrepared = service.prepareFeature('llm/admission', admissionApi)
   admissionPrepared.commit()
-  assert.equal(typeof service.llm.admission.register, 'function')
+  assert.equal(typeof service.llm.admissionPolicies.register, 'function')
   admissionPrepared.rollback()
   assert.throws(
-    () => service.llm.admission.register({}),
+    () => service.llm.admissionPolicies.register({}),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/admission',
   )
 
   const requestApi = { transform() {} }
   const requestPrepared = service.prepareFeature('llm/request', requestApi)
   requestPrepared.commit()
-  assert.equal(typeof service.llm.request.transform, 'function')
+  assert.equal(typeof service.llm.requestTransforms.register, 'function')
   requestPrepared.rollback()
   assert.throws(
-    () => service.llm.request.transform({}),
+    () => service.llm.requestTransforms.register({}),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
   )
 })
@@ -158,7 +158,7 @@ test('inactive service keeps core-inactive precedence on disabled prepared surfa
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: false })
   const service = instantiate(ServiceClass, mockCtx())
 
-  assert.throws(() => service.llm.request.transform({}), PluginApiInactiveError)
-  assert.throws(() => service.llm.admission.register({}), PluginApiInactiveError)
-  assert.throws(() => service.llm.request.transform({}), PluginApiInactiveError)
+  assert.throws(() => service.llm.requestTransforms.register({}), PluginApiInactiveError)
+  assert.throws(() => service.llm.admissionPolicies.register({}), PluginApiInactiveError)
+  assert.throws(() => service.llm.requestTransforms.register({}), PluginApiInactiveError)
 })

@@ -43,7 +43,7 @@ async function settle() {
 }
 
 function featureOf(state, name) {
-  return state.pluginApi.features.find((entry) => entry.name === name)
+  return state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === name)
 }
 
 test('healthy apply mounts diagnostics after remote and exposes a working projection', async () => {
@@ -53,7 +53,7 @@ test('healthy apply mounts diagnostics after remote and exposes a working projec
   assert.ok(diagnostics)
   assert.equal(diagnostics.isActive, true)
 
-  const names = state.pluginApi.features.map((entry) => entry.name)
+  const names = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').map((entry) => entry.name)
 assert.equal(names.indexOf('diagnostics'), names.indexOf('workspaceTransactions') + 1, 'diagnostics mounts directly after workspaceTransactions')
   assert.equal(names[names.length - 8], 'diagnostics', 'diagnostics mounts directly before tasks')
   assert.equal(names[names.length - 7], 'tasks', 'tasks stays directly before toolDiscovery')
@@ -90,7 +90,7 @@ test('re-applying is idempotent and never duplicates the diagnostics feature', (
   const { ctx, state } = createMockCtx()
   apply(ctx)
   apply(ctx)
-  const diagnostics = state.pluginApi.features.filter((entry) => entry.name === 'diagnostics')
+  const diagnostics = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').filter((entry) => entry.name === 'diagnostics')
   assert.equal(diagnostics.length, 1)
   assert.equal(diagnostics[0].isActive, true)
 })
@@ -98,8 +98,8 @@ test('re-applying is idempotent and never duplicates the diagnostics feature', (
 test('a sibling feature failing keeps the diagnostics feature and the rest of the facade active', () => {
   const { ctx, state } = createMockCtx({ services: { tools: undefined } })
   assert.doesNotThrow(() => apply(ctx))
-  const tools = state.pluginApi.features.find((entry) => entry.name === 'tools')
-  const diagnostics = state.pluginApi.features.find((entry) => entry.name === 'diagnostics')
+  const tools = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'tools')
+  const diagnostics = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'diagnostics')
   assert.ok(tools)
   assert.equal(tools.isActive, false)
   assert.ok(diagnostics)
@@ -110,7 +110,7 @@ test('a sibling feature failing keeps the diagnostics feature and the rest of th
 test('a failing cleanup registration leaves the feature inert and apply returns normally with a typed disabled surface', () => {
   const { ctx, state } = createMockCtx({ effectThrows: true })
   assert.doesNotThrow(() => apply(ctx))
-  const diagnostics = state.pluginApi.features.find((entry) => entry.name === 'diagnostics')
+  const diagnostics = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'diagnostics')
   assert.ok(diagnostics)
   assert.equal(diagnostics.isActive, false)
   // The disabled surface never returns silent data: it throws a typed error.

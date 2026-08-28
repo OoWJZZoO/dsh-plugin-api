@@ -82,13 +82,13 @@ test('guard: sessionChannel guard is deterministic', () => {
   assert.equal(guard1.ok, guard2.ok)
 })
 
-test('facade: pluginApi.sessionChannel has correct shape', async () => {
+test('facade: pluginApi.sessions.channels has correct shape', async () => {
   const service = createRealService()
   const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   assert.ok(result, 'mount succeeded')
   assert.ok(result.prepared.commit(), 'prepared transaction commits')
-  const api = service.sessionChannel
-  assert.ok(api, 'pluginApi.sessionChannel must be published')
+  const api = service.sessions.channels
+  assert.ok(api, 'pluginApi.sessions.channels must be published')
   assert.equal(typeof api.open, 'function')
   assert.equal(typeof api.subscribe, 'function')
   assert.equal(typeof api.ack, 'function')
@@ -112,7 +112,7 @@ test('facade: open fails closed without verifier (typed unavailable)', async () 
   const service = createRealService()
   const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   result.prepared.commit()
-  const api = service.sessionChannel
+  const api = service.sessions.channels
   const r = await api.open({ device: 'dev1', session: 's1' })
   assert.equal(r.ok, false)
   assert.equal(r.error.code, 'unavailable')
@@ -123,7 +123,7 @@ test('facade: open succeeds after registering a verifier', async () => {
   const service = createRealService()
   const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   result.prepared.commit()
-  const api = service.sessionChannel
+  const api = service.sessions.channels
   api.auth.registerVerifier({ id: 'v1', verify: (cred) => ({ deviceId: 'dev1', scope: [] }) })
   const r = await api.open({ device: 'dev1', session: 's1' })
   assert.ok(r.ok, 'open must succeed after verifier registration')
@@ -135,7 +135,7 @@ test('facade: projection observe returns a snapshot', async () => {
   const service = createRealService()
   const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   result.prepared.commit()
-  const api = service.sessionChannel
+  const api = service.sessions.channels
   const snap = api.observe({})
   assert.ok(snap.channels)
   assert.ok(snap.subscriptions)

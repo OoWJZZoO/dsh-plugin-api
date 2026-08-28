@@ -22,13 +22,13 @@ test('active service exposes a disabled systemPrompt stub', () => {
   const ctx = mockCtx()
   const service = new ServiceClass(ctx)
 
-  assert.equal(service.systemPrompt.isActive, false)
+  assert.equal(service.prompts.isActive, false)
   for (const method of ['section', 'context', 'variable', 'tools', 'suppressRuntimeContext', 'render', 'renderContextSections']) {
     assert.throws(
-      () => service.systemPrompt[method](),
+      () => service.prompts[method](),
       (error) => {
         assert.ok(error instanceof PluginApiFeatureDisabledError)
-        assert.equal(error.feature, 'systemPrompt')
+        assert.equal(error.feature, 'prompts')
         return true
       },
       `${method} should throw feature-disabled`,
@@ -45,7 +45,7 @@ test('inert service throws inactive errors from systemPrompt stub', () => {
   const service = new ServiceClass(ctx)
 
   for (const method of ['section', 'context', 'variable', 'tools', 'suppressRuntimeContext', 'render', 'renderContextSections']) {
-    assert.throws(() => service.systemPrompt[method](), PluginApiInactiveError, `${method} should throw inactive`)
+    assert.throws(() => service.prompts[method](), PluginApiInactiveError, `${method} should throw inactive`)
   }
 
   assert.equal(ctx.getCalls.length, 0)
@@ -59,9 +59,9 @@ test('mountFeature injects the systemPrompt API', () => {
   const systemPromptApi = { isActive: true, section() {}, render() {} }
   service.mountFeature('systemPrompt', systemPromptApi)
 
-  assert.equal(service.systemPrompt.section, systemPromptApi.section)
-  assert.equal(service.systemPrompt.render, systemPromptApi.render)
-  assert.ok(Object.isFrozen(service.systemPrompt))
+  assert.equal(service.prompts.section, systemPromptApi.section)
+  assert.equal(service.prompts.render, systemPromptApi.render)
+  assert.ok(Object.isFrozen(service.prompts))
 })
 
 test('mountFeature still rejects unknown feature names', () => {

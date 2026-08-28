@@ -84,11 +84,11 @@ test('llm feature guard passes: apply mounts all six llm methods and keeps admis
   ]) {
     assert.equal(typeof state.pluginApi.llm[method], 'function', `missing llm.${method}`)
   }
-  assert.equal(typeof state.pluginApi.llm.admission, 'object')
-  assert.equal(typeof state.pluginApi.llm.admission.register, 'function')
+  assert.equal(typeof state.pluginApi.llm.admissionPolicies, 'object')
+  assert.equal(typeof state.pluginApi.llm.admissionPolicies.register, 'function')
   // admission.isActive is retired; the feature registry is the sole signal.
-  assert.equal('isActive' in state.pluginApi.llm.admission, false)
-  assert.equal(typeof state.pluginApi.llm.request.transform, 'function')
+  assert.equal('isActive' in state.pluginApi.llm.admissionPolicies, false)
+  assert.equal(typeof state.pluginApi.llm.requestTransforms.register, 'function')
 })
 
 test('llm guard failure disables only llm, keeps facade active, and excludes LLM catalog entries', () => {
@@ -107,7 +107,7 @@ test('llm guard failure disables only llm, keeps facade active, and excludes LLM
   assert.equal(state.pluginApi.isActive, true)
   assert.equal(state.pluginApi.llm.isActive, false)
 
-  const features = state.pluginApi.features
+  const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   const llmFeature = features.find((f) => f.name === 'llm')
   assert.ok(llmFeature, 'llm feature must be registered as disabled')
   assert.equal(llmFeature.isActive, false)

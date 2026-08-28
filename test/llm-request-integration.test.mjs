@@ -126,7 +126,7 @@ function createHarness(options = {}) {
   }
 
   function registerPolicy(policy) {
-    return state.pluginApi.llm.admission.register({ id: 'img-policy', input: 'image', match() { return true }, process() { return { kind: 'pass' } }, validate() { return true }, ...policy })
+    return state.pluginApi.llm.admissionPolicies.register({ id: 'img-policy', input: 'image', match() { return true }, process() { return { kind: 'pass' } }, validate() { return true }, ...policy })
   }
 
   return { ctx, state, services, resolverCalls, streamEntry, registerPolicy }
@@ -256,7 +256,7 @@ test('no matching policy for non-native image rejects without continuation or re
 test('compat request-introduced image input is handled by the unified image admission pipeline', async () => {
   const harness = createHarness()
   const request = makeRequest([textBlock('hello')])
-  harness.state.pluginApi.llm.request.transform({
+  harness.state.pluginApi.llm.requestTransforms.register({
     id: 'introduce-image',
     mode: 'compat',
     apply() {
@@ -354,7 +354,7 @@ test('policy mutation during an operation cannot affect the current policy snaps
     process(snapshot) {
       processCalls += 1
       // Register a new policy mid-operation; the op-start snapshot is frozen.
-      harness.state.pluginApi.llm.admission.register(latePolicy)
+      harness.state.pluginApi.llm.admissionPolicies.register(latePolicy)
       // Strict progress without elimination: two images -> one image. The
       // policy loop must continue past this policy, so a snapshot violation
       // (the late policy joining this operation's selection) would invoke its

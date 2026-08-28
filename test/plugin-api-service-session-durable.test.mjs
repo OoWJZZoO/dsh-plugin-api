@@ -40,9 +40,9 @@ function assertFeatureDisabled(callback) {
 test('durable session stubs report feature-disabled while core is active', () => {
   const { getCalls, service } = instantiate(true)
 
-  for (const method of DURABLE_METHODS) assertFeatureDisabled(() => service.session[method]())
-  assertFeatureDisabled(() => service.session.durableEventTypes)
-  assertFeatureDisabled(() => service.session.durableEventDescriptors)
+  for (const method of DURABLE_METHODS) assertFeatureDisabled(() => service.sessions[method]())
+  assertFeatureDisabled(() => service.sessions.durableEventTypes)
+  assertFeatureDisabled(() => service.sessions.durableEventDescriptors)
   assert.deepEqual(getCalls, [])
 })
 
@@ -50,10 +50,10 @@ test('durable session stubs report core-inactive while core is inactive', () => 
   const { getCalls, service } = instantiate(false)
 
   for (const method of DURABLE_METHODS) {
-    assert.throws(() => service.session[method](), PluginApiInactiveError)
+    assert.throws(() => service.sessions[method](), PluginApiInactiveError)
   }
-  assert.throws(() => service.session.durableEventTypes, PluginApiInactiveError)
-  assert.throws(() => service.session.durableEventDescriptors, PluginApiInactiveError)
+  assert.throws(() => service.sessions.durableEventTypes, PluginApiInactiveError)
+  assert.throws(() => service.sessions.durableEventDescriptors, PluginApiInactiveError)
   assert.deepEqual(getCalls, [])
 })
 
@@ -80,15 +80,15 @@ test('session composition preserves baseline descriptors without eager getter ac
   service.mountFeature('session', sessionApi)
 
   assert.equal(getterReads, 0)
-  assert.equal(service.session.get('session-1'), 'session-1')
-  assert.deepEqual(service.session.catalog, ['m1-catalog'])
+  assert.equal(service.sessions.get('session-1'), 'session-1')
+  assert.deepEqual(service.sessions.catalog, ['m1-catalog'])
   assert.equal(getterReads, 1)
-  assert.deepEqual(Object.getOwnPropertyDescriptor(service.session, 'catalog'), Object.getOwnPropertyDescriptor(sessionApi, 'catalog'))
-  assert.equal(Object.getOwnPropertyDescriptor(service.session, 'get').value, sessionApi.get)
-  assert.equal(Object.getOwnPropertyDescriptor(service.session, 'hidden').value, 'hidden value')
-  assert.equal(Object.getOwnPropertyDescriptor(service.session, symbolKey).value, 'symbol value')
-  assert.ok(Object.isFrozen(service.session))
-  assertFeatureDisabled(() => service.session.appendMessage())
+  assert.deepEqual(Object.getOwnPropertyDescriptor(service.sessions, 'catalog'), Object.getOwnPropertyDescriptor(sessionApi, 'catalog'))
+  assert.equal(Object.getOwnPropertyDescriptor(service.sessions, 'get').value, sessionApi.get)
+  assert.equal(Object.getOwnPropertyDescriptor(service.sessions, 'hidden').value, 'hidden value')
+  assert.equal(Object.getOwnPropertyDescriptor(service.sessions, symbolKey).value, 'symbol value')
+  assert.ok(Object.isFrozen(service.sessions))
+  assertFeatureDisabled(() => service.sessions.appendMessage())
   const durableKeys = [
     'durableEventTypes',
     'durableEventDescriptors',
@@ -99,7 +99,7 @@ test('session composition preserves baseline descriptors without eager getter ac
     'appendMessage',
   ]
   assert.deepEqual(
-    Reflect.ownKeys(service.session).filter((key) => durableKeys.includes(key)).sort(),
+    Reflect.ownKeys(service.sessions).filter((key) => durableKeys.includes(key)).sort(),
     durableKeys.slice().sort(),
   )
 })
@@ -127,17 +127,17 @@ test('published durable epoch stays unavailable until the registry activates it'
   }
 
   const epoch = service.mountFeature('sessionDurable', { facade, closeEpoch() {} })
-  assertFeatureDisabled(() => service.session.durableEventTypes)
-  assertFeatureDisabled(() => service.session.onDurable())
+  assertFeatureDisabled(() => service.sessions.durableEventTypes)
+  assertFeatureDisabled(() => service.sessions.onDurable())
 
   registry.mount('sessionDurable')
-  assert.deepEqual(service.session.durableEventTypes, ['approval/asked'])
-  assert.equal(service.session.isDurableEventType('approval/asked'), true)
-  assert.equal(service.session.onDurable(), 'on')
-  assert.equal(service.session.onceDurable(), 'once')
-  assert.equal(service.session.appendMessage(), 'append')
+  assert.deepEqual(service.sessions.durableEventTypes, ['approval/asked'])
+  assert.equal(service.sessions.isDurableEventType('approval/asked'), true)
+  assert.equal(service.sessions.onDurable(), 'on')
+  assert.equal(service.sessions.onceDurable(), 'once')
+  assert.equal(service.sessions.appendMessage(), 'append')
   assert.equal(service.resetSessionDurable(epoch), true)
-  assertFeatureDisabled(() => service.session.appendMessage())
+  assertFeatureDisabled(() => service.sessions.appendMessage())
 })
 
 test('durable reset revokes retained session facades and closes an epoch once', () => {
@@ -158,7 +158,7 @@ test('durable reset revokes retained session facades and closes an epoch once', 
     },
     closeEpoch() { closes += 1 },
   })
-  const retainedSession = service.session
+  const retainedSession = service.sessions
 
   assert.equal(service.resetSessionDurable(epoch), true)
   assert.equal(closes, 1)
@@ -188,11 +188,11 @@ test('stale durable cleanup cannot reset a later epoch or its base session API',
 
   assert.equal(firstCloses, 1)
   assert.equal(service.resetSessionDurable(firstEpoch), false)
-  assert.equal(service.session.get, baseSessionApi.get)
-  assert.equal(service.session.appendMessage(), 'second')
+  assert.equal(service.sessions.get, baseSessionApi.get)
+  assert.equal(service.sessions.appendMessage(), 'second')
   assert.equal(service.resetSessionDurable(secondEpoch), true)
   assert.equal(secondCloses, 1)
-  assert.equal(service.session.get, baseSessionApi.get)
+  assert.equal(service.sessions.get, baseSessionApi.get)
 })
 
 test('durable reset contains close and logger failures', () => {
@@ -209,7 +209,7 @@ test('durable reset contains close and logger failures', () => {
   })
 
   assert.doesNotThrow(() => service.resetSessionDurable(epoch))
-  assertFeatureDisabled(() => service.session.appendMessage())
+  assertFeatureDisabled(() => service.sessions.appendMessage())
 })
 
 test('a failed first durable mount leaves feature-disabled available for a later epoch', () => {
@@ -219,12 +219,12 @@ test('a failed first durable mount leaves feature-disabled available for a later
   const service = new ServiceClass({ reflect: { provide() {} } })
 
   assert.throws(() => service.mountFeature('sessionDurable', { facade: {} }), PluginApiFeatureDisabledError)
-  assertFeatureDisabled(() => service.session.appendMessage())
+  assertFeatureDisabled(() => service.sessions.appendMessage())
   const epoch = service.mountFeature('sessionDurable', {
     facade: { durableEventTypes: [], durableEventDescriptors: {}, isDurableEventType() {}, getDurableEventDescriptor() {}, onDurable() {}, onceDurable() {}, appendMessage: () => 'later epoch' },
     closeEpoch() {},
   })
-  assert.equal(service.session.appendMessage(), 'later epoch')
+  assert.equal(service.sessions.appendMessage(), 'later epoch')
   assert.equal(service.resetSessionDurable(epoch), true)
 })
 
@@ -238,7 +238,7 @@ test('retained durable facade reports core-inactive after core deactivation', ()
     facade: { durableEventTypes: [], durableEventDescriptors: {}, isDurableEventType() {}, getDurableEventDescriptor() {}, onDurable() {}, onceDurable() {}, appendMessage() {} },
     closeEpoch() {},
   })
-  const retainedSession = service.session
+  const retainedSession = service.sessions
 
   coreActive = false
   assert.throws(() => retainedSession.appendMessage(), PluginApiInactiveError)
@@ -303,7 +303,7 @@ test('reconcile dynamically revokes published durable entry points', () => {
     facade: { durableEventTypes: [], durableEventDescriptors: {}, isDurableEventType() {}, getDurableEventDescriptor() {}, onDurable() {}, onceDurable() {}, appendMessage() {} },
     closeEpoch() {},
   })
-  const retainedSession = service.session
+  const retainedSession = service.sessions
   const inactiveRegistry = createFeatureRegistry()
 
   service.reconcile({ registry: inactiveRegistry, coreActive: true })
@@ -316,7 +316,7 @@ test('retained feature-disabled durable stubs report core-inactive after reconci
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
   const service = new ServiceClass({ reflect: { provide() {} } })
-  const retainedSession = service.session
+  const retainedSession = service.sessions
 
   service.reconcile({ registry, coreActive: false })
   assert.throws(() => retainedSession.appendMessage(), PluginApiInactiveError)

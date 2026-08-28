@@ -40,7 +40,7 @@ const resource = { scope: 'workspace', key: 'mounted-resource' }
 test('healthy apply mounts the host coordination surface after recovery and before diagnostics', async () => {
   const { ctx, state } = createContext()
   assert.doesNotThrow(() => apply(ctx))
-  const names = state.pluginApi.features.map((entry) => entry.name)
+  const names = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').map((entry) => entry.name)
   assert.ok(names.includes('coordination'))
   assert.ok(names.indexOf('recovery') < names.indexOf('coordination'))
   assert.ok(names.indexOf('coordination') < names.indexOf('diagnostics'))
@@ -66,8 +66,8 @@ test('coordination typed results keep other facade surfaces intact', async () =>
   const conflict = await coordination.takeover({ resource, ownerId: 'owner', leaseMs: 60_000 })
   assert.equal(conflict.ok, false)
   assert.equal(conflict.code, 'invalid-input')
-  assert.equal(typeof state.pluginApi.recovery.evaluate, 'function')
-  assert.equal(typeof state.pluginApi.execution.observe, 'function')
+  assert.equal(typeof state.pluginApi.executions.recovery.evaluate, 'function')
+  assert.equal(typeof state.pluginApi.executions.observe, 'function')
 })
 
 test('unresolvable optional services keep coordination active on the memory backend and apply fail-safe', async () => {
@@ -75,13 +75,13 @@ test('unresolvable optional services keep coordination active on the memory back
   const resolve = ctx.get
   ctx.get = (name) => (name === 'pluginApi' ? resolve(name) : undefined)
   assert.doesNotThrow(() => apply(ctx))
-  const feature = state.pluginApi.features.find((entry) => entry.name === 'coordination')
+  const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'coordination')
   assert.equal(feature?.isActive, true)
   const outcome = await state.pluginApi.coordination.acquire({ resource, ownerId: 'owner', leaseMs: 60_000 })
   assert.equal(outcome.ok, true)
   assert.equal(outcome.handle.backend.id, 'memory')
   // unrelated features stay active
-  assert.equal(state.pluginApi.features.find((entry) => entry.name === 'recovery')?.isActive, true)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'recovery')?.isActive, true)
 })
 
 test('stale coordination facade is typed unavailable after its owner slot is unmounted', async () => {

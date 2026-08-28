@@ -47,16 +47,16 @@ test('active service with unmounted session throws feature-disabled from every m
   const service = instantiate(ServiceClass, ctx)
 
   assert.equal(service.isActive, true)
-  assert.equal(service.session.sessionEventTypes, undefined)
-  assert.equal(service.session.surfaceEventTypes, undefined)
+  assert.equal(service.sessions.sessionEventTypes, undefined)
+  assert.equal(service.sessions.surfaceEventTypes, undefined)
 
   for (const method of SESSION_METHODS) {
     assert.throws(
-      () => service.session[method](),
+      () => service.sessions[method](),
       (error) => {
         assert.ok(error instanceof PluginApiFeatureDisabledError)
         assert.equal(error.code, 'PLUGIN_API_FEATURE_DISABLED')
-        assert.equal(error.feature, 'session')
+        assert.equal(error.feature, 'sessions')
         return true
       },
       `${method} should throw feature-disabled`,
@@ -74,7 +74,7 @@ test('inert service session methods throw inactive before touching any official 
   assert.equal(service.isActive, false)
   for (const method of SESSION_METHODS) {
     assert.throws(
-      () => service.session[method](),
+      () => service.sessions[method](),
       (error) => {
         assert.ok(error instanceof PluginApiInactiveError)
         assert.equal(error.code, 'PLUGIN_API_INACTIVE')
@@ -93,11 +93,11 @@ test('mountFeature injects the session API and unknown feature still throws', ()
 
   const sessionApi = { isActive: true, get() {}, list() {}, fork() {} }
   service.mountFeature('session', sessionApi)
-  assert.equal(service.session.isActive, true)
-  assert.equal(service.session.get, sessionApi.get)
-  assert.equal(service.session.list, sessionApi.list)
-  assert.equal(service.session.fork, sessionApi.fork)
-  assert.throws(() => service.session.appendMessage(), PluginApiFeatureDisabledError)
+  assert.equal(service.sessions.isActive, true)
+  assert.equal(service.sessions.get, sessionApi.get)
+  assert.equal(service.sessions.list, sessionApi.list)
+  assert.equal(service.sessions.fork, sessionApi.fork)
+  assert.throws(() => service.sessions.appendMessage(), PluginApiFeatureDisabledError)
 
   assert.throws(
     () => service.mountFeature('unknown/feature', {}),

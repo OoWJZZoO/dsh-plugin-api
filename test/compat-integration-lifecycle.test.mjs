@@ -62,14 +62,14 @@ function createHost(options = {}) {
 }
 
 function feature(state, name) {
-  return state.pluginApi.features.find((entry) => entry.name === name)
+  return state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === name)
 }
 
 test('combined host publishes additive immutable compat shapes once without synthetic public surfaces', () => {
   const { ctx, state } = createHost()
   apply(ctx)
   const first = state.pluginApi
-  const views = [first.agent, first.tools, first.llm, first.session, first.services]
+  const views = [first.agents, first.tools, first.llm, first.sessions, first.services]
 
   apply(ctx)
   assert.equal(state.pluginApi, first)
@@ -81,13 +81,12 @@ test('combined host publishes additive immutable compat shapes once without synt
     'subagent/end', 'subagent/start', 'tools/execute', 'tools/post-execute', 'tools/pre-execute',
     'tools/pre-execute', 'tools/pre-execute', 'tools/pre-execute', 'tools/result', 'workflow/end', 'workflow/start',
   ])
-  assert.equal(typeof first.agent.routeOf, 'function')
-  assert.equal(first.agent.routeOf({}), undefined, 'missing capture remains query-only rather than a synthetic route value')
-  assert.equal(typeof first.tools.routeOf, 'function')
-  assert.equal(typeof first.llm.request.transform, 'function')
-  assert.equal(typeof first.llm.admission.register, 'function')
-  assert.equal(typeof first.session.onDurable, 'function')
-  assert.equal(typeof first.session.appendMessage, 'function')
+  assert.equal(typeof first.llm.routing.forExecution, 'function')
+  assert.equal(first.llm.routing.forExecution({}), undefined, 'missing capture remains query-only rather than a synthetic route value')
+  assert.equal(typeof first.llm.requestTransforms.register, 'function')
+  assert.equal(typeof first.llm.admissionPolicies.register, 'function')
+  assert.equal(typeof first.sessions.onDurable, 'function')
+  assert.equal(typeof first.sessions.appendMessage, 'function')
   assert.equal(Object.keys(first.events.catalog).length, 47)
   for (const excluded of ['llm/request', 'llm/admission', 'exec.route', 'agent/create', 'compaction/started']) {
     assert.equal(first.events.catalog[excluded], undefined)
@@ -104,7 +103,7 @@ test('combined host preserves core-inactive → feature-disabled → guard-disab
   try {
     const inert = createHost()
     apply(inert.ctx)
-    assert.throws(() => inert.state.pluginApi.session.appendMessage(), PluginApiInactiveError)
+    assert.throws(() => inert.state.pluginApi.sessions.appendMessage(), PluginApiInactiveError)
   } finally {
     if (previous === undefined) delete process.env.DSH_PLUGIN_API_FORCE_GUARD_FAIL
     else process.env.DSH_PLUGIN_API_FORCE_GUARD_FAIL = previous
@@ -113,7 +112,7 @@ test('combined host preserves core-inactive → feature-disabled → guard-disab
   const active = createHost({ services: { apiProxy: undefined, settings: undefined } })
   apply(active.ctx)
   assert.equal(feature(active.state, 'llm/admission').isActive, false)
-  assert.throws(() => active.state.pluginApi.llm.admission.register({}), PluginApiFeatureDisabledError)
+  assert.throws(() => active.state.pluginApi.llm.admissionPolicies.register({}), PluginApiFeatureDisabledError)
   assert.throws(() => active.state.pluginApi.settings.scope('consumer'), PluginApiServiceUnavailableError)
   assert.equal(active.state.pluginApi.services.compaction.isActive, false)
   assert.throws(() => active.state.pluginApi.services.compaction.compactNow(), /compaction/)
@@ -130,28 +129,28 @@ test('throwing mandatory substrate and logger disable only dependent compat surf
   assert.equal(feature(state, 'llm/request').isActive, true)
   assert.equal(feature(state, 'session').isActive, true)
   assert.equal(feature(state, 'sessionDurable').isActive, true)
-  assert.throws(() => state.pluginApi.tools.routeOf({}), PluginApiFeatureDisabledError)
+  assert.throws(() => state.pluginApi.llm.routing.forExecution({}), PluginApiFeatureDisabledError)
 })
 
 test('durable retained references, repeated cleanup, and stale cleanup cannot affect a fresh epoch or unrelated LLM', () => {
   const { ctx, state } = createHost()
   apply(ctx)
-  const retainedSession = state.pluginApi.session
+  const retainedSession = state.pluginApi.sessions
   const retainedLlm = state.pluginApi.llm
   const firstCleanup = state.effects.find((entry) => entry.label === 'dsh-plugin-api: sessionDurable cleanup').fn()
 
   assert.equal(firstCleanup(), true)
   assert.equal(firstCleanup(), false)
   assert.throws(() => retainedSession.onDurable(), PluginApiFeatureDisabledError)
-  assert.equal(typeof retainedLlm.request.transform, 'function')
+  assert.equal(typeof retainedLlm.requestTransforms.register, 'function')
 
   apply(ctx)
-  const freshSession = state.pluginApi.session
+  const freshSession = state.pluginApi.sessions
   assert.equal(feature(state, 'sessionDurable').isActive, true)
   assert.throws(() => retainedSession.appendMessage(), PluginApiFeatureDisabledError)
   assert.equal(typeof freshSession.onDurable, 'function')
   assert.equal(firstCleanup(), false)
   assert.equal(feature(state, 'sessionDurable').isActive, true)
-  assert.equal(typeof state.pluginApi.llm.request.transform, 'function')
+  assert.equal(typeof state.pluginApi.llm.requestTransforms.register, 'function')
   assert.equal(state.listeners.filter(({ name }) => name === 'session/event').length, 4)
 })

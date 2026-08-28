@@ -48,7 +48,7 @@ function activeCoordinationLease(pluginApi) {
 test('healthy apply mounts the tasks facade after diagnostics and exposes the frozen surface', async () => {
   const { ctx, state } = createContext()
   assert.doesNotThrow(() => apply(ctx))
-  const names = state.pluginApi.features.map((entry) => entry.name)
+  const names = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').map((entry) => entry.name)
   assert.ok(names.includes('tasks'))
   assert.ok(names.indexOf('coordination') < names.indexOf('tasks'))
   assert.ok(names.indexOf('diagnostics') < names.indexOf('tasks'))
@@ -97,9 +97,9 @@ test('tasks typed results keep other facade surfaces intact and claim works thro
   assert.equal(invalid.ok, false)
   assert.equal(invalid.code, 'invalid-input')
   // isolation: unrelated surfaces stay working
-  assert.equal(typeof state.pluginApi.workspaceTransactions.prepare, 'function')
-  assert.equal(typeof state.pluginApi.recovery.evaluate, 'function')
-  assert.equal(typeof state.pluginApi.execution.observe, 'function')
+  assert.equal(typeof state.pluginApi.workspaces.transactions.prepare, 'function')
+  assert.equal(typeof state.pluginApi.executions.recovery.evaluate, 'function')
+  assert.equal(typeof state.pluginApi.executions.observe, 'function')
 })
 
 test('stale tasks facade is typed unavailable after its owner slot is unmounted', async () => {
@@ -132,11 +132,11 @@ test('tasks guard fails safe with missing ctx.on and leaves other features activ
   const on = ctx.on
   ctx.on = undefined
   assert.doesNotThrow(() => apply(ctx))
-  const feature = state.pluginApi.features.find((entry) => entry.name === 'tasks')
+  const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'tasks')
   assert.equal(feature?.isActive, false)
   assert.throws(() => state.pluginApi.tasks.register({}), PluginApiFeatureDisabledError)
-  assert.equal(state.pluginApi.features.find((entry) => entry.name === 'coordination')?.isActive, true)
-  assert.equal(state.pluginApi.features.find((entry) => entry.name === 'workspaceTransactions')?.isActive, false)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'coordination')?.isActive, true)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'workspaceTransactions')?.isActive, false)
   ctx.on = on
 })
 
@@ -147,7 +147,7 @@ test('tasks mount survives missing optional source seams and keeps isolation fro
     },
   })
   assert.doesNotThrow(() => apply(ctx))
-  const feature = state.pluginApi.features.find((entry) => entry.name === 'tasks')
+  const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'tasks')
   assert.equal(feature?.isActive, true)
-  assert.equal(state.pluginApi.features.find((entry) => entry.name === 'execution')?.isActive, true)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'execution')?.isActive, true)
 })

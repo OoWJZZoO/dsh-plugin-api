@@ -114,29 +114,29 @@ test('apply mounts session after events with a composed events catalog', () => {
     assert.ok(catalog[name], `${name} must be in the composed catalog`)
   }
 
-  assert.equal(state.pluginApi.session.isActive, true)
+  assert.equal(state.pluginApi.sessions.isActive, true)
   assert.deepEqual(
-    state.pluginApi.features.map((feature) => feature.name),
+    state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').map((feature) => feature.name),
     ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel'],
   )
-  assert.ok(state.pluginApi.features.slice(0, 15).every((feature) => feature.name === 'sessionBranch' || feature.isActive))
-  assert.equal(state.pluginApi.features[15].isActive, false)
-  assert.equal(state.pluginApi.features[16].isActive, false)
-  assert.equal(state.pluginApi.features[17].isActive, false)
-  assert.equal(state.pluginApi.features.some((feature) => feature.name === 'compaction'), false)
+  assert.ok(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').slice(0, 15).every((feature) => feature.name === 'sessionBranch' || feature.isActive))
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')[15].isActive, false)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')[16].isActive, false)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')[17].isActive, false)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').some((feature) => feature.name === 'compaction'), false)
   const listener = () => {}
-  state.pluginApi.session.on('session/event', listener)
+  state.pluginApi.sessions.on('session/event', listener)
   assert.ok(state.listeners.some((l) => l.name === 'session/event'), 'session/event must register a native hook')
 
-  assert.ok(Array.isArray(state.pluginApi.session.sessionEventTypes))
-  assert.ok(Object.isFrozen(state.pluginApi.session.sessionEventTypes))
-  assert.ok(Array.isArray(state.pluginApi.session.surfaceEventTypes))
-  assert.ok(Object.isFrozen(state.pluginApi.session.surfaceEventTypes))
-  assert.equal(typeof state.pluginApi.session.get, 'function')
-  assert.equal(typeof state.pluginApi.session.fork, 'function')
-  assert.equal(typeof state.pluginApi.session.header, 'function')
-  assert.equal(typeof state.pluginApi.session.deriveMessages, 'function')
-  assert.equal(typeof state.pluginApi.session.isSessionEventType, 'function')
+  assert.ok(Array.isArray(state.pluginApi.sessions.sessionEventTypes))
+  assert.ok(Object.isFrozen(state.pluginApi.sessions.sessionEventTypes))
+  assert.ok(Array.isArray(state.pluginApi.sessions.surfaceEventTypes))
+  assert.ok(Object.isFrozen(state.pluginApi.sessions.surfaceEventTypes))
+  assert.equal(typeof state.pluginApi.sessions.get, 'function')
+  assert.equal(typeof state.pluginApi.sessions.fork, 'function')
+  assert.equal(typeof state.pluginApi.sessions.header, 'function')
+  assert.equal(typeof state.pluginApi.sessions.deriveMessages, 'function')
+  assert.equal(typeof state.pluginApi.sessions.isSessionEventType, 'function')
 })
 
 test('apply completes every guard pass before pass-2 publication and an early feature-disabled does not stop later mounters', () => {
@@ -158,7 +158,7 @@ test('apply completes every guard pass before pass-2 publication and an early fe
   assert.ok(firstPublicationGetCalls.includes('systemPrompt'))
   assert.ok(firstPublicationGetCalls.includes('sessions'))
 
-  const features = state.pluginApi.features
+  const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   assert.deepEqual(
     features.map((feature) => feature.name),
     ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel'],
@@ -171,7 +171,7 @@ test('apply completes every guard pass before pass-2 publication and an early fe
   assert.equal(features.find((feature) => feature.name === 'typert')?.isActive, false)
   assert.equal(features.find((feature) => feature.name === 'settingsRemote')?.isActive, false)
   assert.equal(state.pluginApi.events.catalog['tools/change'], undefined)
-  assert.equal(state.pluginApi.features.some((feature) => feature.name === 'compaction'), false)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').some((feature) => feature.name === 'compaction'), false)
 })
 
 test('session guard failure disables only session and keeps the facade active', () => {
@@ -181,7 +181,7 @@ test('session guard failure disables only session and keeps the facade active', 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
 
-  const features = state.pluginApi.features
+  const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
 assert.equal(features.length, 30)
   assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel'])
   assert.equal(features[0].isActive, true)
@@ -203,34 +203,34 @@ assert.equal(features.length, 30)
   assert.equal(features[14].isActive, true)
 
   assert.throws(
-    () => state.pluginApi.session.get('s1'),
+    () => state.pluginApi.sessions.get('s1'),
     (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'session')
+      assert.equal(error.feature, 'sessions')
       return true
     },
   )
 
   assert.equal(typeof state.pluginApi.events.on, 'function')
   assert.equal(typeof state.pluginApi.services.web.registerSearchProvider, 'function')
-  assert.equal(typeof state.pluginApi.llm.admission.register, 'function')
+  assert.equal(typeof state.pluginApi.llm.admissionPolicies.register, 'function')
 })
 
 test('sessionRoute prepared cleanup rolls back its epoch, preserves routing identity, and reapplies cleanly', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
-  const routing = state.pluginApi.routing
+  const routing = state.pluginApi.llm.routing
   const firstEffect = state.effects.find((entry) => entry.label === 'dsh-plugin-api: sessionRoute cleanup')?.fn
   assert.equal(typeof firstEffect, 'function')
   const firstCleanup = firstEffect()
   assert.equal(firstCleanup(), true)
-  assert.equal(state.pluginApi.features.find((entry) => entry.name === 'sessionRoute')?.isActive, false)
-  assert.equal(state.pluginApi.routing, routing)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'sessionRoute')?.isActive, false)
+  assert.equal(state.pluginApi.llm.routing, routing)
   assert.equal(firstCleanup(), false)
 
   apply(ctx)
-  assert.equal(state.pluginApi.features.find((entry) => entry.name === 'sessionRoute')?.isActive, true)
-  assert.equal(state.pluginApi.routing, routing)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'sessionRoute')?.isActive, true)
+  assert.equal(state.pluginApi.llm.routing, routing)
   const secondEffect = state.effects
     .filter((entry) => entry.label === 'dsh-plugin-api: sessionRoute cleanup')
     .at(-1).fn

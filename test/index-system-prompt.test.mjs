@@ -84,17 +84,17 @@ test('apply mounts the systemPrompt API and core-inactive calls forward to the o
 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
-  assert.equal(state.pluginApi.systemPrompt.isActive, true)
+  assert.equal(state.pluginApi.prompts.isActive, true)
 
   const section = { name: 's1', order: 1, text: 'hello' }
-  assert.equal(state.pluginApi.systemPrompt.section(section), systemPrompt.sectionDisposer)
+  assert.equal(state.pluginApi.prompts.section(section), systemPrompt.sectionDisposer)
   assert.equal(systemPrompt.sectionCalls.length, 2, 'the facade hint section registers first')
   assert.equal(systemPrompt.sectionCalls.at(-1), section)
 
-  assert.equal(state.pluginApi.systemPrompt.context({ name: 'c1', order: 2, text: 'ctx' }), 'context-disposer')
-  assert.equal(state.pluginApi.systemPrompt.variable('v', () => 'x'), 'variable-disposer')
-  assert.equal(state.pluginApi.systemPrompt.tools(() => ({ schemas: [] })), 'tools-disposer')
-  assert.equal(state.pluginApi.systemPrompt.suppressRuntimeContext(), 'suppress-disposer')
+  assert.equal(state.pluginApi.prompts.context({ name: 'c1', order: 2, text: 'ctx' }), 'context-disposer')
+  assert.equal(state.pluginApi.prompts.variable('v', () => 'x'), 'variable-disposer')
+  assert.equal(state.pluginApi.prompts.tools(() => ({ schemas: [] })), 'tools-disposer')
+  assert.equal(state.pluginApi.prompts.suppressRuntimeContext(), 'suppress-disposer')
 })
 
 test('systemPrompt guard failure disables only systemPrompt and keeps the facade active', () => {
@@ -103,7 +103,7 @@ test('systemPrompt guard failure disables only systemPrompt and keeps the facade
 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
-  const features = state.pluginApi.features
+  const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
 assert.equal(features.length, 30)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
@@ -131,10 +131,10 @@ assert.equal(features[24].name, 'toolDiscovery')
 
 
   assert.throws(
-    () => state.pluginApi.systemPrompt.section({ name: 's', order: 0, text: 'x' }),
+    () => state.pluginApi.prompts.section({ name: 's', order: 0, text: 'x' }),
     (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'systemPrompt')
+      assert.equal(error.feature, 'prompts')
       return true
     },
   )
@@ -146,7 +146,7 @@ test('apply is idempotent for the systemPrompt feature mount', () => {
   assert.doesNotThrow(() => apply(ctx))
   assert.doesNotThrow(() => apply(ctx))
 
-  assert.equal(state.pluginApi.systemPrompt.isActive, true)
+  assert.equal(state.pluginApi.prompts.isActive, true)
   const section = { name: 's1', order: 1, text: 'hello' }
-  assert.equal(state.pluginApi.systemPrompt.section(section), systemPrompt.sectionDisposer)
+  assert.equal(state.pluginApi.prompts.section(section), systemPrompt.sectionDisposer)
 })

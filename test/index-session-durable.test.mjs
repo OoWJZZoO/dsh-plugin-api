@@ -94,7 +94,7 @@ function createMockCtx(options = {}) {
 }
 
 function feature(state, name) {
-  return state.pluginApi.features.find((entry) => entry.name === name)
+  return state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === name)
 }
 
 function durableCleanup(state) {
@@ -107,7 +107,7 @@ test('apply mounts sessionDurable immediately after session without extending th
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
 
-  assert.deepEqual(state.pluginApi.features.map((entry) => entry.name), [
+  assert.deepEqual(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').map((entry) => entry.name), [
     'tools',
     'events',
     'agent',
@@ -149,22 +149,22 @@ test('apply mounts sessionDurable immediately after session without extending th
   assert.equal(feature(state, 'sessionDurable').isActive, true)
   assert.equal(Object.keys(state.pluginApi.events.catalog).length, 47)
   assert.equal(state.pluginApi.events.catalog['approval/asked'], undefined)
-  assert.deepEqual(state.pluginApi.session.durableEventTypes, [
+  assert.deepEqual(state.pluginApi.sessions.durableEventTypes, [
     'approval/asked',
     'approval/decided',
     'approval/policy',
     'schedule/change',
     'subagent/descriptor',
   ])
-  assert.equal(typeof state.pluginApi.session.onDurable, 'function')
-  assert.equal(typeof state.pluginApi.session.appendMessage, 'function')
+  assert.equal(typeof state.pluginApi.sessions.onDurable, 'function')
+  assert.equal(typeof state.pluginApi.sessions.appendMessage, 'function')
   assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 4)
 })
 
 test('durable cleanup restores feature-disabled, and a stale cleanup cannot revoke a re-mounted epoch', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
-  const firstSessionApi = state.pluginApi.session
+  const firstSessionApi = state.pluginApi.sessions
   const firstCleanup = durableCleanup(state)
 
   assert.equal(firstCleanup(), true)
@@ -179,7 +179,7 @@ test('durable cleanup restores feature-disabled, and a stale cleanup cannot revo
   apply(ctx)
   assert.equal(feature(state, 'sessionDurable').isActive, true)
   assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 4, 'durable remount retains one hub entry beside sessionRoute, execution observer, and sessionChannel')
-  const secondSessionApi = state.pluginApi.session
+  const secondSessionApi = state.pluginApi.sessions
   const cleanups = state.effects
     .filter((entry) => entry.label === 'dsh-plugin-api: sessionDurable cleanup')
     .map((entry) => entry.fn())
@@ -201,7 +201,7 @@ test('an effect registration failure resets the published durable epoch before d
 
   assert.equal(feature(state, 'sessionDurable').isActive, false)
   assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 3, 'failed durable transaction leaves sessionRoute, execution observers and sessionChannel')
-  assert.throws(() => state.pluginApi.session.durableEventTypes, (error) => {
+  assert.throws(() => state.pluginApi.sessions.durableEventTypes, (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
     assert.equal(error.feature, 'sessionDurable')
     return true
@@ -218,7 +218,7 @@ test('registry mount failures before and after activation reset the published du
 
     assert.equal(feature(state, 'sessionDurable').isActive, false)
     assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 3)
-    assert.throws(() => state.pluginApi.session.onDurable(), (error) => {
+    assert.throws(() => state.pluginApi.sessions.onDurable(), (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
       assert.equal(error.feature, 'sessionDurable')
       return true
@@ -244,8 +244,8 @@ test('a sessionDurable mounter exception leaves the composed session facade at f
   assert.doesNotThrow(() => apply(ctx))
 
   assert.equal(feature(state, 'sessionDurable').isActive, false)
-  assert.equal(typeof state.pluginApi.session.get, 'function')
-  assert.throws(() => state.pluginApi.session.appendMessage(), (error) => {
+  assert.equal(typeof state.pluginApi.sessions.get, 'function')
+  assert.throws(() => state.pluginApi.sessions.appendMessage(), (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
     assert.equal(error.feature, 'sessionDurable')
     return true
@@ -263,7 +263,7 @@ test('apply-time durable failure routes contain absent and throwing loggers', ()
       const { ctx, state } = createMockCtx({ ...options, logger })
       assert.doesNotThrow(() => apply(ctx))
       assert.equal(feature(state, 'sessionDurable').isActive, false)
-      assert.throws(() => state.pluginApi.session.onDurable(), PluginApiFeatureDisabledError)
+      assert.throws(() => state.pluginApi.sessions.onDurable(), PluginApiFeatureDisabledError)
     }
   }
 })
@@ -279,8 +279,8 @@ test('host audit and public contract mismatches retain baseline session while di
     apply(packageMismatch.ctx)
     assert.equal(feature(packageMismatch.state, 'session').isActive, true)
     assert.equal(feature(packageMismatch.state, 'sessionDurable').isActive, false)
-    assert.equal(typeof packageMismatch.state.pluginApi.session.get, 'function')
-    assert.throws(() => packageMismatch.state.pluginApi.session.onDurable(), PluginApiFeatureDisabledError)
+    assert.equal(typeof packageMismatch.state.pluginApi.sessions.get, 'function')
+    assert.throws(() => packageMismatch.state.pluginApi.sessions.onDurable(), PluginApiFeatureDisabledError)
 
     scheduleManifest.version = originalScheduleVersion
     assert.equal(KNOWN_SESSION_EVENT_TYPES.delete(scheduleType), true)
@@ -288,8 +288,8 @@ test('host audit and public contract mismatches retain baseline session while di
     apply(contractMismatch.ctx)
     assert.equal(feature(contractMismatch.state, 'session').isActive, true)
     assert.equal(feature(contractMismatch.state, 'sessionDurable').isActive, false)
-    assert.equal(typeof contractMismatch.state.pluginApi.session.get, 'function')
-    assert.throws(() => contractMismatch.state.pluginApi.session.appendMessage(), PluginApiFeatureDisabledError)
+    assert.equal(typeof contractMismatch.state.pluginApi.sessions.get, 'function')
+    assert.throws(() => contractMismatch.state.pluginApi.sessions.appendMessage(), PluginApiFeatureDisabledError)
   } finally {
     scheduleManifest.version = originalScheduleVersion
     KNOWN_SESSION_EVENT_TYPES.add(scheduleType)

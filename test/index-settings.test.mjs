@@ -125,7 +125,7 @@ test('settings guard failure disables only settings and keeps facade active', ()
 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
-  const feature = state.pluginApi.features.find((entry) => entry.name === 'settings')
+  const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'settings')
   assert.ok(feature)
   assert.equal(feature.isActive, false)
   assert.match(feature.reason, /settings\.describe/)
@@ -146,5 +146,5 @@ test('re-applying the host plugin is idempotent for the settings feature', () =>
   const firstSettings = state.pluginApi.settings
   assert.doesNotThrow(() => apply(ctx))
   assert.equal(state.pluginApi.settings, firstSettings)
-  assert.equal(state.pluginApi.features.filter((entry) => entry.name === 'settings').length, 1)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').filter((entry) => entry.name === 'settings').length, 1)
 })

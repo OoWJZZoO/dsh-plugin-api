@@ -101,7 +101,7 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
   assert.equal(state.provideCount, 1)
   assert.equal(state.pluginApi.isActive, true)
   assert.equal(state.pluginApi.apiVersion, '0.1')
-  assert.deepEqual(state.pluginApi.features, [
+  assert.deepEqual(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough'), [
     { name: 'tools', isActive: true },
     { name: 'events', isActive: true },
     { name: 'agent', isActive: true },
@@ -144,20 +144,20 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     { name: 'sessionChannel', isActive: true },
   ])
   assert.equal(state.pluginApi.llm.isActive, true)
-  assert.equal(typeof state.pluginApi.llm.request.transform, 'function')
+  assert.equal(typeof state.pluginApi.llm.requestTransforms.register, 'function')
   // admission.isActive is retired: the feature registry is the sole signal.
-  assert.equal('isActive' in state.pluginApi.llm.admission, false)
-  assert.equal(typeof state.pluginApi.llm.admission.register, 'function')
+  assert.equal('isActive' in state.pluginApi.llm.admissionPolicies, false)
+  assert.equal(typeof state.pluginApi.llm.admissionPolicies.register, 'function')
   assert.equal(typeof state.pluginApi.llm.modelInfo, 'function')
   assert.equal(typeof state.pluginApi.events.on, 'function')
-  assert.equal(typeof state.pluginApi.session.get, 'function')
+  assert.equal(typeof state.pluginApi.sessions.get, 'function')
   assert.equal(typeof state.pluginApi.services.web.registerSearchProvider, 'function')
   assert.equal(state.pluginApi.services.typert.isActive, true)
 
-  assert.equal(typeof state.pluginApi.systemPrompt.section, 'function')
+  assert.equal(typeof state.pluginApi.prompts.section, 'function')
   assert.equal(state.pluginApi.settings.isActive, true)
-  assert.equal(typeof state.pluginApi.remote.publish, 'function')
-  assert.equal(state.pluginApi.remote.isActive, true)
+  assert.equal(typeof state.pluginApi.remotes.publish, 'function')
+  assert.equal(state.pluginApi.remotes.isActive, true)
   assert.ok(state.listeners.some((l) => l.name === 'llm/stream'))
 })
 
@@ -170,9 +170,9 @@ test('core guard failure (non-registration primitive) leaves an inert service an
 
     assert.ok(state.pluginApi)
     assert.equal(state.pluginApi.isActive, false)
-    assert.deepEqual(state.pluginApi.features, [])
+    assert.deepEqual(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough'), [])
     assert.throws(() => state.pluginApi.assertCompatible('0.1'), PluginApiInactiveError)
-    assert.throws(() => state.pluginApi.llm.admission.register({}), PluginApiInactiveError)
+    assert.throws(() => state.pluginApi.llm.admissionPolicies.register({}), PluginApiInactiveError)
     assert.equal(state.listeners.length, 0)
   } finally {
     if (previous === undefined) delete process.env.DSH_PLUGIN_API_FORCE_GUARD_FAIL
@@ -201,7 +201,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
-  const features = state.pluginApi.features
+  const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
 
 
 
@@ -239,7 +239,7 @@ assert.deepEqual(features[23], { name: 'tasks', isActive: true })
   assert.deepEqual(features[27], { name: 'profile', isActive: true })
 
   assert.throws(
-    () => state.pluginApi.llm.admission.register({}),
+    () => state.pluginApi.llm.admissionPolicies.register({}),
     (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
       assert.equal(error.feature, 'llm/admission')

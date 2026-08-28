@@ -204,17 +204,22 @@ function observeHostFaces(applyFn) {
   // Keep name/activity pairs aligned (both sorted by feature name) so the
   // regression comparison can filter branch-added features by name without
   // mispairing the independently sorted activity values.
-  const featurePairs = api?.features
-    ?.map((feature) => [feature.name, feature.isActive])
+  const registrySnapshot = api?._registry?.snapshot?.() ?? []
+  const featurePairs = registrySnapshot
+    .map((feature) => [feature.name, feature.isActive])
     .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+  // The host namespace cutover renamed the published roots; the boundary-era host exposes the old
+  // names. The observer reads either era so the same harness compares both.
+  const promptsApi = api?.prompts ?? api?.systemPrompt
+  const remotesApi = api?.remotes ?? api?.remote
   const face = {
     applyOutcome,
-    featureNames: featurePairs?.map(([name]) => name) ?? api?.features?.map((feature) => feature.name).sort(),
-    featureActivity: featurePairs?.map(([, active]) => active) ?? api?.features?.map((feature) => feature.isActive).sort(),
-    systemPromptMembers: safe(() => Object.keys(api.systemPrompt).sort()),
+    featureNames: featurePairs?.map(([name]) => name),
+    featureActivity: featurePairs?.map(([, active]) => active),
+    promptsMembers: safe(() => Object.keys(promptsApi).sort()),
     toolsMembers: safe(() => Object.keys(api.tools).sort()),
     abortShape,
-    remotePublish: safe(() => typeof api.remote.publish),
+    remotePublish: safe(() => typeof remotesApi.publish),
     servicesNames: safe(() => Object.keys(api.services).sort()),
   }
   const lifecycle = (() => {
@@ -268,22 +273,43 @@ test('host regression: the boundary-era and current hosts agree on every pre-exi
     const helperMembers = ['renderContextSnapshot', 'joinContextSections']
     const LATER_ADDED_MEMBERS = ['assemble', 'defineTool', 'executionMode', 'discovery']
 const BRANCH_ADDED_FEATURES = ['security', 'execution', 'recovery', 'coordination', 'workspaceTransactions', 'tasks', 'diagnostics', 'toolDiscovery', 'skillsActivation', 'sessionBranch', 'context', 'profile', 'llmAdapters', 'sessionChannel']
-    const currentFeatureNames = current.face.featureNames.filter((name) => !BRANCH_ADDED_FEATURES.includes(name))
+    // The host cutover removed the public features snapshot (registry snapshot
+    // is an internal state), removed routeOf delegates, and added the prompts
+    // provenance face; both eras keep the same internal feature keys, so only
+    // the public-surface deltas below are excluded from the face equality.
+    const REMOVED_FEATURES = ['officialPassthrough']
+    const REMOVED_TOOLS_MEMBERS = ['routeOf']
+    const ADDED_PROMPTS_MEMBERS = ['provenance']
+    const currentFeatureNames = current.face.featureNames.filter((name) =>
+      !BRANCH_ADDED_FEATURES.includes(name) && !REMOVED_FEATURES.includes(name))
     const currentFeatureActivity = current.face.featureActivity.filter((_, index) =>
-      !BRANCH_ADDED_FEATURES.includes(current.face.featureNames[index]))
+      !BRANCH_ADDED_FEATURES.includes(current.face.featureNames[index])
+      && !REMOVED_FEATURES.includes(current.face.featureNames[index]))
     const currentFace = {
       ...current.face,
       featureNames: currentFeatureNames,
       featureActivity: currentFeatureActivity,
-      systemPromptMembers: current.face.systemPromptMembers.filter((name) =>
-        !helperMembers.includes(name) && !LATER_ADDED_MEMBERS.includes(name)),
-      toolsMembers: current.face.toolsMembers.filter((name) => !LATER_ADDED_MEMBERS.includes(name)),
+      promptsMembers: current.face.promptsMembers.filter((name) =>
+        !helperMembers.includes(name) && !LATER_ADDED_MEMBERS.includes(name) && !ADDED_PROMPTS_MEMBERS.includes(name)),
+      toolsMembers: current.face.toolsMembers.filter((name) =>
+        !LATER_ADDED_MEMBERS.includes(name) && !REMOVED_TOOLS_MEMBERS.includes(name)),
     }
-    assert.deepEqual(currentFace, boundary.face, 'the current host must not alter any pre-existing host face')
+    // The boundary-era host still exposes the pre-cutover surface: the cutover removed
+    // routeOf delegates and the history features snapshot from the public
+    // face, and the swept features never changed their internal registry
+    // keys. Normalize the boundary side to the same removed-surface baseline.
+    const boundaryFace = {
+      ...boundary.face,
+      featureNames: boundary.face.featureNames.filter((name) => !REMOVED_FEATURES.includes(name)),
+      featureActivity: boundary.face.featureActivity.filter((_, index) =>
+        !REMOVED_FEATURES.includes(boundary.face.featureNames[index])),
+      toolsMembers: boundary.face.toolsMembers.filter((name) => !REMOVED_TOOLS_MEMBERS.includes(name)),
+    }
+    assert.deepEqual(currentFace, boundaryFace, 'the current host must not alter any pre-existing host face')
     assert.deepEqual(current.lifecycle, boundary.lifecycle, 'host reapply/dispose/cleanup observations must be unchanged')
-    assert.equal(current.face.systemPromptMembers.includes('renderContextSnapshot'), true,
+    assert.equal(current.face.promptsMembers.includes('renderContextSnapshot'), true,
       'the current host exposes the two context-rendering helpers')
-    assert.equal(boundary.face.systemPromptMembers.includes('renderContextSnapshot'), false,
+    assert.equal(boundary.face.promptsMembers.includes('renderContextSnapshot'), false,
       'the boundary-era host does not expose them')
   } finally {
     rmSync(tmp, { recursive: true, force: true })

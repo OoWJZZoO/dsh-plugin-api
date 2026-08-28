@@ -107,7 +107,7 @@ export function createChannelRpcDispatch({ connection, facade = () => undefined,
  *
  * @param {{ publish?: Function, facade?: Function, logger?: object }} options
  *   `publish(key, service)` — the host-side remote publication function
- *   (e.g., `ctx.pluginApi?.remote?.publish`).
+ *   (e.g., `ctx.pluginApi?.remotes?.publish`).
  */
 export function createChannelRemoteNamespace({ publish, facade = () => undefined, logger } = {}) {
   const log = (message) => {

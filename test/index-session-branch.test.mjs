@@ -8,7 +8,7 @@ const SESSION_BRANCH_MARKER = Symbol.for('dsh-plugin-api.session-branch.contract
 
 /**
  * Facade-surface tests for the session branch add-on under
- * `pluginApi.session.branches`.
+ * `pluginApi.sessions.branches`.
  *
  * Three states are exercised:
  *   1. replacement active (marker + version match): operations forward to the
@@ -70,7 +70,7 @@ function createMountHarness({ services = new Map(), marker = false, manifest = n
   return { ctx, service, featureRegistry, logger, auxiliaryManifests, facadeContract }
 }
 
-test('replacement active: pluginApi.session.branches forwards operations and availability', () => {
+test('replacement active: pluginApi.sessions.branches forwards operations and availability', () => {
   const calls = []
   const { service, featureRegistry, logger, auxiliaryManifests, facadeContract } = createMountHarness({
     marker: makeMarkerBranches(calls),
@@ -84,7 +84,7 @@ test('replacement active: pluginApi.session.branches forwards operations and ava
   assert.equal(mounted.prepared.commit(), true, 'prepared transaction must publish')
   featureRegistry.mount('sessionBranch')
 
-  const branches = service.session.branches
+  const branches = service.sessions.branches
   assert.equal(typeof branches.create, 'function')
   assert.equal(branches.create('p1', 0, { kind: 'sidechain' }).ok, true)
   assert.equal(calls[0][0], 'create')
@@ -102,7 +102,7 @@ test('no replacement marker: mount succeeds but operations reject with the typed
   mounted.prepared.commit()
   featureRegistry.mount('sessionBranch')
 
-  const branches = service.session.branches
+  const branches = service.sessions.branches
   assert.throws(() => branches.create('p1', 0, { kind: 'retry' }), (error) => error instanceof PluginApiFeatureDisabledError)
   assert.throws(() => branches.graph('p1'), PluginApiFeatureDisabledError)
   assert.throws(() => branches.plan('p1'), PluginApiFeatureDisabledError)
@@ -125,16 +125,16 @@ test('version mismatch or absent auxiliary: the facade feature is disabled and n
     assert.equal(mounted, null, 'mount must fail closed so the apply disables the feature')
     assert.equal(calls.length, 0, 'never forwards under version mismatch')
     // the constructor-provided disabled add-on stays truthful
-    assert.deepEqual(service.session.branches.availability(), Object.freeze({ active: false, contract: false }))
-    assert.throws(() => service.session.branches.create('p1', 0, { kind: 'retry' }), PluginApiFeatureDisabledError)
+    assert.deepEqual(service.sessions.branches.availability(), Object.freeze({ active: false, contract: false }))
+    assert.throws(() => service.sessions.branches.create('p1', 0, { kind: 'retry' }), PluginApiFeatureDisabledError)
   }
 })
 
 test('facade inactive: branch add-on rejects with inactive/feature-disabled typing and availability is honest', () => {
   const { service } = createMountHarness({ manifest: { version: '0.1.0-rc.6-0.1.0', api: '0.1' } })
   // never mounted: sessionBranch slot stays on the disabled surface
-  assert.deepEqual(service.session.branches.availability(), Object.freeze({ active: false, contract: false }))
-  assert.throws(() => service.session.branches.create('p1', 0, { kind: 'retry' }), (error) => {
+  assert.deepEqual(service.sessions.branches.availability(), Object.freeze({ active: false, contract: false }))
+  assert.throws(() => service.sessions.branches.create('p1', 0, { kind: 'retry' }), (error) => {
     assert.ok(error instanceof Error)
     return true
   })
@@ -173,14 +173,14 @@ test('full apply() publishes the branch add-on as a typed disabled surface when 
   }
   apply(ctx)
   const pluginApi = state.pluginApi
-  assert.equal(typeof pluginApi.session.branches, 'object')
-  assert.deepEqual(pluginApi.session.branches.availability(), { active: false, contract: false })
-  assert.throws(() => pluginApi.session.branches.create('p1', 0, { kind: 'retry' }), PluginApiFeatureDisabledError)
-  const feature = pluginApi.features.find((entry) => entry.name === 'sessionBranch')
-  assert.ok(feature, 'sessionBranch is listed in pluginApi.features')
+  assert.equal(typeof pluginApi.sessions.branches, 'object')
+  assert.deepEqual(pluginApi.sessions.branches.availability(), { active: false, contract: false })
+  assert.throws(() => pluginApi.sessions.branches.create('p1', 0, { kind: 'retry' }), PluginApiFeatureDisabledError)
+  const feature = pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'sessionBranch')
+  assert.ok(feature, 'sessionBranch is listed in the pluginApi feature registry snapshot')
 })
 
-test('pluginApi.session identity is preserved with the branches add-on (no leakage into other session members)', () => {
+test('pluginApi.sessions identity is preserved with the branches add-on (no leakage into other session members)', () => {
   const calls = []
   const { service, featureRegistry, logger, auxiliaryManifests, facadeContract } = createMountHarness({
     marker: makeMarkerBranches(calls),
@@ -191,7 +191,7 @@ test('pluginApi.session identity is preserved with the branches add-on (no leaka
   })
   mounted.prepared.commit()
   featureRegistry.mount('sessionBranch')
-  const session = service.session
+  const session = service.sessions
   assert.equal(typeof session.branches.graph, 'function')
   assert.equal(typeof session.list, 'function')
   assert.equal(typeof session.deriveMessages, 'function', 'the session base members stay intact')

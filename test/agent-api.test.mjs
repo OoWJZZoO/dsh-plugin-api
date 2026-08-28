@@ -61,34 +61,34 @@ function createMockCtx() {
   return { ctx, state, agents, agentA, agentB }
 }
 
-test('pluginApi.agent.get returns the official registry value unchanged', () => {
+test('pluginApi.agents.get returns the official registry value unchanged', () => {
   const { ctx, state, agents, agentA, agentB } = createMockCtx()
   apply(ctx)
 
-  assert.equal(state.pluginApi.agent.get('agent-a'), agentA)
-  assert.equal(state.pluginApi.agent.get('agent-b'), agentB)
-  assert.equal(state.pluginApi.agent.get('missing'), undefined)
+  assert.equal(state.pluginApi.agents.get('agent-a'), agentA)
+  assert.equal(state.pluginApi.agents.get('agent-b'), agentB)
+  assert.equal(state.pluginApi.agents.get('missing'), undefined)
   assert.deepEqual(agents.getCalls, ['agent-a', 'agent-b', 'missing'])
 })
 
-test('pluginApi.agent.list and roots return fresh arrays and are not cached', () => {
+test('pluginApi.agents.list and roots return fresh arrays and are not cached', () => {
   const { ctx, state, agents, agentA } = createMockCtx()
   apply(ctx)
 
-  const list1 = state.pluginApi.agent.list()
-  const list2 = state.pluginApi.agent.list()
+  const list1 = state.pluginApi.agents.list()
+  const list2 = state.pluginApi.agents.list()
   assert.notEqual(list1, list2, 'list() must return a fresh array each call')
   assert.equal(list1[0].id, 'agent-a')
   assert.equal(list2[1].id, 'agent-b')
   assert.equal(agents.listCalls, 2)
 
-  const roots1 = state.pluginApi.agent.roots()
-  const roots2 = state.pluginApi.agent.roots()
+  const roots1 = state.pluginApi.agents.roots()
+  const roots2 = state.pluginApi.agents.roots()
   assert.notEqual(roots1, roots2, 'roots() must return a fresh array each call')
   assert.equal(roots1[0], agentA)
   assert.equal(agents.rootsCalls, 2)
 
   // Mutating a returned array must not affect later calls.
   roots1.length = 0
-  assert.equal(state.pluginApi.agent.roots().length, 1)
+  assert.equal(state.pluginApi.agents.roots().length, 1)
 })

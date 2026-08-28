@@ -40,7 +40,7 @@ function createMockCtx(options = {}) {
 }
 
 function featureOf(state, name) {
-  return state.pluginApi.features.find((entry) => entry.name === name)
+  return state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === name)
 }
 
 test('healthy apply mounts security and exposes the four faces plus availability', () => {
@@ -66,7 +66,7 @@ test('healthy apply mounts security and exposes the four faces plus availability
 test('the FEATURE_MOUNTERS tail order pins stay intact (remote..profile at the end)', () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
-  const names = state.pluginApi.features.map((entry) => entry.name)
+  const names = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').map((entry) => entry.name)
   // sessionChannel appends one tail entry after profile (maintenance batch);
   // llmAdapters appends another between profile and sessionChannel (final
   // batch integration); the remote..profile relative order pins shift by

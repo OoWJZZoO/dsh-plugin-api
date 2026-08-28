@@ -155,7 +155,7 @@ test('events guard failure disables only events and keeps facade active', () => 
 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
-  const features = state.pluginApi.features
+  const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
 
 
 
@@ -222,7 +222,7 @@ test('web service absence keeps the services feature active while disabling only
 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
-  const features = state.pluginApi.features
+  const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
 
 assert.equal(features.length, 30)
 

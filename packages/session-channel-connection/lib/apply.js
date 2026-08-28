@@ -136,7 +136,7 @@ export function createSessionChannelConnectionApply(overrides = {}) {
   const officialAvailable = overrides.officialAvailable ?? (OfficialApply !== undefined)
   const resolveFacade = overrides.resolveFacade ?? ((ctx) => {
     try {
-      return ctx.get('pluginApi')?.sessionChannel
+      return ctx.get('pluginApi')?.sessions?.channels
     } catch {
       return undefined
     }

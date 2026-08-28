@@ -124,14 +124,14 @@ export function createSessionChannelGatewayApply(overrides = {}) {
   const officialAvailable = overrides.officialAvailable ?? (OfficialApply !== undefined)
   const resolveFacade = overrides.resolveFacade ?? ((ctx) => {
     try {
-      return ctx.get('pluginApi')?.sessionChannel
+      return ctx.get('pluginApi')?.sessions?.channels
     } catch {
       return undefined
     }
   })
   const resolvePublish = overrides.resolvePublish ?? ((ctx) => {
     try {
-      return ctx.get('pluginApi')?.remote?.publish
+      return ctx.get('pluginApi')?.remotes?.publish
     } catch {
       return undefined
     }

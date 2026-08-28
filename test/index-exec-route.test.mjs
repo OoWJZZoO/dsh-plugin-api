@@ -70,26 +70,26 @@ test('healthy apply activates execRoute after dependencies and installs one prep
   const { ctx, state } = createCtx()
   apply(ctx)
 
-  assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'execRoute')?.isActive, true)
   const hooks = state.listeners.filter((entry) => entry.name === 'tools/pre-execute')
   assert.equal(hooks.length, 4, 'execRoute capture hook plus the execution observation listener plus the workspace-transaction evidence intake plus the security facade listener')
   assert.equal(hooks.filter((entry) => entry.eventOptions?.prepend === true).length, 1, 'exactly one prepended execRoute capture hook')
-  assert.equal(typeof state.pluginApi.agent.routeOf, 'function')
-  assert.equal(typeof state.pluginApi.tools.routeOf, 'function')
+  assert.equal(typeof state.pluginApi.llm.routing.forExecution, 'function')
+  assert.equal(typeof state.pluginApi.llm.routing.forExecution, 'function')
 })
 
 test('sessionRoute registration failure disables only sessionRoute while execRoute remains active', () => {
   const { ctx, state } = createCtx({ onThrowsName: 'session/disposed' })
   apply(ctx)
-  assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
-  assert.equal(state.pluginApi.features.find((feature) => feature.name === 'sessionRoute')?.isActive, false)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'execRoute')?.isActive, true)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'sessionRoute')?.isActive, false)
   assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 4)
-  assert.throws(() => state.pluginApi.routing.current({}), (error) => {
+  assert.throws(() => state.pluginApi.llm.routing.current({}), (error) => {
     return error instanceof PluginApiFeatureDisabledError && error.feature === 'sessionRoute'
   })
   const exec = execWithRoute()
   dispatchPreExecute(state, exec)
-  assert.deepEqual(state.pluginApi.routing.ofExecution(exec), { provider: 'provider-a', model: 'model-a' })
+  assert.deepEqual(state.pluginApi.llm.routing.forExecution(exec), { provider: 'provider-a', model: 'model-a' })
 })
 
 test('repeated apply retains the active execRoute hook and captured authority outcome', () => {
@@ -97,7 +97,7 @@ test('repeated apply retains the active execRoute hook and captured authority ou
   apply(ctx)
   const exec = execWithRoute()
   dispatchPreExecute(state, exec)
-  const captured = state.pluginApi.agent.routeOf(exec)
+  const captured = state.pluginApi.llm.routing.forExecution(exec)
   const before = state.listeners.filter((entry) => entry.name === 'tools/pre-execute')
   const effectsBefore = state.effects.filter((effect) => effect.label === 'dsh-plugin-api: execRoute cleanup').length
 
@@ -105,9 +105,9 @@ test('repeated apply retains the active execRoute hook and captured authority ou
 
   assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 4)
   assert.equal(state.effects.filter((effect) => effect.label === 'dsh-plugin-api: execRoute cleanup').length, effectsBefore)
-  assert.ok(Object.isFrozen(state.pluginApi.agent))
-  assert.equal(state.pluginApi.agent.routeOf(exec), captured)
-  assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
+  assert.ok(Object.isFrozen(state.pluginApi.agents))
+  assert.equal(state.pluginApi.llm.routing.forExecution(exec), captured)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'execRoute')?.isActive, true)
   assert.equal(before.length, 4)
 })
 
@@ -116,12 +116,12 @@ test('repeated apply preserves active execRoute when cleanup registration later 
   apply(ctx)
   const exec = execWithRoute()
   dispatchPreExecute(state, exec)
-  const captured = state.pluginApi.agent.routeOf(exec)
+  const captured = state.pluginApi.llm.routing.forExecution(exec)
   ctx.effect = undefined
 
   assert.doesNotThrow(() => apply(ctx))
-  assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, true)
-  assert.equal(state.pluginApi.agent.routeOf(exec), captured)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'execRoute')?.isActive, true)
+  assert.equal(state.pluginApi.llm.routing.forExecution(exec), captured)
   assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 4)
 })
 
@@ -140,11 +140,11 @@ test('missing declared dependency disables only execRoute with its feature-disab
   const { ctx, state } = createCtx({ services: { sessions: undefined } })
   apply(ctx)
 
-  assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, false)
-  assert.equal(state.pluginApi.features.find((feature) => feature.name === 'tools')?.isActive, true)
-  assert.equal(state.pluginApi.features.find((feature) => feature.name === 'agent')?.isActive, true)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'execRoute')?.isActive, false)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'tools')?.isActive, true)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'agent')?.isActive, true)
   assert.throws(
-    () => state.pluginApi.agent.routeOf(new Proxy({}, { get() { throw new Error('inspected') } })),
+    () => state.pluginApi.llm.routing.forExecution(new Proxy({}, { get() { throw new Error('inspected') } })),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'execRoute',
   )
 })
@@ -153,9 +153,9 @@ test('hook registration and cleanup registration failures roll back to feature-d
   for (const options of [{ onThrows: true }, { effectThrows: true }]) {
     const { ctx, state } = createCtx(options)
     assert.doesNotThrow(() => apply(ctx))
-    assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, false)
+    assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'execRoute')?.isActive, false)
     assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 0)
-    assert.throws(() => state.pluginApi.agent.routeOf({}), PluginApiFeatureDisabledError)
+    assert.throws(() => state.pluginApi.llm.routing.forExecution({}), PluginApiFeatureDisabledError)
   }
 })
 
@@ -181,11 +181,11 @@ test('publication and registry failures roll back hook and route delegate', () =
     }
 
     assert.doesNotThrow(() => apply(ctx))
-    assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, false)
+    assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'execRoute')?.isActive, false)
     const remaining = state.listeners.filter((entry) => entry.name === 'tools/pre-execute')
     assert.equal(remaining.length, 3, 'the execution observation listener, the workspace-transaction evidence intake, and the security facade listener remain')
     assert.equal(remaining.every((entry) => entry.eventOptions?.prepend !== true), true, 'the execRoute prepended hook is removed')
-    assert.throws(() => state.pluginApi.agent.routeOf({}), PluginApiFeatureDisabledError)
+    assert.throws(() => state.pluginApi.llm.routing.forExecution({}), PluginApiFeatureDisabledError)
   }
 })
 
@@ -195,8 +195,8 @@ test('feature-disabled diagnostics deduplicate repeated apply failures by lifecy
   const originalPlugin = ctx.plugin
   ctx.plugin = (Class) => {
     originalPlugin(Class)
-    const original = state.pluginApi.reportExecRouteDiagnosticsOnce.bind(state.pluginApi)
-    state.pluginApi.reportExecRouteDiagnosticsOnce = (phase, category, problems) => {
+    const original = state.pluginApi._reportExecRouteDiagnosticsOnce.bind(state.pluginApi)
+    state.pluginApi._reportExecRouteDiagnosticsOnce = (phase, category, problems) => {
       const reported = original(phase, category, problems)
       if (reported) keys.push(`${phase}:${category}`)
       return reported
@@ -223,7 +223,7 @@ test('every missing tools or session substrate leaves execRoute disabled without
 
     apply(ctx)
 
-    assert.equal(state.pluginApi.features.find((feature) => feature.name === 'execRoute')?.isActive, false)
+    assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'execRoute')?.isActive, false)
     const remaining = state.listeners.filter((entry) => entry.name === 'tools/pre-execute')
     assert.equal(remaining.length, 3, 'the execution observation listener, the workspace-transaction evidence intake, and the security facade listener remain')
     assert.equal(remaining.every((entry) => entry.eventOptions?.prepend !== true), true, 'no execRoute prepended capture hook remains')
@@ -356,8 +356,8 @@ test('route outcome remains available to facade listeners through every dispatch
   }
   const seen = []
   const observe = (stage) => () => {
-    const agentOutcome = state.pluginApi.agent.routeOf(exec)
-    const toolsOutcome = state.pluginApi.tools.routeOf(exec)
+    const agentOutcome = state.pluginApi.llm.routing.forExecution(exec)
+    const toolsOutcome = state.pluginApi.llm.routing.forExecution(exec)
     seen.push({ stage, agentOutcome, toolsOutcome })
   }
 
@@ -414,14 +414,14 @@ test('dispatched final-result paths preserve captured routes or leave unobserved
   const seen = []
   const observe = (exec) => seen.push({
     exec,
-    agentOutcome: state.pluginApi.agent.routeOf(exec),
-    toolsOutcome: state.pluginApi.tools.routeOf(exec),
+    agentOutcome: state.pluginApi.llm.routing.forExecution(exec),
+    toolsOutcome: state.pluginApi.llm.routing.forExecution(exec),
   })
   state.pluginApi.events.on('tools/execute', observe)
   state.pluginApi.events.on('tools/result', observe)
 
   dispatchWaterfall(state, 'tools/pre-execute', [capturedExec], () => ({ kind: 'allow' }))
-  const captured = state.pluginApi.agent.routeOf(capturedExec)
+  const captured = state.pluginApi.llm.routing.forExecution(capturedExec)
   capturedContext = { provider: 'provider-c', model: 'model-c' }
   dispatchWaterfall(state, 'tools/execute', [capturedExec], () => ({ id: 'captured-signal' }))
   // The final-result route intentionally bypasses tools/post-execute.
@@ -452,20 +452,20 @@ test('route capture leaves dispatched decision, signal, result, and emission sem
   const emitted = []
 
   state.pluginApi.events.on('tools/pre-execute', (observedExec, next) => {
-    assert.equal(state.pluginApi.tools.routeOf(observedExec)?.model, 'model-a')
+    assert.equal(state.pluginApi.llm.routing.forExecution(observedExec)?.model, 'model-a')
     return next()
   })
   state.pluginApi.events.on('tools/execute', (observedExec, next) => {
-    assert.equal(state.pluginApi.agent.routeOf(observedExec)?.provider, 'provider-a')
+    assert.equal(state.pluginApi.llm.routing.forExecution(observedExec)?.provider, 'provider-a')
     return next()
   })
   state.pluginApi.events.on('tools/post-execute', (observedExec, observedResult, next) => {
-    assert.equal(state.pluginApi.tools.routeOf(observedExec)?.model, 'model-a')
+    assert.equal(state.pluginApi.llm.routing.forExecution(observedExec)?.model, 'model-a')
     assert.equal(observedResult, result)
     return next()
   })
   state.pluginApi.events.on('tools/result', (observedExec, observedResult) => {
-    assert.equal(state.pluginApi.agent.routeOf(observedExec)?.provider, 'provider-a')
+    assert.equal(state.pluginApi.llm.routing.forExecution(observedExec)?.provider, 'provider-a')
     emitted.push(observedResult)
   })
 
@@ -487,24 +487,24 @@ test('route absence leaves dispatched decision, signal, result, and emission sem
   const emitted = []
 
   state.pluginApi.events.on('tools/pre-execute', (observedExec, next) => {
-    assert.equal(state.pluginApi.agent.routeOf(observedExec), undefined)
-    assert.equal(state.pluginApi.tools.routeOf(observedExec), undefined)
+    assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
+    assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
     return next()
   })
   state.pluginApi.events.on('tools/execute', (observedExec, next) => {
-    assert.equal(state.pluginApi.agent.routeOf(observedExec), undefined)
-    assert.equal(state.pluginApi.tools.routeOf(observedExec), undefined)
+    assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
+    assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
     return next()
   })
   state.pluginApi.events.on('tools/post-execute', (observedExec, observedResult, next) => {
-    assert.equal(state.pluginApi.agent.routeOf(observedExec), undefined)
-    assert.equal(state.pluginApi.tools.routeOf(observedExec), undefined)
+    assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
+    assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
     assert.equal(observedResult, result)
     return next()
   })
   state.pluginApi.events.on('tools/result', (observedExec, observedResult) => {
-    assert.equal(state.pluginApi.agent.routeOf(observedExec), undefined)
-    assert.equal(state.pluginApi.tools.routeOf(observedExec), undefined)
+    assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
+    assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
     emitted.push(observedResult)
   })
 
@@ -527,5 +527,5 @@ test('registered cleanup is idempotent and stale after a failed later apply', ()
   const remaining = state.listeners.filter((entry) => entry.name === 'tools/pre-execute')
   assert.equal(remaining.length, 3, 'the execution observation listener, the workspace-transaction evidence intake, and the security facade listener remain after execRoute cleanup')
   assert.equal(remaining.every((entry) => entry.eventOptions?.prepend !== true), true, 'the execRoute prepended hook is removed')
-  assert.throws(() => state.pluginApi.agent.routeOf({}), PluginApiFeatureDisabledError)
+  assert.throws(() => state.pluginApi.llm.routing.forExecution({}), PluginApiFeatureDisabledError)
 })

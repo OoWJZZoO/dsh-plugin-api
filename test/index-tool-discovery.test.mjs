@@ -161,7 +161,7 @@ test('feature guard failure disables only the discovery face and keeps boot aliv
     assert.equal(error.feature, 'toolDiscovery')
     return true
   })
-  const features = service.features
+  const features = service._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   const discoveryState = features.find((feature) => feature.name === 'toolDiscovery')
   assert.ok(discoveryState, 'feature appears in the registry snapshot')
   assert.equal(discoveryState.isActive, false)

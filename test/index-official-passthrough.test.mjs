@@ -65,34 +65,34 @@ test('apply exposes both public system-prompt helpers with the installed officia
   }
   const sections = [{ name: 'runtime', text: 'hello' }]
   assert.equal(
-    state.pluginApi.systemPrompt.renderContextSnapshot(assembly),
+    state.pluginApi.prompts.renderContextSnapshot(assembly),
     'Current runtime context. This snapshot supersedes earlier runtime-context snapshots.\n\nhello',
   )
   assert.equal(
-    state.pluginApi.systemPrompt.joinContextSections(sections),
+    state.pluginApi.prompts.joinContextSections(sections),
     'Current runtime context. This snapshot supersedes earlier runtime-context snapshots.\n\nhello',
   )
-  assert.equal(state.pluginApi.features.some(({ name }) => name === 'officialPassthrough'), false)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').some(({ name }) => name === 'officialPassthrough'), false)
   assert.ok(state.effects.some(({ label }) => label === 'dsh-plugin-api: officialPassthrough cleanup'))
 })
 
 test('a missing base system-prompt service does not disable valid helper exports', () => {
   const { ctx, state } = createMockCtx({ systemPrompt: false })
   assert.doesNotThrow(() => apply(ctx))
-  assert.equal(state.pluginApi.systemPrompt.isActive, false)
+  assert.equal(state.pluginApi.prompts.isActive, false)
 
   const assembly = { sections: [], contexts: [], tools: [], variables: {} }
-  assert.equal(state.pluginApi.systemPrompt.renderContextSnapshot(assembly), '')
+  assert.equal(state.pluginApi.prompts.renderContextSnapshot(assembly), '')
   assert.throws(
-    () => state.pluginApi.systemPrompt.section({}),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'systemPrompt',
+    () => state.pluginApi.prompts.section({}),
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'prompts',
   )
 })
 
 test('official helper cleanup and reapply revoke old references without disturbing the new owner', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
-  const oldSurface = state.pluginApi.systemPrompt
+  const oldSurface = state.pluginApi.prompts
   const oldEffect = state.effects.find(({ label }) => label === 'dsh-plugin-api: officialPassthrough cleanup').fn
   const oldCleanup = oldEffect()
   oldCleanup()
@@ -104,11 +104,11 @@ test('official helper cleanup and reapply revoke old references without disturbi
   )
 
   apply(ctx)
-  const newSurface = state.pluginApi.systemPrompt
+  const newSurface = state.pluginApi.prompts
   assert.notEqual(newSurface, oldSurface)
   assert.equal(newSurface.joinContextSections([]), '')
 
   oldCleanup()
-  assert.equal(state.pluginApi.systemPrompt, newSurface)
-  assert.equal(state.pluginApi.systemPrompt.joinContextSections([]), '')
+  assert.equal(state.pluginApi.prompts, newSurface)
+  assert.equal(state.pluginApi.prompts.joinContextSections([]), '')
 })

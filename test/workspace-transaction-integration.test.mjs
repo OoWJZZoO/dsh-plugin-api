@@ -262,12 +262,12 @@ test('negative integration: no scheduler/poller, no automatic external rollback 
   assert.doesNotThrow(() => apply(ctx))
   // the mounted facade observes fs edges for evidence but never schedules
   // anything; no timer/poller side effect exists
-  assert.equal(state.pluginApi.features.some((f) => f.name === 'workspaceTransactions' && f.isActive), true)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').some((f) => f.name === 'workspaceTransactions' && f.isActive), true)
   // automatic external rollback is impossible: an external mutation commits
   // only with approval and rollback preserves the classification
   const coordination = state.pluginApi.coordination
   const handle = (await coordination.acquire({ resource: { scope: 'workspace', key: 'neg-tx' }, ownerId: 'owner-1', leaseMs: 60_000 })).handle
-  const wt = state.pluginApi.workspaceTransactions
+  const wt = state.pluginApi.workspaces.transactions
   const prepared = await wt.prepare({
     transactionId: 'neg-tx',
     workspace,

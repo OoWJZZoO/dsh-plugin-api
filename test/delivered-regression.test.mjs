@@ -112,7 +112,7 @@ test('aborted error: disabled tools degrade locally without touching other featu
 test('remote: publication registers with wire-parameter validation and an isolated owner disposer', async () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
-  const remote = state.pluginApi.remote
+  const remote = state.pluginApi.remotes
   assert.equal(remote.isActive, true)
 
   const service = {
@@ -142,7 +142,7 @@ test('remote: publication registers with wire-parameter validation and an isolat
 test('remote: same-key same-reference publish is idempotent; a conflicting owner is rejected', () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
-  const remote = state.pluginApi.remote
+  const remote = state.pluginApi.remotes
   const service = { get() { return { ok: true } } }
 
   const first = remote.publish('conflictConfig', service)
@@ -161,10 +161,10 @@ test('remote: missing typert prerequisite degrades to the disabled surface (feat
   const { ctx, state } = createMockCtx({ services: { typert: undefined } })
   assert.doesNotThrow(() => apply(ctx))
   assert.ok(state.pluginApi)
-  assert.equal(state.pluginApi.remote.isActive, false)
+  assert.equal(state.pluginApi.remotes.isActive, false)
   assert.throws(
-    () => state.pluginApi.remote.publish('k', { get() {} }),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'remote',
+    () => state.pluginApi.remotes.publish('k', { get() {} }),
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'remotes',
   )
   assert.equal(state.pluginApi.tools.isActive, true, 'unrelated features stay healthy')
 })

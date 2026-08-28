@@ -238,9 +238,8 @@ test('mountSessionFeature returns null when dependencies are missing and mounts 
   const mocks = createMocks()
 
   const serviceMissingEvents = {
-    session: undefined,
     events: undefined,
-    features: [{ name: 'events', isActive: true }],
+    _registry: { isActive: (name) => name === 'events' },
     mountFeature() {
       throw new Error('must not mount')
     },
@@ -251,9 +250,8 @@ test('mountSessionFeature returns null when dependencies are missing and mounts 
   )
 
   const serviceEventsNotActive = {
-    session: undefined,
     events: mocks.eventsApi,
-    features: [{ name: 'events', isActive: false }],
+    _registry: { isActive: () => false },
     mountFeature() {
       throw new Error('must not mount')
     },
@@ -265,9 +263,8 @@ test('mountSessionFeature returns null when dependencies are missing and mounts 
 
   const mounted = []
   const service = {
-    session: undefined,
     events: mocks.eventsApi,
-    features: [{ name: 'events', isActive: true }],
+    _registry: { isActive: (name) => name === 'events' },
     mountFeature(name, api) {
       mounted.push({ name, api })
     },

@@ -50,10 +50,10 @@ async function acquireLease(pluginApi) {
 test('healthy apply mounts the workspaceTransactions facade after coordination and exposes the frozen surface', async () => {
   const { ctx, state } = createContext()
   assert.doesNotThrow(() => apply(ctx))
-  const names = state.pluginApi.features.map((entry) => entry.name)
+  const names = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').map((entry) => entry.name)
   assert.ok(names.includes('workspaceTransactions'))
   assert.ok(names.indexOf('coordination') < names.indexOf('workspaceTransactions'))
-  const wt = state.pluginApi.workspaceTransactions
+  const wt = state.pluginApi.workspaces.transactions
   assert.equal(typeof wt.prepare, 'function')
   assert.equal(typeof wt.record, 'function')
   assert.equal(typeof wt.preview, 'function')
@@ -86,34 +86,34 @@ test('healthy apply mounts the workspaceTransactions facade after coordination a
 test('workspaceTransactions typed results keep other facade surfaces intact', async () => {
   const { ctx, state } = createContext()
   apply(ctx)
-  const wt = state.pluginApi.workspaceTransactions
+  const wt = state.pluginApi.workspaces.transactions
   const invalid = await wt.prepare({})
   assert.equal(invalid.ok, false)
   assert.equal(invalid.code, 'invalid-input')
   const recorded = await wt.record('missing-tx', {})
   assert.equal(recorded.ok, false)
   assert.equal(typeof state.pluginApi.coordination.acquire, 'function')
-  assert.equal(typeof state.pluginApi.recovery.evaluate, 'function')
+  assert.equal(typeof state.pluginApi.executions.recovery.evaluate, 'function')
   assert.equal(typeof state.pluginApi.tasks.register, 'function')
 })
 
 test('stale workspaceTransactions facade is typed unavailable after its owner slot is unmounted', async () => {
   const { ctx, state } = createContext()
   apply(ctx)
-  const old = state.pluginApi.workspaceTransactions
+  const old = state.pluginApi.workspaces.transactions
   const token = state.pluginApi._readSlot('workspaceTransactions')
   assert.ok(token)
   const removed = state.pluginApi.unmountFeature('workspaceTransactions', state.pluginApi._workspaceTransactionsSlot)
   assert.equal(removed, true)
   assert.throws(() => old.prepare({}), PluginApiFeatureDisabledError)
-  assert.throws(() => state.pluginApi.workspaceTransactions.commit('tx-1'), PluginApiFeatureDisabledError)
+  assert.throws(() => state.pluginApi.workspaces.transactions.commit('tx-1'), PluginApiFeatureDisabledError)
 })
 
 test('repeated apply is idempotent and keeps the live workspaceTransactions surface', async () => {
   const { ctx, state } = createContext()
   apply(ctx)
   apply(ctx)
-  const wt = state.pluginApi.workspaceTransactions
+  const wt = state.pluginApi.workspaces.transactions
   const handle = await acquireLease(state.pluginApi)
   const prepared = await wt.prepare({
     transactionId: 'mounted-tx-2',
@@ -131,12 +131,12 @@ test('workspaceTransactions guard uses only the public substrate and fails safe 
   const on = ctx.on
   ctx.on = undefined
   assert.doesNotThrow(() => apply(ctx))
-  const feature = state.pluginApi.features.find((entry) => entry.name === 'workspaceTransactions')
+  const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'workspaceTransactions')
   assert.equal(feature?.isActive, false)
-  assert.throws(() => state.pluginApi.workspaceTransactions.prepare({}), PluginApiFeatureDisabledError)
+  assert.throws(() => state.pluginApi.workspaces.transactions.prepare({}), PluginApiFeatureDisabledError)
   // unrelated features stay active
-  assert.equal(state.pluginApi.features.find((entry) => entry.name === 'coordination')?.isActive, true)
-  assert.equal(state.pluginApi.features.find((entry) => entry.name === 'tasks')?.isActive, false)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'coordination')?.isActive, true)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'tasks')?.isActive, false)
   ctx.on = on
 })
 
@@ -153,9 +153,9 @@ test('workspaceTransactions mount survives broken optional seams and keeps isola
     },
   })
   assert.doesNotThrow(() => apply(ctx))
-  const feature = state.pluginApi.features.find((entry) => entry.name === 'workspaceTransactions')
+  const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'workspaceTransactions')
   assert.equal(feature?.isActive, true)
   // isolation: coordination, recovery, and the rest stay active
-  assert.equal(state.pluginApi.features.find((entry) => entry.name === 'coordination')?.isActive, true)
-  assert.equal(state.pluginApi.features.find((entry) => entry.name === 'recovery')?.isActive, true)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'coordination')?.isActive, true)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'recovery')?.isActive, true)
 })

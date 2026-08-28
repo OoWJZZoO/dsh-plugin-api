@@ -125,8 +125,8 @@ function spec(overrides = {}) {
 test('context feature mounts through apply and serves the full lifecycle', () => {
   const host = createHost()
   apply(host.ctx)
-  const context = host.ctx.get('pluginApi').context
-  assert.ok(context, 'pluginApi.context exists')
+  const context = host.ctx.get('pluginApi').prompts.provenance
+  assert.ok(context, 'pluginApi.prompts.provenance exists')
   const registered = context.contribute(spec())
   assert.equal(registered.ok, true)
   const graph = context.compose({ sessionId: 'session-1' })
@@ -137,7 +137,7 @@ test('context feature mounts through apply and serves the full lifecycle', () =>
   assert.equal(availability.sentReachable, false, 'no evidence slice in this composition')
   assert.equal(availability.skillExposure, 'unavailable', 'the sibling skill feature is not integrated')
   // feature appears active in the registry snapshot
-  const features = host.ctx.get('pluginApi').features
+  const features = host.ctx.get('pluginApi')._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   const contextState = features.find((feature) => feature.name === 'context')
   assert.ok(contextState)
   assert.equal(contextState.isActive, true)
@@ -206,7 +206,7 @@ test('evidence intake end-to-end via direct mount: emitted payloads transition n
   })
   assert.ok(owner)
   owner.prepared.commit()
-  const context = platform.service.context
+  const context = platform.service.prompts.provenance
   assert.equal(context.availability().sentReachable, true)
   context.contribute(spec())
   context.compose({ sessionId: 'session-1' })
@@ -226,7 +226,7 @@ test('compaction completed events become replacement mappings end-to-end', () =>
     },
   })
   apply(host.ctx)
-  const context = host.ctx.get('pluginApi').context
+  const context = host.ctx.get('pluginApi').prompts.provenance
   const surface = context.contribute(spec({
     id: 'surface-node',
     source: { kind: 'sessionSurface', owner: 'plugin-a' },
@@ -254,7 +254,7 @@ test('compaction completed events become replacement mappings end-to-end', () =>
 test('soft sources degrade per-source without disabling the feature', () => {
   const host = createHost()
   apply(host.ctx)
-  const availability = host.ctx.get('pluginApi').context.availability()
+  const availability = host.ctx.get('pluginApi').prompts.provenance.availability()
   assert.equal(availability.systemPrompt, 'available', 'official systemPrompt service and helpers present')
   assert.equal(availability.skillExposure, 'unavailable', 'the sibling skills feature is not integrated')
   assert.equal(availability.toolExposure, 'available', 'toolDiscovery is mounted in this composition')
@@ -265,12 +265,12 @@ test('context guard failure disables only the context face and keeps boot alive'
   const host = createHost({ services: { systemPrompt: undefined } })
   apply(host.ctx)
   const service = host.ctx.get('pluginApi')
-  assert.throws(() => service.context.contribute({}), (error) => {
+  assert.throws(() => service.prompts.provenance.contribute({}), (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
-    assert.equal(error.feature, 'context')
+    assert.equal(error.feature, 'prompts.provenance')
     return true
   })
-  const features = service.features
+  const features = service._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   const contextState = features.find((feature) => feature.name === 'context')
   assert.ok(contextState, 'feature appears in the registry snapshot')
   assert.equal(contextState.isActive, false)
@@ -288,7 +288,7 @@ test('inactive core keeps the context face typed-inactive', () => {
   new ServiceClass(host.ctx)
   const service = host.state.pluginApi
   assert.equal(service.isActive, false)
-  assert.throws(() => service.context.compose({ sessionId: 'x' }), (error) => {
+  assert.throws(() => service.prompts.provenance.compose({ sessionId: 'x' }), (error) => {
     assert.ok(error instanceof PluginApiInactiveError)
     return true
   })

@@ -202,7 +202,7 @@ test('recovery recommendations are preserved as evidence but never executed by t
 test('negative integration: no scheduler creation, no R replacement, no official package modification', async () => {
   const { ctx, state } = createHostContext({})
   assert.doesNotThrow(() => apply(ctx))
-  assert.equal(state.pluginApi.features.some((f) => f.name === 'tasks' && f.isActive), true)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').some((f) => f.name === 'tasks' && f.isActive), true)
   const tasks = state.pluginApi.tasks
   await tasks.register({ taskId: 'neg-task', ownerId: 'owner-1', scope: taskScope, intent: { kind: 'review', summary: 'neg' } })
   const got = await tasks.get('neg-task')

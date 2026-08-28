@@ -23,41 +23,38 @@ test('composition authority publishes additive immutable llm, agent, tools, sess
   service.mountFeature('session', { get() { return 'm1-session' } })
   service.mountFeature('services', Object.freeze({ compaction: Object.freeze({ isActive: false }) }))
 
-  assert.equal(service.llm.request.transform(), 'transform')
-  assert.equal(service.llm.admission.register(), 'register')
-  assert.equal(service.agent.get(), 'm1')
-  assert.equal(service.agent.create(), 'agent-extension')
-  assert.equal(service.agent.routeOf({}), route)
-  assert.equal(service.tools.routeOf({}), route)
-  assert.equal(service.session.get(), 'm1-session')
+  assert.equal(service.llm.requestTransforms.register(), 'transform')
+  assert.equal(service.llm.admissionPolicies.register(), 'register')
+  assert.equal(service.agents.get(), 'm1')
+  assert.equal(service.agents.create(), 'agent-extension')
+  assert.equal(service.llm.routing.forExecution({}), route)
+  assert.equal(service.sessions.get(), 'm1-session')
   assert.equal(service.services.compaction.isActive, false)
-  for (const view of [service.llm, service.agent, service.tools, service.session, service.services]) {
+  for (const view of [service.llm, service.agents, service.tools, service.sessions, service.services]) {
     assert.ok(Object.isFrozen(view))
   }
-  assert.throws(() => { service.llm.request = {} }, TypeError)
-  assert.throws(() => { service.session = {} }, TypeError)
+  assert.throws(() => { service.llm.requestTransforms = {} }, TypeError)
+  assert.throws(() => { service.sessions = {} }, TypeError)
 })
 
 test('slot rollback revokes retained image admission/compat request references without touching a newer slot', () => {
   const service = serviceWithActiveCore()
   const first = service.prepareFeature('llm/request', { transform() { return 'first' } })
   first.commit()
-  const retainedFirst = service.llm.request
+  const retainedFirst = service.llm.requestTransforms
   const second = service.prepareFeature('llm/request', { transform() { return 'second' } })
   second.commit()
 
-  assert.equal(service.llm.request.transform(), 'second')
-  assert.throws(
-    () => retainedFirst.transform(),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
-  )
+  assert.equal(service.llm.requestTransforms.register(), 'second')
+  assert.equal(retainedFirst, service.llm.requestTransforms, 'leaf wrapper identity stays service-lifetime stable')
+  assert.equal(retainedFirst.register(), 'second', 'retained wrapper resolves the current slot')
   first.rollback()
-  assert.equal(service.llm.request.transform(), 'second')
+  assert.equal(service.llm.requestTransforms.register(), 'second')
   second.rollback()
-  assert.throws(() => service.llm.request.transform(), PluginApiFeatureDisabledError)
+  assert.throws(() => service.llm.requestTransforms.register(), PluginApiFeatureDisabledError)
 })
 
-test('routing composes independent execution and session leaves with frozen availability', () => {
+test('routing composes independent execution and session leaves with frozen surface', () => {
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({ apiVersion: '0.4', registry, coreActive: true })
   const service = new ServiceClass({ reflect: { provide() {} } })
@@ -65,7 +62,7 @@ test('routing composes independent execution and session leaves with frozen avai
   const execution = Object.freeze({ provider: 'p', model: 'm' })
   const session = {}
   const sessionRoute = Object.freeze({ provider: 'sp', model: 'sm' })
-  const routing = service.routing
+  const routing = service.llm.routing
   assert.ok(Object.isFrozen(routing))
   service.mountFeature('execRoute', { routeOf(value) { return value === exec ? execution : undefined } })
   service.mountFeature('sessionRoute', {
@@ -76,17 +73,17 @@ test('routing composes independent execution and session leaves with frozen avai
   })
   registry.mount('execRoute')
   registry.mount('sessionRoute')
-  assert.equal(service.routing, routing, 'routing namespace identity is service-lifetime stable')
-  assert.equal(routing.ofExecution(exec), execution)
+  assert.equal(service.llm.routing, routing, 'routing namespace identity is service-lifetime stable')
+  assert.equal(routing.forExecution(exec), execution)
   assert.equal(routing.current(session), sessionRoute)
-  assert.deepEqual(routing.availability, { execution: true, session: true })
-  assert.ok(Object.isFrozen(routing.availability))
+  assert.equal(typeof routing.policies.register, 'function')
 
   service.unmountFeature('execRoute', service._execRouteToken)
   registry.disable('execRoute', 'test teardown')
-  assert.throws(() => routing.ofExecution(exec), PluginApiFeatureDisabledError)
+  assert.throws(() => routing.forExecution(exec), PluginApiFeatureDisabledError)
   assert.equal(routing.current(session), sessionRoute)
-  assert.deepEqual(service.routing.availability, { execution: false, session: true })
+  // capability availability is reported through the capabilities query surface
+  assert.equal(service.capabilities.get('llm.routing').status, 'degraded')
 })
 
 test('routing checks core and leaf guards before inspecting hostile inputs', () => {
@@ -94,13 +91,13 @@ test('routing checks core and leaf guards before inspecting hostile inputs', () 
   const Inert = createPluginApiService({ apiVersion: '0.4', registry, coreActive: false })
   const inert = new Inert({ reflect: { provide() {} } })
   const hostile = new Proxy({}, { get() { throw new Error('inspected') } })
-  assert.throws(() => inert.routing.ofExecution(hostile), PluginApiInactiveError)
-  assert.throws(() => inert.routing.current(hostile), PluginApiInactiveError)
-  assert.throws(() => inert.routing.wait(hostile, { signal: hostile }), PluginApiInactiveError)
-  assert.throws(() => inert.routing.availability, PluginApiInactiveError)
+  assert.throws(() => inert.llm.routing.forExecution(hostile), PluginApiInactiveError)
+  assert.throws(() => inert.llm.routing.current(hostile), PluginApiInactiveError)
+  assert.throws(() => inert.llm.routing.wait(hostile, { signal: hostile }), PluginApiInactiveError)
+  assert.throws(() => inert.llm.routing.policies.register(hostile), PluginApiInactiveError)
 
   const Active = createPluginApiService({ apiVersion: '0.4', registry, coreActive: true })
   const active = new Active({ reflect: { provide() {} } })
-  assert.throws(() => active.routing.ofExecution(hostile), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'execRoute')
-  assert.throws(() => active.routing.current(hostile), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'sessionRoute')
+  assert.throws(() => active.llm.routing.forExecution(hostile), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'execRoute')
+  assert.throws(() => active.llm.routing.current(hostile), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'sessionRoute')
 })

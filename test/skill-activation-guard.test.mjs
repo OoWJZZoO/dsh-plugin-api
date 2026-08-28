@@ -67,7 +67,7 @@ function makeMockCtx() {
 test('feature snapshot order pins skillsActivation after toolDiscovery and before profile', () => {
   const { ctx, state } = makeMockCtx()
   assert.doesNotThrow(() => apply(ctx))
-  const names = state.pluginApi.features.map((entry) => entry.name)
+  const names = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').map((entry) => entry.name)
   assert.ok(names.includes('skillsActivation'), `snapshot includes the feature: ${names.join(',')}`)
   assert.ok(names.indexOf('skillsActivation') > names.indexOf('toolDiscovery'))
   assert.ok(names.indexOf('skillsActivation') < names.indexOf('profile'))

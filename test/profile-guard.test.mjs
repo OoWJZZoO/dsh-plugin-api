@@ -83,10 +83,10 @@ test('profile members throw typed errors when the feature is disabled', () => {
   const { ctx, state } = createMockCtx({ services: { loader: undefined } })
   assert.doesNotThrow(() => apply(ctx))
   assert.equal(state.pluginApi.isActive, true)
-  const features = state.pluginApi.features
+  const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   const profileFeature = features.find((entry) => entry.name === 'profile')
   assert.equal(profileFeature.isActive, false)
-  const profile = state.pluginApi.profile
+  const profile = state.pluginApi.profiles
   assert.throws(() => profile.inspect({ view: 'runtime' }), PluginApiFeatureDisabledError)
   assert.throws(() => profile.health('disk'), PluginApiFeatureDisabledError)
   assert.throws(() => profile.planDiff({ type: 'config', rows: [] }), PluginApiFeatureDisabledError)
@@ -101,8 +101,8 @@ test('inactive facade leaves the profile namespace inactive', () => {
     const { ctx, state } = createMockCtx()
     assert.doesNotThrow(() => apply(ctx))
     assert.equal(state.pluginApi.isActive, false)
-    assert.throws(() => state.pluginApi.profile.inspect({ view: 'runtime' }), PluginApiInactiveError)
-    assert.throws(() => state.pluginApi.profile.snapshot.create({}), PluginApiInactiveError)
+    assert.throws(() => state.pluginApi.profiles.inspect({ view: 'runtime' }), PluginApiInactiveError)
+    assert.throws(() => state.pluginApi.profiles.snapshot.create({}), PluginApiInactiveError)
   } finally {
     if (previous === undefined) delete process.env.DSH_PLUGIN_API_FORCE_GUARD_FAIL
     else process.env.DSH_PLUGIN_API_FORCE_GUARD_FAIL = previous
@@ -132,9 +132,9 @@ test('profile mount failure degrades only profile and keeps unrelated features',
     get(name) { if (name === 'pluginApi') return state.pluginApi; if (name in services) return services[name]; return undefined },
   }
   assert.doesNotThrow(() => apply(ctx2))
-  const profileFeature = state.pluginApi.features.find((entry) => entry.name === 'profile')
+  const profileFeature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'profile')
   assert.equal(profileFeature.isActive, true)
-  const view = state.pluginApi.profile.inspect({ view: 'runtime' })
+  const view = state.pluginApi.profiles.inspect({ view: 'runtime' })
   assert.equal(view.code, 'ok')
   assert.deepEqual(view.rows, [])
   assert.equal(state.pluginApi.tasks !== undefined, true)

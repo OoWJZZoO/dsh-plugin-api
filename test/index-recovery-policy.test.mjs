@@ -43,23 +43,23 @@ function createContext(options = {}) {
 test('healthy apply mounts a host-only recovery surface after execution and before diagnostics', async () => {
   const { ctx, state } = createContext()
   assert.doesNotThrow(() => apply(ctx))
-  const names = state.pluginApi.features.map((entry) => entry.name)
+  const names = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').map((entry) => entry.name)
   assert.ok(names.includes('recovery'))
   assert.ok(names.indexOf('execution') < names.indexOf('recovery'))
   assert.ok(names.indexOf('recovery') < names.indexOf('diagnostics'))
-  assert.equal(typeof state.pluginApi.recovery.classify, 'function')
-  assert.equal(typeof state.pluginApi.recovery.capability.declare, 'function')
-  assert.equal(typeof state.pluginApi.recovery.policy.register, 'function')
-  assert.equal(typeof state.pluginApi.recovery.evaluate, 'function')
-  assert.equal(typeof state.pluginApi.recovery.consume, 'function')
-  assert.equal(typeof state.pluginApi.recovery.adapters.fromAgentRequestError, 'function')
-  assert.equal(state.pluginApi.recovery.availability.status, 'active')
+  assert.equal(typeof state.pluginApi.executions.recovery.classify, 'function')
+  assert.equal(typeof state.pluginApi.executions.recovery.capability.declare, 'function')
+  assert.equal(typeof state.pluginApi.executions.recovery.policy.register, 'function')
+  assert.equal(typeof state.pluginApi.executions.recovery.evaluate, 'function')
+  assert.equal(typeof state.pluginApi.executions.recovery.consume, 'function')
+  assert.equal(typeof state.pluginApi.executions.recovery.adapters.fromAgentRequestError, 'function')
+  assert.equal(state.pluginApi.executions.recovery.availability.status, 'active')
   assert.equal(Object.prototype.hasOwnProperty.call(state.pluginApi, 'client'), false)
 })
 test('mounted recovery evaluates and consumes a bounded policy decision without executing it', async () => {
   const { ctx, state } = createContext()
   apply(ctx)
-  const recovery = state.pluginApi.recovery
+  const recovery = state.pluginApi.executions.recovery
   recovery.capability.declare({
     operationId: 'op', ownerId: 'owner', generation: '1', scope: 'session',
     idempotent: true, retryable: true, allowedActions: ['retry', 'stop'],
@@ -85,15 +85,15 @@ test('missing event substrate disables only recovery and keeps apply fail-safe',
   const { ctx, state } = createContext()
   ctx.on = undefined
   assert.doesNotThrow(() => apply(ctx))
-  const feature = state.pluginApi.features.find((entry) => entry.name === 'recovery')
+  const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'recovery')
   assert.equal(feature?.isActive, false)
-  assert.throws(() => state.pluginApi.recovery.evaluate({}), PluginApiFeatureDisabledError)
+  assert.throws(() => state.pluginApi.executions.recovery.evaluate({}), PluginApiFeatureDisabledError)
 })
 
 test('stale recovery facade is typed unavailable after its owner slot is unmounted', () => {
   const { ctx, state } = createContext()
   apply(ctx)
-  const old = state.pluginApi.recovery
+  const old = state.pluginApi.executions.recovery
   const token = state.pluginApi._readSlot('recovery')
   assert.ok(token)
   state.pluginApi.unmountFeature('recovery', state.pluginApi._recoverySlot)

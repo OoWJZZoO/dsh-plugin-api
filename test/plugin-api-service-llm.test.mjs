@@ -108,10 +108,10 @@ test('unmounted llm request surface throws core-inactive/feature-disabled before
     mockCtx(),
   )
 
-  assert.equal(typeof active.llm.request.transform, 'function')
-  assert.throws(() => inert.llm.request.transform({}), PluginApiInactiveError)
+  assert.equal(typeof active.llm.requestTransforms.register, 'function')
+  assert.throws(() => inert.llm.requestTransforms.register({}), PluginApiInactiveError)
   assert.throws(
-    () => active.llm.request.transform({}),
+    () => active.llm.requestTransforms.register({}),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
   )
 })
@@ -122,11 +122,11 @@ test('mountFeature("llm/request", api) installs only the request surface', () =>
 
   service.mountFeature('llm/request', requestApi)
 
-  assert.equal(service.llm.request.transform(), undefined)
-  assert.ok(Object.isFrozen(service.llm.request))
+  assert.equal(service.llm.requestTransforms.register(), undefined)
+  assert.ok(Object.isFrozen(service.llm.requestTransforms))
   assert.equal(service.llm.isActive, false)
   // admission.isActive is retired; the disabled surface exposes only register.
-  assert.equal('isActive' in service.llm.admission, false)
+  assert.equal('isActive' in service.llm.admissionPolicies, false)
 })
 
 test('mountFeature("llm") does not overwrite an already-mounted admission surface', () => {
@@ -144,7 +144,7 @@ test('mountFeature("llm") does not overwrite an already-mounted admission surfac
     registerModelDiscovery() {},
   })
 
-  assert.equal(service.llm.admission.register(), undefined)
+  assert.equal(service.llm.admissionPolicies.register(), undefined)
   assert.equal(service.llm.isActive, true)
 })
 
@@ -163,6 +163,6 @@ test('llm/admission can still be mounted after llm is mounted', () => {
   })
   service.mountFeature('llm/admission', admissionApi)
 
-  assert.equal(service.llm.admission.register(), undefined)
+  assert.equal(service.llm.admissionPolicies.register(), undefined)
   assert.equal(service.llm.isActive, true)
 })

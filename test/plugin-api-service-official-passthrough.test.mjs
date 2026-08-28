@@ -70,10 +70,10 @@ test('helper slots follow the service active state after reconciliation', () => 
     joinContextSections() { return 'joined' },
   })
 
-  assert.equal(service.systemPrompt.renderContextSnapshot(), 'snapshot')
+  assert.equal(service.prompts.renderContextSnapshot(), 'snapshot')
   active = false
   assert.throws(
-    () => service.systemPrompt.renderContextSnapshot(),
+    () => service.prompts.renderContextSnapshot(),
     (error) => error instanceof PluginApiInactiveError,
   )
 })
@@ -120,7 +120,7 @@ test('retained service surfaces are revoked across replacement and stale cleanup
   }
   const firstToken = service.mountFeature('officialPassthrough', first)
   registry.mount('officialPassthrough')
-  const retainedFirst = service.systemPrompt
+  const retainedFirst = service.prompts
 
   const second = {
     renderContextSnapshot() { return 'second-snapshot' },
@@ -128,22 +128,22 @@ test('retained service surfaces are revoked across replacement and stale cleanup
   }
   const secondToken = service.mountFeature('officialPassthrough', second)
 
-  assert.equal(service.systemPrompt.renderContextSnapshot(), 'second-snapshot')
+  assert.equal(service.prompts.renderContextSnapshot(), 'second-snapshot')
   assert.throws(
     () => retainedFirst.renderContextSnapshot(),
     (error) => error instanceof PluginApiFeatureDisabledError
       && error.feature === 'systemPrompt.renderContextSnapshot',
   )
   assert.equal(service.unmountFeature('officialPassthrough', firstToken), false)
-  assert.equal(service.systemPrompt.joinContextSections(), 'second-join')
+  assert.equal(service.prompts.joinContextSections(), 'second-join')
   assert.equal(service.unmountFeature('officialPassthrough', secondToken), true)
-  assert.equal(service.systemPrompt.renderContextSnapshot(), 'base-snapshot')
+  assert.equal(service.prompts.renderContextSnapshot(), 'base-snapshot')
 })
 
 test('internal host identity is not added to the public feature snapshot', () => {
   const { registry, service } = createService()
   registry.mount('officialPassthrough')
-  assert.equal(service.features.some(({ name }) => name === 'officialPassthrough'), false)
+  assert.equal(service._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').some(({ name }) => name === 'officialPassthrough'), false)
 })
 
 test('inactive service rejects helper calls before touching the owner', () => {
@@ -158,5 +158,5 @@ test('inactive service rejects helper calls before touching the owner', () => {
   service.mountFeature('systemPrompt', { isActive: true })
   service.mountFeature('officialPassthrough', owner.api)
 
-  assert.throws(() => service.systemPrompt.renderContextSnapshot({}), PluginApiInactiveError)
+  assert.throws(() => service.prompts.renderContextSnapshot({}), PluginApiInactiveError)
 })

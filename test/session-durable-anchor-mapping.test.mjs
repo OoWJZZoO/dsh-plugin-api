@@ -62,7 +62,7 @@ test('ability-anchor finite append mapping appends only supported messages witho
   const { ctx, service } = createPublishedFacade()
   const session = ctx.sessions.create('ability-anchor-mapping')
 
-  const user = service.session.appendMessage(session, 'user/message', message(
+  const user = service.sessions.appendMessage(session, 'user/message', message(
     'user-1',
     'user',
     { kind: 'user' },
@@ -71,7 +71,7 @@ test('ability-anchor finite append mapping appends only supported messages witho
   assert.deepEqual(user.surfaceOp, 'append')
   assert.equal(Object.hasOwn(user, 'sourceEventSeqs'), false)
 
-  const assistant = service.session.appendMessage(session, 'assistant/message', {
+  const assistant = service.sessions.appendMessage(session, 'assistant/message', {
     turn: 1,
     step: 1,
     message: message(
@@ -91,7 +91,7 @@ test('ability-anchor finite append mapping appends only supported messages witho
     name: 'lookup',
     arguments: { query: 'q' },
   })
-  const result = service.session.appendMessage(session, 'tool/result', {
+  const result = service.sessions.appendMessage(session, 'tool/result', {
     turn: 1,
     step: 1,
     message: message(
@@ -120,7 +120,7 @@ test('ability-anchor mapping rejects title, replacement, and atomic-turn attempt
     ['virtual-turn/commit', { events: [] }, undefined],
   ]) {
     assert.throws(
-      () => service.session.appendMessage(session, kind, payload, options),
+      () => service.sessions.appendMessage(session, kind, payload, options),
       (error) => error instanceof TypeError && [
         'unsupported-surface-message-kind',
         'invalid-options',
@@ -131,7 +131,7 @@ test('ability-anchor mapping rejects title, replacement, and atomic-turn attempt
 
   assert.equal(session.events.length, 0)
   assert.equal(session.surface.nodes.length, 0)
-  assert.throws(() => service.session.appendMessage(null, 'user/message', user), (error) => {
+  assert.throws(() => service.sessions.appendMessage(null, 'user/message', user), (error) => {
     return error instanceof TypeError && error.code === 'invalid-target-session'
   })
 })

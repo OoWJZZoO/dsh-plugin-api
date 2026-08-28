@@ -96,26 +96,26 @@ test('apply mounts llm/request before llm/admission with usable surfaces', () =>
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
 
-  const features = state.pluginApi.features
+  const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   const requestIndex = features.findIndex((f) => f.name === 'llm/request')
   const admissionIndex = features.findIndex((f) => f.name === 'llm/admission')
   assert.ok(requestIndex >= 0 && admissionIndex > requestIndex, 'llm/request mounts before llm/admission')
 
-  const disposer = state.pluginApi.llm.request.transform({
+  const disposer = state.pluginApi.llm.requestTransforms.register({
     id: 'probe',
     mode: 'compat',
     apply() { return { kind: 'pass' } },
     isConverged() { return true },
   })
   assert.throws(
-    () => state.pluginApi.llm.request.transform({ id: 'probe', mode: 'compat', apply() {}, isConverged() {} }),
+    () => state.pluginApi.llm.requestTransforms.register({ id: 'probe', mode: 'compat', apply() {}, isConverged() {} }),
     LlmRequestTransformRegistrationError,
     'duplicate transform id is rejected',
   )
   assert.equal(disposer(), true)
   assert.equal(disposer(), false)
 
-  const policyDisposer = state.pluginApi.llm.admission.register({
+  const policyDisposer = state.pluginApi.llm.admissionPolicies.register({
     id: 'probe-policy',
     input: 'image',
     match() { return true },
@@ -126,7 +126,7 @@ test('apply mounts llm/request before llm/admission with usable surfaces', () =>
   assert.equal(policyDisposer(), false)
 
   assert.throws(
-    () => state.pluginApi.llm.admission.register({ id: 'p', input: 'audio', match() {}, process() {}, validate() {} }),
+    () => state.pluginApi.llm.admissionPolicies.register({ id: 'p', input: 'audio', match() {}, process() {}, validate() {} }),
     LlmInputPolicyRegistrationError,
   )
 })
@@ -136,7 +136,7 @@ test('staged publication: effect failure rolls back the disabled facade, dispose
   const originalResolve = services.llm.resolveModelInfo
   assert.doesNotThrow(() => apply(ctx))
 
-  const features = state.pluginApi.features
+  const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   const request = features.find((f) => f.name === 'llm/request')
   const admission = features.find((f) => f.name === 'llm/admission')
   assert.equal(request.isActive, false)
@@ -144,7 +144,7 @@ test('staged publication: effect failure rolls back the disabled facade, dispose
   assert.equal(admission.isActive, false, 'request failure independently feature-disabled-disables admission')
 
   assert.throws(
-    () => state.pluginApi.llm.request.transform({}),
+    () => state.pluginApi.llm.requestTransforms.register({}),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
   )
   // The gateway was never installed: the official resolver is untouched.
@@ -160,8 +160,8 @@ test('private compat request/image admission prepare failure leaves no owner res
     const originalResolve = services.llm.resolveModelInfo
     assert.doesNotThrow(() => apply(ctx))
 
-    const request = state.pluginApi.features.find((feature) => feature.name === 'llm/request')
-    const admission = state.pluginApi.features.find((feature) => feature.name === 'llm/admission')
+    const request = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'llm/request')
+    const admission = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'llm/admission')
     assert.equal(request.isActive, featureName !== 'llm/request')
     assert.equal(admission.isActive, false)
     assert.equal(services.llm.resolveModelInfo, originalResolve, 'an unpublished image admission gateway must not retain its resolver wrapper')
@@ -179,11 +179,11 @@ test('request guard failure disables both llm/request and llm/admission without 
   const originalPrompt = services.apiProxy.sessions.prompt
   assert.doesNotThrow(() => apply(ctx))
 
-  const features = state.pluginApi.features
+  const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   assert.equal(features.find((f) => f.name === 'llm/request').isActive, false)
   assert.equal(features.find((f) => f.name === 'llm/admission').isActive, false)
   assert.throws(
-    () => state.pluginApi.llm.request.transform({}),
+    () => state.pluginApi.llm.requestTransforms.register({}),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
   )
   assert.equal(services.llm.resolveModelInfo, originalResolve)
@@ -203,8 +203,8 @@ test('reapply is idempotent: one stream listener and one gateway wrapper', () =>
   assert.equal(state.listeners.filter((l) => l.name === 'llm/stream').length, listenerCountAfterFirst)
   assert.equal(services.llm.resolveModelInfo, firstWrapper, 'no second gateway wrapper layer')
   assert.notEqual(services.llm.resolveModelInfo, originalResolve, 'the gateway wrapper is installed')
-  assert.equal(state.pluginApi.features.find((f) => f.name === 'llm/request').isActive, true)
-  assert.equal(state.pluginApi.features.find((f) => f.name === 'llm/admission').isActive, true)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((f) => f.name === 'llm/request').isActive, true)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((f) => f.name === 'llm/admission').isActive, true)
 })
 
 test('facade modelInfo stays authoritative pre-overlay inside an active gateway scope', async () => {
@@ -225,7 +225,7 @@ test('facade modelInfo stays authoritative pre-overlay inside an active gateway 
   state.pluginApi = undefined
   apply(ctx)
 
-  state.pluginApi.llm.admission.register({
+  state.pluginApi.llm.admissionPolicies.register({
     id: 'img',
     input: 'image',
     match() { return true },
@@ -243,8 +243,8 @@ test('inert core keeps core-inactive precedence for the request and admission su
   try {
     const { ctx, state } = createMockCtx()
     assert.doesNotThrow(() => apply(ctx))
-    assert.throws(() => state.pluginApi.llm.request.transform({}), PluginApiInactiveError)
-    assert.throws(() => state.pluginApi.llm.admission.register({}), PluginApiInactiveError)
+    assert.throws(() => state.pluginApi.llm.requestTransforms.register({}), PluginApiInactiveError)
+    assert.throws(() => state.pluginApi.llm.admissionPolicies.register({}), PluginApiInactiveError)
   } finally {
     if (previous === undefined) delete process.env.DSH_PLUGIN_API_FORCE_GUARD_FAIL
     else process.env.DSH_PLUGIN_API_FORCE_GUARD_FAIL = previous

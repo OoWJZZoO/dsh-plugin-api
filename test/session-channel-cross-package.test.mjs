@@ -23,17 +23,29 @@ function createMockSessionApi() {
 }
 
 function createMockService() {
+  const sessions = createMockSessionApi()
   const service = {
     isActive: true,
-    session: createMockSessionApi(),
+    sessions,
     events: {
       on() { return () => {} },
       once() { return () => {} },
     },
     prepareFeature(name, api) {
       return {
-        commit: () => { this[name] = api; return true },
-        rollback: () => { delete this[name]; return true },
+        commit: () => {
+          if (name === 'sessionChannel') {
+            // The real service publishes the channel slot under sessions.channels.
+            Object.defineProperty(service.sessions, 'channels', { value: api, enumerable: true })
+          }
+          this[name] = api
+          return true
+        },
+        rollback: () => {
+          if (name === 'sessionChannel') delete service.sessions.channels
+          delete this[name]
+          return true
+        },
       }
     },
   }
@@ -45,7 +57,7 @@ function mountFacade() {
   const result = mountSessionChannelFeature({ ctx: {}, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   assert.ok(result, 'facade must mount')
   result.prepared.commit()
-  return { service, api: service.sessionChannel, result }
+  return { service, api: service.sessions.channels, result }
 }
 
 test('cross-package: gateway channel RPC dispatch routes to the real facade', async () => {
@@ -198,7 +210,7 @@ test('cross-package: wire-time audience filter narrows captured payloads by prof
   })
 
   // Drive one official session event carrying both a profile field and a secret.
-  service.session.emit('session/event', {
+  service.sessions.emit('session/event', {
     sessionId: 's1',
     detail: 'channel-telemetry-value',
     resumeToken: 'must-not-appear',

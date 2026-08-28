@@ -50,7 +50,7 @@ async function acquireLease(pluginApi) {
 test('mounted facade: full prepare -> record -> preview -> commit flow over the memory registry', async () => {
   const { ctx, state } = createContext()
   apply(ctx)
-  const wt = state.pluginApi.workspaceTransactions
+  const wt = state.pluginApi.workspaces.transactions
   const handle = await acquireLease(state.pluginApi)
   const prepared = await wt.prepare({
     transactionId: 'flow-tx',
@@ -101,7 +101,7 @@ test('mounted facade: full prepare -> record -> preview -> commit flow over the 
 test('mounted facade: rollback over the memory registry restores only confirmed rollbackable resources', async () => {
   const { ctx, state } = createContext()
   apply(ctx)
-  const wt = state.pluginApi.workspaceTransactions
+  const wt = state.pluginApi.workspaces.transactions
   const handle = await acquireLease(state.pluginApi)
   const prepared = await wt.prepare({
     transactionId: 'rollback-tx',
@@ -137,7 +137,7 @@ test('mounted facade: rollback over the memory registry restores only confirmed 
 test('mounted facade: recovery over the memory registry returns typed unsupported, never a fake success', async () => {
   const { ctx, state } = createContext()
   apply(ctx)
-  const wt = state.pluginApi.workspaceTransactions
+  const wt = state.pluginApi.workspaces.transactions
   const handle = await acquireLease(state.pluginApi)
   const prepared = await wt.prepare({
     transactionId: 'recover-tx',
@@ -156,7 +156,7 @@ test('mounted facade: recovery over the memory registry returns typed unsupporte
 test('mounted observer surface delivers transitions with epoch metadata', async () => {
   const { ctx, state } = createContext()
   apply(ctx)
-  const wt = state.pluginApi.workspaceTransactions
+  const wt = state.pluginApi.workspaces.transactions
   const handle = await acquireLease(state.pluginApi)
   await wt.prepare({
     transactionId: 'observe-tx',
@@ -180,8 +180,8 @@ test('disabled surface throws typed errors and keeps unrelated features active',
   const on = ctx.on
   ctx.on = undefined
   assert.doesNotThrow(() => apply(ctx))
-  assert.throws(() => state.pluginApi.workspaceTransactions.prepare({}), PluginApiFeatureDisabledError)
-  assert.throws(() => state.pluginApi.workspaceTransactions.observe('tx'), PluginApiFeatureDisabledError)
+  assert.throws(() => state.pluginApi.workspaces.transactions.prepare({}), PluginApiFeatureDisabledError)
+  assert.throws(() => state.pluginApi.workspaces.transactions.observe('tx'), PluginApiFeatureDisabledError)
   assert.equal(typeof state.pluginApi.coordination.acquire, 'function')
   ctx.on = on
 })

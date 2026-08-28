@@ -110,7 +110,7 @@ test('apply mounts services when compaction is the only complete capability serv
 
   assert.doesNotThrow(() => apply(ctx))
 
-  const feature = state.pluginApi.features.find((entry) => entry.name === 'services')
+  const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'services')
   assert.equal(feature.isActive, true)
   assert.equal(state.pluginApi.services.compaction.isActive, true)
   assert.throws(
@@ -135,7 +135,7 @@ test('apply mounts services when jobs and shellEnv are the only complete capabil
 
   assert.doesNotThrow(() => apply(ctx))
 
-  const feature = state.pluginApi.features.find((entry) => entry.name === 'services')
+  const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'services')
   assert.equal(feature.isActive, true)
   assert.equal(state.pluginApi.services.jobs.isActive, true)
   assert.equal(state.pluginApi.services.shellEnv.isActive, true)
@@ -222,7 +222,7 @@ test('apply degrades a missing capability service per-service while keeping the 
       assert.equal(state.pluginApi.services[def.key].isActive, true, `${def.key} stays active`)
     }
   }
-  assert.equal(state.pluginApi.features.find((f) => f.name === 'services').isActive, true)
+  assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((f) => f.name === 'services').isActive, true)
 })
 
 test('apply degrades hostile compaction construction while another capability remains active', () => {
@@ -237,7 +237,7 @@ test('apply degrades hostile compaction construction while another capability re
 
   assert.doesNotThrow(() => apply(ctx))
 
-  const feature = state.pluginApi.features.find((entry) => entry.name === 'services')
+  const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'services')
   assert.equal(feature.isActive, true)
   assert.equal(state.pluginApi.services.fs.isActive, true)
   assert.equal(state.pluginApi.services.compaction.isActive, false)
@@ -259,7 +259,7 @@ test('apply keeps the facade active and disables services when none of the servi
   assert.doesNotThrow(() => apply(ctx))
 
   assert.equal(state.pluginApi.isActive, true)
-  const feature = state.pluginApi.features.find((f) => f.name === 'services')
+  const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((f) => f.name === 'services')
   assert.equal(feature.isActive, false)
   assert.match(feature.reason, /capability services/)
   assert.throws(
@@ -304,7 +304,7 @@ test('apply never throws when services mount throws and disables the services fe
   assert.doesNotThrow(() => apply(ctx))
 
   assert.equal(state.pluginApi.isActive, true)
-  const feature = state.pluginApi.features.find((f) => f.name === 'services')
+  const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((f) => f.name === 'services')
   assert.equal(feature.isActive, false)
   assert.match(feature.reason, /did not produce a disposer|mount/)
 })

@@ -67,14 +67,14 @@ function createMockCtx({ services: extra = {}, systemPrompt = true } = {}) {
 test('apply mounts profile last with a working composed surface', () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
-  const features = state.pluginApi.features
+  const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   assert.equal(features[features.length - 3].name, 'profile')
   assert.equal(features[features.length - 3].isActive, true)
   assert.equal(features[features.length - 2].name, 'llmAdapters')
   assert.equal(features[features.length - 2].isActive, false)
   assert.equal(features[features.length - 1].name, 'sessionChannel')
 
-  const profile = state.pluginApi.profile
+  const profile = state.pluginApi.profiles
   assert.equal(typeof profile.inspect, 'function')
   assert.equal(typeof profile.health, 'function')
   assert.equal(typeof profile.planDiff, 'function')
@@ -100,10 +100,10 @@ test('repeated apply keeps profile mounted once (idempotent re-apply)', () => {
   assert.equal(state.provideCount, 1)
   // the profile getter composes per access (agent style), so the surface
   // shape — not reference identity — is the stable contract.
-  const profile = state.pluginApi.profile
+  const profile = state.pluginApi.profiles
   assert.equal(typeof profile.inspect, 'function')
   assert.equal(typeof profile.apply, 'function')
   assert.equal(typeof profile.snapshot.validate, 'function')
-  const profileFeatures = state.pluginApi.features.filter((entry) => entry.name === 'profile')
+  const profileFeatures = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').filter((entry) => entry.name === 'profile')
   assert.equal(profileFeatures.length, 1)
 })

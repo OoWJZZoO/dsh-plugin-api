@@ -24,30 +24,31 @@ test('execRoute core-inactive and feature-disabled delegates throw before inspec
   const inert = createService({ coreActive: false })
   const disabled = createService()
 
-  for (const routeOf of [inert.service.agent.routeOf, inert.service.tools.routeOf]) {
-    assert.throws(() => routeOf(hostile), PluginApiInactiveError)
+  for (const routeMethod of [inert.service.llm.routing.forExecution, inert.service.llm.routing.current]) {
+    assert.throws(() => routeMethod(hostile), PluginApiInactiveError)
   }
-  for (const routeOf of [disabled.service.agent.routeOf, disabled.service.tools.routeOf]) {
-    assert.throws(
-      () => routeOf(hostile),
-      (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'execRoute',
-    )
-  }
+  assert.throws(
+    () => disabled.service.llm.routing.forExecution(hostile),
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'execRoute',
+  )
+  assert.throws(
+    () => disabled.service.llm.routing.current(hostile),
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'sessionRoute',
+  )
   assert.deepEqual(inert.getCalls, [])
   assert.deepEqual(disabled.getCalls, [])
 })
 
-test('agent and tools routeOf share the mounted owner outcome without tools lookup', () => {
+test('llm.routing.forExecution shares the mounted owner outcome without tools lookup', () => {
   const { service, getCalls } = createService()
   const exec = {}
   const snapshot = Object.freeze({ provider: 'provider-a', model: 'model-a' })
   const token = service.mountFeature('execRoute', { routeOf(received) { return received === exec ? snapshot : undefined } })
   service.mountFeature('tools', { isActive: true })
-  service.mountFeature('agent', () => ({ isActive: true, get() {}, list() {}, roots() {}, routeOf: (received) => service._execRouteDelegate(received) }))
+  service.mountFeature('agent', () => ({ isActive: true, get() {}, list() {}, roots() {} }))
   const lookupsBeforeRoute = getCalls.length
 
-  assert.equal(service.agent.routeOf(exec), snapshot)
-  assert.equal(service.tools.routeOf(exec), snapshot)
+  assert.equal(service.llm.routing.forExecution(exec), snapshot)
   assert.equal(getCalls.length, lookupsBeforeRoute)
   assert.ok(token)
 })
@@ -58,11 +59,11 @@ test('execRoute unmount is token-bound, idempotent, and restores feature-disable
   const second = service.mountFeature('execRoute', { routeOf() { return { provider: 'second', model: 'second' } } })
 
   assert.equal(service.unmountFeature('execRoute', first), false)
-  assert.deepEqual(service.agent.routeOf({}), { provider: 'second', model: 'second' })
+  assert.deepEqual(service.llm.routing.forExecution({}), { provider: 'second', model: 'second' })
   assert.equal(service.unmountFeature('execRoute', second), true)
   assert.equal(service.unmountFeature('execRoute', second), false)
   assert.throws(
-    () => service.agent.routeOf({}),
+    () => service.llm.routing.forExecution({}),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'execRoute',
   )
 })
@@ -84,9 +85,9 @@ test('execRoute feature-disabled diagnostic ledger deduplicates per key while pr
   })
   const problems = [{ name: 'ctx.on', detail: 'missing' }]
 
-  assert.equal(service.reportExecRouteDiagnosticsOnce('guard', 'mandatory-substrate', problems), true)
-  assert.equal(service.reportExecRouteDiagnosticsOnce('guard', 'mandatory-substrate', problems), false)
-  assert.equal(service.reportExecRouteDiagnosticsOnce('mount', 'dependency-or-registration', problems), true)
+  assert.equal(service._reportExecRouteDiagnosticsOnce('guard', 'mandatory-substrate', problems), true)
+  assert.equal(service._reportExecRouteDiagnosticsOnce('guard', 'mandatory-substrate', problems), false)
+  assert.equal(service._reportExecRouteDiagnosticsOnce('mount', 'dependency-or-registration', problems), true)
   assert.equal(writes.length, 2)
   assert.equal(notices.length, 2)
   assert.deepEqual(logged, ['execRoute:/tmp/guard.log', 'execRoute:/tmp/guard.log'])
@@ -99,17 +100,16 @@ test('execRoute feature-disabled diagnostic failures remain inert', () => {
     logger: { error() { throw new Error('logger failed') } },
   })
 
-  assert.doesNotThrow(() => service.reportExecRouteDiagnosticsOnce('activation', 'publication', []))
-  assert.equal(service.reportExecRouteDiagnosticsOnce('activation', 'publication', []), false)
+  assert.doesNotThrow(() => service._reportExecRouteDiagnosticsOnce('activation', 'publication', []))
+  assert.equal(service._reportExecRouteDiagnosticsOnce('activation', 'publication', []), false)
 })
 
 test('existing agent and tools forwarding remains available after execRoute additions', () => {
   const { service } = createService()
-  const agentApi = { isActive: true, get: () => 'agent', list: () => [], roots: () => [], routeOf: (exec) => service._execRouteDelegate(exec) }
+  const agentApi = { isActive: true, get: () => 'agent', list: () => [], roots: () => [] }
   service.mountFeature('agent', () => agentApi)
 
-  assert.equal(service.agent.get(), 'agent')
-  assert.deepEqual(service.agent.list(), [])
-  assert.deepEqual(service.agent.roots(), [])
-  assert.equal(typeof service.agent.routeOf, 'function')
+  assert.equal(service.agents.get(), 'agent')
+  assert.deepEqual(service.agents.list(), [])
+  assert.deepEqual(service.agents.roots(), [])
 })

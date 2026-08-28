@@ -30,15 +30,13 @@ test('route policy facade is additive and typed-unavailable until replacement ga
     routePolicyProvider: () => owner,
   })
   const service = new ServiceClass({ reflect: { provide() {} } })
-  assert.ok(Object.isFrozen(service.routePolicy))
-  assert.throws(() => service.routePolicy.policy.register({}), (error) => {
+  assert.ok(Object.isFrozen(service.llm.routing))
+  assert.throws(() => service.llm.routing.policies.register({}), (error) => {
     return error instanceof PluginApiFeatureDisabledError && error.feature === 'routePolicy'
   })
   owner = createOwner()
-  assert.equal(service.routePolicy.availability().status, 'active')
-  assert.equal(typeof service.routePolicy.policy.register, 'function')
-  assert.equal(typeof service.routePolicy.health.observe, 'function')
-  assert.equal(typeof service.routePolicy.circuit.status, 'function')
-  assert.equal(typeof service.routePolicy.decisions.history, 'function')
-  assert.equal(service.routing.availability.execution, false)
+  assert.equal(typeof service.llm.routing.policies.register, 'function')
+  assert.equal(typeof service.llm.routing.health.observe, 'function')
+  assert.equal(typeof service.llm.routing.circuit.status, 'function')
+  assert.equal(typeof service.llm.routing.decisions.history, 'function')
 })

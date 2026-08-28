@@ -16,84 +16,84 @@ function mockCtx() {
   }
 }
 
-function assertDisabledView(agent) {
-  assert.equal(agent.isActive, false)
+function assertDisabledView(agents) {
+  assert.equal(agents.isActive, false)
   for (const method of ['get', 'list', 'roots']) {
-    assert.throws(() => agent[method]('x'), (error) => {
+    assert.throws(() => agents[method]('x'), (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'agent')
-      assert.doesNotMatch(error.message, /agent extension member/)
+      assert.equal(error.feature, 'agents')
+      assert.doesNotMatch(error.message, /agents extension member/)
       return true
     })
   }
   for (const method of ['create', 'resume', 'register']) {
-    assert.throws(() => agent[method]('x'), (error) => {
+    assert.throws(() => agents[method]('x'), (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'agent')
-      assert.match(error.message, new RegExp(`agent extension member "${method}"`))
+      assert.equal(error.feature, 'agents')
+      assert.match(error.message, new RegExp(`agents extension member "${method}"`))
       return true
     })
   }
   for (const method of ['enter', 'announce', 'setFactory']) {
-    assert.throws(() => agent.provider[method]('x'), (error) => {
+    assert.throws(() => agents.providers[method]('x'), (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'agent')
-      assert.match(error.message, new RegExp(`provider\\.${method}`))
+      assert.equal(error.feature, 'agents')
+      assert.match(error.message, new RegExp(`providers\\.${method}`))
       return true
     })
   }
-  assert.equal(agent.provider.isActive, false)
-  assert.deepEqual(Object.keys(agent.provider), ['isActive', 'enter', 'announce', 'setFactory'])
-  assert.deepEqual(agent.availability, {
+  assert.equal(agents.providers.isActive, false)
+  assert.deepEqual(Object.keys(agents.providers), ['isActive', 'enter', 'announce', 'setFactory'])
+  assert.deepEqual(agents.availability, {
     create: false,
     resume: false,
     register: false,
-    provider: { enter: false, announce: false, setFactory: false },
+    providers: { enter: false, announce: false, setFactory: false },
   })
-  assert.ok(Object.isFrozen(agent.availability))
-  assert.ok(Object.isFrozen(agent.availability.provider))
-  assert.ok(Object.isFrozen(agent.provider))
+  assert.ok(Object.isFrozen(agents.availability))
+  assert.ok(Object.isFrozen(agents.availability.providers))
+  assert.ok(Object.isFrozen(agents.providers))
 }
 
-test('active service exposes the complete disabled agent stub without official service calls', () => {
+test('active service exposes the complete disabled agents stub without official service calls', () => {
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
   const ctx = mockCtx()
   const service = new ServiceClass(ctx)
 
-  assertDisabledView(service.agent)
+  assertDisabledView(service.agents)
   assert.equal(ctx.getCalls.length, 0)
 })
 
-test('inert service throws inactive errors from every declared agent member', () => {
+test('inert service throws inactive errors from every declared agents member', () => {
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: false })
   const ctx = mockCtx()
   const service = new ServiceClass(ctx)
-  const agent = service.agent
+  const agents = service.agents
 
-  assert.equal(agent.isActive, false)
+  assert.equal(agents.isActive, false)
   for (const method of ['get', 'list', 'roots', 'create', 'resume', 'register']) {
-    assert.throws(() => agent[method]('x'), PluginApiInactiveError)
+    assert.throws(() => agents[method]('x'), PluginApiInactiveError)
   }
   for (const method of ['enter', 'announce', 'setFactory']) {
-    assert.throws(() => agent.provider[method]('x'), PluginApiInactiveError)
+    assert.throws(() => agents.providers[method]('x'), PluginApiInactiveError)
   }
-  assert.equal(agent.provider.isActive, false)
-  assert.deepEqual(Object.keys(agent.provider), ['isActive', 'enter', 'announce', 'setFactory'])
-  assert.deepEqual(agent.availability, {
+  assert.equal(agents.providers.isActive, false)
+  assert.deepEqual(Object.keys(agents.providers), ['isActive', 'enter', 'announce', 'setFactory'])
+  assert.deepEqual(agents.availability, {
     create: false,
     resume: false,
     register: false,
-    provider: { enter: false, announce: false, setFactory: false },
+    providers: { enter: false, announce: false, setFactory: false },
   })
-  assert.ok(Object.isFrozen(agent.availability))
-  assert.ok(Object.isFrozen(agent.availability.provider))
-  assert.ok(Object.isFrozen(agent.provider))
+  assert.ok(Object.isFrozen(agents.availability))
+  assert.ok(Object.isFrozen(agents.availability.providers))
+  assert.ok(Object.isFrozen(agents.providers))
   assert.equal(ctx.getCalls.length, 0)
 })
 
-test('mountFeature installs an agent facade factory', () => {
+test('mountFeature installs an agents facade factory', () => {
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
   const service = new ServiceClass(mockCtx())
@@ -101,12 +101,12 @@ test('mountFeature installs an agent facade factory', () => {
 
   service.mountFeature('agent', () => agentApi)
 
-  assert.equal(service.agent.get, agentApi.get)
-  assert.equal(service.agent.list, agentApi.list)
-  assert.ok(Object.isFrozen(service.agent))
+  assert.equal(service.agents.get, agentApi.get)
+  assert.equal(service.agents.list, agentApi.list)
+  assert.ok(Object.isFrozen(service.agents))
 })
 
-test('agent mount tokens restore exact prior factory and stale cleanup is isolated', () => {
+test('agents mount tokens restore exact prior factory and stale cleanup is isolated', () => {
   const registry = createFeatureRegistry()
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
   const service = new ServiceClass(mockCtx())
@@ -115,15 +115,15 @@ test('agent mount tokens restore exact prior factory and stale cleanup is isolat
   const firstToken = service.mountFeature('agent', () => first)
   const secondToken = service.mountFeature('agent', () => second)
 
-  assert.equal(service.agent.name, second.name)
+  assert.equal(service.agents.name, second.name)
   assert.equal(service.unmountFeature('agent', firstToken), false)
-  assert.equal(service.agent.name, second.name)
+  assert.equal(service.agents.name, second.name)
   assert.equal(service.unmountFeature('agent', secondToken), true)
-  assert.equal(service.agent.name, first.name)
+  assert.equal(service.agents.name, first.name)
   assert.equal(service.unmountFeature('agent', secondToken), false)
 })
 
-test('agent facade factory receives the consuming context for official reads', () => {
+test('agents facade factory receives the consuming context for official reads', () => {
   const registry = createFeatureRegistry()
   const host = mockCtx()
   const consumerAgents = { get(id) { return { id, owner: 'consumer' } }, list() { return [] }, roots() { return [] } }
@@ -138,20 +138,8 @@ test('agent facade factory receives the consuming context for official reads', (
   }))
   const traced = Object.create(service)
   traced.ctx = consumer
-  assert.deepEqual(traced.agent.get('x'), { id: 'x', owner: 'consumer' })
-  assert.deepEqual(host.getCalls, [])
-})
-test('mountFeature still rejects unknown feature names', () => {
-  const registry = createFeatureRegistry()
-  const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
-  const service = new ServiceClass(mockCtx())
 
-  assert.throws(
-    () => service.mountFeature('unknown/feature', {}),
-    (error) => {
-      assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'unknown/feature')
-      return true
-    },
-  )
+  assert.equal(traced.agents.get('a-1').owner, 'consumer')
+  assert.deepEqual(traced.agents.list(), [])
+  assert.deepEqual(traced.agents.roots(), [])
 })

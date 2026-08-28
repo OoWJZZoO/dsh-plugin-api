@@ -132,7 +132,7 @@ test('settings guard failure excludes the settings slice from the composed catal
   })
   assert.doesNotThrow(() => apply(ctx))
 
-  const settingsFeature = state.pluginApi.features.find((f) => f.name === 'settings')
+  const settingsFeature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((f) => f.name === 'settings')
   assert.equal(settingsFeature.isActive, false)
 
   assert.equal(state.pluginApi.events.catalog['settings/updated'], undefined)
@@ -151,7 +151,7 @@ test('settings guard pass keeps the settings slice in the composed catalog', () 
   })
   assert.doesNotThrow(() => apply(ctx))
 
-  const settingsFeature = state.pluginApi.features.find((f) => f.name === 'settings')
+  const settingsFeature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((f) => f.name === 'settings')
   assert.equal(settingsFeature.isActive, true)
   assert.ok(state.pluginApi.events.catalog['settings/updated'])
   assert.ok(state.pluginApi.events.catalog['settings/document-updated'])

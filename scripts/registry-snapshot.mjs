@@ -49,6 +49,16 @@ export function buildSnapshots(registry) {
     servicesFixture: {
       keys: servicesWhitelist.map((entry) => entry.key).sort(),
     },
+    capabilityFixture: {
+      capabilities: members
+        .filter((member) => member.runtime === 'host' || member.runtime === 'both')
+        .map((member) => ({
+          capability: member.capability ?? member.publicPath,
+          publicPath: member.publicPath,
+          effect: member.effect,
+          status: member.status,
+        })),
+    },
     compositionMatrix: {
       byComposition,
     },

@@ -209,7 +209,7 @@ test('integrated llm facade exposes the six official directory methods and three
 test('integrated agent facade exposes initiator/ownership methods and a frozen options snapshot', () => {
   const { ctx, state, agents } = createMockCtx()
   apply(ctx)
-  const agent = state.pluginApi.agent
+  const agent = state.pluginApi.agents
   assert.equal(typeof agent.currentInitiator, 'function')
   assert.equal(typeof agent.requireInitiator, 'function')
   assert.equal(typeof agent.withInitiator, 'function')
@@ -223,11 +223,11 @@ test('integrated agent facade exposes initiator/ownership methods and a frozen o
   assert.deepEqual(snapshot, { provider: undefined, model: undefined, maxTokens: undefined })
 
   // A live initiator with an options descriptor is reflected on the next
-  // composed view (each `pluginApi.agent` access rebuilds the view).
+  // composed view (each `pluginApi.agents` access rebuilds the view).
   agents.initiator = {
     options: { provider: 'p', model: 'm', maxTokens: 8 },
   }
-  const freshView = state.pluginApi.agent
+  const freshView = state.pluginApi.agents
   assert.deepEqual(freshView.options, { provider: 'p', model: 'm', maxTokens: 8 })
   assert.ok(Object.isFrozen(freshView.options))
 })
@@ -253,7 +253,7 @@ test('integrated agent facade keeps the established read surface intact when the
     once() {}, emit() {}, serial() {}, parallel() {}, bail() {}, waterfall() {},
   }
   apply(bareCtx)
-  const agent = state.pluginApi.agent
+  const agent = state.pluginApi.agents
   assert.deepEqual(agent.get('x'), { id: 1 })
   assert.throws(() => agent.options, (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'agent')
 })
@@ -261,7 +261,7 @@ test('integrated agent facade keeps the established read surface intact when the
 test('integrated session facade exposes store lifecycle and derive/append members', () => {
   const { ctx, state, sessions } = createMockCtx()
   apply(ctx)
-  const session = state.pluginApi.session
+  const session = state.pluginApi.sessions
   assert.deepEqual(session.create('s1', { seed: true }), { id: 's1', header: { seeded: true } })
   assert.deepEqual(sessions.createCalls, [['s1', { seed: true }]])
   assert.deepEqual(session.prepare(), { prepared: true })
@@ -304,7 +304,7 @@ test('integrated tools facade exposes executionMode and defineTool', async () =>
 test('integrated systemPrompt facade exposes assemble with official semantics', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
-  const systemPrompt = state.pluginApi.systemPrompt
+  const systemPrompt = state.pluginApi.prompts
   assert.deepEqual(systemPrompt.assemble({ scope: 's' }), { assembly: { scope: 's' } })
   assert.equal(typeof systemPrompt.section, 'function')
 })
@@ -342,7 +342,7 @@ test('repeated apply does not duplicate the leaf members and keeps identity stab
   assert.deepEqual(second.listProviders(), ['provider-a'])
   assert.equal(second.isActive, true)
   // Re-apply keeps one active registration and no extra feature entries.
-  const llmFeatures = state.pluginApi.features.filter((feature) => feature.name === 'llm')
+  const llmFeatures = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').filter((feature) => feature.name === 'llm')
   assert.equal(llmFeatures.length, 1)
   const provides = state.getCalls.filter((name) => name === 'llm')
   assert.ok(provides.length > 0)
