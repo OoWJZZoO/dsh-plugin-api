@@ -1,5 +1,13 @@
 # Design: plugin-api-foundation
 
+> **公共契约现状注（2026-08-29 追加）**：本制品成文于目标领域树 cutover 之前，文中的公共 path 为旧命名。现行命名以 [`public-contract.registry.json`](../plugin-api-m7-public-contract-refactor/public-contract.registry.json) 的 `oldToTargetMapping` 为唯一权威，本制品涉及的映射如下：
+>
+> | 本制品使用的旧 path | 现行 path |
+> |---|---|
+> | `pluginApi.features`（feature 启用/禁用快照） | **已删除**；替代为 `pluginApi.capabilities`（`get` / `list` / `require`，registry-backed 能力描述 + availability） |
+>
+> 现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；版本模型为 `<A>-<B>.<C>.<D>`（本制品写作时仍为 `<runtime>-<B>.<C>`），本制品中出现的 `0.1.0-rc.6-0.x` 为历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动本制品已获批的 Goal / Requirements 验收边界。
+
 > **M2 supersession note:** F0.3 version policy and the foundation guard remain policy foundations, but any admission-bridge or projection-guard implementation reference in this historical M0 design is obsolete. The current L2 owner is solely `lib/llm-admission-gateway.js`; do not reintroduce a foundation-level wrapper or the historical bridge.
 >
 > **Rename/version pointer（`plugin-api-compaction-events-r1`）**：主包现已更名为 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`，Cordis 服务 key 仍为 `pluginApi`），monorepo 工作区见根 `pnpm-workspace.yaml` / `packages/`；唯一 full version 为 `0.1.0-rc.6-0.4` / `dsh.api: 0.4`。本文历史正文保留原始 M0 记录。

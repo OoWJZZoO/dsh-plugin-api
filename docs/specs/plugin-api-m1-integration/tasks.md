@@ -1,5 +1,13 @@
 # Tasks: plugin-api-m1-integration
 
+> **公共契约现状注（2026-08-29 追加）**：本制品成文于目标领域树 cutover 之前，文中的公共 path 为旧命名。现行命名以 [`public-contract.registry.json`](../plugin-api-m7-public-contract-refactor/public-contract.registry.json) 的 `oldToTargetMapping` 为唯一权威，本制品涉及的映射如下：
+>
+> | 本制品使用的旧 path | 现行 path |
+> |---|---|
+> | `pluginApi.session` | `pluginApi.sessions` |
+>
+> 现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；本制品中出现的 `0.1.0-rc.6-0.x` 为历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动本制品已获批的 Goal / Requirements 验收边界。
+
 > **Historical M1 execution record / M2 supersession:** These tasks describe the original `0.2` integration work and are retained as a historical record, not as an executable current plan. The old admission-bridge/resolver ownership and active/no-op wording are superseded; current authority is the M2 L2 gateway in `lib/llm-admission-gateway.js` under `0.1.0-rc.6-0.3` / `dsh.api` `0.3`. Do not rerun this list or reintroduce the old projection-guard path.
 >
 > **Rename/version pointer（`plugin-api-compaction-events-r1`）**：主包现名 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），full version 升至 `0.1.0-rc.6-0.4` / `dsh.api: 0.4`；monorepo 见根 `pnpm-workspace.yaml`。

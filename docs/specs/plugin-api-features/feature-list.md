@@ -2,11 +2,39 @@
 
 > 状态：delivery registry（历史条目保留其原始 spec 链接；已交付项的最终形状以对应 approved spec 与 M2 integration reconciliation 为准）。本文不是脱离 spec 的独立 API 契约。A/B/C/R 分类与能力上限策略的权威细则见 `docs/standards/capability-strategy.md`。
 >
+> **公共契约现状注（2026-08-29 追加）**：本表 §2 的 API 形状清单、各命名空间节与 §7 条目成文于目标领域树 cutover 之前，使用**旧 path**。现行公共 path、成员状态与版本基线的唯一事实源是 [`public-contract.registry.json`](../plugin-api-m7-public-contract-refactor/public-contract.registry.json)；本表涉及的旧 path → 目标 path 映射如下（完整表见其 `oldToTargetMapping`）：
+>
+> | 旧 path | 现行 path |
+> |---|---|
+> | `pluginApi.agent` | `pluginApi.agents`（叶子 `providers` 为复数） |
+> | `pluginApi.session` | `pluginApi.sessions` |
+> | `pluginApi.session.branches` | `pluginApi.sessions.branches` |
+> | `pluginApi.sessionChannel` | `pluginApi.sessions.channels` |
+> | `pluginApi.execution` | `pluginApi.executions` |
+> | `pluginApi.recovery` | `pluginApi.executions.recovery` |
+> | `pluginApi.routing` / `pluginApi.routePolicy` | `pluginApi.llm.routing`（叶子 `forExecution` / 复数 `policies`） |
+> | `pluginApi.systemPrompt` | `pluginApi.prompts` |
+> | `pluginApi.context` | `pluginApi.prompts.provenance` |
+> | `pluginApi.workspaceTransactions` | `pluginApi.workspaces.transactions` |
+> | `pluginApi.profile` | `pluginApi.profiles` |
+> | `pluginApi.remote` | `pluginApi.remotes` |
+> | `pluginApi.features` | `pluginApi.capabilities`（`get` / `list` / `require`） |
+> | `pluginApi.client.*`（client 根） | `ctx.pluginApi` 直接根成员（已无 `.client` 子命名空间） |
+> | `pluginApi.client.remote` / `client.mountRemote` | `pluginApi.remotes` / `pluginApi.remotes.mountRemote` |
+> | `pluginApi.client.settingsScope` | `pluginApi.settings.scope` |
+> | `pluginApi.client.lifecycle` / `slots` / `connection` / `codec` | `pluginApi.lifecycle` / `pluginApi.slots` / `pluginApi.connection` / `pluginApi.codec` |
+> | `agent.routeOf` / `tools.routeOf` | **已删除**，route 查询统一走 `llm.routing.forExecution` |
+> | `pluginApi.reportExecRouteDiagnosticsOnce` | **已删除**（诊断保留在 execRoute 内部） |
+>
+> 现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；本表正文与 §7 条目中出现的 `0.1.0-rc.6-0.x` 为各批次历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动任何 feature 已获批的验收边界。
+>
 > feature_name: `plugin-api-features`
 > 范围：全量（host 面 + client 面 + C 类上游提案）
 > 组织方式：按 API 命名空间分组，每项标注 A/B/C 类型与建议里程碑；已交付项标注 `**delivered**`。
 >
-> **命名空间安置规则**（`plugin-api-m1-integration` 确立）：顶层命名空间保留给**核心域**（`llm`、`agent`、`session`、`tools`、`systemPrompt`、`settings`）与**基础设施**（`events`）；二线**纯直通 capability seam** 统一收敛在 `pluginApi.services.<name>` 之下。未来新增的纯直通 feature 一律进 `services.*`；带门面附加语义的 feature 自建顶层命名空间。
+> **命名空间安置规则（历史，`plugin-api-m1-integration` 确立）**：顶层命名空间保留给**核心域**（`llm`、`agent`、`session`、`tools`、`systemPrompt`、`settings`）与**基础设施**（`events`）；二线**纯直通 capability seam** 统一收敛在 `pluginApi.services.<name>` 之下。未来新增的纯直通 feature 一律进 `services.*`；带门面附加语义的 feature 自建顶层命名空间。
+>
+> **现行规则（目标领域树 cutover 之后）**：公共面按第三方理解的业务领域组织，顶层为 `agents` / `sessions` / `executions` / `llm` / `prompts` / `tools` / `skills` / `attachments` / `mcp` / `tasks` / `coordination` / `workspaces` / `security` / `diagnostics` / `settings` / `profiles` / `remotes` / `storage` / `events` / `services`，另加根元数据 `isActive` / `apiVersion` / `assertCompatible` / `capabilities`；纯官方直通 capability seam 收敛在 `pluginApi.services.<name>`，带门面附加语义的能力归属其领域命名空间。**公共 path 不得泄漏内部 feature / mounter / package / replacement 的组织方式**；完整领域树、逐成员状态与组合契约见 `docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json`。
 
 ---
 
@@ -41,6 +69,7 @@
 | **M4** | 当前已冻结的剩余 A 类官方透传接口（host service seam、核心 namespace API、client service/event API） |
 | **M5** | M4 冻结后审计发现的新增 A 类官方透传接口 |
 | **M6** | 启发式候选 feature 规划里程碑：不在本文逐项列出，候选表单见 [heuristic-feature-proposals-2026-08-20.md](./dsh-plugin-api-heuristic-feature-proposals-2026-08-20.md)（20 个候选、第一/二梯队与 R 类评估）；候选经 Stage 0 批准正式立项后再按现行规则回填本文对应命名空间条目；第六批次当前为 `skill-discovery-activation`（Wave A，R 类：替换官方 `tool-skill` 行，运行时名 `plugin-api-tool-skill`，U18）→ `context-provenance`（Wave B，B 类门面 + `sent` 证据 R 切片于 `plugin-api-agent-loop`，U19；不依赖 memory facade）；`memory-interoperability` 已明确排除立项（功能组件非门面，由具体 memory 插件基于已交付 API 实现，见候选表单 §10） |
+| **M7** | 公共契约重构：按业务领域树统一 host/client 公共 API、一次性迁移并删除旧路径与兼容 alias、公共面减法、组合与 authority 加固、`services.*` 成员分级；单一事实源 `public-contract.registry.json`（spec：`docs/specs/plugin-api-m7-public-contract-refactor/`，已 delivered；版本基线冻结 `0.1.0-rc.6-0.1.0` / `dsh.api 0.1`） |
 | **M-final** | C 类上游提案、迁移验收（dsh-read-image / dsh-pro-ex-ability-anchor）与治理收尾 |
 
 ### 1.3.1 M2 共同契约状态（非公开 API）
@@ -91,6 +120,8 @@
 
 > 表格列：`Feature` = 外部 API 形状；`类型` = A/B/C/门面基础；`来源` = 官方源码或既有 hack 依据；`里程碑` = 建议交付期；`状态` = `delivered` / `planned`。
 > API 形状是示意性的 TypeScript 签名，不保证最终定稿。
+>
+> **本节 path 为 cutover 之前的旧命名**：现行 path 见文首「公共契约现状注」映射表与 `public-contract.registry.json`（`oldToTargetMapping`）；此处不逐单元格改写旧 path，以免与单一事实源产生二次漂移。节标题已标注对应的现行领域名。
 
 ### 2.1 `pluginApi` 门面基础（M0）
 
@@ -98,7 +129,7 @@
 |---|---|---|---|---|---|
 | F0.1 门面服务 | `ctx.pluginApi`（Cordis Service，`inject: ['pluginApi']`）；**推荐、受支持**的门面入口；直连 `@deepseek-ai/dsh-*` 内部包为 unsupported escape hatch | 门面基础 | 本仓库 `lib/index.js` / `lib/plugin-api-service.js`；spec `plugin-api-foundation` | M0 | **delivered** |
 | F0.2 fail-safe guard | `pluginApi.isActive: boolean`；核心 guard 失败时服务仍注册为 inert；非核心 feature 失败时只禁用该 feature 并显式报错 | 门面基础 | 本仓库 `lib/guards.js`；对齐 dsh-read-image G1；spec `plugin-api-foundation` | M0 | **delivered** |
-| F0.3 版本协商 | 门面全量唯一版本号 = `<runtime全量版本>-<API协议大版本.迭代小版本>`（当前 `0.1.0-rc.6-0.7`，`dsh.api: 0.7`，写入 `package.json.version`）；`dsh.api` 仅承载 API 协议版本。主包名 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），辅助 replacement bundles 位于 `packages/`。**主包与全部辅助包统一适用**该版本规则；主包校验辅助包版本一致，不一致仅停用该辅助包对应 R 特性。双向协商——方向① runtime 部分与安装的官方 runtime 不匹配时该包安全停用；方向② 插件要求不满足时插件收到 typed 错误。安装只提供全量聚合 `@deepseek-ai/dsh-plugin-api-full` 或选择性安装主包 + 辅助包。当前纯本地开发阶段，这些检查用于发现错配与契约漂移，不构成社区兼容承诺或生产运维政策。 | 门面基础 | 本仓库 `lib/version.js` / `lib/guards.js` / `package.json` / `packages/*/package.json`；spec `plugin-api-foundation` 与 M2 integration reconciliation | M0 | **delivered** |
+| F0.3 版本协商 | 门面全量唯一版本号 = `<A>-<B>.<C>.<D>`，即 `<runtime 全量 identity>-<API 大版本.迭代小版本.包本地维护号>`（当前冻结基线 `0.1.0-rc.6-0.1.0`，`dsh.api: 0.1`，写入 `package.json.version`）；`dsh.api` 只承载 `B.C`。现行基线以 `public-contract.registry.json` 的 `contractBaseline` 为唯一事实源；历史批次版本号见 §7 各条目。主包名 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`），辅助 replacement bundles 位于 `packages/`。**主包与全部辅助包统一适用**该版本规则；主包校验辅助包版本一致，不一致仅停用该辅助包对应 R 特性。双向协商——方向① runtime 部分与安装的官方 runtime 不匹配时该包安全停用；方向② 插件要求不满足时插件收到 typed 错误。安装只提供全量聚合 `@deepseek-ai/dsh-plugin-api-full` 或选择性安装主包 + 辅助包。当前纯本地开发阶段，这些检查用于发现错配与契约漂移，不构成社区兼容承诺或生产运维政策。 | 门面基础 | 本仓库 `lib/version.js` / `lib/guards.js` / `package.json` / `packages/*/package.json`；spec `plugin-api-foundation` 与 M2 integration reconciliation | M0 | **delivered** |
 | F0.4 符号解析门面 | `pluginApi` 作为**推荐** import/inject 面；第三方插件默认经门面解析符号；直连 `dsh-tools`/`dsh-llm` 等内部包属于 unsupported escape hatch（门面不拦截、不保障） | 门面基础 | `docs/specs/plugin-api-facade-integrity/requirements.md` §1（权威定义）；`README.md` | M0–M3 | delivered（F0.4 策略；符号覆盖随命名空间逐步扩展） |
 | F0.5 包装链安全 | dispose 用 identity-guard；目标被其他插件包装时降级透传，不拆别人的链 | 门面基础 | 本仓库 `lib/wrap-safety.js` / `lib/admission-bridge.js`；dsh-read-image A1 加固；spec `plugin-api-facade-integrity` | M0 | **delivered** |
 
@@ -137,7 +168,7 @@
 | L11 官方 provider 目录与调用配置查询 | `llm.listProviders()`、`listConfigurableProviders()`、`discoverModels(settingsNs, request)`、`providerRetryPolicy(provider)`、`listModels(provider)`、`resolveCallConfig(config, signal?)` | A | `dsh-llm/lib/types/index.d.ts`；`LlmRuntime` 公共方法 | M4 | **delivered**（M4 official passthrough 交付） |
 | L12 LLM 公共构造与流处理工件 | `llm.contentHasImage(content)`、`llm.createUserMessage(input)`、`llm.BlockAssembler` 稳定直通（L12 scope correction：仅这三项，不隐含同 package 其他导出；官方身份，不克隆不改写） | A | `dsh-llm/lib/index.js:176,650,673,1407`；`dsh-llm/lib/types/content.d.ts`、`message.d.ts`、`assembler.d.ts` | M4 | **delivered**（M4 official passthrough 交付） |
 
-### 2.4 `pluginApi.agent` —— Agent 生命周期与驱动面（M1/M2/M4/M-final）
+### 2.4 `pluginApi.agents`（旧 `pluginApi.agent`） —— Agent 生命周期与驱动面（M1/M2/M4/M-final）
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
@@ -159,7 +190,7 @@
 >
 > A11 的 `create`、`resume`、`register` 是推荐的 consumer host API；`agent.provider.*` 是受支持但 advanced 的有序 provider 生命周期原语，不是普通创建入口。可用成员经 immutable `agent.availability` 逐成员表达；core inactive 为 P1，M1 whole-agent guard 失败或 A11 member 不可用为对应 P2。已解析的 A11 调用保留消费者 Cordis context、精确参数、原始同步返回/官方 registry Promise、`AgentHandle`、disposer、官方错误、lifecycle publication 与 teardown；门面不包装它们。尚未安装 factory 或官方 factory slot 已被占用均是官方 call-time outcome，不改变 availability。
 
-### 2.5 `pluginApi.session` —— 会话与上屏事件面（M1/M2/M4/M-final）
+### 2.5 `pluginApi.sessions`（旧 `pluginApi.session`） —— 会话与上屏事件面（M1/M2/M4/M-final）
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
@@ -192,7 +223,7 @@
 
 > 管线顺序（官方已定，门面只稳定化不重排）：`tools/pre-execute` → 单调 `guard()` 检查 → `tools/execute` → `tools/post-execute` → 工具 `finalizeContent` → `tools/result`。定义里的 `timeoutMs` 由 `dsh-tool-call-timeout-policy`（`tools/execute` wrapper）执行，不在门面内复制。
 
-### 2.7 `pluginApi.systemPrompt` —— 系统提示组装面（M1/M4/M5）
+### 2.7 `pluginApi.prompts`（旧 `pluginApi.systemPrompt`） —— 系统提示组装面（M1/M4/M5）
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
@@ -223,7 +254,7 @@
 | RB1 通用 Typert Remote host 发布 | `remote.publish(serviceKey, service)`：任意 JSON-safe 配置/状态服务经官方 `bindTypertRemote` + `Remote` marker + `ctx.reflect.provide` 发布为 web 可消费的 Typert remote，返回 owner 作用域 disposer；`service` 自有可调用成员即 endpoint，方法参数名即 wire 名 | B | `dsh-typert-protocol`（`bindTypertRemote`/`Remote`/`remoteMethods`/`isTypertRemoteSegment`）；`dsh-api-gateway` source-mode 自动发现（`dsh-api-gateway/lib/index.js:75-88,143-156`）；pro-ex `lib/config-remote.js`（95 行手搓桥，迁移目标） | M4 | **delivered**（旧 M4 交付，经 M4 official passthrough 回归复证） |
 | ST9 设置文档与可写能力 | `settings.writable`、`prepareDocument()`、`get()`、`update(patch)`、`replace(section)`、`mutate(ops)` | A | `dsh-settings/lib/types/index.d.ts:187-203`、`SettingsScope` 公共方法 | M4 | **delivered**（M4 official passthrough 交付） |
 
-### 2.9 `pluginApi.client` —— 客户端 bundle / slot / remote（M3/M4/M5/M-final）
+### 2.9 `pluginApi` client 直接根（旧 `pluginApi.client`） —— 客户端 bundle / slot / remote（M3/M4/M5/M-final）
 
 | Feature | 外部 API 形状（示意） | 类型 | 来源 | 里程碑 | 状态 |
 |---|---|---|---|---|---|
@@ -356,7 +387,7 @@
 
 词汇：`health {healthy|degraded|failed|pending|unknown}`；`availability {active|degraded-active|inactive|unavailable|unknown}`（与 health 分离）；`severity {info|warning|error|critical}`；`blocking {blocking|non-blocking|unknown}`；`uncertainty {observed|inferred|unavailable}`；scope 固定四值。redaction fail-closed：snapshot/notification/log/client 出版共用同一份已脱敏冻结快照（secret 键/凭证值/evidence 白名单/boundedDetail 限长/深度有界）。client publication 为可选 seam：缺省显式 client-unavailable、host 保持 active；真实 host↔client 接线属 Wave C 整合议题（B3）。
 
-### 2.13 `pluginApi.profile` —— profile 组合投影与双模式变更（M6 第五批次）
+### 2.13 `pluginApi.profiles`（旧 `pluginApi.profile`） —— profile 组合投影与双模式变更（M6 第五批次）
 
 > host-only 双面命名空间（api-shape §3 一面原则的 llm 先例拆分、独立 owner、各自 fail-safe 边界）：
 > 投影面（inspection mounter）只读展示三种视图 + 健康体检 + dry-run diff；写入面（mutation mounter）

@@ -1,5 +1,14 @@
 # Stage 2 - Design
 
+> **公共契约现状注（2026-08-29 追加）**：本制品成文于目标领域树 cutover 之前，文中的公共 path 为旧命名。现行命名以 [`public-contract.registry.json`](../plugin-api-m7-public-contract-refactor/public-contract.registry.json) 的 `oldToTargetMapping` 为唯一权威，本制品涉及的映射如下：
+>
+> | 本制品使用的旧 path | 现行 path |
+> |---|---|
+> | `pluginApi.sessionChannel`（`open/subscribe/fetchEvents/heartbeat/ack/resume/revoke` + `observe/onChange` + `auth.*`） | `pluginApi.sessions.channels`（叶子名不变） |
+> | `pluginApi.session` | `pluginApi.sessions` |
+>
+> 现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；本制品中出现的 `0.1.0-rc.6-0.x` 为历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动本制品已获批的 Goal / Requirements 验收边界。
+
 ## Status
 
 SPEC1 Stage 0–2 修订稿：原稿（2026-08-27 批量确认门获批）结论为 **R no-go**——源码审计显示无单一官方行拥有完整认证通道语义，feature 转入 C 类上游提案（U21）。2026-08-27 用户指示改为 **B+R 混合设计**：认证抽象与 session 游标/重放机械层由 B 类门面 `pluginApi.sessionChannel` 承载，transport 载波与 channel RPC 派发由 `connection`/`gateway` 两个 R 替换包承载，跨组件协同在 feature-list §3.1.1 报备登记。本批仅修订 goal/requirements/design 三份制品，不产出 Tasks；**修订稿已获用户确认（2026-08-27）**。

@@ -1,5 +1,15 @@
 # Stage 3 - Tasks
 
+> **公共契约现状注（2026-08-29 追加）**：本制品成文于目标领域树 cutover 之前，文中的公共 path 为旧命名。现行命名以 [`public-contract.registry.json`](../plugin-api-m7-public-contract-refactor/public-contract.registry.json) 的 `oldToTargetMapping` 为唯一权威，本制品涉及的映射如下：
+>
+> | 本制品使用的旧 path | 现行 path |
+> |---|---|
+> | `pluginApi.session.branches` | `pluginApi.sessions.branches` |
+> | `pluginApi.session` | `pluginApi.sessions` |
+> | `pluginApi.features`（feature 快照） | `pluginApi.capabilities`（`get` / `list` / `require`） |
+>
+> 现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；本制品中出现的 `0.1.0-rc.6-0.x` 为历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动本制品已获批的 Goal / Requirements 验收边界。
+
 ## Status
 
 SPEC1 Stage 0 Goal、Stage 1 Requirements、Stage 2 Design 已确认（2026-08-25 批量确认门 + SPEC2 纠偏并入，基底 commit `cb17052`）。本任务书按 AGENTS.md §3.2 SPEC3 规则执行：Tasks 产出后先经对抗性审查门（返回「无偏差」）再进入 Stage 4（Execute）；Stage 4 全部顶层任务完成并验证后做一次全局终审，通过后才交付结果报告、做 Stage 4 完成提交并清理 worktree。本 feature 为 M6 第四批次 Wave B（重 R 串行殿后），分支 `feat/sbe-session-branch`。

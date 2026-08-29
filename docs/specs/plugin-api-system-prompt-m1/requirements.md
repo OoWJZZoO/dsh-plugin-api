@@ -1,5 +1,13 @@
 # Feature Requirements: plugin-api-system-prompt-m1
 
+> **公共契约现状注（2026-08-29 追加）**：本制品成文于目标领域树 cutover 之前，文中的公共 path 为旧命名。现行命名以 [`public-contract.registry.json`](../plugin-api-m7-public-contract-refactor/public-contract.registry.json) 的 `oldToTargetMapping` 为唯一权威，本制品涉及的映射如下：
+>
+> | 本制品使用的旧 path | 现行 path |
+> |---|---|
+> | `pluginApi.systemPrompt`（P1–P8） | `pluginApi.prompts`（叶子名不变） |
+>
+> 注意：slash 事件名 `system-prompt/assemble` 是协议名，**保持不变**。现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；本制品中出现的 `0.1.0-rc.6-0.x` 为历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动本制品已获批的 Goal / Requirements 验收边界。
+
 ## Introduction
 
 `plugin-api-system-prompt-m1` 是 `dsh-plugin-api` 门面在 M1 的 `pluginApi.systemPrompt` 命名空间 feature，覆盖 feature-list §2.7 的 P1–P8：

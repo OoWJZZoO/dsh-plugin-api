@@ -1,5 +1,19 @@
 # dsh-plugin-api 启发式新 Feature 提案
 
+> **公共契约现状注（2026-08-29 追加）**：本候选表单成文于目标领域树 cutover 之前，文中的公共 path 为旧命名，且仅代表**立项前的启发式候选**（候选是否立项仍须经各自 Stage 0 批准）。现行命名以 [`public-contract.registry.json`](../plugin-api-m7-public-contract-refactor/public-contract.registry.json) 的 `oldToTargetMapping` 为唯一权威，本制品涉及的映射如下：
+>
+> | 本制品使用的旧 path | 现行 path |
+> |---|---|
+> | `pluginApi.execution` | `pluginApi.executions` |
+> | `pluginApi.recovery` | `pluginApi.executions.recovery` |
+> | `pluginApi.session` | `pluginApi.sessions` |
+> | `pluginApi.routing` / `pluginApi.routePolicy` | `pluginApi.llm.routing` |
+> | `pluginApi.context` | `pluginApi.prompts.provenance` |
+> | `pluginApi.profile` | `pluginApi.profiles` |
+> | `pluginApi.client.*`（client 根） | `ctx.pluginApi` 直接根成员（已无 `.client` 子命名空间） |
+>
+> 现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；本制品中出现的 `0.1.0-rc.6-0.x` 为历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动任何候选的评估结论。
+
 日期：2026-08-20
 范围：公开 DSH 插件源码、插件生态仓库与本地 `temp/research/` 快照。
 目的：从真实插件反复实现的 workaround、状态机和失败处理里反推 `dsh-plugin-api` 尚未覆盖的公共能力。

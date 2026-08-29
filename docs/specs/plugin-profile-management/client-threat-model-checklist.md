@@ -1,5 +1,13 @@
 # Client-Half Threat Model Checklist (plugin-profile-management)
 
+> **公共契约现状注（2026-08-29 追加）**：本制品成文于目标领域树 cutover 之前，文中的公共 path 为旧命名。现行命名以 [`public-contract.registry.json`](../plugin-api-m7-public-contract-refactor/public-contract.registry.json) 的 `oldToTargetMapping` 为唯一权威，本制品涉及的映射如下：
+>
+> | 本制品使用的旧 path | 现行 path |
+> |---|---|
+> | `pluginApi.profile`（`inspect`/`health`/`planDiff`/`apply`/`snapshot.*`） | `pluginApi.profiles`（叶子名不变） |
+>
+> 现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；本制品中出现的 `0.1.0-rc.6-0.x` 为历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动本清单的威胁模型结论。
+
 > 配套交付（authorized design KDD #7）：面向第三方开发者的 client 半身威胁模型清单，
 > 由 profile 校验管线的机械校验 warning 词汇（`CLIENT_WARNING_CODES`）与本清单共同承载。
 > Warning 词汇与执行器 `runClientHalfCheck` 共享同一份词表：`eval` /

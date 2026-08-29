@@ -1,5 +1,9 @@
 # Tasks: usage-budget-telemetry
 
+> **公共契约现状注（2026-08-29 追加）**：本制品**已整体移除**（`pluginApi.usage` 整面删除，成本账本由单 cost 插件经 `llm/stream` / session / execution observation API 端到端自足），目录保留作历史存档，不再描述任何现行 API。文中引用 `pluginApi.execution` 的现行 path 为 `pluginApi.executions`。
+>
+> 现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；本制品中出现的 `0.1.0-rc.6-0.x` 为历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动本制品的历史记录内容。
+
 > feature_name: `usage-budget-telemetry`
 > 状态：Stage 3 Tasks 已批准（Stage 3 边界 `d24f7f8`）；Stage 4 已全部完成（Task 1–12 完成并验证：全量 `npm test` 1182/1187，5 个失败全部为冻结文件顺序断言，见下「Stage 4 执行注记」）；SPEC3 全局终审由 Wave C 整体终审覆盖并通过（无偏差，见文末「Wave C 整合注记」），Stage 4 完成提交 `1c9d23d` 已创建。2026-08-26 复审登记：**待弃用**（pending deprecation，功能组件非门面；弃用动工另行指示，弃用前 API 保持不变）。2026-08-26 已按用户 ANY 指示执行移除（commit `856746f`）：`pluginApi.usage` 整面删除并登记 removed，本 spec 目录保留作历史存档。
 > 上游：`requirements.md`（Stage 1 已批准）、`design.md`（Stage 2 已批准，用户已明确批准）。

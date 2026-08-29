@@ -168,7 +168,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 ## 4. 核心设计决策（已讨论，作为 constitution 输入）
 
 1. 插件作者的**推荐、受支持**入口是主门面包 `@deepseek-ai/dsh-plugin-api-main`（仓库/项目名仍为 `dsh-plugin-api`；运行时通过 `ctx.pluginApi` 服务解析符号），由门面提供稳定性、版本协商与 fail-safe 保障。第三方插件**可以**绕过门面直接与 `dsh-tools`/`dsh-llm` 等内部包交互，但该路径被明确标记为 **unsupported escape hatch**：无兼容承诺、官方内部变化时可能破坏、自担风险。门面不强制、不拦截这种直连，也不为其提供任何保障。
-2. 版本协商（主包与全部辅助包统一适用）：全量唯一版本号采用 **`<A>-<B>.<C>.<D>`**（如 `0.1.0-rc.6-0.5.0`，写入各自 `package.json.version`）：`A` 是官方 runtime 的全量 identity（含 patch 与 prerelease），`B` 是 API 向后兼容保证世代，`C` 是同一 `B` 内的向后兼容增量，`D` 是包本地内部维护版本；`package.json.dsh.api` 只承载 `B.C`。runtime↔包要求 `A` 精确匹配；插件↔门面比较 `B.C`，同一 `B` 内实际 `C >= required C`，不同 `B` 不兼容。主包、全部辅助包和全量聚合包共享 `A.B.C`，`D` 可不同；主包与辅助包装配要求 `A.B.C` 三段完全一致，错配时只停用相关辅助/R 类能力，不连带停用主包或无关能力。`services.*` 因 runtime `A` 不可用时保留路径并报告 `disabled/unavailable`。wire protocol 与 durable record 的 revision/schema version 独立于 `B.C.D`。
+2. 版本协商（主包与全部辅助包统一适用）：全量唯一版本号采用 **`<A>-<B>.<C>.<D>`**（如 `0.1.0-rc.6-0.5.0`，写入各自 `package.json.version`）：`A` 是官方 runtime 的全量 identity（含 patch 与 prerelease），`B` 是 API 向后兼容保证世代，`C` 是同一 `B` 内的向后兼容增量，`D` 是包本地内部维护版本；`package.json.dsh.api` 只承载 `B.C`。runtime↔包要求 `A` 精确匹配；插件↔门面比较 `B.C`，同一 `B` 内实际 `C >= required C`，不同 `B` 不兼容。主包、全部辅助包和全量聚合包共享 `A.B.C`，`D` 可不同；主包与辅助包装配要求 `A.B.C` 三段完全一致，错配时只停用相关辅助/R 类能力，不连带停用主包或无关能力。`services.*` 因 runtime `A` 不可用时保留路径并报告 `disabled/unavailable`。wire protocol 与 durable record 的 revision/schema version 独立于 `B.C.D`。**现行冻结契约基线**（含 runtime identity、`dsh.api`、包版本与公共 API path 的旧→现行映射）以 `docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json` 为唯一事实源；各历史 spec 制品中成文于 cutover 之前的旧 path，以该文件文首「公共契约现状注」的映射为准。
 3. 事件 API 保留 Cordis 的 `ctx.on` + `emit/serial/parallel/waterfall`，只增加稳定类型、只读 payload 与 `priority`（lowest/low/normal/high/highest/monitor）。
 4. 需要优先“转译”的语义钩子：
    - 同步 `llm/request`（基于 `llm/stream` 重入，必须幂等收敛）
@@ -248,5 +248,6 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 ## 8. 交付登记与规范目录（防过期）
 
 > 已交付 feature 的逐项登记表（范围、状态、Spec 目录、关键约束/设计）自 2026-08-21 起迁至 `docs/specs/plugin-api-features/feature-list.md` §7，本文不再保留登记表，避免双源漂移。规则不变：每个 feature 在 Stage 4 交付后，必须在该节追加条目并同步对应状态；公开 API 形状或里程碑状态变化时同步更新，防止文档过期过时（§3.0.1 中"登记为 delivered"即指该登记表）。
+> 公共 API path 与版本基线发生变化时，除本文件 §4 第 2 条指向的 registry 外，同步面还包括 `docs/specs/plugin-api-features/feature-list.md`、`README.md` 与受影响的 `docs/specs/**` 历史制品；历史制品以文首「公共契约现状注」的形式追加旧 path → 现行 path 映射，不改写其已获批的验收边界。
 > 本文件自身**不记录任何 feature 的进度/里程碑状态**（进度以各 feature spec 目录的状态行与 feature-list §7 登记为准）；修改本文件时不得引入"当前完成了xxx"式的进度表述。
 > 全局 feature 设计规范统一收于 `docs/standards/`（`README.md` 为索引；现行分册：`capability-strategy.md` 能力策略、`api-shape.md` API 形状、`identity-and-lifecycle.md` 身份与生命周期、`durable-state-and-scope.md` 持久状态与作用域、`visibility-and-redaction.md` 可见性、`concurrency-and-cancellation.md` 并发与取消；M7 API 重构规范入口为 `refactor/README.md`，其下按领域拆分；`stage0-common-questions.md` 已弃用作溯源）；新增全局规范落盘该目录并在 §6 登记。

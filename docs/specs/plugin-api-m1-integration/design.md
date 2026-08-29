@@ -1,5 +1,13 @@
 # Design: plugin-api-m1-integration
 
+> **公共契约现状注（2026-08-29 追加）**：本制品成文于目标领域树 cutover 之前，文中的公共 path 为旧命名。现行命名以 [`public-contract.registry.json`](../plugin-api-m7-public-contract-refactor/public-contract.registry.json) 的 `oldToTargetMapping` 为唯一权威，本制品涉及的映射如下：
+>
+> | 本制品使用的旧 path | 现行 path |
+> |---|---|
+> | `pluginApi.session` | `pluginApi.sessions` |
+>
+> 本制品确立的「命名空间安置规则」已由目标领域树取代（现行规则见 `docs/specs/plugin-api-features/feature-list.md` 文首）；事件目录、catalog slice 与 FEATURE_MOUNTERS 顺序等内部契约不受影响。现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；本制品中出现的 `0.1.0-rc.6-0.x` 为历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动本制品已获批的 Goal / Requirements 验收边界。
+
 > **Historical M1 record / M2 supersession:** This design describes the pre-M2 `0.2` integration boundary. References to an admission-bridge/resolver wrapper or to the old active wording are historical and are not current runtime authority. M2 L2 is owned solely by `lib/llm-admission-gateway.js`; do not resurrect the old admission-bridge or projection-guard implementation.
 
 > feature_name: `plugin-api-m1-integration`

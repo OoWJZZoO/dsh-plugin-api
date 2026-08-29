@@ -1,5 +1,13 @@
 # Stage 4 Delivery: plugin-api-host-remote-m4
 
+> **公共契约现状注（2026-08-29 追加）**：本制品成文于目标领域树 cutover 之前，文中的公共 path 为旧命名。现行命名以 [`public-contract.registry.json`](../plugin-api-m7-public-contract-refactor/public-contract.registry.json) 的 `oldToTargetMapping` 为唯一权威，本制品涉及的映射如下：
+>
+> | 本制品使用的旧 path | 现行 path |
+> |---|---|
+> | `pluginApi.remote`（`publish/isActive`） | `pluginApi.remotes`（叶子名不变） |
+>
+> 现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；本制品中出现的 `0.1.0-rc.6-0.x` 为历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动本制品已获批的 Goal / Requirements 验收边界。
+
 > feature_name: `plugin-api-host-remote-m4`
 > 状态：delivered（M4 RB1 通用 host 侧 Typert Remote 发布）
 > 上游：Stage 1–3 已批准（`requirements.md` / `design.md` / `tasks.md`）

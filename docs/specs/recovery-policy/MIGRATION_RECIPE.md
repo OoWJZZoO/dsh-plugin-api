@@ -1,5 +1,15 @@
 # Recovery policy migration recipe
 
+> **公共契约现状注（2026-08-29 追加）**：本配方成文于目标领域树 cutover 之前，文中的公共 path 为旧命名，**消费者迁移请以现行 path 为准，本配方中的旧 path 仅供追溯**。现行命名以 [`public-contract.registry.json`](../plugin-api-m7-public-contract-refactor/public-contract.registry.json) 的 `oldToTargetMapping` 为唯一权威，本制品涉及的映射如下：
+>
+> | 本制品使用的旧 path | 现行 path |
+> |---|---|
+> | `pluginApi.recovery`（`classify/capability/policy/evaluate/consume/adapters/visibility/availability`） | `pluginApi.executions.recovery`（叶子名不变） |
+> | `pluginApi.routePolicy` | `pluginApi.llm.routing`（policy 叶子改复数 `policies`） |
+> | `pluginApi.execution` | `pluginApi.executions` |
+>
+> 现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；本制品中出现的 `0.1.0-rc.6-0.x` 为历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动本制品已获批的 Goal / Requirements 验收边界。
+
 `recovery-policy` is an explicit decision surface. A consumer owns execution
 state and calls `pluginApi.recovery.evaluate(input)` at a supported decision
 point; it then executes the returned action through its existing owner. The

@@ -1,5 +1,14 @@
 # Requirements: plugin-api-host-remote-m4
 
+> **公共契约现状注（2026-08-29 追加）**：本制品成文于目标领域树 cutover 之前，文中的公共 path 为旧命名。现行命名以 [`public-contract.registry.json`](../plugin-api-m7-public-contract-refactor/public-contract.registry.json) 的 `oldToTargetMapping` 为唯一权威，本制品涉及的映射如下：
+>
+> | 本制品使用的旧 path | 现行 path |
+> |---|---|
+> | `pluginApi.remote`（`publish/isActive`） | `pluginApi.remotes`（叶子名不变） |
+> | `ctx.pluginApi.client.*`（client 根） | `ctx.pluginApi` 直接根成员（已无 `.client` 子命名空间） |
+>
+> 现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；本制品中出现的 `0.1.0-rc.6-0.x` 为历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动本制品已获批的 Goal / Requirements 验收边界。
+
 > feature_name: `plugin-api-host-remote-m4`
 > 状态：Stage 1 草案（待对抗性审查与用户批准）
 > 上游：Stage 0 Goal（已批准）、`AGENTS.md` §2/§4/§6、`docs/specs/plugin-api-features/feature-list.md` §2.8（ST4 `settings.remote`）与 §3.1（`typert-gateway` R 类观察项）、`docs/standards/capability-strategy.md`（R 类登记与观察项）、`docs/specs/plugin-api-settings-remote-m3/`（ST4 既有绑定/回滚实现）、`dsh-pro-ex-ability-anchor/lib/config-remote.js` 与 `lib/index.js`（当前手工桥接路径）

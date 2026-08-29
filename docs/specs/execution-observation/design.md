@@ -1,5 +1,14 @@
 # Stage 2 - Design
 
+> **公共契约现状注（2026-08-29 追加）**：本制品成文于目标领域树 cutover 之前，文中的公共 path 为旧命名。现行命名以 [`public-contract.registry.json`](../plugin-api-m7-public-contract-refactor/public-contract.registry.json) 的 `oldToTargetMapping` 为唯一权威，本制品涉及的映射如下：
+>
+> | 本制品使用的旧 path | 现行 path |
+> |---|---|
+> | `pluginApi.execution`（`observe/get/history/onChange/visibility/availability`） | `pluginApi.executions`（叶子名不变） |
+> | `pluginApi.routing` | `pluginApi.llm.routing`（叶子 `forExecution`） |
+>
+> 现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；本制品中出现的 `0.1.0-rc.6-0.x` 为历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动本制品已获批的 Goal / Requirements 验收边界。
+
 ## Status
 
 Stage 2 Design 已获批并落地（3278b5c），进入 Stage 3 Tasks；Stage 3 Tasks 已获批（663e7ec）；Stage 4 已完成（b7626af）并合入 M6 Wave C（merge dc1a7cd / 12c6ce0）。

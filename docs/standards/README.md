@@ -20,3 +20,5 @@
 | `stage0-common-questions.md` | 历史溯源（已弃用） | 溯源映射 + 历史问答快照，不再作为 feature 设计入口或权威 |
 
 现行权威分册为前六项及 M7 重构分册；`stage0-common-questions.md` 仅供追溯历史决议。
+
+**公共契约的唯一事实源**：现行公共 API path、逐成员状态与版本基线以 `docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json` 为准。本目录各分册规定「应当如何设计」，不复制该 registry 的逐成员登记，避免双源漂移；分册条文与 registry 现有登记冲突时，以 registry 为现状事实、以分册为设计判据，并走变更流程修订其中一方。
