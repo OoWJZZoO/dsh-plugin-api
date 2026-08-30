@@ -1,7 +1,7 @@
 # 身份与生命周期标准（identity & lifecycle）
 
 > 适用范围：所有会暴露 identity、generation、终态语义的 feature（execution observation、session branch、lease/coordination、checkpoint、task 观察、诊断等）。
-> 权威性：Stage 0 共同问题 NO.1 / NO.3 / NO.4 的综合落地（2026-08-21 确认）；feature 立项时逐条对照。
+> feature 立项时逐条对照。
 > 关联：durable mutation 面的 commitState 执行细节见 `durable-state-and-scope.md`；并发取消、stale callback 与 disposer 所有权见 `concurrency-and-cancellation.md`；projection 面的 observer epoch 见 `api-shape.md`。
 
 ## 1. execution 身份

@@ -1,11 +1,11 @@
-# 多插件排序标准（M7）
+# 多插件排序标准
 
 > 适用范围：普通事件监听、确实需要串行的 transform/waterfall，以及领域内的策略组合。
-> 关联：组合模式和 callback containment 见 [`composition-and-authority.md`](composition-and-authority.md)；事件 producer/consumer 权限见 [`../capability-strategy.md`](../capability-strategy.md)。
+> 关联：组合模式和 callback containment 见 `composition-and-authority.md`；各领域的 reducer/fixed stages 边界见 `domain-composition.md`；事件 producer/consumer 权限见 `capability-strategy.md`。
 
 ## 1. 普通排序模型
 
-普通事件监听采用简单、开放的固定 priority 模型：固定 priority vocabulary，加上同一 priority 内的成功注册顺序。保留现有 priority vocabulary：
+普通事件监听采用简单、开放的固定 priority 模型：固定 priority vocabulary，加上同一 priority 内的成功注册顺序。现行 priority vocabulary：
 
 ```text
 lowest | low | normal | high | highest | monitor
@@ -35,4 +35,4 @@ lowest | low | normal | high | highest | monitor
 - `ordered` 表示该成员存在明确的多 owner 顺序合同；它不自动意味着顺序无关，也不授权调用方修改其他 owner 的状态。
 - `coordinated` 和 `exclusive` 的资源冲突必须由 authority/claim 处理，不能通过提高 priority 绕过。
 - 普通 event consumer 的注册不等于 canonical event producer authority；派发权仍按事件领域契约授予。
-- 若某个 feature 的业务正确性必须依赖跨领域全局排序，优先拆解为领域内 reducer/fixed stages，或将该需求作为上游 proposal；本标准不新增全局 dependency graph。
+- 若某个 feature 的业务正确性必须依赖跨领域全局排序，优先拆解为领域内 reducer/fixed stages，或将该需求作为 upstream proposal；本册不新增全局 dependency graph。

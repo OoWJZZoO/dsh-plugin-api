@@ -459,7 +459,7 @@ success | error | aborted | denied | superseded
 
 ### Events
 
-`events.on` and `events.once` are observe-only by default. Canonical dispatch is available only to the producer authority recorded for that event. Custom events use `events.define` and an owner-scoped publisher handle. Ordinary listener order is fixed priority plus successful registration order, with the priority vocabulary `lowest`/`low`/`normal`/`high`/`highest`/`monitor` (see `docs/standards/refactor/ordering.md`); no global dependency graph is added.
+`events.on` and `events.once` are observe-only by default. Canonical dispatch is available only to the producer authority recorded for that event. Custom events use `events.define` and an owner-scoped publisher handle. Ordinary listener order is fixed priority plus successful registration order, with the priority vocabulary `lowest`/`low`/`normal`/`high`/`highest`/`monitor` (see `docs/standards/ordering.md`); no global dependency graph is added.
 
 ### LLM
 
@@ -508,7 +508,7 @@ success | error | aborted | denied | superseded
 
 ### Composable Profile
 
-The default Composable Profile is the set of public members third-party plugins may rely on as safely composable without additional arbitration, covering pure queries, additive registrations, ordered transforms, and coordinated mutations with explicit claim as defined by `docs/standards/refactor/composition-and-authority.md` §3.
+The default Composable Profile is the set of public members third-party plugins may rely on as safely composable without additional arbitration, covering pure queries, additive registrations, ordered transforms, and coordinated mutations with explicit claim as defined by `docs/standards/composition-and-authority.md` §3.
 
 - A member SHALL enter the default Composable Profile only after its composition and authority audit records are complete in the registry; members with incomplete audits SHALL NOT be labelled `recommended` and SHALL NOT enter the profile. `status: 'recommended'` in a public member entry therefore implies profile membership.
 - The profile boundary is a registry marker and a test/evidence fixture, not a runtime service; the composition matrix (see §Composition Matrix) exercises every applicable shared primitive inside the profile.

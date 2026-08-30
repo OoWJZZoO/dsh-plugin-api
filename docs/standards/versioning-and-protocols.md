@@ -1,7 +1,7 @@
-# 版本与协议标准（M7）
+# 版本与协议标准
 
 > 适用范围：主包、辅助包、全量聚合包、第三方插件协商，以及真实 wire/durable 合同。
-> 关联：能力 presence 与 unavailable 见 [`capability-and-services.md`](capability-and-services.md)；总体能力上限见 [`../capability-strategy.md`](../capability-strategy.md)。
+> 关联：能力 presence 与 unavailable 见 `capability-strategy.md` §6.2；公共面减法见 `capability-strategy.md` §7。
 
 ## 1. 包版本格式
 
@@ -24,7 +24,7 @@
 - 同一 `A`、同一 `B`、较大的 `C`：必须兼容在较小 `C` 上编写的插件；较大 `C` 可以增加新的 API/capability，因此面向较大 `C` 的插件不保证能在较小 `C` 上运行。
 - 同一 `B`、不同 `A`：semantic API 尽量保持同一 `C` 的公共语义和 API 外观；无法适配时报告 capability 不可用，不能静默改变已存在的语义。
 - 不同 `A`、不同 `C` 只有在对应 capability 的公共合同确实满足同一 `B` 世代的兼容关系时才能称为向后兼容。
-- 如果跨 runtime 的差异动摇公共 semantic API 合同，应通过 capability absence/unavailable、提高 `B` 或发布前删除该 semantic API 解决。
+- 如果跨 runtime 的差异动摇公共 semantic API 合同，应通过 capability absence/unavailable、提高 `B` 或删除该 semantic API 解决。
 
 ## 3. 包装配与 runtime 检查
 

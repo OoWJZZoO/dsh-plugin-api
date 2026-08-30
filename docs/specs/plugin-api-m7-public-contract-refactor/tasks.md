@@ -101,6 +101,6 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
   - **9.1 全量验证**：`npm test` 全绿（含既有全部测试与 M7 新增）；`git diff --check` 通过；官方包修改审计（`/usr/lib/node_modules/@deepseek-ai/dsh/**` 未被修改）通过；headless 冒烟与 dev boot 通过；任一验证失败/超时/无法建立证据按阻塞处理（§15 末条）。
   - **9.2 registry/文档/登记同步**：registry 与 public contract registry 输出（类型/快照/fixtures/参考片段）一致且为同一事实源；`docs/specs/plugin-api-features/feature-list.md` 登记本 feature（spec 链接、状态、关键约束/设计、删除报备链接；R 类涉及项按 §3.1 口径）；AGENTS.md / `docs/standards/` 需要同步的链接与 §8 登记项同步；删除报告与批准记录归档于本 feature 目录。
   - **9.3 规格制品回写**：核对 requirements/design/tasks 与交付一致；执行中发现的 spec 细节偏差就地修订对应文档并在最终报告列出（动摇 Goal/Requirements 验收边界的偏差必须暂停请示，不得擅改）。
-  - **9.4 全局终审（阻塞）**：全部顶层任务完成后，调用一次只读阻塞式全局终审（核对整个 Stage 4 交付与 Tasks/Design/Requirements 的一致性，并按 `docs/standards/` 与 `docs/standards/refactor/` 适用分册比对规范符合性）；返回「无偏差」后才可交付；有意见则在整体范围内集中修订后再次全局终审，直至通过。
+  - **9.4 全局终审（阻塞）**：全部顶层任务完成后，调用一次只读阻塞式全局终审（核对整个 Stage 4 交付与 Tasks/Design/Requirements 的一致性，并按 `docs/standards/` 适用分册比对规范符合性）；返回「无偏差」后才可交付；有意见则在整体范围内集中修订后再次全局终审，直至通过。
   - **9.5 Stage 4 完成提交**：终审通过后提交本 Stage 全部实现、测试、registry、规格制品修订与登记（先 `git diff --check`）；提交后工作区保持干净；交付最终结果报告（含任务完成情况、spec 偏差修订列表、删除批准记录、消费者迁移记录）。
   - **要求**：交付物全绿 + 终审无偏差 + 完成提交 + 工作区干净，才可宣告 Stage 4 完成。

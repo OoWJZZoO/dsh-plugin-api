@@ -1,7 +1,6 @@
 # 可见性与脱敏标准（visibility & redaction）
 
 > 适用范围：任何 feature 暴露给模型 / UI / 日志 / debug 的语义（execution 诊断、usage、route reason、attachment metadata、error detail 等）。
-> 权威性：Stage 0 共同问题 NO.5 的综合落地（2026-08-21 确认）。
 > 关联：提升可见性的 policy 面契约见 `api-shape.md` §1；最小暴露不影响 fail-safe（AGENTS.md）。
 > 增补：**§4 client 半身受众**（由 `plugin-profile-management` Stage 4 配套交付增补；威胁模型清单见
 > `docs/specs/plugin-profile-management/client-threat-model-checklist.md`）。

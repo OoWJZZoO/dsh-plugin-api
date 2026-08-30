@@ -76,7 +76,7 @@
 
 ## B4 追加清单（Task 6.2 审计产出，2026-08-28）——已批准（批准记录见下）
 
-> 审计依据：`docs/standards/refactor/capability-and-services.md` §2（发布前减法候选）与 §5（成员分级）。逐成员核对 48 个 `services.*` 白名单成员；仓库内引用面仅为白名单/契约枚举（`official-service-definitions`、`services-definitions.test.mjs`、`compat-integration-cardinality.test.mjs`、M4 交付报告），无独立消费者代码；消费者约束：`dsh-pro-ex-ability-anchor` 使用 `shellEnv`/`jobs`/`sessionTitle`（不列入）。批准后按冻结决策 11①**直接删除 PATH**（不做 unavailable 占位）；删除后成员访问 → 成员不存在（`undefined`），整键删除后该 key 不在 `services` namespace。
+> 审计依据：`docs/standards/capability-strategy.md` §7（发布前减法候选）与 §6.1（`services.*` 成员分级）。原依据文件（当时位于 `refactor/` 目录下的 capability-and-services 分册）已并入 `docs/standards/capability-strategy.md`。逐成员核对 48 个 `services.*` 白名单成员；仓库内引用面仅为白名单/契约枚举（`official-service-definitions`、`services-definitions.test.mjs`、`compat-integration-cardinality.test.mjs`、M4 交付报告），无独立消费者代码；消费者约束：`dsh-pro-ex-ability-anchor` 使用 `shellEnv`/`jobs`/`sessionTitle`（不列入）。批准后按冻结决策 11①**直接删除 PATH**（不做 unavailable 占位）；删除后成员访问 → 成员不存在（`undefined`），整键删除后该 key 不在 `services` namespace。
 
 ### A 类——裸 singleton setter / 共享 mutation 无 owner 协调（§2 首条、§5）
 

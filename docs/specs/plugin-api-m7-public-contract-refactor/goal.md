@@ -17,8 +17,10 @@
 - 覆盖包版本、插件协商、wire revision 与 durable schema 的边界重整；本次重构的公共 API 基线版本采用 `0.1.0-rc.6-0.1.0`，`dsh.api` 采用 `0.1`，遵守 `<A>-<B>.<C>.<D>` 版本模型。主包、辅助包和全量聚合包在本次重构中统一采用该约定的冻结基线；完成基线版本锁定（即各包 `package.json` 写入该版本并提交）后，整个 M7 执行期间不得再次 bump 任何包版本或 `dsh.api` 版本。
 - 覆盖最终保留 API 的最小组合语义加固、host/client 对齐、full bundle 与选择性安装的装配等价性、反向加载顺序、冲突/失败/重载/scope/claim/cleanup 测试。
 - 覆盖 `dsh-read-image` 与 `dsh-pro-ex-ability-anchor` 的消费者迁移验收，以及 headless 冒烟和 dev boot 验证。
-- 遵守 `docs/standards/` 六册全局规范、`docs/standards/refactor/` M7 分册、AGENTS.md 的 spec coding 确认门、fail-safe、阶段提交和干净工作区要求。
-- 本 feature 属于 M7 API 重构范围，适用 `docs/standards/refactor/README.md` 声明的适用范围及其各分册规范。
+- 遵守 `docs/standards/` 全局规范、AGENTS.md 的 spec coding 确认门、fail-safe、阶段提交和干净工作区要求。
+- 本 feature 适用交付时 `docs/standards/` 下的现行分册规范。
+
+> **规范路径迁移注**：本 feature 交付时的分册位于 `docs/standards/refactor/`（`public-api-shape.md`、`composition-and-authority.md`、`domain-composition.md`、`versioning-and-protocols.md`、`ordering.md`、`capability-and-services.md`、`plugin-state-and-lifecycle.md`、`sdk-and-conformance.md`）。这些规范已并入 `docs/standards/` 现行分册：前五个同名收录，`capability-and-services.md` 并入 `capability-strategy.md`，`plugin-state-and-lifecycle.md` 并入 `durable-state-and-scope.md`，`sdk-and-conformance.md` 已删除。现 `docs/standards/refactor/` 是后续 API 语义重构的未来目标规范，与本 feature 无关。
 
 ## Out Of Scope
 

@@ -1,7 +1,6 @@
 # 持久状态与作用域标准（durable state & scope）
 
-> 适用范围：所有写持久/半持久状态的 feature（durable observation、lease/coordination、checkpoint、workspace mutation transaction、附件处理记录等）。
-> 权威性：Stage 0 共同问题 NO.2 / NO.8 的综合落地（2026-08-21 确认）。
+> 适用范围：所有写持久/半持久状态的 feature（durable observation、lease/coordination、checkpoint、workspace mutation transaction、附件处理记录、第三方插件私有 storage 等）。
 > 关联：终态词汇见 `identity-and-lifecycle.md` §3；并发取消、提交资格与 retry 传播见 `concurrency-and-cancellation.md`；durable mutation 面在 API 形状中的位置见 `api-shape.md` §1；fail-safe 底线见 AGENTS.md。
 
 ## 1. 存储作用域分层（scope 即存储契约）
@@ -42,3 +41,42 @@
 | superseded | 旧 generation/attempt 已被新操作取代 | 禁止继续补写结果 |
 
 - 分类必须落在 operation 能力声明（§3）里，不得由调用方事后猜测。
+
+## 5. 第三方插件私有 storage（与公共领域状态分离）
+
+`pluginApi.storage` 是基于官方 `storageDomain` 的 **owner-scoped、scope-bound 薄绑定层**。它只解决稳定命名、作用域绑定、handle 生命周期和最小 schema envelope，不实现新的存储后端或数据库平台。
+
+责任边界：
+
+- owner 从调用者上下文自动派生；插件只声明 owner 内的局部 store 名称。
+- 插件私有 storage **只保存单一 owner 的私有实现数据**。
+- `settings` 保存用户可配置数据；session/domain API 保存公共领域事实；memory 保存用户或 Agent 语义记忆；插件 storage **不替代这些领域**。
+- **多插件共享状态不得借插件私有 storage 绕过相应领域的 authority、coordination 或 transaction。**
+
+Durable scope 与 §1 同构，只有三档：`profile` / `workspace` / `session`。不增加 `agent` scope；跨档需求拆分为多个记录或 feature，不用单一记录横跨两层。
+
+Schema envelope：每类记录只使用 schema ID、整数 version 和 data，概念上至少包含：
+
+```js
+{
+  schema: 'plugin.example-state',
+  version: 1,
+  owner: 'derived-owner',
+  scope: { ... },
+  id: '...',
+  data: { ... },
+}
+```
+
+- 旧版本读取由插件附近的局部 decoder/upcaster 负责。
+- 未知未来版本返回 `unsupported-schema`，不猜测、不静默丢字段。
+- 新 writer 只写当前版本；没有升级读取需求的数据不预建 migrator。
+
+生命周期：
+
+- 插件停用或重载时关闭该插件持有的 storage handle。
+- 关闭 handle 不删除数据；插件卸载默认保留数据。
+- 永久删除只能由显式 purge 操作触发，不能由普通 disable、reload 或 uninstall 隐式触发。
+- 旧 handle 在关闭后不得继续写入；stale disposer/回调不得影响新 generation 或其他 owner。
+
+当前不提供：通用 migration framework、per-plugin quota、secret storage、跨 store transaction、通用 CAS/fencing、自动备份恢复、orphan collector、插件自选 backend。`services.storage` 与 `services.storageDomain` 继续作为 advanced、runtime-bound passthrough，但不因此获得默认 Composable Profile 保证。

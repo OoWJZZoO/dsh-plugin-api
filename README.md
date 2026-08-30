@@ -129,6 +129,11 @@ pluginApi.llm.routing.availability // { execution: boolean, session: boolean }
 
 `@deepseek-ai/dsh-plugin-api-main`（row id `plugin-api-main`）必须在第三方插件之前加载（`cordis.patch.yml` 与全量聚合 bundle 的 patch 均已声明该顺序），否则依赖 `inject: ['pluginApi']` 的第三方插件会 pending 并杀死 boot。
 
+## 全局规范
+
+- 现行全局设计规范统一收于 `docs/standards/`，索引见 `docs/standards/README.md`：能力策略与 `services.*` 分级、语义三面、公共 namespace 与成员形状、组合与 authority、领域组合最低要求、多插件排序、身份与生命周期、持久状态与作用域、可见性与脱敏、并发与取消、版本与协议。这些分册只写**当前仓库事实**。
+- `docs/standards/refactor/` 是下一轮公共 API 语义重构（API idiom 与成员级契约）的**未来目标**规范，不是当前已提供的能力，不作为当前集成依据。
+
 ## 测试
 
 ```bash

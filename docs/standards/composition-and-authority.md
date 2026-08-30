@@ -1,7 +1,7 @@
-# 组合与 Authority 标准（M7）
+# 组合与 Authority 标准
 
 > 适用范围：所有由多个第三方插件共同使用的 facade 语义、注册表、策略、变更、事件生产权和生命周期。
-> 关联：通用三面边界见 [`../api-shape.md`](../api-shape.md)；身份和终态见 [`../identity-and-lifecycle.md`](../identity-and-lifecycle.md)；并发与取消见 [`../concurrency-and-cancellation.md`](../concurrency-and-cancellation.md)。
+> 关联：语义三面见 `api-shape.md`；公共形状见 `public-api-shape.md`；身份和终态见 `identity-and-lifecycle.md`；并发与取消见 `concurrency-and-cancellation.md`；各领域最低要求见 `domain-composition.md`。
 
 ## 1. 兼容层次
 
@@ -30,7 +30,7 @@
 
 ## 3. Composable Profile
 
-推荐的可组合子集由以下部分组成：
+可组合子集由以下部分组成：
 
 ```text
 Composable Profile
@@ -65,7 +65,7 @@ Composable Profile
 3. 仅供机器关联的私有 key 应自动 owner-qualification。tool 名、command 名、remote service key 等用户可见全局名称不得静默改名，必须使用共享、冲突拒绝或 claim 规则。
 4. `latest-wins` 只允许发生在同一 owner、同一逻辑 key 内。
 5. disposer/handle 必须绑定 owner、resource key 和 generation；stale disposer 返回 typed no-op，不能删除新 generation 或其他 owner 的资源。
-6. 普通事件监听同 priority 按成功注册顺序执行；需要业务顺序的 feature 必须使用固定 priority、明确依赖或领域内规则，不依赖隐式“谁先加载”来证明业务正确性。
+6. 普通事件监听同 priority 按成功注册顺序执行；需要业务顺序的 feature 必须使用固定 priority、明确依赖或领域内规则（见 `ordering.md`），不依赖隐式“谁先加载”来证明业务正确性。
 7. 返回的 live handle 不得泄漏无边界共享写 authority；只读需求返回冻结投影，写需求返回能力受限的 opaque handle。
 8. callback 失败只按当前决策点的 containment 规则影响该 owner，不得破坏 registry 或其他 owner。
 
@@ -128,7 +128,7 @@ pluginApi: {
 
 - 通用 `waterfall` 只能提供调用机制，不能替代领域组合规则。
 - 订阅权与生产权分离：`on/once` 可以是 additive consumer 面；canonical system event 的 `emit/serial/parallel/bail/waterfall` 只授予其 producer authority。
-- 第三方自定义事件先通过 owner-scoped `events.define` 取得能力受限的 publisher handle，不能依赖一个可派发任意系统事件名的全局入口。
+- 第三方自定义事件只能通过 owner-scoped `events.define` 取得能力受限的 publisher handle，不能依赖一个可派发任意系统事件名的全局入口。**当前 `events` 面未提供 `define` 与 publisher handle**（面成员为 `catalog / on / once / emit / serial / parallel / bail / waterfall`），因此第三方自定义事件当前没有受支持的派发入口。
 - 每个多插件决策点必须写明 decision vocabulary、支配元素、多个 transform 的合并规则、priority 相同的注册顺序、callback 失败策略、reducer 的幂等/结合性或顺序依赖，以及输出是否冻结并携带 owner/provenance。
 - 关键决策点优先使用领域 typed decision 和 reducer，不向第三方只暴露可返回任意对象的裸 waterfall。
 

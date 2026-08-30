@@ -1,8 +1,7 @@
 # API 形状标准：投影 / 策略 / 变更三面边界（api shape）
 
 > 适用范围：所有新增**语义组合型** feature（非纯官方直通）的公开 API 设计；纯官方直通（A 类）按官方形状原样直通，不适用三面改造。
-> 权威性：Stage 0 共同问题 NO.9 的综合落地（2026-08-21 确认）。
-> 关联：M7 及后续的命名空间安置规则见 `docs/standards/refactor/public-api-shape.md`；失败呈现沿用既有 P1–P4 路径；横切派发语义（priority / deepFreeze / fault containment）永不走 R（`capability-strategy.md`）。
+> 关联：公共 namespace 与成员形状安置规则见 `public-api-shape.md`；失败呈现沿用既有 P1–P4 路径；横切派发语义（priority / deepFreeze / fault containment）永不走 R（`capability-strategy.md`）。
 
 ## 1. 三面定义（face）
 
@@ -36,6 +35,6 @@ decision point（系统内）→ 调 policy → mutation（可能发生）→ �
 
 ## 5. 与既有规则衔接
 
-- 顶层命名空间按 `refactor/public-api-shape.md` 的 bounded context 规则分配；纯官方低层直通收敛到 `pluginApi.services.*`，带门面附加语义的 feature 挂到最近的既有领域，只有形成独立词汇、资源身份和使用场景的一等领域才新增顶层命名空间。
+- 顶层命名空间按 `public-api-shape.md` 的 bounded context 规则分配；纯官方低层直通收敛到 `pluginApi.services.*`，带门面附加语义的 feature 挂到最近的既有领域，只有形成独立词汇、资源身份和使用场景的一等领域才新增顶层命名空间。
 - B 类是否转 R 按官方组件边界、契约保留、风险与维护成本判断；R 类硬性规则见 `capability-strategy.md`。三面模型不改变该判断，只约束 R 与 B 的公开 API 形状。
 - facade 可以组合多个官方组件的公开能力；一个 R capability slice 可以跨组件协同（须在 feature-list.md §3.1 报备登记），但每个替换行仍归属唯一官方组件包，且不能依赖跨组件 replacement 才能成立。

@@ -1,13 +1,21 @@
-# 语义领域组合标准（M7）
+# 语义领域组合标准
 
-> 适用范围：M7 目标 namespace 中各语义领域的 owner、顺序、冲突和 authority 边界。
-> 关联：通用 composition mode 与 authority map 见 [`composition-and-authority.md`](composition-and-authority.md)；namespace 形状见 [`public-api-shape.md`](public-api-shape.md)；`services.*` 见 [`capability-and-services.md`](capability-and-services.md)。
+> 适用范围：现行 host 公共 namespace 中各语义领域的 owner、顺序、冲突和 authority 边界。
+> 关联：通用 composition mode 与 authority map 见 `composition-and-authority.md`；namespace 形状见 `public-api-shape.md`；`services.*` 见 `capability-strategy.md` §6；排序规则见 `ordering.md`。
 
-## 1. 领域要求
+## 1. 层次说明
+
+本册是**领域层**要求，与另两册分层且不得混写：
+
+- `composition-and-authority.md`：跨领域通用的 composition mode、owner/key/generation、authority closure、claim。
+- **本册**：各领域在满足通用规则之外，额外必须满足的最低领域约束。
+- `ordering.md`：普通事件监听的排序模型，以及领域 reducer/fixed stages 的使用边界。
+
+## 2. 领域最低要求
 
 | 领域 | 组合要求 |
 |---|---|
-| `events` | 区分 observe-only consumer 与 producer authority；canonical system event 只能由其 owner 派发；第三方自定义事件通过 owner-scoped `define` 获取 publisher handle；关键决策不用裸 waterfall 代替领域 reducer |
+| `events` | 区分 observe-only consumer 与 producer authority；canonical system event 只能由其 owner 派发；关键决策不用裸 waterfall 代替领域 reducer。第三方自定义事件的 owner-scoped `define` / publisher handle 当前未提供（面成员为 `catalog / on / once / emit / serial / parallel / bail / waterfall`） |
 | `llm.requestTransforms` | owner-scoped、确定的 priority/注册顺序、声明改写范围、at-most-once/convergence；同字段冲突有明确规则 |
 | `llm.admissionPolicies` | 使用固定 decision algebra；deny/ask/allow 等优先级不得由监听顺序隐式决定 |
 | `llm.adapters` | owner/id/generation 隔离；稳定链序；卸载和 topology reconcile 不影响其他 owner |
@@ -33,9 +41,9 @@
 | `remotes` | service key owner 化；同 key 跨 owner 冲突拒绝；disposer 不撤销其他 generation |
 | `storage` | 只保存 owner 私有实现数据；owner 自动派生、scope 显式；不得作为共享领域状态或 authority 的旁路 |
 
-## 2. 应用方式
+## 3. 应用方式
 
 - 表中的要求是各领域 spec 的最低架构约束，不替代具体 requirements/design 中的可测试合同。
-- 某个领域成员仅为纯官方 passthrough 时，可以按 `services.*` 分级处理，而不强行套用语义领域改造。
+- 某个领域成员仅为纯官方 passthrough 时，按 `services.*` 分级处理，不强行套用语义领域改造。
 - 领域确实需要比全局 priority 更强的顺序语义时，只在该领域内定义 reducer、固定阶段或 ordered pipeline，不建立跨领域 dependency graph。
 - 某个 feature 同时包含 facade translation 和 replacement slice 时，公共领域要求保持不变；replacement 组件边界和退役条件另按 `capability-strategy.md` 处理。

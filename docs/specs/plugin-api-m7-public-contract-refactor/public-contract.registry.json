@@ -1413,7 +1413,7 @@
  },
  "namingDecisions": {
   "approvedAt": "2026-08-28",
-  "authority": "docs/standards/refactor/public-api-shape.md §2 (human ruling; overrides design.md data-model example)",
+  "authority": "docs/standards/public-api-shape.md §2 (human ruling; overrides design.md data-model example)",
   "llmRoutingLeaves": [
    "forExecution",
    "current",
