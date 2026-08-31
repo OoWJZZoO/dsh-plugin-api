@@ -25,6 +25,19 @@ test('rejects a member whose capability cluster is absent from the capability ma
   expectErrors(copy, 'absent from capabilityMatrix')
 })
 
+test('rejects a handle row without a registered parent member', () => {
+  const copy = structuredClone(registry)
+  copy.members.push({
+    ...structuredClone(copy.members[0]),
+    publicPath: 'orphan.namespace.handle',
+    kind: 'handle',
+    idiom: 'resourceRegistry',
+    runtime: 'host',
+    capability: 'llm',
+  })
+  expectErrors(copy, 'has no registered parent member')
+})
+
 test('rejects an idiom outside the closed vocabulary and a passthrough idiom outside services.*', () => {
   const copy = structuredClone(registry)
   copy.members[0].idiom = 'not-an-idiom'

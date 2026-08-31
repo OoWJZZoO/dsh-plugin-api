@@ -8,9 +8,9 @@
     "conclusion": "M7 frozen baseline verified unchanged; M8 creates no new version boundary."
   },
   "counts": {
-    "hostLeaves": 303,
-    "clientLeaves": 52,
-    "handleLeaves": 23,
+    "hostLeaves": 330,
+    "clientLeaves": 53,
+    "handleLeaves": 51,
     "servicesWhitelistHost": 46,
     "note": "counts derived from the leaves array; re-derived mechanically when the registry changes"
   },
@@ -3564,6 +3564,286 @@
       "idiom": "selfDescription",
       "migrationAction": "add",
       "shapeNote": "namespace availability(); host/client parity"
+    },
+    {
+      "publicPath": "llm.routing.policies.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "llm.routing.policies.register.handle",
+      "idiom": "policy",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; identity-bound stale disposer"
+    },
+    {
+      "publicPath": "llm.routing.candidates.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "llm.routing.candidates.register.handle",
+      "idiom": "resourceRegistry",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; new lifecycle after dispose"
+    },
+    {
+      "publicPath": "llm.routing.health.circuitPolicy.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "llm.routing.health.circuitPolicy.register.handle",
+      "idiom": "policy",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; identity-bound stale disposer"
+    },
+    {
+      "publicPath": "llm.routing.health.probe.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "llm.routing.health.probe.register.handle",
+      "idiom": "resourceRegistry",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; new lifecycle after dispose"
+    },
+    {
+      "publicPath": "llm.providers.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "llm.providers.register.handle",
+      "idiom": "resourceRegistry",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; new lifecycle after dispose"
+    },
+    {
+      "publicPath": "llm.models.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "llm.models.register.handle",
+      "idiom": "resourceRegistry",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; new lifecycle after dispose"
+    },
+    {
+      "publicPath": "agents.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "agents.register.handle",
+      "idiom": "resourceRegistry",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; new lifecycle after dispose"
+    },
+    {
+      "publicPath": "executions.visibility.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "executions.visibility.register.handle",
+      "idiom": "policy",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; identity-bound stale disposer"
+    },
+    {
+      "publicPath": "executions.recovery.capability.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "executions.recovery.capability.register.handle",
+      "idiom": "resourceRegistry",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; new lifecycle after dispose"
+    },
+    {
+      "publicPath": "executions.recovery.policy.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "executions.recovery.policy.register.handle",
+      "idiom": "policy",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; identity-bound stale disposer"
+    },
+    {
+      "publicPath": "executions.recovery.visibility.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "executions.recovery.visibility.register.handle",
+      "idiom": "policy",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; identity-bound stale disposer"
+    },
+    {
+      "publicPath": "sessions.channels.auth.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "sessions.channels.auth.register.handle",
+      "idiom": "policy",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; identity-bound stale disposer"
+    },
+    {
+      "publicPath": "sessions.channels.auth.pairingProvider.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "sessions.channels.auth.pairingProvider.register.handle",
+      "idiom": "resourceRegistry",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; new lifecycle after dispose"
+    },
+    {
+      "publicPath": "sessions.channels.redaction.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "sessions.channels.redaction.register.handle",
+      "idiom": "resourceRegistry",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; new lifecycle after dispose"
+    },
+    {
+      "publicPath": "skills.activation.policy.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "skills.activation.policy.register.handle",
+      "idiom": "policy",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; identity-bound stale disposer"
+    },
+    {
+      "publicPath": "tools.restrict.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "tools.restrict.register.handle",
+      "idiom": "policy",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; identity-bound stale disposer"
+    },
+    {
+      "publicPath": "tools.guard.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "tools.guard.register.handle",
+      "idiom": "policy",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; identity-bound stale disposer"
+    },
+    {
+      "publicPath": "tools.presentation.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "tools.presentation.register.handle",
+      "idiom": "resourceRegistry",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; new lifecycle after dispose"
+    },
+    {
+      "publicPath": "tools.executionMode.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "tools.executionMode.register.handle",
+      "idiom": "resourceRegistry",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; new lifecycle after dispose"
+    },
+    {
+      "publicPath": "tasks.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "tasks.register.handle",
+      "idiom": "resourceRegistry",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; new lifecycle after dispose"
+    },
+    {
+      "publicPath": "security.policy.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "security.policy.register.handle",
+      "idiom": "policy",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; identity-bound stale disposer"
+    },
+    {
+      "publicPath": "security.redaction.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "security.redaction.register.handle",
+      "idiom": "policy",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; identity-bound stale disposer"
+    },
+    {
+      "publicPath": "security.egress.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "security.egress.register.handle",
+      "idiom": "policy",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; identity-bound stale disposer"
+    },
+    {
+      "publicPath": "prompts.provenance.policy.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "prompts.provenance.policy.register.handle",
+      "idiom": "policy",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; identity-bound stale disposer"
+    },
+    {
+      "publicPath": "prompts.provenance.contribute.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "prompts.provenance.contribute.handle",
+      "idiom": "contribution",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, seq, dispose() }; active until dispose or eviction"
+    },
+    {
+      "publicPath": "diagnostics.register.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "diagnostics.register.handle",
+      "idiom": "resourceRegistry",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, generation, dispose() }; new lifecycle after dispose"
+    },
+    {
+      "publicPath": "settings.remote.contribute.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "settings.remote.contribute.handle",
+      "idiom": "contribution",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, seq, dispose() }; active until dispose or eviction"
+    },
+    {
+      "publicPath": "slots.contribute.handle",
+      "runtime": "client",
+      "kind": "handle",
+      "currentShape": null,
+      "targetPath": "slots.contribute.handle",
+      "idiom": "contribution",
+      "migrationAction": "add",
+      "shapeNote": "handle { id, ownerId, seq, dispose() }; active until dispose or eviction"
     }
   ],
   "servicesWhitelistReview": {

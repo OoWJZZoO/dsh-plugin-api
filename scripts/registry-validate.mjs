@@ -148,8 +148,11 @@ export function validateRegistry(registry) {
       }
       const segments = member.publicPath.split('.')
       const servicesRooted = member.publicPath === 'services' || member.publicPath.startsWith('services.')
-      if (segments.length > MAX_PATH_DEPTH && !servicesRooted) {
-        errors.push(`${where}: publicPath depth ${segments.length} exceeds the allowed maximum ${MAX_PATH_DEPTH} (services.* excepted)`)
+      // Handle rows append the `.handle` suffix to their parent path, so they
+      // carry one segment more than the deepest leaf.
+      const depthLimit = member.kind === 'handle' ? MAX_PATH_DEPTH + 1 : MAX_PATH_DEPTH
+      if (segments.length > depthLimit && !servicesRooted) {
+        errors.push(`${where}: publicPath depth ${segments.length} exceeds the allowed maximum ${depthLimit} (services.* excepted)`)
       }
 
       // Idiom classification and the services passthrough boundary.
