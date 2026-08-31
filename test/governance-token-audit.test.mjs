@@ -125,3 +125,19 @@ test('implementation artifacts contain no governance magic tokens, labels, or ca
   }
   assert.deepEqual(violations, [])
 })
+
+/**
+ * The public contract registry and its generated snapshots are consumed as
+ * neutral capability/domain data; governance tokens must not travel through
+ * them into types, fixtures, or downstream plugin surfaces.
+ */
+test('the public contract registry and generated snapshots stay neutral', async () => {
+  const registryPath = join(root, 'docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json')
+  const violations = scanArtifact(readFileSync(registryPath, 'utf8'), 'public-contract.registry.json')
+  const { buildSnapshots } = await import('../scripts/registry-snapshot.mjs')
+  const registry = JSON.parse(readFileSync(registryPath, 'utf8'))
+  for (const [name, value] of Object.entries(buildSnapshots(registry))) {
+    violations.push(...scanArtifact(JSON.stringify(value, null, 2), `snapshot ${name}`))
+  }
+  assert.deepEqual(violations, [])
+})

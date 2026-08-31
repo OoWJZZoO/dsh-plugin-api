@@ -2,7 +2,7 @@
  * Plugin entry for the replacement bundle
  * `@deepseek-ai/dsh-plugin-api-session-title`.
  *
- * apply() is fail-safe by design (AGENTS.md §2.6): it NEVER throws. It runs the
+ * apply() is fail-safe by design by constitution: it NEVER throws. It runs the
  * boot self-check matrix, then either:
  * - registers the forked SessionTitleService (with the `session-title/candidate`
  *   vocabulary and the contract symbol) when the official row is disabled/absent

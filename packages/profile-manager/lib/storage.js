@@ -1,6 +1,6 @@
 /**
  * Executor storage scope and governance primitives (profile scope per
- * durable-state-and-scope §1): `$DSH_HOME/plugin-api/profile-manager/` with
+ * durable-state-and-scope rule): `$DSH_HOME/plugin-api/profile-manager/` with
  * snapshots/, cache/seed/, backups/, audit.log and tmp/.
  *
  * Config.json (executor-owned, no public write entry): quotas and backup

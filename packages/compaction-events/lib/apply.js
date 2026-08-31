@@ -2,7 +2,7 @@
  * Plugin entry for the replacement bundle
  * `@deepseek-ai/dsh-plugin-api-compaction-events`.
  *
- * apply() is fail-safe by design (AGENTS.md §2.6): it NEVER throws. It runs the
+ * apply() is fail-safe by design by constitution: it NEVER throws. It runs the
  * boot self-check matrix, then either:
  * - registers the forked `BasicCompactionEngine` (with the compaction/* event
  *   vocabulary) when the official row is disabled/absent and every identity

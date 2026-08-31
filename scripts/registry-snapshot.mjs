@@ -3,16 +3,19 @@
  *
  * Zero harness dependencies. Derives test-time artifacts from the registry so
  * the public shape is constrained by a single source of truth:
- * - host surface snapshot (target tree + members);
- * - client surface snapshot (target tree + client root record);
+ * - host/client surface snapshots (target tree + leaf members);
+ * - idiom groups (public paths grouped by their primary idiom);
+ * - handle members (public handle leaves);
+ * - capability status (conservation matrix rows);
  * - services fixture (static whitelist);
- * - composition matrix input (members grouped by declared composition mode;
- *   members awaiting audit are excluded until they are finalized);
- * - composable profile fixture (recommended members; the registry marker for
- *   default-profile membership per design §Composable Profile).
+ * - event authority (event semantics, producer authority, dispatch modes);
+ * - composable profile fixture (recommended members);
+ * - migration diff (per-action current-to-target path lists);
+ * - composition matrix (members grouped by declared composition mode).
  *
  * Snapshots contain neutral capability/domain names only and never carry
- * governance classification tokens.
+ * governance classification tokens. The generator never inspects arbitrary
+ * runtime objects and never discovers undocumented official members.
  *
  * Usage:
  *   node scripts/registry-snapshot.mjs <registry.json> <outDir>
@@ -23,6 +26,10 @@ export function buildSnapshots(registry) {
   const clientDomainTree = Array.isArray(registry?.clientDomainTree) ? registry.clientDomainTree : []
   const members = Array.isArray(registry?.members) ? registry.members : []
   const servicesWhitelist = Array.isArray(registry?.servicesWhitelist) ? registry.servicesWhitelist : []
+  const capabilityMatrix = Array.isArray(registry?.capabilityMatrix) ? registry.capabilityMatrix : []
+  const eventCatalog = Array.isArray(registry?.eventCatalog) ? registry.eventCatalog : []
+  const oldToTargetMapping = Array.isArray(registry?.oldToTargetMapping) ? registry.oldToTargetMapping : []
+  const namespaces = Array.isArray(registry?.namespaces) ? registry.namespaces : []
 
   const hostMembers = members
     .filter((member) => member.runtime === 'host' || member.runtime === 'both')
@@ -30,6 +37,24 @@ export function buildSnapshots(registry) {
   const clientMembers = members
     .filter((member) => member.runtime === 'client' || member.runtime === 'both')
     .map(projectMember)
+
+  const idiomGroups = {}
+  for (const member of members) {
+    if (member.idiom === null || member.idiom === undefined) continue
+    ;(idiomGroups[member.idiom] ??= []).push(member.publicPath)
+  }
+  for (const list of Object.values(idiomGroups)) list.sort()
+
+  const handleMembers = members
+    .filter((member) => member.kind === 'handle')
+    .map((member) => ({
+      publicPath: member.publicPath,
+      targetPath: member.targetPath,
+      runtime: member.runtime,
+      idiom: member.idiom,
+      lifecycle: member.lifecycle,
+    }))
+    .sort((a, b) => a.publicPath.localeCompare(b.publicPath))
 
   const byComposition = {}
   for (const member of members) {
@@ -43,28 +68,55 @@ export function buildSnapshots(registry) {
     .map((member) => member.publicPath)
     .sort()
 
+  const byAction = {}
+  for (const entry of oldToTargetMapping) {
+    const action = entry.action ?? 'rename'
+    ;(byAction[action] ??= []).push(entry.oldPath)
+  }
+  for (const list of Object.values(byAction)) list.sort()
+
   return {
     hostSurface: {
       roots: [...hostDomainTree].sort(),
+      namespaces: namespaces
+        .filter((record) => (record.runtime ?? 'host') === 'host')
+        .map((record) => ({ namespace: record.namespace, availabilityMember: record.availabilityMember, availabilityExemption: record.availabilityExemption })),
       members: hostMembers,
     },
     clientSurface: {
       roots: [...clientDomainTree].sort(),
       clientRoot: registry?.clientRoot ?? null,
+      namespaces: namespaces
+        .filter((record) => (record.runtime ?? 'host') === 'client')
+        .map((record) => ({ namespace: record.namespace, availabilityMember: record.availabilityMember, availabilityExemption: record.availabilityExemption })),
       members: clientMembers,
+    },
+    idiomGroups,
+    handleMembers,
+    capabilityStatus: {
+      clusters: capabilityMatrix.map((row) => ({
+        capabilityCluster: row.capabilityCluster,
+        status: row.status,
+        qualifiers: row.qualifiers ?? [],
+        replacement: row.replacement ?? null,
+        gapReason: row.gapReason ?? null,
+      })),
     },
     servicesFixture: {
       keys: servicesWhitelist.map((entry) => entry.key).sort(),
     },
-    capabilityFixture: {
-      capabilities: members
-        .filter((member) => member.runtime === 'host' || member.runtime === 'both')
-        .map((member) => ({
-          capability: member.capability ?? member.publicPath,
-          publicPath: member.publicPath,
-          effect: member.effect,
-          status: member.status,
-        })),
+    eventAuthority: {
+      events: eventCatalog.map((event) => ({
+        name: event.name,
+        runtime: event.runtime ?? 'host',
+        eventSemantics: event.eventSemantics,
+        producerAuthority: event.producerAuthority,
+        dispatch: event.dispatch,
+        observerFailure: event.observerFailure,
+      })),
+    },
+    migrationDiff: {
+      byAction,
     },
     compositionMatrix: {
       byComposition,
@@ -78,8 +130,9 @@ export function buildSnapshots(registry) {
 function projectMember(member) {
   return {
     publicPath: member.publicPath,
-    proposedTargetPath: member.proposedTargetPath ?? member.publicPath,
+    proposedTargetPath: typeof member.targetPath === 'string' && member.targetPath.length > 0 ? member.targetPath : null,
     runtime: member.runtime,
+    idiom: member.idiom,
     effect: member.effect,
     composition: member.composition ?? 'pending-audit',
     status: member.status,

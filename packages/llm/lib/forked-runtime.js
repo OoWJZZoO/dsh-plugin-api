@@ -614,7 +614,7 @@ const APP_IDENTITY = {
 /**
 * The standard `User-Agent` value: `product/version (+url)`. The
 * parenthesized `+url` comment is the conventional self-identification form
-* (RFC 9110 §10.1.5 product + comment syntax).
+* (RFC 9110 product + comment syntax).
 * @param identity - the identity to render; defaults to {@link APP_IDENTITY}.
 * @returns the ready-to-send header value.
 */

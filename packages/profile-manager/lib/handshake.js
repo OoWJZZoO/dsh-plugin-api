@@ -1,6 +1,6 @@
 /**
  * Executor handshake: the companion CLI reports its own build identity so
- * the facade can run the two-direction version check (constitution §4):
+ * the facade can run the two-direction version check (constitution):
  * direction ① `builtForRuntime` (runtime part of the full unique version)
  * must equal the installed official runtime full identity; direction ②
  * `apiProtocol` (`dsh.api` major.minor) must match the main facade's

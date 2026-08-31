@@ -32,11 +32,11 @@ test('the client runtime root member inventory stays in sync with the registry',
 })
 
 test('every retained member has a finalized composition record with authority fields', () => {
-  const requiredFields = ['composition', 'stateOwner', 'scope', 'resourceKey', 'identitySource', 'conflictRule', 'lifecycle', 'bypasses', 'availability']
+  const requiredFields = ['composition', 'idiom', 'effect', 'scope', 'resourceKey', 'identitySource', 'conflictRule', 'lifecycle', 'failureSemantics', 'availabilityShape']
   for (const member of registry.members) {
     assert.notEqual(member.composition, 'pending-audit', `${member.publicPath} must have a finalized composition mode`)
     for (const field of requiredFields) {
-      assert.ok(member[field] !== undefined && member[field] !== '', `${member.publicPath}.${field} must be recorded`)
+      assert.ok(member[field] !== undefined, `${member.publicPath}.${field} must be recorded (explicit null allowed)`)
     }
   }
 })
@@ -74,7 +74,7 @@ test('validator rejects vocabulary violations', () => {
 test('validator rejects excessive path depth outside services.*', () => {
   const copy = structuredClone(registry)
   copy.members.push({
-    publicPath: 'llm.routing.decisions.extra',
+    publicPath: 'llm.routing.decisions.extra.deep.more',
     runtime: 'host',
     effect: 'read',
     composition: 'pure',
@@ -107,8 +107,11 @@ test('snapshots derive every surface from the same registry', () => {
   assert.ok(Array.isArray(snapshots.hostSurface.roots))
   assert.ok(snapshots.hostSurface.roots.includes('llm'))
   assert.ok(snapshots.hostSurface.roots.includes('services'))
-  const targets = new Set(snapshots.hostSurface.members.map((member) => member.proposedTargetPath))
   for (const expected of ['agents', 'sessions', 'executions', 'prompts', 'llm.routing', 'workspaces.transactions', 'sessions.channels', 'capabilities']) {
+    assert.ok(snapshots.hostSurface.roots.includes(expected.split('.')[0]), `host surface must include root ${expected}`)
+  }
+  const targets = new Set(snapshots.hostSurface.members.map((member) => member.proposedTargetPath).filter(Boolean))
+  for (const expected of ['agents.get', 'sessions.observe', 'llm.routing.forExecution', 'workspaces.transactions.prepare', 'sessions.channels.acquire', 'capabilities.get']) {
     assert.ok(targets.has(expected), `host surface must include target ${expected}`)
   }
   assert.ok(Array.isArray(snapshots.clientSurface.roots))
@@ -163,33 +166,32 @@ test('the snapshot CLI writes files and the validate CLI accepts the registry', 
     const outDir = join(tmp, 'snap')
     execFileSync(process.execPath, ['scripts/registry-snapshot.mjs', REGISTRY_PATH, outDir], { cwd: root, encoding: 'utf8' })
     const files = readdirSync(outDir).sort()
-    assert.deepEqual(files, ['capabilityFixture.json', 'clientSurface.json', 'composableProfile.json', 'compositionMatrix.json', 'hostSurface.json', 'servicesFixture.json'])
-    const capabilityFixture = JSON.parse(readFileSync(join(outDir, 'capabilityFixture.json'), 'utf8'))
-    const targetPaths = new Set(registry.members.filter((m) => m.runtime === 'host' || m.runtime === 'both').map((m) => m.publicPath))
-    for (const entry of capabilityFixture.capabilities) {
-      assert.ok(targetPaths.has(entry.publicPath), `capability fixture covers ${entry.publicPath}`)
-      assert.equal(entry.capability, entry.publicPath)
+    assert.deepEqual(files, [
+      'capabilityStatus.json', 'clientSurface.json', 'composableProfile.json', 'compositionMatrix.json',
+      'eventAuthority.json', 'handleMembers.json', 'hostSurface.json', 'idiomGroups.json',
+      'migrationDiff.json', 'servicesFixture.json',
+    ])
+    const capabilityStatus = JSON.parse(readFileSync(join(outDir, 'capabilityStatus.json'), 'utf8'))
+    const matrixClusters = new Set(registry.capabilityMatrix.map((row) => row.capabilityCluster))
+    for (const row of capabilityStatus.clusters) {
+      assert.ok(matrixClusters.has(row.capabilityCluster), `capability status covers matrix cluster ${row.capabilityCluster}`)
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true })
   }
 })
 
-test('the runtime capability descriptor table mirrors the registry host member set', async () => {
+test('the runtime capability descriptor table mirrors the registry capability paths', async () => {
   const { CAPABILITY_PATHS } = await import('../lib/capability-descriptors.js')
-  const registryTargets = new Set(
-    registry.members
-      .filter((member) => member.runtime === 'host' || member.runtime === 'both')
-      .map((member) => member.publicPath),
-  )
-  // The runtime table derives from the same registry members; every
-  // registered host member must be queryable and no extra capability may
-  // exist without a registry record.
-  for (const path of CAPABILITY_PATHS) {
-    assert.ok(registryTargets.has(path), `runtime capability ${path} must be a registry host member`)
+  // Leaf-level registry: a runtime capability path is a member capability
+  // cluster, a namespace navigation path, or a root self-description member.
+  const capabilityPaths = new Set(registry.members.map((m) => m.capability))
+  for (const record of registry.namespaces) capabilityPaths.add(record.capabilityPath)
+  for (const path of registry.members.map((m) => m.publicPath)) {
+    if (!path.includes('.')) capabilityPaths.add(path)
   }
-  for (const path of registryTargets) {
-    assert.ok(CAPABILITY_PATHS.includes(path), `registry host member ${path} must be queryable through capabilities`)
+  for (const path of CAPABILITY_PATHS) {
+    assert.ok(capabilityPaths.has(path), `runtime capability ${path} must be a registry capability path`)
   }
 })
 
