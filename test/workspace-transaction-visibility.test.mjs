@@ -103,7 +103,7 @@ async function prepareTx(services, transactionId = 'tx-1') {
   return acquired.handle
 }
 
-test('get/observe projections are deep-frozen, redacted, and carry availability with generation', async () => {
+test('get/observe projections are deep-frozen, redacted, and never embed availability (it lives on the owner api)', async () => {
   const services = createServices()
   const { owner } = createOwner(services)
   const handle = await prepareTx(services)

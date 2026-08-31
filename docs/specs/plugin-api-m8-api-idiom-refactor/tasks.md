@@ -87,12 +87,12 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 
 ### [ ] 4. Wave 4 — Projection 与 Self-Description 面（requirements §3、§10；design §Wave 4 / §Availability And Capability Presence）
 
-- [ ] **4.1 读取路径迁移**：低风险读取/观察路径迁到 `get` / `list` / `inspect` / `history` / `observe`，返回冻结只读视图或 typed unavailable 结果；缺失或降级通过文档化的 unavailable/degraded 视图表达，不抛穿调用方。
-- [ ] **4.2 namespace `availability()`**：按 2.3 的导航记录，为每个公共 namespace 提供返回冻结 `{ status, ... }` 的 `availability()`，`status` 恰为 `active` / `degraded` / `unavailable`；不可用 namespace 保持形状兼容并报 `unavailable`，不因 backing 缺失而消失。
-- [ ] **4.3 capabilities 与 capabilityMatrix 分离**：`capabilities.get` / `list` / `require` 描述公共能力存在与当前状态（三值），不暴露内部 mounter/包名/替代行/可写 registry 对象；能力矩阵另用 `capabilityMatrix()`，不与 availability 混用；`capabilities.require` 对缺失能力抛 typed capability-unavailable 错误。
-- [ ] **4.4 移除业务结果内嵌 availability**：判别式业务结果不得内嵌 availability 字段；availability 唯一公共入口是 namespace `availability()`（coordination 为 `availability(scope)`）。
-- [ ] **4.5 官方只读 helper 处置**：没有门面语义担保的官方只读 helper 迁到经审计的 `services.*`，或保留并在 registry 显式登记其 passthrough 性质与理由。
-- [ ] **4.6 测试**：冻结视图、observe 句柄、availability 三值与幂等无副作用、capability 三值映射、业务结果无内嵌 availability、移除重复暴露。
+- [x] **4.1 读取路径迁移**：低风险读取/观察路径迁到 `get` / `list` / `inspect` / `history` / `observe`，返回冻结只读视图或 typed unavailable 结果；缺失或降级通过文档化的 unavailable/degraded 视图表达，不抛穿调用方。本 Wave 新增的 observe 订阅面（llm.routing.observe / mcp.observe / coordination.observe / diagnostics.observe / sessions.durable.observe）已按冻结决策 6 登记 handle 行；其标准投影句柄形状（current/subscribe/dispose/epoch）随 Wave 5–6 的共享句柄契约落地，registry 以 handle 行 currentShape 如实记录本阶段形状。
+- [x] **4.2 namespace `availability()`**：按 2.3 的导航记录，为每个公共 namespace 提供返回冻结 `{ status, ... }` 的 `availability()`，`status` 恰为 `active` / `degraded` / `unavailable`；不可用 namespace 保持形状兼容并报 `unavailable`，不因 backing 缺失而消失。
+- [x] **4.3 capabilities 与 capabilityMatrix 分离**：`capabilities.get` / `list` / `require` 描述公共能力存在与当前状态（三值），不暴露内部 mounter/包名/替代行/可写 registry 对象；能力矩阵另用 `capabilityMatrix()`，不与 availability 混用；`capabilities.require` 对缺失能力抛 typed capability-unavailable 错误。
+- [x] **4.4 移除业务结果内嵌 availability**：判别式业务结果不得内嵌 availability 字段；availability 唯一公共入口是 namespace `availability()`（coordination 为 `availability(scope)`）。本 Wave 已从 tasks / workspaces.transactions 的判别式结果移除 availability（durability/epoch 由 namespace availability() 承载）；coordination 租约结果的 availability 内嵌由 Wave 6（6.3/6.5）移除。
+- [x] **4.5 官方只读 helper 处置**：没有门面语义担保的官方只读 helper 迁到经审计的 `services.*`，或保留并在 registry 显式登记其 passthrough 性质与理由。
+- [x] **4.6 测试**：冻结视图、observe 句柄、availability 三值与幂等无副作用、capability 三值映射、业务结果无内嵌 availability、移除重复暴露。
 
 ### [ ] 5. Wave 5 — Policy / Resource Registry / Contribution 面（requirements §4、§7、§8；design §Wave 5）
 
