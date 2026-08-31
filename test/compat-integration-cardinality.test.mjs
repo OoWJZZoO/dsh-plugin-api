@@ -13,7 +13,7 @@ import { SERVICES_NAMESPACE_KEYS } from '../lib/services.js'
 
 // These are deliberately separate approved sets. Their counts must never be
 // inferred from each other: Cordis events (47), durable records (5), and
-// services namespace keys (21) have distinct ownership and boundaries.
+// services namespace keys (46 static allowlist; the migrate leaves are separate, non-allowlist keys).
 const CORDIS_EVENT_NAMES = [
   'agent/created',
   'agent/disposed',
