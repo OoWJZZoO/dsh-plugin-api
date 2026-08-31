@@ -131,6 +131,15 @@ registry 目标行已登记。
 `executions.recovery` / `sessions.channels` 内部化簇：成员移出公共面，不作为
 公共入口保留；7.7b 断言其在公共面与任何别名下均不重现。
 
+> 执行中补充（sanctioned 内部契约成员，登记语义）：`sessions.channels.
+> dispatchChannelMethod` / `channelGenerationOf` 与 `events.dispose` 以
+> **非枚举**成员保留（walkSurface/公共面快照不可见；无兼容别名）。前者是
+> session-channel gateway/connection 替换包经 CONTRACT_SYMBOL 消费的跨包内部
+> 契约管件；后者是 events feature 的 fail-safe teardown。二者按 7.7a(c)/
+> 7.7b 的快照口径不构成公共面残留（不枚举、非别名、非静默 no-op），并在此
+> 显式登记为内部机制（internalize 的 sanctioned 实现形态）。
+> client `lifecycle.onRebind`（merge 旧入口）已随本波从 caller-bound 面移除。
+
 ## 7. 受影响类型/快照/测试/包
 
 - 类型与快照：`scripts/registry-snapshot.mjs` 产物随 registry 重建；

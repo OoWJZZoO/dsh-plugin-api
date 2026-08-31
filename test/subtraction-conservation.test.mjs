@@ -63,7 +63,7 @@ function walkSurface(obj, out = [], prefix = '') {
 
 // -- 7.7a: old paths are removed from the host surface; targets expose the target shapes --
 
-test('7.7a: renamed/merged/split/migrated old paths are absent while their targets exist', () => {
+test('subtraction: renamed/merged/split/migrated old paths are absent while their targets exist', () => {
   const { ctx, state } = createHarness()
   apply(ctx)
   const api = state.pluginApi
@@ -123,7 +123,7 @@ test('7.7a: renamed/merged/split/migrated old paths are absent while their targe
   }
 })
 
-test('7.7a: deleted members are gone and their capability clusters carry replacement or gap reason', () => {
+test('subtraction: deleted members are gone and their capability clusters carry replacement or gap reason', () => {
   const { ctx, state } = createHarness()
   apply(ctx)
   const api = state.pluginApi
@@ -146,7 +146,7 @@ test('7.7a: deleted members are gone and their capability clusters carry replace
 
 // -- 7.7b: no residual legacy shapes anywhere on the public surface --
 
-test('7.7b: no compatibility aliases, dormant fallbacks, or hidden clones of removed members', () => {
+test('subtraction: no compatibility aliases, dormant fallbacks, or hidden clones of removed members', () => {
   const { ctx, state } = createHarness()
   apply(ctx)
   const api = state.pluginApi
@@ -165,7 +165,7 @@ test('7.7b: no compatibility aliases, dormant fallbacks, or hidden clones of rem
 
 // -- 7.7c: reconciliation assertions --
 
-test('7.7c: host-first redaction and client codec validation keep their order', async () => {
+test('subtraction: host-first redaction and client codec validation keep their order', async () => {
   const { ctx, state } = createHarness()
   apply(ctx)
   const api = state.pluginApi
@@ -178,7 +178,7 @@ test('7.7c: host-first redaction and client codec validation keep their order', 
   assert.equal(typeof api.services, 'object')
 })
 
-test('7.7c: the registry declares every public host leaf (no undocumented members)', () => {
+test('subtraction: the registry declares every public host leaf (no undocumented members)', () => {
   const { ctx, state } = createHarness()
   apply(ctx)
   const api = state.pluginApi
@@ -200,7 +200,7 @@ test('7.7c: the registry declares every public host leaf (no undocumented member
   }
 })
 
-test('7.7c: optional capability isolation affects only its owner', () => {
+test('subtraction: optional capability isolation affects only its owner', () => {
   const { ctx, state } = createHarness()
   apply(ctx)
   const api = state.pluginApi
@@ -221,7 +221,7 @@ const HOST_REMOVE_ROWS = registry.members.filter(
   (member) => member.runtime === 'host' && REMOVE_ACTIONS.has(member.migrationAction),
 )
 
-test('7.7a (registry-driven): every remove row is absent from healthy and degraded surfaces', () => {
+test('subtraction (registry-driven): every remove row is absent from healthy and degraded surfaces', () => {
   const { ctx, state } = createHarness()
   apply(ctx)
   const api = state.pluginApi
@@ -237,7 +237,10 @@ test('7.7a (registry-driven): every remove row is absent from healthy and degrad
     assert.equal(keys.has(row.publicPath), false, `${row.publicPath} (${row.migrationAction}) must be absent`)
   }
 
-  const bareServices = {}
+  const bareServices = {
+    llm: undefined, tools: undefined, agents: undefined, sessions: undefined,
+    settings: undefined, systemPrompt: undefined, apiProxy: undefined, web: undefined,
+  }
   const { ctx: bareCtx, state: bareState } = createHarness(bareServices)
   apply(bareCtx)
   const bareKeys = new Set(walkSurface(bareState.pluginApi))
@@ -252,7 +255,7 @@ test('7.7a (registry-driven): every remove row is absent from healthy and degrad
   }
 })
 
-test('7.7a (registry-driven): deleted rows report replacement or gap in the capability matrix', () => {
+test('subtraction (registry-driven): deleted rows report replacement or gap in the capability matrix', () => {
   const deletedRows = HOST_REMOVE_ROWS.filter((row) => row.migrationAction === 'delete')
   assert.ok(deletedRows.length >= 3, 'delete rows are recorded')
   for (const row of deletedRows) {
@@ -266,7 +269,7 @@ test('7.7a (registry-driven): deleted rows report replacement or gap in the capa
   }
 })
 
-test('7.7a (registry-driven): renamed/merged/migrated targets exist on the healthy surface', () => {
+test('subtraction (registry-driven): renamed/merged/migrated targets exist on the healthy surface', () => {
   const { ctx, state } = createHarness()
   apply(ctx)
   const api = state.pluginApi

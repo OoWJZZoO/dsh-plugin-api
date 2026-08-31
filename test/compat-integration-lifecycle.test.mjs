@@ -85,8 +85,8 @@ test('combined host publishes additive immutable compat shapes once without synt
   assert.equal(first.llm.routing.forExecution({}), undefined, 'missing capture remains query-only rather than a synthetic route value')
   assert.equal(typeof first.llm.requestTransforms.register, 'function')
   assert.equal(typeof first.llm.admissionPolicies.register, 'function')
-  assert.equal(typeof first.sessions.onDurable, 'function')
-  assert.equal(typeof first.sessions.appendMessage, 'function')
+  assert.equal(typeof first.sessions.durable.observe, 'function')
+  assert.equal(typeof first.sessions.durable.appendMessage, 'function')
   assert.equal(Object.keys(first.events.catalog()).length, 47)
   for (const excluded of ['llm/request', 'llm/admission', 'exec.route', 'agent/create', 'compaction/started']) {
     assert.equal(first.events.catalog()[excluded], undefined)
@@ -105,7 +105,7 @@ test('combined host preserves core-inactive → feature-disabled → guard-disab
   try {
     const inert = createHost()
     apply(inert.ctx)
-    assert.throws(() => inert.state.pluginApi.sessions.appendMessage(), PluginApiInactiveError)
+    assert.throws(() => inert.state.pluginApi.sessions.durable.appendMessage('target', 'kind', {}), PluginApiInactiveError)
   } finally {
     if (previous === undefined) delete process.env.DSH_PLUGIN_API_FORCE_GUARD_FAIL
     else process.env.DSH_PLUGIN_API_FORCE_GUARD_FAIL = previous
@@ -143,14 +143,14 @@ test('durable retained references, repeated cleanup, and stale cleanup cannot af
 
   assert.equal(firstCleanup(), true)
   assert.equal(firstCleanup(), false)
-  assert.throws(() => retainedSession.onDurable(), PluginApiFeatureDisabledError)
+  assert.throws(() => retainedSession.durable.observe(), PluginApiFeatureDisabledError)
   assert.equal(typeof retainedLlm.requestTransforms.register, 'function')
 
   apply(ctx)
   const freshSession = state.pluginApi.sessions
   assert.equal(feature(state, 'sessionDurable').isActive, true)
-  assert.throws(() => retainedSession.appendMessage(), PluginApiFeatureDisabledError)
-  assert.equal(typeof freshSession.onDurable, 'function')
+  assert.throws(() => retainedSession.durable.appendMessage(), PluginApiFeatureDisabledError)
+  assert.equal(typeof freshSession.durable.observe, 'function')
   assert.equal(firstCleanup(), false)
   assert.equal(feature(state, 'sessionDurable').isActive, true)
   assert.equal(typeof state.pluginApi.llm.requestTransforms.register, 'function')

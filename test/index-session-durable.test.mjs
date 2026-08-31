@@ -159,7 +159,7 @@ test('apply mounts sessionDurable immediately after session without extending th
   ])
   assert.ok(state.pluginApi.sessions.durable.list().every((entry) => entry.descriptor), 'the merged list carries descriptors')
   assert.equal(typeof state.pluginApi.sessions.durable.observe, 'function')
-  assert.equal(typeof state.pluginApi.sessions.appendMessage, 'function')
+  assert.equal(typeof state.pluginApi.sessions.durable.appendMessage, 'function')
   // One shared observe feed backs the session/event projection subscribers
   // (durable hub, sessionRoute and sessionChannel share the feed).
   assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 2)
@@ -192,7 +192,7 @@ test('durable cleanup restores feature-disabled, and a stale cleanup cannot revo
   assert.equal(firstCleanup(), false)
   assert.equal(feature(state, 'sessionDurable').isActive, true)
   assert.equal(secondCleanup(), true)
-  assert.throws(() => secondSessionApi.appendMessage(), (error) => {
+  assert.throws(() => secondSessionApi.durable.appendMessage(), (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
     assert.equal(error.feature, 'sessionDurable')
     return true
@@ -249,7 +249,7 @@ test('a sessionDurable mounter exception leaves the composed session facade at f
 
   assert.equal(feature(state, 'sessionDurable').isActive, false)
   assert.equal(typeof state.pluginApi.sessions.get, 'function')
-  assert.throws(() => state.pluginApi.sessions.appendMessage(), (error) => {
+  assert.throws(() => state.pluginApi.sessions.durable.appendMessage(), (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
     assert.equal(error.feature, 'sessionDurable')
     return true
@@ -293,7 +293,7 @@ test('host audit and public contract mismatches retain baseline session while di
     assert.equal(feature(contractMismatch.state, 'session').isActive, true)
     assert.equal(feature(contractMismatch.state, 'sessionDurable').isActive, false)
     assert.equal(typeof contractMismatch.state.pluginApi.sessions.get, 'function')
-    assert.throws(() => contractMismatch.state.pluginApi.sessions.appendMessage(), PluginApiFeatureDisabledError)
+    assert.throws(() => contractMismatch.state.pluginApi.sessions.durable.appendMessage(), PluginApiFeatureDisabledError)
   } finally {
     scheduleManifest.version = originalScheduleVersion
     KNOWN_SESSION_EVENT_TYPES.add(scheduleType)
