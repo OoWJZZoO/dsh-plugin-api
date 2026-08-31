@@ -166,7 +166,7 @@ test('mounted agent extension facade preserves all registry lifecycle result ide
     create: true,
     resume: true,
     register: true,
-    providers: { enter: true, announce: true, setFactory: true },
+    providers: { enter: true, announce: true, setFactory: true, register: true },
   })
 })
 test('active composed facade degrades only a missing agent extension leaf', () => {
@@ -188,7 +188,7 @@ test('active composed facade degrades only a missing agent extension leaf', () =
     create: true,
     resume: true,
     register: true,
-    providers: { enter: true, announce: true, setFactory: false },
+    providers: { enter: true, announce: true, setFactory: false, register: false },
   })
   assert.equal(agent.get('agent-1').id, 'agent-1')
   assert.equal(typeof state.pluginApi.llm.routing.forExecution, 'function')
@@ -231,6 +231,7 @@ test('active composed facade degrades each missing agent extension leaf independ
         enter: missing !== 'enter',
         announce: missing !== 'announce',
         setFactory: true,
+        register: missing !== 'enter' && missing !== 'announce',
       },
     })
     assert.equal(agent.providers.isActive, missing !== 'enter' && missing !== 'announce')

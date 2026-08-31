@@ -107,7 +107,7 @@ test('availability has frozen exact shape and provider is active only for three 
     create: true,
     resume: true,
     register: true,
-    providers: { enter: true, announce: false, setFactory: true },
+    providers: { enter: true, announce: false, setFactory: true, register: false },
   })
   assert.ok(Object.isFrozen(availability))
   assert.ok(Object.isFrozen(availability.providers))

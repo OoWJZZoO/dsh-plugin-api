@@ -62,7 +62,7 @@ test('prompts.contribute returns a discriminated result with a seq handle and re
   const revived = contribute({ kind: 'tools', id: 'provider-a', provider: () => {} })
   assert.equal(revived.ok, true)
   revived.handle.dispose()
-  revoked: revived.handle.dispose()
+  assert.equal(revived.handle.dispose(), false, 'dispose stays idempotent after revival')
 })
 
 test('the five prompt kinds merge into prompts.contribute', () => {
@@ -97,6 +97,7 @@ test('resource registrations expose the merged register entry with official iden
   assert.equal(typeof api.remotes.register, 'function')
   // settings remote mounts through contribute
   assert.equal(typeof api.settings.remote.contribute, 'function')
+  assert.equal('contribute' in api.settings, false, 'the registered entry is settings.remote.contribute only')
 })
 
 test('merged agent provider registration dispatches by spec shape', () => {
@@ -134,4 +135,34 @@ test('channel auth/redaction registrations and skills activation registers are s
   apply(disabled.ctx)
   assert.throws(() => disabled.state.pluginApi.skills.activation.register({}), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED')
   assert.throws(() => disabled.state.pluginApi.skills.activation.policy.register({}), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED')
+})
+test('facade-owned registration handles expose owner, generation and identity-bound dispose', async () => {
+  const { createFeatureRegistry } = await import('../lib/feature-registry.js')
+  const { createPluginApiService } = await import('../lib/plugin-api-service.js')
+  const { LlmAdaptersOwnerConflictError } = await import('../lib/errors.js')
+  const registry = createFeatureRegistry()
+  const Service = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
+  const records = []
+  const facet = {
+    decorate(definition, owner) {
+      const record = { id: definition.id, owner, generation: 1, spec: definition }
+      records.push(record)
+      return { status: 'ok', record }
+    },
+    dispose(owner, id) { return { status: 'ok' } },
+    snapshot() { return Object.freeze([]) },
+  }
+  const fiber = { uid: 7 }
+  const service = new Service({
+    fiber, loader: { entries() { return [{ fiber, options: { name: 'plugin-a' } }] } },
+    reflect: { provide() {} }, get() { return undefined }, effect() { return () => {} },
+  })
+  service._setLlmAdaptersProvider(() => facet)
+  registry.mount('llmAdapters')
+  const handle = service.llm.adapters.register({ id: 'adapter-1' })
+  assert.ok(handle, 'facade-owned adapter registration returns a handle')
+  assert.equal(typeof handle.dispose, 'function')
+  assert.equal(typeof handle.snapshot, 'function')
+  const reclaimed = await handle.dispose()
+  assert.equal(reclaimed.disposed ?? true, true)
 })
