@@ -80,7 +80,7 @@ test('active service with unmounted tools throws feature-disabled error', () => 
 
   assert.equal(service.tools.isActive, false)
   assert.throws(
-    () => service.tools.guard(() => {}),
+    () => service.tools.guard.register(() => {}),
     (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
       assert.equal(error.feature, 'tools')
@@ -107,12 +107,12 @@ test('mountFeature("tools") activates the tools accessor and delegates to the of
   const scope = { agent: 'agent-1' }
 
   assert.doesNotThrow(() => service.tools.register(definition))
-  assert.doesNotThrow(() => service.tools.restrict(filter))
-  assert.doesNotThrow(() => service.tools.guard(guard))
+  assert.doesNotThrow(() => service.tools.restrict.register(filter))
+  assert.doesNotThrow(() => service.tools.guard.register(guard))
   assert.equal(service.tools.get('tool', scope).name, 'tool')
   assert.deepEqual(service.tools.schemas(scope), [{ name: 'schema' }])
   assert.deepEqual(await service.tools.execute(input), { isError: false, content: [] })
-  assert.doesNotThrow(() => service.tools.presentAs('native', 'extra'))
+  assert.doesNotThrow(() => service.tools.presentation.register('native', 'extra'))
 
   assert.deepEqual(calls, [
     ['register', definition],

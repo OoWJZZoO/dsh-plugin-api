@@ -279,7 +279,7 @@ test('integrated tools facade exposes executionMode and defineTool', async () =>
   const { ctx, state } = createMockCtx()
   apply(ctx)
   const tools = state.pluginApi.tools
-  assert.equal(tools.executionMode({ mode: 'parallel' }), 'parallel')
+  assert.equal(tools.executionMode.register({ mode: 'parallel' }), 'parallel')
   assert.equal(typeof tools.defineTool, 'function')
   // defineTool delegates the official public export when present.
   const dshTools = await import('@deepseek-ai/dsh-tools').catch(() => undefined)

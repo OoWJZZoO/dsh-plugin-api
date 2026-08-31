@@ -34,7 +34,7 @@ function assertDisabledView(agents) {
       return true
     })
   }
-  for (const method of ['enter', 'announce', 'setFactory']) {
+  for (const method of ['enter', 'announce', 'setFactory', 'register']) {
     assert.throws(() => agents.providers[method]('x'), (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
       assert.equal(error.feature, 'agents')
@@ -43,7 +43,7 @@ function assertDisabledView(agents) {
     })
   }
   assert.equal(agents.providers.isActive, false)
-  assert.deepEqual(Object.keys(agents.providers), ['isActive', 'enter', 'announce', 'setFactory'])
+  assert.deepEqual(Object.keys(agents.providers), ['isActive', 'enter', 'announce', 'setFactory', 'register'])
   const availability = agents.availability()
   assert.deepEqual(availability, {
     status: 'unavailable',
@@ -77,11 +77,11 @@ test('inert service throws inactive errors from every declared agents member', (
   for (const method of ['get', 'list', 'roots', 'create', 'resume', 'register']) {
     assert.throws(() => agents[method]('x'), PluginApiInactiveError)
   }
-  for (const method of ['enter', 'announce', 'setFactory']) {
+  for (const method of ['enter', 'announce', 'setFactory', 'register']) {
     assert.throws(() => agents.providers[method]('x'), PluginApiInactiveError)
   }
   assert.equal(agents.providers.isActive, false)
-  assert.deepEqual(Object.keys(agents.providers), ['isActive', 'enter', 'announce', 'setFactory'])
+  assert.deepEqual(Object.keys(agents.providers), ['isActive', 'enter', 'announce', 'setFactory', 'register'])
   const inertAvailability = agents.availability()
   assert.deepEqual(inertAvailability, {
     status: 'unavailable',

@@ -115,11 +115,11 @@ assert.equal(names[names.length - 14], 'remote', 'remote stays directly before e
 test('pluginApi.remotes and pluginApi.settings.remote coexist without overriding each other', () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
-  // Settings remote surface intact.
-  assert.equal(typeof state.pluginApi.settings.remote, 'function')
+  // Settings remote surface intact (the mounted entry is contribute).
+  assert.equal(typeof state.pluginApi.settings.remote.contribute, 'function')
   // Generic top-level surface intact (its own owner semantics, AC 5.4).
   assert.equal(typeof state.pluginApi.remotes.publish, 'function')
-  assert.notEqual(state.pluginApi.settings.remote, state.pluginApi.remotes.publish)
+  assert.notEqual(state.pluginApi.settings.remote.contribute, state.pluginApi.remotes.publish)
 })
 
 test('remote feature is active while the facade is active (known feature, not disabled)', () => {
