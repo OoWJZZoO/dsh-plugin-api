@@ -79,7 +79,7 @@ test('aborted error: typed identity through the integrated facade', () => {
   assert.doesNotThrow(() => apply(ctx))
   const tools = state.pluginApi.tools
   assert.equal(tools.isActive, true)
-  const err = tools.toolAbortedError()
+  const err = state.pluginApi.services.tools.toolAbortedError()
   assert.ok(err instanceof Error)
   assert.equal(err.name, 'AbortError')
   assert.equal(err.message, 'tool call aborted')
@@ -99,10 +99,10 @@ test('aborted error: disabled tools degrade locally without touching other featu
   const { ctx, state } = createMockCtx({ services: { tools: undefined } })
   assert.doesNotThrow(() => apply(ctx))
   assert.equal(state.pluginApi.tools.isActive, false)
-  assert.equal(typeof state.pluginApi.tools.toolAbortedError, 'function')
+  assert.equal(typeof state.pluginApi.services.tools.toolAbortedError, 'function')
   assert.throws(
-    () => state.pluginApi.tools.toolAbortedError(),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'tools',
+    () => state.pluginApi.services.tools.toolAbortedError(),
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.tools',
   )
   assert.equal(state.pluginApi.services.web.isActive, true, 'unrelated features stay healthy')
 })
@@ -113,13 +113,13 @@ test('remote: publication registers with wire-parameter validation and an isolat
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
   const remote = state.pluginApi.remotes
-  assert.equal(remote.isActive, true)
+  assert.equal(remote.availability().status, 'active')
 
   const service = {
     getPayload(limit) { return { limit } },
     setPayload(payload) { return { ok: true, payload } },
   }
-  const disposer = remote.publish('regressionConfig', service)
+  const disposer = remote.register('regressionConfig', service)
   assert.equal(typeof disposer, 'function')
   const published = state.provided.find((s) => s.name === 'regressionConfig')
   assert.ok(published, 'service published through the official boundary')
@@ -129,7 +129,7 @@ test('remote: publication registers with wire-parameter validation and an isolat
   // signature is accepted, a signature the official gateway cannot derive
   // (destructuring) is rejected with a typed error before registration.
   assert.throws(
-    () => remote.publish('badWireConfig', { config({ limit }) { return null } }),
+    () => remote.register('badWireConfig', { config({ limit }) { return null } }),
     (error) => error instanceof PluginApiRemoteError,
   )
 
@@ -145,11 +145,11 @@ test('remote: same-key same-reference publish is idempotent; a conflicting owner
   const remote = state.pluginApi.remotes
   const service = { get() { return { ok: true } } }
 
-  const first = remote.publish('conflictConfig', service)
-  const second = remote.publish('conflictConfig', service)
+  const first = remote.register('conflictConfig', service)
+  const second = remote.register('conflictConfig', service)
   assert.equal(first, second, 'idempotent re-publication reuses the same disposer')
   assert.throws(
-    () => remote.publish('conflictConfig', { get() { return { ok: true } } }),
+    () => remote.register('conflictConfig', { get() { return { ok: true } } }),
     (error) => error instanceof PluginApiRemoteError,
     'a different reference under the same key is a typed conflict',
   )
@@ -161,9 +161,9 @@ test('remote: missing typert prerequisite degrades to the disabled surface (feat
   const { ctx, state } = createMockCtx({ services: { typert: undefined } })
   assert.doesNotThrow(() => apply(ctx))
   assert.ok(state.pluginApi)
-  assert.equal(state.pluginApi.remotes.isActive, false)
+  assert.equal(state.pluginApi.remotes.availability().status, 'unavailable')
   assert.throws(
-    () => state.pluginApi.remotes.publish('k', { get() {} }),
+    () => state.pluginApi.remotes.register('k', { get() {} }),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'remotes',
   )
   assert.equal(state.pluginApi.tools.isActive, true, 'unrelated features stay healthy')

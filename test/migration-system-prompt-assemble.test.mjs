@@ -97,21 +97,26 @@ test('dsh-pro-ex-ability-anchor assemble listener pattern is behavior-equivalent
   assert.equal(directResult, replacement)
   assert.equal(dshSystemPrompt.renderPrompt(directResult), 'replaced')
 
-  // Facade behavior through pluginApi.events must be equivalent.
+  // Facade observation: the projection entry observes the frozen args array
+  // [assembly, context, next] with the original identities; the chain result
+  // stays authoritative (the observer never rewrites the dispatch).
   const facadeCtx = createWaterfallCtx()
   const events = createEventsBus({ ctx: facadeCtx, catalog: composeCatalogs(baseEventsCatalog, systemPromptEventsCatalog) })
   let facadeArgs
-  events.on('system-prompt/assemble', (assembly, ctx, next) => {
+  const handle = events.observe('system-prompt/assemble')
+  handle.subscribe((payload) => {
+    const [assembly, ctx, next] = payload
     facadeArgs = [assembly, ctx, next]
     return replacement
   })
 
   const facadeResult = facadeCtx.waterfall('system-prompt/assemble', baseAssembly, context, inner)
 
-  assert.equal(facadeResult, replacement)
+  assert.equal(facadeResult, baseAssembly, 'the dispatch chain result stays authoritative for the observer')
   assert.equal(facadeArgs[0], baseAssembly)
   assert.equal(facadeArgs[1], context)
   assert.equal(typeof facadeArgs[2], 'function')
-  assert.equal(dshSystemPrompt.renderPrompt(facadeResult), dshSystemPrompt.renderPrompt(directResult))
-  assert.deepEqual(facadeResult, directResult)
+  assert.equal(handle.epoch, 1)
+  // The reversible assembly inputs are contributed through prompts.contribute
+  // (contribution idiom) — see the prompts contribution suites.
 })

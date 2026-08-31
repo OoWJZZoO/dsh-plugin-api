@@ -34,9 +34,9 @@ function makeService(methods = ['hello']) {
 
 test('publish returns a disposer and registers through official boundary', () => {
   const { ctx, provided } = makeHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: true })
+  const { api } = createHostRemoteApi({ ctx, protocol, active: true })
   const service = makeService(['hello'])
-  const dispose = api.publish('extraproAnchorConfig', service)
+  const dispose = api.register('extraproAnchorConfig', service)
   assert.equal(typeof dispose, 'function')
   assert.equal(provided.get('extraproAnchorConfig'), service)
   assert.deepEqual(protocol.remoteMethods(service).map((e) => e.method), ['hello'])
@@ -46,9 +46,9 @@ test('publish returns a disposer and registers through official boundary', () =>
 
 test('plain-object service is re-homed; markers never leak onto Object.prototype', () => {
   const { ctx } = makeHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: true })
+  const { api } = createHostRemoteApi({ ctx, protocol, active: true })
   const service = makeService(['hello', 'ping'])
-  const dispose = api.publish('k', service)
+  const dispose = api.register('k', service)
   assert.ok(isRehomedService(service))
   assert.ok(Object.getPrototypeOf(service) !== Object.prototype)
   assert.deepEqual(protocol.remoteMethods(Object.create(null)), [])
@@ -58,49 +58,49 @@ test('plain-object service is re-homed; markers never leak onto Object.prototype
 
 test('publish rejects null / array / no-callable-own member / non-extensible', () => {
   const { ctx } = makeHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: true })
-  assert.throws(() => api.publish('k', null), PluginApiRemoteError)
-  assert.throws(() => api.publish('k', []), PluginApiRemoteError)
-  assert.throws(() => api.publish('k', {}), PluginApiRemoteError)
-  assert.throws(() => api.publish('k', Object.preventExtensions({ a: 1 })), PluginApiRemoteError)
+  const { api } = createHostRemoteApi({ ctx, protocol, active: true })
+  assert.throws(() => api.register('k', null), PluginApiRemoteError)
+  assert.throws(() => api.register('k', []), PluginApiRemoteError)
+  assert.throws(() => api.register('k', {}), PluginApiRemoteError)
+  assert.throws(() => api.register('k', Object.preventExtensions({ a: 1 })), PluginApiRemoteError)
   // class instance whose methods only live on the class prototype → remote publication narrowing
   class Foo {
     hi() {
       return 1
     }
   }
-  assert.throws(() => api.publish('k', new Foo()), PluginApiRemoteError)
+  assert.throws(() => api.register('k', new Foo()), PluginApiRemoteError)
 })
 
 test('method-name segment grammar is validated before registration', () => {
   const { ctx, provided } = makeHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: true })
+  const { api } = createHostRemoteApi({ ctx, protocol, active: true })
   const service = {}
   service['bad name'] = () => true
-  assert.throws(() => api.publish('k', service), PluginApiRemoteError)
+  assert.throws(() => api.register('k', service), PluginApiRemoteError)
   assert.equal(provided.size, 0)
 })
 
 test('signature contract: destructuring/defaults/rest/duplicates and non-final signal are rejected pre-registration', () => {
   const { ctx, provided } = makeHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: true })
+  const { api } = createHostRemoteApi({ ctx, protocol, active: true })
   assert.throws(
-    () => api.publish('k', { m({ a }) { return a } }),
+    () => api.register('k', { m({ a }) { return a } }),
     PluginApiRemoteError,
     'destructuring rejected',
   )
   assert.throws(
-    () => api.publish('k', { m(a = 1) { return a } }),
+    () => api.register('k', { m(a = 1) { return a } }),
     PluginApiRemoteError,
     'defaults rejected',
   )
   assert.throws(
-    () => api.publish('k', { m(...args) { return args } }),
+    () => api.register('k', { m(...args) { return args } }),
     PluginApiRemoteError,
     'rest rejected',
   )
   assert.throws(
-    () => api.publish('k', { m(signal, a) { return a } }),
+    () => api.register('k', { m(signal, a) { return a } }),
     PluginApiRemoteError,
     'non-final signal rejected',
   )
@@ -109,10 +109,10 @@ test('signature contract: destructuring/defaults/rest/duplicates and non-final s
 
 test('idempotence: same key + same reference returns the same disposer without re-registration', () => {
   const { ctx, provided } = makeHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: true })
+  const { api } = createHostRemoteApi({ ctx, protocol, active: true })
   const service = makeService(['hello'])
-  const d1 = api.publish('k', service)
-  const d2 = api.publish('k', service)
+  const d1 = api.register('k', service)
+  const d2 = api.register('k', service)
   assert.equal(d2, d1)
   assert.equal(provided.get('k'), service)
   d1()
@@ -121,12 +121,12 @@ test('idempotence: same key + same reference returns the same disposer without r
 
 test('conflict: same key + different service throws and does not mutate the passed object', () => {
   const { ctx, provided } = makeHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: true })
+  const { api } = createHostRemoteApi({ ctx, protocol, active: true })
   const first = makeService(['hello'])
   const second = makeService(['hello'])
-  const d1 = api.publish('k', first)
+  const d1 = api.register('k', first)
   const protoBefore = Object.getPrototypeOf(second)
-  assert.throws(() => api.publish('k', second), PluginApiRemoteError)
+  assert.throws(() => api.register('k', second), PluginApiRemoteError)
   assert.equal(Object.getPrototypeOf(second), protoBefore, 'conflicted object is not mutated (client)')
   assert.equal(isRehomedService(second), false, 'conflicted object is not re-homed')
   assert.equal(provided.get('k'), first)
@@ -138,12 +138,12 @@ test('conflict: same key already published by another instance (shared owner map
   // Two createHostRemoteApi instances on the same ctx resolve the SAME owner
   // map (ownerName:'remote'), so a second instance's different service conflicts
   // via the owner record.
-  const apiA = createHostRemoteApi({ ctx, protocol, active: true })
-  const apiB = createHostRemoteApi({ ctx, protocol, active: true })
+  const { api: apiA } = createHostRemoteApi({ ctx, protocol, active: true })
+  const { api: apiB } = createHostRemoteApi({ ctx, protocol, active: true })
   const s1 = makeService(['hello'])
-  apiA.publish('k', s1)
+  apiA.register('k', s1)
   const s2 = makeService(['hello'])
-  assert.throws(() => apiB.publish('k', s2), PluginApiRemoteError)
+  assert.throws(() => apiB.register('k', s2), PluginApiRemoteError)
   assert.equal(provided.get('k'), s1)
 })
 
@@ -152,54 +152,54 @@ test('conflict: live official-registry owner with no owner record throws', () =>
   // or another plugin would) with NO record in our owner map; the read-only
   // registry probe must reject the publication without touching it.
   const { ctx, provided } = makeHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: true })
+  const { api } = createHostRemoteApi({ ctx, protocol, active: true })
   const foreign = makeService(['hello'])
   provided.set('k', foreign)
   const mine = makeService(['hello'])
-  assert.throws(() => api.publish('k', mine), PluginApiRemoteError)
+  assert.throws(() => api.register('k', mine), PluginApiRemoteError)
   assert.equal(provided.get('k'), foreign, 'foreign registry owner untouched')
 })
 
 test('core-inactive: inactive api throws PluginApiInactiveError on publish', () => {
   const { ctx } = makeHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: false })
-  // The active leaf is the mounted variant (isActive:true); runtime core-inactive gating
-  // happens inside publish() via the supplied active() predicate.
-  assert.equal(api.isActive, true)
-  assert.throws(() => api.publish('k', makeService()), PluginApiInactiveError)
+  const { api } = createHostRemoteApi({ ctx, protocol, active: false })
+  // Runtime core-inactive gating happens inside register() via the supplied
+  // active() predicate; the availability projection reports the live state.
+  assert.equal(api.availability().status, 'active')
+  assert.throws(() => api.register('k', makeService()), PluginApiInactiveError)
 })
 
 test('feature-disabled disabled face: missing protocol → publish throws PluginApiFeatureDisabledError', () => {
   const { ctx } = makeHost()
   const api = createHostRemoteApi({ ctx, protocol: undefined, active: true })
-  assert.equal(api.isActive, false)
-  assert.throws(() => api.publish('k', makeService()), PluginApiFeatureDisabledError)
+  // The disabled face is the surface itself (no { api, dispose } wrapper).
+  assert.equal(api.availability().status, 'unavailable')
+  assert.throws(() => api.register('k', makeService()), PluginApiFeatureDisabledError)
 })
 
 test('disabled factory: same disabled contract shape', () => {
   const api = createDisabledHostRemoteApi(true, 'missing')
-  assert.equal(api.isActive, false)
-  assert.equal(typeof api.dispose, 'function')
-  assert.throws(() => api.publish('k', {}), PluginApiFeatureDisabledError)
+  assert.equal(api.availability().status, 'unavailable')
+  assert.throws(() => api.register('k', {}), PluginApiFeatureDisabledError)
   const inactive = createDisabledHostRemoteApi(false)
-  assert.throws(() => inactive.publish('k', {}), PluginApiInactiveError)
+  assert.throws(() => inactive.register('k', {}), PluginApiInactiveError)
 })
 
 test('dispose() clears all owned records and unregisters providers', () => {
   const { ctx, provided } = makeHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: true })
+  const { api, dispose } = createHostRemoteApi({ ctx, protocol, active: true })
   const s1 = makeService(['hello'])
   const s2 = makeService(['hello'])
-  api.publish('a', s1)
-  api.publish('b', s2)
+  api.register('a', s1)
+  api.register('b', s2)
   assert.equal(provided.size, 2)
-  api.dispose()
+  dispose()
   assert.equal(provided.size, 0)
 })
 
 test('pro-ex-shaped service: get/set plain methods publish with stable wire identity', async () => {
   const { ctx, provided } = makeHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: true })
+  const { api } = createHostRemoteApi({ ctx, protocol, active: true })
   const store = { enabled: true }
   const service = {
     get() {
@@ -210,7 +210,7 @@ test('pro-ex-shaped service: get/set plain methods publish with stable wire iden
       return { ok: true }
     },
   }
-  const dispose = api.publish('extraproAnchorConfig', service)
+  const dispose = api.register('extraproAnchorConfig', service)
   const fn = provided.get('extraproAnchorConfig')
   assert.equal(fn, service, 'identity preserved through publication')
   assert.deepEqual(protocol.remoteMethods(service).map((e) => e.method), ['get', 'set'])

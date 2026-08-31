@@ -86,6 +86,6 @@ test('unmount is token-bound, idempotent and restores the disabled surface', () 
 test('existing service surfaces remain untouched after execution additions', () => {
   const service = makeService({ coreActive: true })
   assert.equal(typeof service.tools.isActive, 'boolean')
-  assert.throws(() => service.events.on('x', () => {}), (error) => error instanceof PluginApiFeatureDisabledError)
+  assert.throws(() => service.events.emit('x', () => {}), (error) => error instanceof PluginApiFeatureDisabledError)
   assert.equal(typeof service.executions.observe, 'function')
 })

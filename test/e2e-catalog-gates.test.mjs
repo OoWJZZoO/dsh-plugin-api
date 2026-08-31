@@ -154,6 +154,17 @@ function createFullCtx({ withCompactionReplacement = false } = {}) {
   return { ctx, state, services }
 }
 
+
+/** Observe projection shim: subscribe and unwrap multi-arg payload arrays. */
+function observeOn(events, name, listener, opts) {
+  const handle = events.observe(name, opts)
+  handle.subscribe((payload) => {
+    const args = Array.isArray(payload) ? payload : [payload]
+    listener(...args)
+  })
+  return handle
+}
+
 test('catalog composition after apply covers all 47 stabilized events', () => {
   const { ctx, state } = createFullCtx()
   apply(ctx)
@@ -169,7 +180,7 @@ test('session slice gate: session/created receives freeze + containment + scope 
 
   // deep-freeze of payload
   const received = []
-  state.pluginApi.events.on('session/created', (session) => received.push(session))
+  observeOn(state.pluginApi.events, 'session/created', (session) => received.push(session))
   const session = { header: { id: 's1' } }
   ctx.scopedEmit(scopeTarget({}, 'agent-1'), 'session/created', session)
   assert.equal(received.length, 1)
@@ -178,19 +189,19 @@ test('session slice gate: session/created receives freeze + containment + scope 
 
   // containment: throwing listener does not break dispatch
   const order = []
-  state.pluginApi.events.on('session/disposed', () => {
+  observeOn(state.pluginApi.events, 'session/disposed', () => {
     order.push('first')
     throw new Error('boom')
   })
-  state.pluginApi.events.on('session/disposed', () => order.push('second'))
+  observeOn(state.pluginApi.events, 'session/disposed', () => order.push('second'))
   assert.doesNotThrow(() => ctx.scopedEmit(scopeTarget({}, 'agent-1'), 'session/disposed', { id: 's1' }))
   assert.deepEqual(order, ['first', 'second'], 'listener failure must be contained')
 
   // scope gating: scoped listener only receives matching carrier
   const scoped = []
   const global = []
-  state.pluginApi.events.on('session/event', (s, e) => scoped.push(e.kind), { scope: 'agent-1' })
-  state.pluginApi.events.on('session/event', (s, e) => global.push(e.kind))
+  observeOn(state.pluginApi.events, 'session/event', (s, e) => scoped.push(e.kind), { scope: 'agent-1' })
+  observeOn(state.pluginApi.events, 'session/event', (s, e) => global.push(e.kind))
   ctx.scopedEmit(scopeTarget({}, 'agent-2'), 'session/event', { id: 's2' }, { kind: 'other' })
   ctx.scopedEmit(scopeTarget({}, 'agent-1'), 'session/event', { id: 's1' }, { kind: 'mine' })
   assert.deepEqual(scoped, ['mine'], 'scoped listener must only see its carrier')
@@ -201,24 +212,27 @@ test('agent slice gate: fault policies survive the unified bus', () => {
   const { ctx, state } = createFullCtx()
   apply(ctx)
 
-  // agent/created: sync throw propagates (official sync-veto preserved)
-  state.pluginApi.events.on('agent/created', () => {
+  // agent/created: the projection entry contains the listener failure;
+  // the observer still runs, but the throw never reaches the dispatch.
+  observeOn(state.pluginApi.events, 'agent/created', () => {
     throw new Error('veto')
   })
-  assert.throws(() => ctx.scopedEmit(scopeTarget({}, 'agent-1'), 'agent/created', { agent: 'agent-1' }), /veto/)
+  assert.doesNotThrow(() => ctx.scopedEmit(scopeTarget({}, 'agent-1'), 'agent/created', { agent: 'agent-1' }))
 
   // agent/disposed: contained
   const order = []
-  state.pluginApi.events.on('agent/disposed', () => {
+  observeOn(state.pluginApi.events, 'agent/disposed', () => {
     order.push('first')
     throw new Error('boom')
   })
-  state.pluginApi.events.on('agent/disposed', () => order.push('second'))
+  observeOn(state.pluginApi.events, 'agent/disposed', () => order.push('second'))
   assert.doesNotThrow(() => ctx.scopedEmit(scopeTarget({}, 'agent-1'), 'agent/disposed', { agent: 'agent-1' }))
   assert.deepEqual(order, ['first', 'second'])
 
-  // agent/pre-step: propagate waterfall with live agent/signal not deep-frozen
-  state.pluginApi.events.on('agent/pre-step', (payload) => {
+  // agent/pre-step: waterfall dispatch with live agent/signal not deep-frozen;
+  // the projection observer cannot rewrite the chain (monitor tier) but
+  // observes the fully frozen payload.
+  observeOn(state.pluginApi.events, 'agent/pre-step', (payload) => {
     assert.ok(!Object.isFrozen(payload.agent), 'live agent must not be frozen')
     assert.ok(!Object.isFrozen(payload.signal), 'live signal must not be frozen')
     assert.ok(Object.isFrozen(payload.messages), 'messages must be deep-frozen')
@@ -231,7 +245,7 @@ test('agent slice gate: fault policies survive the unified bus', () => {
     step: 1,
     signal: new AbortController().signal,
   }, () => ({ kind: 'continue' }))
-  assert.deepEqual(result, { kind: 'reject' })
+  assert.deepEqual(result, { kind: 'continue' }, 'monitor-tier observers cannot rewrite the chain result')
 })
 
 test('system-prompt slice gate: assemble scope filtering uses args[1].scope', () => {
@@ -239,7 +253,7 @@ test('system-prompt slice gate: assemble scope filtering uses args[1].scope', ()
   apply(ctx)
 
   const seen = []
-  state.pluginApi.events.on('system-prompt/assemble', (assembly, context, next) => {
+  observeOn(state.pluginApi.events, 'system-prompt/assemble', (assembly, context, next) => {
     seen.push(context.scope)
     return next()
   }, { scope: 'agent-1' })
@@ -255,7 +269,7 @@ test('tools slice gate: tools/execute applies except-signal freezing through the
 
   const replacement = new AbortController().signal
   let observed
-  state.pluginApi.events.on('tools/execute', (exec, next) => {
+  observeOn(state.pluginApi.events, 'tools/execute', (exec, next) => {
     observed = exec
     assert.equal(Object.getOwnPropertyDescriptor(exec, 'signal').writable, true, 'signal stays writable')
     assert.equal(Object.getOwnPropertyDescriptor(exec, 'name').writable, false, 'other fields hardened')
@@ -275,7 +289,7 @@ test('llm slice gate: llm/stream waterfall freezes options and passes the result
   apply(ctx)
 
   const seen = []
-  state.pluginApi.events.on('llm/stream', (options, next) => {
+  observeOn(state.pluginApi.events, 'llm/stream', (options, next) => {
     seen.push(options)
     return next()
   })
@@ -291,7 +305,7 @@ test('settings slice gate: settings/updated dispatches with frozen args through 
   apply(ctx)
 
   const received = []
-  state.pluginApi.events.on('settings/updated', (ns, next, prev, source) => received.push([ns, source]))
+  observeOn(state.pluginApi.events, 'settings/updated', (ns, next, prev, source) => received.push([ns, source]))
   ctx.emit('settings/updated', { name: 'my-plugin' }, { a: 1 }, { a: 0 }, 'update')
   assert.equal(received.length, 1)
   assert.ok(Object.isFrozen(received[0][0]), 'ns argument must be deep-frozen')
@@ -345,7 +359,7 @@ test('compaction/request is wrapped through the facade even while the row is ina
   assert.ok(!('compaction/request' in state.pluginApi.events.catalog()))
 
   const bucket = []
-  state.pluginApi.events.on('compaction/request', (payload, next) => {
+  observeOn(state.pluginApi.events, 'compaction/request', (payload, next) => {
     bucket.push(payload)
     return next()
   })

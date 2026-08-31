@@ -54,7 +54,7 @@ test('mounted facade: full register -> start -> claim -> settle flow with fenced
     ownerId: 'owner-1',
     leaseMs: 60_000,
   })).handle
-  const claimed = await tasks.claim('flow-task', { ownerId: 'owner-1', lease: handle })
+  const claimed = await tasks.acquire('flow-task', { ownerId: 'owner-1', lease: handle })
   assert.equal(claimed.ok, true)
   const settled = await tasks.settle('flow-task', {
     attemptId: claimed.attemptId,
@@ -98,14 +98,14 @@ test('mounted facade: reassign takeover gating works through the facade surfaces
     ownerId: 'owner-1',
     leaseMs: 60_000,
   })).handle
-  await tasks.claim('reassign-task', { ownerId: 'owner-1', lease: handle })
-  const failed = await tasks.reassign('reassign-task', {
+  await tasks.acquire('reassign-task', { ownerId: 'owner-1', lease: handle })
+  const failed = await tasks.takeover('reassign-task', {
     ownerId: 'owner-2',
     expectedGeneration: 'gen:WRONG',
     reason: 'no',
   })
   assert.equal(failed.ok, false)
-  const reassigned = await tasks.reassign('reassign-task', {
+  const reassigned = await tasks.takeover('reassign-task', {
     ownerId: 'owner-2',
     expectedGeneration: handle.generation,
     reason: 'handoff',

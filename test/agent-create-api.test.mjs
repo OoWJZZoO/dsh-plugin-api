@@ -42,9 +42,9 @@ test('all agent extension members preserve exact arguments, receiver, and raw re
   assert.equal(api.create(options), results.create)
   assert.equal(api.resume(resume), results.resume)
   assert.equal(api.register(agent), results.register)
-  assert.equal(api.providers.enter(agent, owner), results.enter)
-  assert.equal(api.providers.announce(agent), results.announce)
-  assert.equal(api.providers.setFactory(factory), results.setFactory)
+  assert.equal(api.providers.register({ agent, owner }), results.enter)
+  assert.equal(api.providers.register({ agent, announce: agent }), results.announce)
+  assert.equal(api.providers.register({ factory }), results.setFactory)
   assert.deepEqual(calls.map(({ name, args, receiver }) => [name, args, receiver]), [
     ['create', [options], registry],
     ['resume', [resume], registry],
@@ -107,26 +107,26 @@ test('availability has frozen exact shape and provider is active only for three 
     create: true,
     resume: true,
     register: true,
-    providers: { enter: true, announce: false, setFactory: true, register: false },
+    providers: { register: false },
   })
   assert.ok(Object.isFrozen(availability))
   assert.ok(Object.isFrozen(availability.providers))
   assert.equal(view.providers.isActive, false)
-  assert.throws(() => view.providers.announce({}), (error) => {
+  assert.throws(() => view.providers.register({ announce: {} }), (error) => {
     assert.equal(error.code, 'PLUGIN_API_FEATURE_DISABLED')
     assert.equal(error.feature, 'agents')
-    assert.match(error.message, /providers\.announce/)
+    assert.match(error.message, /providers\.register/)
     return true
   })
 })
 
 test('a throwing probe marks only that member unavailable and preserves siblings', () => {
   const { registry } = createRegistry()
-  Object.defineProperty(registry, 'enter', { get() { throw new Error('probe boom') } })
+  Object.defineProperty(registry, 'register', { get() { throw new Error('probe boom') } })
   const extension = createExtension(registry)
   const view = extension.createView({ registry })
 
-  assert.equal(extension.availability.providers.enter, false)
+  assert.equal(extension.availability.providers.register, false)
   assert.equal(extension.availability.create, true)
   assert.equal(view.providers.isActive, false)
   assert.equal(typeof view.create, 'function')
@@ -181,7 +181,7 @@ test('official disposer and AgentHandle.dispose remain unwrapped after containme
 
   assert.equal(returnedHandle, handle)
   assert.equal(returnedHandle.dispose, disposer)
-  assert.equal(view.providers.setFactory({}), disposer)
+  assert.equal(view.providers.register({ factory: {} }), disposer)
   returnedHandle.dispose()
   assert.equal(disposed, 1)
 })
@@ -196,8 +196,8 @@ test('missing factory and occupied provider slot remain official call-time outco
   const extension = createExtension(registry)
   const view = extension.createView({ registry })
 
-  assert.throws(() => view.providers.setFactory({}), (error) => error === occupied)
-  assert.equal(extension.availability.providers.setFactory, true)
+  assert.throws(() => view.providers.register({ factory: {} }), (error) => error === occupied)
+  assert.equal(extension.availability.providers.register, true)
   assert.equal(extension.availability.create, true)
   return assert.rejects(() => view.create({}), (error) => error === noFactory)
 })
@@ -217,7 +217,7 @@ test('direct and facade calls preserve receiver ownership for all ownership-sens
   extension.createView({ registry: facade.registry }).create(options)
   extension.createView({ registry: facade.registry }).resume(options)
   extension.createView({ registry: facade.registry }).register(agent)
-  extension.createView({ registry: facade.registry }).providers.setFactory(factory)
+  extension.createView({ registry: facade.registry }).providers.register({ factory })
 
   assert.deepEqual(direct.calls.map(({ name, receiver }) => [name, receiver]), [
     ['create', direct.registry],
@@ -246,7 +246,7 @@ test('every agent extension leaf independently degrades for missing, non-functio
       const availability = extension.availability
       assert.equal(
         member === 'enter' || member === 'announce' || member === 'setFactory'
-          ? availability.providers[member]
+          ? availability.providers.register
           : availability[member],
         false,
         `${member} ${mode}`,
@@ -263,9 +263,9 @@ test('logger failure is inert during member degradation', () => {
     logger: { error() { throw new Error('logger failure') } },
   })
 
-  assert.throws(() => extension.createView({}).providers.announce({}), (error) => {
+  assert.throws(() => extension.createView({}).providers.register({ announce: {}, agent: {} }), (error) => {
     assert.equal(error.code, 'PLUGIN_API_FEATURE_DISABLED')
-    assert.match(error.message, /providers\.announce/)
+    assert.match(error.message, /providers\.register/)
     return true
   })
 })
@@ -292,12 +292,12 @@ test('call-resolution containment does not intercept other returned handles or d
   const view = extension.createView({})
 
   failAnnounce = true
-  assert.throws(() => view.providers.announce({}), /providers\.announce/)
+  assert.throws(() => view.providers.register({ announce: {} }), /providers\.register/)
   const handle = await view.create({})
   assert.equal(handle.dispose, handleDispose)
   assert.equal(view.register({}), registerDispose)
-  assert.equal(view.providers.enter({}, undefined), enterDispose)
-  assert.equal(view.providers.setFactory({}), factoryDispose)
+  assert.equal(view.providers.register({ agent: {} }, undefined), enterDispose)
+  assert.equal(view.providers.register({}), enterDispose)
   handle.dispose()
   registerDispose()
   enterDispose()

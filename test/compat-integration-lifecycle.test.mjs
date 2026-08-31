@@ -77,7 +77,7 @@ test('combined host publishes additive immutable compat shapes once without synt
   assert.deepEqual(state.listeners.map(({ name }) => name).sort(), [
     'agent-loop/assembled-context', 'agent/error', 'agent/request', 'approval/request', 'compaction/completed', 'fs/edit-intent', 'fs/write-intent',
     'jobs/changed', 'jobs/done', 'llm/stream', 'llm/stream', 'llm/stream',
-    'session/created', 'session/disposed', 'session/event', 'session/event', 'session/event', 'session/event',
+    'session/created', 'session/disposed', 'session/event', 'session/event',
     'subagent/end', 'subagent/start', 'tools/execute', 'tools/post-execute', 'tools/pre-execute',
     'tools/pre-execute', 'tools/pre-execute', 'tools/pre-execute', 'tools/result', 'workflow/end', 'workflow/start',
   ])
@@ -92,7 +92,9 @@ test('combined host publishes additive immutable compat shapes once without synt
     assert.equal(first.events.catalog()[excluded], undefined)
   }
   for (const view of views) assert.ok(Object.isFrozen(view))
-  assert.equal(Object.keys(first.services).length, 46)
+  // The passthrough definitions plus the eight migrate-target keys
+  // (services.llm/agents/sessions/settings/prompts/tools/recovery/storage).
+  assert.equal(Object.keys(first.services).length, 53)
   assert.equal(first.services.jobs.isActive, true)
   assert.equal(first.services.shellEnv.isActive, true)
 })
@@ -152,5 +154,5 @@ test('durable retained references, repeated cleanup, and stale cleanup cannot af
   assert.equal(firstCleanup(), false)
   assert.equal(feature(state, 'sessionDurable').isActive, true)
   assert.equal(typeof state.pluginApi.llm.requestTransforms.register, 'function')
-  assert.equal(state.listeners.filter(({ name }) => name === 'session/event').length, 4)
+  assert.equal(state.listeners.filter(({ name }) => name === 'session/event').length, 2)
 })

@@ -42,7 +42,7 @@ test('register validates required identity and run function', () => {
 
 test('register exposes only the projection surface (no durable mutation face)', () => {
   const { api } = createOwner()
-  assert.deepEqual(Object.keys(api).sort(), ['get', 'onChange', 'register'])
+  assert.deepEqual(Object.keys(api).sort(), ['get', 'observe', 'register'])
 })
 
 test('a registration is immediately observable as pending, then settles', async () => {
@@ -334,8 +334,8 @@ test('audience projection keeps or drops internal detail without ever leaking se
 test('onChange delivers one notification with immutable snapshot and a per-subscriber epoch', async () => {
   const { api } = createOwner()
   const events = []
-  const offA = api.onChange({ scope: 'plugin' }, (payload) => events.push(['a', payload]))
-  const offB = api.onChange({ scope: 'plugin', ownerId: 'o' }, (payload) => events.push(['b', payload]))
+  const offA = api.observe({ scope: 'plugin' }, (payload) => events.push(['a', payload]))
+  const offB = api.observe({ scope: 'plugin', ownerId: 'o' }, (payload) => events.push(['b', payload]))
   api.register({ ownerId: 'o', checkId: 'c', scope: 'plugin', run() { return { health: 'healthy', availability: 'active' } } })
   await settle()
   // ephemeral pending + terminal final coalesce into ONE notification in one window
@@ -353,7 +353,7 @@ test('equivalent updates are coalesced and do not loop', async () => {
   const harness = createPublicationHarness()
   const { api } = createOwner({ publication: harness })
   const notifications = []
-  api.onChange({ scope: 'client' }, (payload) => notifications.push(payload.observerEpoch))
+  api.observe({ scope: 'client' }, (payload) => notifications.push(payload.observerEpoch))
   harness.clientReport('degraded-active')
   await settle()
   assert.equal(notifications.length, 1)
@@ -370,8 +370,8 @@ test('equivalent updates are coalesced and do not loop', async () => {
 test('a throwing listener is contained and other listeners still receive', async () => {
   const { api } = createOwner()
   const seen = []
-  api.onChange({ scope: 'plugin' }, () => { throw new Error('listener exploded') })
-  api.onChange({ scope: 'plugin' }, (payload) => seen.push(payload))
+  api.observe({ scope: 'plugin' }, () => { throw new Error('listener exploded') })
+  api.observe({ scope: 'plugin' }, (payload) => seen.push(payload))
   api.register({ ownerId: 'o', checkId: 'c', scope: 'plugin', run() { return { health: 'healthy', availability: 'active' } } })
   await settle()
   assert.equal(seen.length, 1)
@@ -380,8 +380,8 @@ test('a throwing listener is contained and other listeners still receive', async
 test('subscriber disposer removes only its own listener', async () => {
   const { api } = createOwner()
   const notifications = []
-  const first = api.onChange({ scope: 'plugin' }, () => notifications.push('first'))
-  api.onChange({ scope: 'plugin' }, () => notifications.push('second'))
+  const first = api.observe({ scope: 'plugin' }, () => notifications.push('first'))
+  api.observe({ scope: 'plugin' }, () => notifications.push('second'))
   api.register({ ownerId: 'o', checkId: 'c', scope: 'plugin', run() { return { health: 'healthy', availability: 'active' } } })
   await settle()
   assert.deepEqual(notifications, ['first', 'second']) // insertion order

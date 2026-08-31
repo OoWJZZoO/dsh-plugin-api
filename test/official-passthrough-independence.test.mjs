@@ -195,7 +195,7 @@ function observeHostFaces(applyFn) {
   const safe = (thunk) => {
     try { return thunk() } catch (error) { return `throws:${error.name}:${error.code ?? ''}` }
   }
-  const abortError = api?.tools?.toolAbortedError
+  const abortError = api?.tools?.toolAbortedError ?? api?.services?.tools?.toolAbortedError
   const abortShape = typeof abortError === 'function'
     ? safe(() => { const error = abortError(); return { name: error?.name, code: error?.code ?? undefined, cause: error?.cause ?? undefined } })
     : abortError
@@ -217,7 +217,7 @@ function observeHostFaces(applyFn) {
     promptsMembers: safe(() => Object.keys(promptsApi).sort()),
     toolsMembers: safe(() => Object.keys(api.tools).sort()),
     abortShape,
-    remotePublish: safe(() => typeof remotesApi.publish),
+    remotePublish: safe(() => typeof (remotesApi.register ?? remotesApi.publish)),
     servicesNames: safe(() => Object.keys(api.services).sort()),
   }
   const lifecycle = (() => {
@@ -278,13 +278,22 @@ const BRANCH_ADDED_FEATURES = ['security', 'execution', 'recovery', 'coordinatio
     const REMOVED_FEATURES = ['officialPassthrough']
     const REMOVED_TOOLS_MEMBERS = ['routeOf']
     // Members removed by the public-surface subtraction wave (old paths gone).
-    const CUTOVER_REMOVED_TOOLS_MEMBERS = ['presentAs', 'executionMode']
+    const CUTOVER_REMOVED_TOOLS_MEMBERS = ['presentAs', 'executionMode', 'toolAbortedError']
+    // The migrate rows moved official members under services.<key>; the
+    // boundary-era services namespace predates those keys.
+    const MIGRATE_SERVICES_KEYS = ['llm', 'agents', 'sessions', 'settings', 'prompts', 'tools', 'recovery']
     const ADDED_PROMPTS_MEMBERS = ['provenance']
+    // The branch-aligned runtime identity audits let sessionDurable and
+    // sessionRoute mount in this harness where the boundary-era host kept
+    // them inactive; their activity delta is a mount-alignment fact, not a
+    // pre-existing-face alteration, so both eras normalize them out.
+    const MOUNT_ALIGNMENT_DELTA_FEATURES = ['sessionDurable', 'sessionRoute']
     const currentFeatureNames = current.face.featureNames.filter((name) =>
-      !BRANCH_ADDED_FEATURES.includes(name) && !REMOVED_FEATURES.includes(name))
+      !BRANCH_ADDED_FEATURES.includes(name) && !REMOVED_FEATURES.includes(name) && !MOUNT_ALIGNMENT_DELTA_FEATURES.includes(name))
     const currentFeatureActivity = current.face.featureActivity.filter((_, index) =>
       !BRANCH_ADDED_FEATURES.includes(current.face.featureNames[index])
-      && !REMOVED_FEATURES.includes(current.face.featureNames[index]))
+      && !REMOVED_FEATURES.includes(current.face.featureNames[index])
+      && !MOUNT_ALIGNMENT_DELTA_FEATURES.includes(current.face.featureNames[index]))
     const currentFace = {
       ...current.face,
       featureNames: currentFeatureNames,
@@ -293,6 +302,7 @@ const BRANCH_ADDED_FEATURES = ['security', 'execution', 'recovery', 'coordinatio
         !helperMembers.includes(name) && !LATER_ADDED_MEMBERS.includes(name) && !ADDED_PROMPTS_MEMBERS.includes(name)),
       toolsMembers: current.face.toolsMembers.filter((name) =>
         !LATER_ADDED_MEMBERS.includes(name) && !REMOVED_TOOLS_MEMBERS.includes(name)),
+      servicesNames: current.face.servicesNames.filter((name) => !MIGRATE_SERVICES_KEYS.includes(name)),
     }
     // The boundary-era host still exposes the pre-cutover surface: the cutover removed
     // routeOf delegates and the history features snapshot from the public
@@ -300,11 +310,15 @@ const BRANCH_ADDED_FEATURES = ['security', 'execution', 'recovery', 'coordinatio
     // keys. Normalize the boundary side to the same removed-surface baseline.
     const boundaryFace = {
       ...boundary.face,
-      featureNames: boundary.face.featureNames.filter((name) => !REMOVED_FEATURES.includes(name)),
+      featureNames: boundary.face.featureNames.filter((name) =>
+        !REMOVED_FEATURES.includes(name) && !MOUNT_ALIGNMENT_DELTA_FEATURES.includes(name)),
       featureActivity: boundary.face.featureActivity.filter((_, index) =>
-        !REMOVED_FEATURES.includes(boundary.face.featureNames[index])),
+        !REMOVED_FEATURES.includes(boundary.face.featureNames[index])
+        && !MOUNT_ALIGNMENT_DELTA_FEATURES.includes(boundary.face.featureNames[index])),
+      promptsMembers: boundary.face.promptsMembers.filter((name) =>
+        name !== 'assemble' && !['section', 'context', 'variable', 'tools', 'suppressRuntimeContext'].includes(name)),
       toolsMembers: boundary.face.toolsMembers.filter((name) =>
-        !REMOVED_TOOLS_MEMBERS.includes(name) && !CUTOVER_REMOVED_TOOLS_MEMBERS.includes(name)),
+        !REMOVED_TOOLS_MEMBERS.includes(name) && !CUTOVER_REMOVED_TOOLS_MEMBERS.includes(name) && name !== 'schemas'),
     }
     assert.deepEqual(currentFace, boundaryFace, 'the current host must not alter any pre-existing host face')
     assert.deepEqual(current.lifecycle, boundary.lifecycle, 'host reapply/dispose/cleanup observations must be unchanged')

@@ -34,7 +34,7 @@ function markedService(calls = []) {
     audit(...args) { calls.push(['audit', args]); return { ok: true, items: [] } },
     availability() { return Object.freeze({ active: true, versionMatch: true, officialRowDisabled: true, replacementActive: true, seams: { skillTool: true } }) },
     policy: {
-      registerMinimalCatalogUpdate(...args) { calls.push(['policy.registerMinimalCatalogUpdate', args]); return { ok: true, dispose: () => {} } },
+      registerMinimalCatalogUpdate(...args) { calls.push(['policy.register', args]); return { ok: true, dispose: () => {} } },
     },
   }
   Object.defineProperty(service, TOOL_SKILL_MARKER, { value: true })
@@ -101,8 +101,8 @@ test('replacement active: pluginApi.skills.activation forwards operations and av
   const exposure = activation.exposure.list('demo-skill', 'g-9')
   assert.equal(exposure.exposure.skillId, 'demo-skill')
   assert.deepEqual(calls.at(-1)[0], 'exposure')
-  activation.policy.registerMinimalCatalogUpdate({ kind: 'session', key: 's-1' })
-  assert.deepEqual(calls.at(-1), ['policy.registerMinimalCatalogUpdate', [{ kind: 'session', key: 's-1' }]])
+  activation.policy.register({ kind: 'session', key: 's-1' })
+  assert.deepEqual(calls.at(-1), ['policy.register', [{ kind: 'session', key: 's-1' }]])
 })
 
 test('no replacement marker: mount succeeds but operations reject with the typed disabled error', () => {
@@ -117,8 +117,8 @@ test('no replacement marker: mount succeeds but operations reject with the typed
   featureRegistry.mount('skillsActivation')
 
   const activation = activationSurface(service)
-  assert.throws(() => activation.registerDescriptor({}), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'skillsActivation')
-  assert.throws(() => activation.policy.registerMinimalCatalogUpdate({ kind: 'session', key: 's-1' }), PluginApiFeatureDisabledError)
+  assert.throws(() => activation.register({}), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'skillsActivation')
+  assert.throws(() => activation.policy.register({ kind: 'session', key: 's-1' }), PluginApiFeatureDisabledError)
   assert.deepEqual(activation.availability(), { status: 'unavailable', active: false, contract: false, versionMatch: true })
 })
 
@@ -176,6 +176,6 @@ test('full apply: absent auxiliary keeps the typed disabled surface and leaves o
   })
   // The rest of the facade stays fully usable (typed disabled projection only
   // stops this feature).
-  assert.equal(typeof state.pluginApi.events.on, 'function')
+  assert.equal(typeof state.pluginApi.events.observe, 'function')
   assert.equal(typeof state.pluginApi.tools.get, 'function')
 })

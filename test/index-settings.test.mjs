@@ -98,7 +98,7 @@ test('apply mounts settings feature when settings service is complete', () => {
   assert.equal(typeof state.pluginApi.settings.register, 'function')
   assert.equal(typeof state.pluginApi.settings.scope, 'function')
   assert.equal(typeof state.pluginApi.settings.inspect, 'function')
-  assert.equal(typeof state.pluginApi.settings.installSettingsSection, 'function')
+  assert.equal('installSettingsSection' in state.pluginApi.settings, false, 'the deleted member is absent')
 
   const handle = state.pluginApi.settings.register('my-plugin', {})
   assert.equal(services.settings.registerCalls.length, 1)
@@ -114,7 +114,7 @@ test('apply keeps settings feature active in optional-settings mode and methods 
   assert.throws(() => state.pluginApi.settings.register('a', {}), PluginApiServiceUnavailableError)
   assert.throws(() => state.pluginApi.settings.scope('a'), PluginApiServiceUnavailableError)
   assert.throws(() => state.pluginApi.settings.inspect(), PluginApiServiceUnavailableError)
-  assert.equal(typeof state.pluginApi.settings.installSettingsSection, 'function')
+  assert.equal('installSettingsSection' in state.pluginApi.settings, false, 'the deleted member is absent')
 })
 
 test('settings guard failure disables only settings and keeps facade active', () => {

@@ -104,24 +104,20 @@ test('ordered: events execute in successful registration order at equal priority
   }
   const bus = createEventsBus({ ctx, catalog })
 
-  const disposerSecond = bus.on('matrix/order', (payload) => emitted.push(`b:${payload}`), { priority: 'normal' })
-  const disposerA = bus.on('matrix/order', (payload) => emitted.push(`a:${payload}`), { priority: 'normal' })
+  const secondHandle = bus.observe('matrix/order')
+  secondHandle.subscribe((payload) => emitted.push(`b:${payload}`))
+  const firstHandle = bus.observe('matrix/order')
+  firstHandle.subscribe((payload) => emitted.push(`a:${payload}`))
   ctx.emit('matrix/order', 'x')
   assert.deepEqual(emitted, ['x', 'b:x', 'a:x'], 'listeners run in successful registration order at equal priority')
 
-  // Invalid priority is typed-rejected before registration.
-  assert.throws(
-    () => bus.on('matrix/order', () => {}, { priority: 'loudest' }),
-    (error) => error instanceof PluginApiEventPriorityError,
-  )
-
-  // Each disposer removes exactly its own listener.
+  // Each handle removes exactly its own listeners.
   emitted.length = 0
-  disposerSecond()
+  secondHandle.dispose()
   ctx.emit('matrix/order', 'y')
   assert.deepEqual(emitted, ['y', 'a:y'])
+  firstHandle.dispose()
   emitted.length = 0
-  disposerA()
   ctx.emit('matrix/order', 'z')
   assert.deepEqual(emitted, ['z'])
 })

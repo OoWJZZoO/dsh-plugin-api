@@ -47,12 +47,12 @@ test('healthy apply mounts a host-only recovery surface after execution and befo
   assert.ok(names.includes('recovery'))
   assert.ok(names.indexOf('execution') < names.indexOf('recovery'))
   assert.ok(names.indexOf('recovery') < names.indexOf('diagnostics'))
-  assert.equal(typeof state.pluginApi.executions.recovery.classify, 'function')
-  assert.equal(typeof state.pluginApi.executions.recovery.capability.declare, 'function')
+  assert.equal(state.pluginApi.executions.recovery.classify, undefined, 'classify is internalized')
+  assert.equal(typeof state.pluginApi.executions.recovery.capability.register, 'function')
   assert.equal(typeof state.pluginApi.executions.recovery.policy.register, 'function')
   assert.equal(typeof state.pluginApi.executions.recovery.evaluate, 'function')
-  assert.equal(typeof state.pluginApi.executions.recovery.consume, 'function')
-  assert.equal(typeof state.pluginApi.executions.recovery.adapters.fromAgentRequestError, 'function')
+  assert.equal(state.pluginApi.executions.recovery.consume, undefined, 'consume is deleted')
+  assert.equal(typeof state.pluginApi.services.recovery.fromAgentRequestError, 'function')
   assert.equal(state.pluginApi.executions.recovery.availability().status, 'active')
   assert.equal(Object.prototype.hasOwnProperty.call(state.pluginApi, 'client'), false)
 })
@@ -60,7 +60,7 @@ test('mounted recovery evaluates and consumes a bounded policy decision without 
   const { ctx, state } = createContext()
   apply(ctx)
   const recovery = state.pluginApi.executions.recovery
-  recovery.capability.declare({
+  recovery.capability.register({
     operationId: 'op', ownerId: 'owner', generation: '1', scope: 'session',
     idempotent: true, retryable: true, allowedActions: ['retry', 'stop'],
     sideEffectClass: 'read-only', retryBudget: { maxAttempts: 1 }, deadlineMs: 60_000,
@@ -77,7 +77,7 @@ test('mounted recovery evaluates and consumes a bounded policy decision without 
     scope: 'session', decisionWindowId: 'window-1',
   })
   assert.equal(decision.action, 'retry')
-  assert.equal(recovery.consume(decision.decisionId, { attemptId: 'a-2' }).consumed, true)
+  assert.equal(recovery.consume, undefined, 'consume is deleted (gap); the decision stays consultative')
   assert.equal(decision.execution.executionId, 'e-1')
 })
 

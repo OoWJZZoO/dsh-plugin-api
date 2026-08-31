@@ -54,9 +54,9 @@ test('healthy apply mounts security and exposes the four faces plus availability
   assert.equal(typeof security.policy.register, 'function')
   assert.equal(typeof security.redaction.register, 'function')
   assert.equal(typeof security.egress.register, 'function')
-  assert.equal(typeof security.egress.check, 'function')
+  assert.equal(security.egress.check, undefined, 'the consultative check member is deleted')
   assert.equal(typeof security.egress.lease.acquire, 'function')
-  assert.equal(typeof security.audit.query, 'function')
+  assert.equal(typeof security.audit.list, 'function')
   const availability = security.availability()
   assert.deepEqual(availability.faces, { policy: 'active', redaction: 'active', egress: 'active', audit: 'active' })
   assert.equal(availability.audit.durable, 'non-durable')
@@ -107,7 +107,7 @@ test('a registered policy enforces through the mounted facade and creates audite
   const outcome = await approvalListener[0]({ agent: { id: 'a1' }, toolName: 'bash', reason: 'write' }, () => Promise.resolve('unavailable'))
   assert.equal(outcome, 'rejected')
 
-  const view = state.pluginApi.security.audit.query({})
+  const view = state.pluginApi.security.audit.list({})
   assert.equal(view.records.length, 1)
   assert.equal(view.records[0].kind, 'decision')
   assert.equal(view.records[0].outcome, 'deny')
@@ -133,15 +133,16 @@ test('redaction rules apply at the mounted post-execute seam', async () => {
   )
   assert.equal(decision.kind, 'accept')
   assert.equal(decision.content[0].text, 'redacted:hide-key')
-  assert.equal(state.pluginApi.security.audit.query({ kind: 'redaction' }).records.length, 1)
+  assert.equal(state.pluginApi.security.audit.list({ kind: 'redaction' }).records.length, 1)
 })
 
-test('egress check through the mounted facade defaults to deny and audits', () => {
+test('egress lease acquire fails closed with a typed denial when no policy allows', () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
-  const decision = state.pluginApi.security.egress.check({ kind: 'subprocess', destination: 'evil.example' })
-  assert.equal(decision.outcome, 'deny')
-  assert.equal(state.pluginApi.security.audit.query({ kind: 'decision' }).records.length, 1)
+  assert.throws(
+    () => state.pluginApi.security.egress.lease.acquire({ kind: 'subprocess', destination: 'evil.example' }, 60000),
+    (error) => error?.name === 'SecurityEgressDeniedError',
+  )
 })
 
 test('without a working ctx.on substrate the feature degrades to inert (no enforcement, truthful availability)', () => {
@@ -175,8 +176,8 @@ test('when the ctx.on guard substrate is missing the feature disables with typed
     () => state.pluginApi.security.policy.register('x', { point: 'tool-before', decide: () => ({ outcome: 'allow' }) }),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'security',
   )
-  assert.throws(() => state.pluginApi.security.audit.query({}), PluginApiFeatureDisabledError)
-  assert.throws(() => state.pluginApi.security.egress.check({ kind: 'http', destination: 'x' }), PluginApiFeatureDisabledError)
+  assert.throws(() => state.pluginApi.security.audit.list({}), PluginApiFeatureDisabledError)
+  assert.throws(() => state.pluginApi.security.egress.lease.acquire({ kind: 'http', destination: 'x' }, 60000), PluginApiFeatureDisabledError)
 })
 
 test('re-apply is idempotent for the security feature', () => {
@@ -202,7 +203,7 @@ test('pluginApi service exposes the security disabled surface until mounted', ()
   const security = instance.security
   assert.equal(typeof security.policy.register, 'function')
   assert.equal(typeof security.egress.lease.acquire, 'function')
-  assert.equal(typeof security.audit.query, 'function')
+  assert.equal(typeof security.audit.list, 'function')
   // inactive facade: every member fails with the typed inactive contract
   assert.throws(() => security.policy.register('x', { point: 'tool-before', decide: () => ({ outcome: 'allow' }) }), PluginApiInactiveError)
   assert.deepEqual(security.availability(), { status: 'unavailable' })

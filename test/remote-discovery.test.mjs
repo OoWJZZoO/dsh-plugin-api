@@ -85,7 +85,7 @@ function wireParameterNames(service, method) {
 
 test('AC 2.5: published service is discoverable via official source-mode traversal', () => {
   const { ctx } = makeGatewayHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: true })
+  const { api } = createHostRemoteApi({ ctx, protocol, active: true })
   const service = {
     get() {
       return { value: { enabled: true } }
@@ -94,7 +94,7 @@ test('AC 2.5: published service is discoverable via official source-mode travers
       return { ok: true, settings }
     },
   }
-  api.publish('extraproAnchorConfig', service)
+  api.register('extraproAnchorConfig', service)
   const claims = sourceModeClaims(ctx)
   assert.ok(claims.has('extraproAnchorConfig/get'), 'get endpoint claim present')
   assert.ok(claims.has('extraproAnchorConfig/set'), 'set endpoint claim present')
@@ -107,7 +107,7 @@ test('AC 2.5: published service is discoverable via official source-mode travers
 
 test('AC 2.5: endpoint resolves to the exact registered service and is callable', async () => {
   const { ctx, provided } = makeGatewayHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: true })
+  const { api } = createHostRemoteApi({ ctx, protocol, active: true })
   const service = {
     get() {
       return { value: { count: 7 } }
@@ -116,7 +116,7 @@ test('AC 2.5: endpoint resolves to the exact registered service and is callable'
       return { ok: true, settings }
     },
   }
-  api.publish('statek', service)
+  api.register('statek', service)
   const receiver = provided.get('statek')
   assert.equal(receiver, service, 'registry resolves the exact published service')
   // Direct source-mode invocation (gateway resolveReceiverContext → Reflect.apply).
@@ -130,8 +130,8 @@ test('AC 2.5: discovery needs no modification of dsh-api-remotes hard-coded cont
   // client side continues to consume via delivered remote adapter/remote mount owner — nothing in
   // this feature adds to dsh-api-remotes (which we cannot modify anyway).
   const { ctx } = makeGatewayHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: true })
-  api.publish('extraproAnchorConfig', {
+  const { api } = createHostRemoteApi({ ctx, protocol, active: true })
+  api.register('extraproAnchorConfig', {
     get() { return { value: {} } },
     set() { return { ok: true } },
   })
@@ -144,12 +144,12 @@ test('AC 2.5: discovery needs no modification of dsh-api-remotes hard-coded cont
 
 test('AC 2.5: non-service props and binding-less entries are excluded from claims', () => {
   const { ctx, props } = makeGatewayHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: true })
+  const { api } = createHostRemoteApi({ ctx, protocol, active: true })
   const service = {
     get() { return { value: {} } },
     set() { return { ok: true } },
   }
-  api.publish('svc', service)
+  api.register('svc', service)
   assert.equal(sourceModeClaims(ctx).size, 2)
   // A gateway-skipped non-service prop (e.g. a lookup def) must NOT contribute.
   props.set('not-a-service', { type: 'lookup' })
@@ -165,7 +165,7 @@ test('AC 7.1 contract lock: pro-ex-shaped get/set publishes with stable wire ide
   // JSON-safe snapshot, `settings` as the wire parameter, replace-one-full-document
   // atomic set semantics.
   const { ctx, provided } = makeGatewayHost()
-  const api = createHostRemoteApi({ ctx, protocol, active: true })
+  const { api } = createHostRemoteApi({ ctx, protocol, active: true })
   const store = { enabled: true, gitBashInstalled: true, draft: 'abc' }
   const service = {
     get() {
@@ -181,7 +181,7 @@ test('AC 7.1 contract lock: pro-ex-shaped get/set publishes with stable wire ide
       return { ok: true, value }
     },
   }
-  const disposer = api.publish('extraproAnchorConfig', service)
+  const disposer = api.register('extraproAnchorConfig', service)
   assert.equal(provided.get('extraproAnchorConfig'), service)
   // remoteMethods descriptors: get then set, both direct.
   const descriptors = protocol.remoteMethods(service)

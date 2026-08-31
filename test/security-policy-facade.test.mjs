@@ -74,7 +74,7 @@ test('no registration: llm/stream forwards the official stream untouched', async
 test('no registration: audit stays empty and availability reports active-but-idle truthfully', async () => {
   const { ctx } = createMockCtx()
   const owner = createSecurityOwner({ ctx, logger: { warn() {} } })
-  assert.equal(owner.api.audit.query({}).records.length, 0)
+  assert.equal(owner.api.audit.list({}).records.length, 0)
   const availability = owner.api.availability
   assert.deepEqual(availability.faces, { policy: 'active', redaction: 'active', egress: 'active', audit: 'active' })
 })
@@ -126,6 +126,6 @@ test('full apply without registration leaves all official seam listeners delegat
   const post = await run('tools/post-execute', { kind: 'accept' }, { name: 'x' }, { content: [{ type: 'text', text: 'api_key=abcdef1234567890' }] })
   assert.equal(post.kind, 'accept')
   assert.equal(post.content, undefined)
-  const audit = state.pluginApi.security.audit.query({})
+  const audit = state.pluginApi.security.audit.list({})
   assert.equal(audit.records.length, 0, 'no registration -> no fabricated audit records')
 })

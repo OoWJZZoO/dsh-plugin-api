@@ -51,10 +51,10 @@ test('active tools: toolAbortedError returns the AbortError identity without tou
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
   assert.equal(state.pluginApi.tools.isActive, true)
-  assert.equal(typeof state.pluginApi.tools.toolAbortedError, 'function')
+  assert.equal(typeof state.pluginApi.services.tools.toolAbortedError, 'function')
 
   const toolsGetsBefore = state.getCalls.filter((n) => n === 'tools').length
-  const err = state.pluginApi.tools.toolAbortedError()
+  const err = state.pluginApi.services.tools.toolAbortedError()
   const toolsGetsAfter = state.getCalls.filter((n) => n === 'tools').length
   assert.equal(toolsGetsAfter, toolsGetsBefore)
 
@@ -84,12 +84,12 @@ test('disabled tools: toolAbortedError exists and throws PluginApiFeatureDisable
   const { ctx, state } = createMockCtx({ tools: false })
   assert.doesNotThrow(() => apply(ctx))
   assert.equal(state.pluginApi.tools.isActive, false)
-  assert.equal(typeof state.pluginApi.tools.toolAbortedError, 'function')
+  assert.equal(typeof state.pluginApi.services.tools.toolAbortedError, 'function')
   assert.throws(
-    () => state.pluginApi.tools.toolAbortedError(),
+    () => state.pluginApi.services.tools.toolAbortedError(),
     (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'tools')
+      assert.equal(error.feature, 'services.tools')
       return true
     },
   )

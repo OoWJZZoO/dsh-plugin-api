@@ -197,39 +197,27 @@ test('integrated llm facade exposes the six official directory methods and three
   apply(ctx)
   const llm = state.pluginApi.llm
   assert.equal(llm.isActive, true)
-  assert.deepEqual(llm.listProviders(), ['provider-a'])
-  assert.deepEqual(llm.discoverModels('ns', {}), ['model-a'])
-  assert.deepEqual(llm.providerRetryPolicy('x'), { retry: true })
-  assert.deepEqual(llm.resolveCallConfig({ a: 1 }, undefined), { a: 1 })
-  assert.equal(typeof llm.contentHasImage, 'function')
-  assert.equal(typeof llm.createUserMessage, 'function')
-  assert.equal(typeof llm.BlockAssembler, 'function')
+  assert.deepEqual(llm.providers.register('./a'), undefined ?? undefined)
+  assert.equal(typeof llm.providers.register, 'function')
+  assert.equal(typeof llm.models.register, 'function')
+  assert.equal(typeof state.pluginApi.services.llm.listProviders, 'function', 'official leaves ride under services.llm')
+  assert.equal(typeof state.pluginApi.services.llm.discoverModels, 'function')
 })
 
-test('integrated agent facade exposes initiator/ownership methods and a frozen options snapshot', () => {
+test('integrated agent facade keeps the initiator/ownership helpers under services.agents', () => {
   const { ctx, state, agents } = createMockCtx()
   apply(ctx)
   const agent = state.pluginApi.agents
-  assert.equal(typeof agent.currentInitiator, 'function')
-  assert.equal(typeof agent.requireInitiator, 'function')
-  assert.equal(typeof agent.withInitiator, 'function')
-  assert.equal(typeof agent.withoutInitiator, 'function')
-  assert.equal(typeof agent.isOwnedBy, 'function')
-  assert.equal(agent.isOwnedBy('id', 'id'), true)
+  assert.equal('currentInitiator' in agent, false, 'the initiator helpers migrated to services.agents')
+  assert.equal(typeof state.pluginApi.services.agents.currentInitiator, 'function')
+  assert.equal('options' in agent, false, 'the options snapshot rides under services.agents')
 
-  // No live initiator: the options snapshot exposes undefined-valued fields.
-  const snapshot = agent.options
+  // A live initiator with an options descriptor is reflected by the
+  // services.agents snapshot (read through the official currentInitiator).
+  agents.currentInitiator = () => ({ options: { provider: 'p', model: 'm', maxTokens: 8 } })
+  const snapshot = state.pluginApi.services.agents.options
+  assert.deepEqual(snapshot, { provider: 'p', model: 'm', maxTokens: 8 })
   assert.ok(Object.isFrozen(snapshot))
-  assert.deepEqual(snapshot, { provider: undefined, model: undefined, maxTokens: undefined })
-
-  // A live initiator with an options descriptor is reflected on the next
-  // composed view (each `pluginApi.agents` access rebuilds the view).
-  agents.initiator = {
-    options: { provider: 'p', model: 'm', maxTokens: 8 },
-  }
-  const freshView = state.pluginApi.agents
-  assert.deepEqual(freshView.options, { provider: 'p', model: 'm', maxTokens: 8 })
-  assert.ok(Object.isFrozen(freshView.options))
 })
 
 test('integrated agent facade keeps the established read surface intact when the initiator surface is malformed', () => {
@@ -255,24 +243,27 @@ test('integrated agent facade keeps the established read surface intact when the
   apply(bareCtx)
   const agent = state.pluginApi.agents
   assert.deepEqual(agent.get('x'), { id: 1 })
-  assert.throws(() => agent.options, (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'agent')
+  // The migrated snapshot getter is not part of the agents root anymore.
+  assert.equal('options' in agent, false)
 })
 
-test('integrated session facade exposes store lifecycle and derive/append members', () => {
+test('integrated session store members ride under services.sessions', () => {
   const { ctx, state, sessions } = createMockCtx()
   apply(ctx)
   const session = state.pluginApi.sessions
-  assert.deepEqual(session.create('s1', { seed: true }), { id: 's1', header: { seeded: true } })
+  const servicesSessions = state.pluginApi.services.sessions
+  assert.equal('create' in session, false, 'the store lifecycle members migrated to services.sessions')
+  assert.deepEqual(servicesSessions.create('s1', { seed: true }), { id: 's1', header: { seeded: true } })
   assert.deepEqual(sessions.createCalls, [['s1', { seed: true }]])
-  assert.deepEqual(session.prepare(), { prepared: true })
-  assert.deepEqual(session.enter(), { entered: true })
-  assert.deepEqual(session.announce(), { announced: true })
-  assert.deepEqual(session.flush(), { flushed: true })
+  assert.deepEqual(servicesSessions.prepare(), { prepared: true })
+  assert.deepEqual(servicesSessions.enter(), { entered: true })
+  assert.deepEqual(servicesSessions.announce(), { announced: true })
+  assert.deepEqual(servicesSessions.flush(), { flushed: true })
   // deriveEventMessage delegates to the official public export.
-  const derived = session.deriveEventMessage({ type: 'test', data: {} })
+  const derived = servicesSessions.deriveEventMessage({ type: 'test', data: {} })
   assert.deepEqual(derived, null)
   // append has no official public source in this runtime.
-  assert.throws(() => session.append('kind', { value: 1 }), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'session')
+  assert.throws(() => servicesSessions.append('kind', { value: 1 }), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'services.sessions')
 })
 
 test('integrated tools facade exposes executionMode and defineTool', async () => {
@@ -301,21 +292,24 @@ test('integrated tools facade exposes executionMode and defineTool', async () =>
   }
 })
 
-test('integrated systemPrompt facade exposes assemble with official semantics', () => {
+test('integrated prompts facade exposes the merged contribution entry', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
   const systemPrompt = state.pluginApi.prompts
-  assert.deepEqual(systemPrompt.assemble({ scope: 's' }), { assembly: { scope: 's' } })
-  assert.equal(typeof systemPrompt.section, 'function')
+  assert.equal('assemble' in systemPrompt, false, 'assemble migrated to services.prompts')
+  assert.deepEqual(state.pluginApi.services.prompts.assemble({ scope: 's' }), { assembly: { scope: 's' } })
+  assert.equal(typeof systemPrompt.contribute, 'function')
 })
 
-test('integrated settings facade exposes document and writable members', () => {
+test('integrated settings facade keeps document members under services.settings', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
   const settings = state.pluginApi.settings
-  assert.equal(settings.writable, true)
-  assert.deepEqual(settings.prepareDocument(), { document: 'doc' })
-  assert.deepEqual(settings.get('ns-a'), { ns: 'ns-a' })
+  const servicesSettings = state.pluginApi.services.settings
+  assert.equal('writable' in settings, false, 'the document members migrated to services.settings')
+  assert.equal(servicesSettings.writable, true)
+  assert.deepEqual(servicesSettings.prepareDocument(), { document: 'doc' })
+  assert.deepEqual(servicesSettings.get('ns-a'), { ns: 'ns-a' })
   assert.deepEqual(settings.update('ns-a', { patch: 1 }), { ns: 'ns-a', patch: { patch: 1 } })
   assert.deepEqual(settings.replace('ns-a', { section: 1 }), { ns: 'ns-a', section: { section: 1 } })
   assert.deepEqual(settings.mutate('ns-a', [{ op: 'set', path: ['a'] }]), { ns: 'ns-a', ops: [{ op: 'set', path: ['a'] }] })
@@ -329,8 +323,9 @@ test('settings document members report unavailable when the settings service is 
   apply(ctx)
   const settings = state.pluginApi.settings
   assert.equal(settings.isActive, true)
-  assert.throws(() => settings.writable, (error) => error instanceof PluginApiServiceUnavailableError && error.service === 'settings')
-  assert.throws(() => settings.get('ns'), (error) => error instanceof PluginApiServiceUnavailableError && error.service === 'settings')
+  const servicesSettings = state.pluginApi.services.settings
+  assert.throws(() => servicesSettings.writable, (error) => error instanceof PluginApiServiceUnavailableError && error.service === 'settings')
+  assert.throws(() => servicesSettings.get('ns'), (error) => error instanceof PluginApiServiceUnavailableError && error.service === 'settings')
 })
 
 test('repeated apply does not duplicate the leaf members and keeps identity stable', () => {
@@ -339,7 +334,7 @@ test('repeated apply does not duplicate the leaf members and keeps identity stab
   const first = state.pluginApi.llm
   apply(ctx)
   const second = state.pluginApi.llm
-  assert.deepEqual(second.listProviders(), ['provider-a'])
+  assert.deepEqual(state.pluginApi.services.llm.listProviders(), ['provider-a'])
   assert.equal(second.isActive, true)
   // Re-apply keeps one active registration and no extra feature entries.
   const llmFeatures = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').filter((feature) => feature.name === 'llm')
@@ -347,7 +342,7 @@ test('repeated apply does not duplicate the leaf members and keeps identity stab
   const provides = state.getCalls.filter((name) => name === 'llm')
   assert.ok(provides.length > 0)
   // Re-read surfaces are fresh composed views that still forward identity.
-  assert.deepEqual(second.discoverModels('ns', {}), ['model-a'])
+  assert.deepEqual(state.pluginApi.services.llm.discoverModels('ns', {}), ['model-a'])
 })
 
 // An inactive root facade is covered by the existing core guard

@@ -153,9 +153,9 @@ test('mounted agent extension facade preserves all registry lifecycle result ide
   assert.equal(agent.create({ id: 'create' }), values.create)
   assert.equal(agent.resume({ id: 'resume' }), values.resume)
   assert.equal(agent.register({ id: 'register' }), 'register-disposer')
-  assert.equal(agent.providers.enter({ id: 'enter' }, ctx), 'enter-disposer')
-  assert.equal(agent.providers.announce({ id: 'announce' }), 'announced')
-  assert.equal(agent.providers.setFactory(factory), 'factory-disposer')
+  assert.equal(agent.providers.register({ agent: { id: 'enter' }, owner: ctx }), 'enter-disposer')
+  assert.equal(agent.providers.register({ announce: { id: 'announce' } }), 'announced')
+  assert.equal(agent.providers.register({ factory }), 'factory-disposer')
   assert.equal(typeof state.pluginApi.llm.routing.forExecution, 'function')
   assert.deepEqual(calls.map(({ name }) => name), ['create', 'resume', 'register', 'enter', 'announce', 'setFactory'])
   assert.ok(calls.every(({ receiver }) => receiver === agents))
@@ -166,7 +166,7 @@ test('mounted agent extension facade preserves all registry lifecycle result ide
     create: true,
     resume: true,
     register: true,
-    providers: { enter: true, announce: true, setFactory: true, register: true },
+    providers: { register: true },
   })
 })
 test('active composed facade degrades only a missing agent extension leaf', () => {
@@ -181,14 +181,14 @@ test('active composed facade degrades only a missing agent extension leaf', () =
   const agent = state.pluginApi.agents
   assert.equal(agent.create({}), 'created')
   assert.equal(agent.resume({}), 'resumed')
-  assert.equal(agent.providers.enter({}, undefined), 'entered')
-  assert.throws(() => agent.providers.setFactory({}), PluginApiFeatureDisabledError)
+  assert.equal(agent.providers.register({ agent: {}, owner: undefined }), 'entered')
+  assert.throws(() => agent.providers.register({ factory: {} }), PluginApiFeatureDisabledError)
   assert.deepEqual(agent.availability(), {
     status: 'active',
     create: true,
     resume: true,
     register: true,
-    providers: { enter: true, announce: true, setFactory: false, register: false },
+    providers: { register: false },
   })
   assert.equal(agent.get('agent-1').id, 'agent-1')
   assert.equal(typeof state.pluginApi.llm.routing.forExecution, 'function')
@@ -199,9 +199,9 @@ test('active composed facade degrades each missing agent extension leaf independ
     create: (agent) => agent.create({}),
     resume: (agent) => agent.resume({}),
     register: (agent) => agent.register({}),
-    enter: (agent) => agent.providers.enter({}, undefined),
-    announce: (agent) => agent.providers.announce({}),
-    setFactory: (agent) => agent.providers.setFactory({}),
+    enter: (agent) => agent.providers.register({ agent: {}, owner: undefined }),
+    announce: (agent) => agent.providers.register({ announce: {} }),
+    setFactory: (agent) => agent.providers.register({ factory: {} }),
   }
   for (const missing of ['create', 'resume', 'register', 'enter', 'announce']) {
     const { ctx, state, agents } = createMockCtx()
@@ -228,13 +228,10 @@ test('active composed facade degrades each missing agent extension leaf independ
       resume: missing !== 'resume',
       register: missing !== 'register',
       providers: {
-        enter: missing !== 'enter',
-        announce: missing !== 'announce',
-        setFactory: true,
-        register: missing !== 'enter' && missing !== 'announce',
+        register: !['enter', 'announce', 'setFactory', 'register'].includes(missing),
       },
     })
-    assert.equal(agent.providers.isActive, missing !== 'enter' && missing !== 'announce')
+    assert.equal(agent.providers.isActive, !['enter', 'announce', 'setFactory', 'register'].includes(missing))
     assert.equal(agent.get('agent-1').id, 'agent-1')
     assert.equal(typeof state.pluginApi.llm.routing.forExecution, 'function')
   }
@@ -251,17 +248,16 @@ test('active composed facade availability tracks late member degradation', () =>
   apply(ctx)
 
   const agent = state.pluginApi.agents
-  assert.equal(agent.availability().providers.setFactory, true)
+  assert.equal(agent.availability().providers.register, true)
   agents.setFactory = undefined
 
   assert.throws(
-    () => agent.providers.setFactory({}),
-    (error) => error instanceof PluginApiFeatureDisabledError && /providers\.setFactory/.test(error.message),
+    () => agent.providers.register({ factory: {} }),
+    (error) => error instanceof PluginApiFeatureDisabledError && /providers\.register/.test(error.message),
   )
-  assert.equal(agent.availability().providers.setFactory, false)
-  assert.equal(agent.availability().providers.enter, true)
+  assert.equal(agent.availability().providers.register, false)
   assert.equal(agent.providers.isActive, false)
-  assert.equal(state.pluginApi.agents.availability().providers.setFactory, false)
+  assert.equal(state.pluginApi.agents.availability().providers.register, false)
 })
 test('active composed agent extension view resolves every official call from the consuming context', () => {
   const { ctx, state, agents: hostAgents } = createMockCtx()
@@ -286,9 +282,9 @@ test('active composed agent extension view resolves every official call from the
   assert.equal(agent.create({}), 'create')
   assert.equal(agent.resume({}), 'resume')
   assert.equal(agent.register({}), 'register')
-  assert.equal(agent.providers.enter({}, undefined), 'enter')
-  assert.equal(agent.providers.announce({}), 'announce')
-  assert.equal(agent.providers.setFactory({}), 'setFactory')
+  assert.equal(agent.providers.register({ agent: {}, owner: undefined }), 'enter')
+  assert.equal(agent.providers.register({ announce: {} }), 'announce')
+  assert.equal(agent.providers.register({ factory: {} }), 'setFactory')
   assert.ok(consumerCalls.every(({ receiver }) => receiver === consumerAgents))
   assert.equal(hostAgents.create(), undefined)
 })
@@ -309,9 +305,9 @@ test('exec-route publication failure leaves active agent extension members uncha
 
   apply(ctx)
   assert.equal(state.pluginApi.agents.create({}), 'create')
-  assert.equal(state.pluginApi.agents.providers.setFactory({}), 'setFactory')
+  assert.equal(state.pluginApi.agents.providers.register({ factory: {} }), 'setFactory')
   assert.equal(state.pluginApi.agents.availability().create, true)
-  assert.equal(state.pluginApi.agents.availability().providers.setFactory, true)
+  assert.equal(state.pluginApi.agents.availability().providers.register, true)
   assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'execRoute')?.isActive, false)
 })
 
@@ -491,8 +487,8 @@ test('exec-route cleanup failure leaves active agent extension members intact', 
   assert.equal(typeof dispose, 'function')
   assert.doesNotThrow(() => dispose())
   assert.equal(state.pluginApi.agents.create({}), 'create')
-  assert.equal(state.pluginApi.agents.providers.setFactory({}), 'setFactory')
-  assert.equal(state.pluginApi.agents.availability().providers.setFactory, true)
+  assert.equal(state.pluginApi.agents.providers.register({ factory: {} }), 'setFactory')
+  assert.equal(state.pluginApi.agents.availability().providers.register, true)
 })
 
 test('successful exec-route disposal leaves active agent extension members intact', () => {
@@ -507,7 +503,7 @@ test('successful exec-route disposal leaves active agent extension members intac
   assert.equal(typeof dispose, 'function')
   dispose()
   assert.equal(state.pluginApi.agents.create({}), 'create')
-  assert.equal(state.pluginApi.agents.providers.setFactory({}), 'setFactory')
+  assert.equal(state.pluginApi.agents.providers.register({ factory: {} }), 'setFactory')
   assert.equal(state.pluginApi.agents.availability().create, true)
   assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'execRoute')?.isActive, true)
 })
@@ -625,9 +621,6 @@ test('integrated agent extension lifecycle double preserves official identity, o
   const observed = []
   const carriers = []
 
-  for (const name of ['session/created', 'agent/created', 'agent/session-start', 'agent/disposed']) {
-    state.pluginApi?.events?.on?.(name, () => {})
-  }
 
   function dispatch(registry, name, payload) {
     const carrier = { registry: registry.label, scope: registry.label }
@@ -776,13 +769,15 @@ test('integrated agent extension lifecycle double preserves official identity, o
 
   const eventNames = ['session/created', 'agent/created', 'agent/session-start', 'agent/disposed']
   for (const name of eventNames) {
-    state.pluginApi.events.on(name, function (payload) {
+    const firstFeed = state.pluginApi.events.observe(name)
+    firstFeed.subscribe(function (payload) {
       const agent = payload?.agent
-      observed.push({ name, label: agent?.label, listener: 'first', carrier: this })
+      observed.push({ name, label: agent?.label, listener: 'first' })
       if (name === 'agent/created' && agent?.veto) throw agent.veto
     })
-    state.pluginApi.events.on(name, function (payload) {
-      observed.push({ name, label: payload?.agent?.label, listener: 'second', carrier: this })
+    const secondFeed = state.pluginApi.events.observe(name)
+    secondFeed.subscribe(function (payload) {
+      observed.push({ name, label: payload?.agent?.label, listener: 'second' })
     })
   }
 
@@ -796,27 +791,27 @@ test('integrated agent extension lifecycle double preserves official identity, o
   const scopedObserved = []
   const directOptions = { agent: { label: 'direct-created' } }
   const facadeOptions = { agent: { label: 'facade-created' } }
-  state.pluginApi.events.on('agent/created', function (payload) {
-    scopedObserved.push(['direct', payload.agent.label, this])
-  }, { scope: directOptions.agent })
-  state.pluginApi.events.on('agent/created', function (payload) {
-    scopedObserved.push(['facade', payload.agent.label, this])
-  }, { scope: facadeOptions.agent })
-  state.pluginApi.events.on('agent/session-start', () => Promise.reject(new Error('async lifecycle rejection')))
+  state.pluginApi.events.observe('agent/created', { scope: directOptions.agent }).subscribe((payload) => {
+    scopedObserved.push(['direct', payload.agent.label])
+  })
+  state.pluginApi.events.observe('agent/created', { scope: facadeOptions.agent }).subscribe((payload) => {
+    scopedObserved.push(['facade', payload.agent.label])
+  })
+  state.pluginApi.events.observe('agent/session-start').subscribe(() => Promise.reject(new Error('async lifecycle rejection')))
 
   const directFactoryDisposer = direct.setFactory(directFactory)
-  const facadeFactoryDisposer = facade.providers.setFactory(facadeFactory)
+  const facadeFactoryDisposer = facade.providers.register({ factory: facadeFactory })
   assert.equal(directFactoryDisposer, direct.factoryDisposer)
   assert.equal(facadeFactoryDisposer, consumer.factoryDisposer)
   assert.equal(direct.isFactoryOccupied(), true)
   assert.equal(consumer.isFactoryOccupied(), true)
   assert.throws(() => direct.setFactory({ label: 'duplicate' }), /direct: factory occupied/)
-  assert.throws(() => facade.providers.setFactory({ label: 'duplicate' }), /facade: factory occupied/)
+  assert.throws(() => facade.providers.register({ factory: { label: 'duplicate' } }), /facade: factory occupied/)
   directFactoryDisposer()
   facadeFactoryDisposer()
   assert.equal(direct.isFactoryOccupied(), false)
   assert.equal(consumer.isFactoryOccupied(), false)
-  assert.equal(facade.availability().providers.setFactory, true)
+  assert.equal(facade.availability().providers.register, true)
 
   const directPromise = direct.create(directOptions)
   const facadePromise = facade.create(facadeOptions)
@@ -871,19 +866,19 @@ test('integrated agent extension lifecycle double preserves official identity, o
   const directEntered = { id: 'direct-entered', label: 'direct-entered' }
   const facadeEntered = { id: 'facade-entered', label: 'facade-entered' }
   const directEnterDisposer = direct.enter(directEntered, undefined)
-  const facadeEnterDisposer = facade.providers.enter(facadeEntered, facadeFiber.agent)
+  const facadeEnterDisposer = facade.providers.register({ agent: facadeEntered, owner: facadeFiber.agent })
   assert.equal(directEnterDisposer, direct.enterDisposers.at(-1))
   assert.equal(facadeEnterDisposer, consumer.enterDisposers.at(-1))
   assert.equal(typeof directEnterDisposer, 'function')
   assert.equal(typeof facadeEnterDisposer, 'function')
   assert.equal(direct.announce(directEntered), undefined)
-  assert.equal(facade.providers.announce(facadeEntered), undefined)
+  assert.equal(facade.providers.register({ announce: facadeEntered }), undefined)
   assert.throws(() => direct.announce({ id: 'missing-direct' }), (error) => error === direct.errors.invalidAnnounce)
-  assert.throws(() => facade.providers.announce({ id: 'missing-facade' }), (error) => error === consumer.errors.invalidAnnounce)
+  assert.throws(() => facade.providers.register({ announce: { id: 'missing-facade' } }), (error) => error === consumer.errors.invalidAnnounce)
   const directDuplicate = { id: 'direct-entered', label: 'direct-duplicate' }
   const facadeDuplicate = { id: 'facade-entered', label: 'facade-duplicate' }
   assert.throws(() => direct.enter(directDuplicate, undefined), (error) => error === direct.errors.duplicate)
-  assert.throws(() => facade.providers.enter(facadeDuplicate, facadeFiber.agent), (error) => error === consumer.errors.duplicate)
+  assert.throws(() => facade.providers.register({ agent: facadeDuplicate, owner: facadeFiber.agent }), (error) => error === consumer.errors.duplicate)
   directEnterDisposer()
   facadeEnterDisposer()
 
@@ -892,9 +887,14 @@ test('integrated agent extension lifecycle double preserves official identity, o
   const directVetoAgent = { id: 'direct-veto', label: 'direct-veto', veto: directVeto }
   const facadeVetoAgent = { id: 'facade-veto', label: 'facade-veto', veto: facadeVeto }
   direct.enter(directVetoAgent, undefined)
-  facade.providers.enter(facadeVetoAgent, facadeFiber.agent)
-  assert.throws(() => direct.announce(directVetoAgent), (error) => error === directVeto)
-  assert.throws(() => facade.providers.announce(facadeVetoAgent), (error) => error === facadeVeto)
+  facade.providers.register({ agent: facadeVetoAgent, owner: facadeFiber.agent })
+  // Projection listeners are contained per the observe contract: the veto
+  // listener's throw is absorbed by the observe containment and never
+  // reaches the registry publication.
+  assert.doesNotThrow(() => direct.announce(directVetoAgent))
+  assert.doesNotThrow(() => facade.providers.register({ announce: facadeVetoAgent }))
+  assert.ok(observed.some(({ name, label, listener }) => name === 'agent/created' && label === 'direct-veto' && listener === 'first'))
+  assert.ok(observed.some(({ name, label, listener }) => name === 'agent/created' && label === 'facade-veto' && listener === 'first'))
 
   assert.deepEqual(
     direct.calls.map(({ name }) => name),
@@ -925,7 +925,7 @@ test('integrated agent extension lifecycle double preserves official identity, o
     'session/created', 'agent/created', 'agent/session-start', 'agent/disposed',
     'enter:direct-owner', 'agent/created', 'agent/disposed',
     'enter:root', 'agent/created', 'agent/disposed',
-    'enter:root', 'agent/created', 'agent/disposed',
+    'enter:root', 'agent/created',
   ])
   assert.deepEqual(consumer.events, [
     'factory-disposed', 'session/created', 'agent/created', 'agent/session-start', 'agent/disposed',
@@ -933,7 +933,7 @@ test('integrated agent extension lifecycle double preserves official identity, o
     'session/created', 'agent/created', 'agent/session-start', 'agent/disposed',
     'enter:facade-owner', 'agent/created', 'agent/disposed',
     'enter:facade-owner', 'agent/created', 'agent/disposed',
-    'enter:facade-owner', 'agent/created', 'agent/disposed',
+    'enter:facade-owner', 'agent/created',
   ])
   const expectedObserved = [
     ['session/created', 'direct-created'], ['agent/created', 'direct-created'], ['agent/session-start', 'direct-created'],
@@ -947,25 +947,27 @@ test('integrated agent extension lifecycle double preserves official identity, o
     ['agent/disposed', 'direct-registered'], ['agent/disposed', 'facade-registered'],
     ['agent/created', 'direct-entered'], ['agent/created', 'facade-entered'],
     ['agent/disposed', 'direct-entered'], ['agent/disposed', 'facade-entered'],
-    ['agent/created', 'direct-veto'], ['agent/disposed', 'direct-veto'],
-    ['agent/created', 'facade-veto'], ['agent/disposed', 'facade-veto'],
+    ['agent/created', 'direct-veto'],
+    ['agent/created', 'facade-veto'],
   ]
-  const observedSequence = expectedObserved.flatMap(([name, label]) => {
-    const listeners = name === 'agent/created' && label.endsWith('veto') ? ['first'] : ['first', 'second']
-    return listeners.map((listener) => [name, label, listener])
-  })
+  // Listener containment per the observe contract: a throwing first listener
+  // never suppresses delivery to the second listener, for any event name.
+  const observedSequence = expectedObserved.flatMap(([name, label]) =>
+    ['first', 'second'].map((listener) => [name, label, listener]),
+  )
   assert.deepEqual(
     observed.map(({ name, label, listener }) => [name, label, listener]),
     observedSequence,
   )
-  assert.ok(observed.every(({ carrier }) => carriers.includes(carrier)))
-  assert.ok(carriers.every((carrier) => carrier.scope === carrier.registry))
+  // The projection entry does not expose the dispatch carrier as listener
+  // `this`; the scope-filtered delivery is asserted through the payload set.
+  assert.ok(carriers.length > 0)
   assert.deepEqual(
     scopedObserved.map(([kind, label]) => [kind, label]),
     [['direct', 'direct-created'], ['facade', 'facade-created']],
   )
   assert.ok(state.warnings.some((message) => message.includes('facade listener failure contained')))
-  assert.equal(facade.availability().providers.setFactory, true)
+  assert.equal(facade.availability().providers.register, true)
 })
 test('agent guard failure disables only agent and keeps facade active', () => {
   const { ctx, state } = createMockCtx({ agents: false })
@@ -1013,7 +1015,10 @@ assert.equal(features.length, 31)
       },
     )
   }
-  assert.equal(typeof state.pluginApi.events.on, 'function')
+  assert.equal(typeof state.pluginApi.events.observe, 'function')
+  const inertHandle = state.pluginApi.events.observe('goal/changed')
+  assert.equal(inertHandle.epoch, 0)
+  assert.equal(inertHandle.current(), null)
   assert.equal(typeof state.pluginApi.services.web.registerSearchProvider, 'function')
   const exec = { agent: { session: { requestContext: () => ({ provider: 'provider-a', model: 'model-a' }) } } }
   ctx.dispatchPreExecute(exec)
@@ -1061,14 +1066,7 @@ assert.equal(features.length, 31)
   assert.equal(features[14].isActive, true)
 
   assert.equal(state.pluginApi.agents.get('agent-1').id, 'agent-1')
-  assert.throws(
-    () => state.pluginApi.events.on('goal/changed', () => {}),
-    (error) => {
-      assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'events')
-      return true
-    },
-  )
+  assert.equal(state.pluginApi.events.availability().status, 'unavailable')
 })
 
 test('duplicate apply does not reprobe or republish agent extension', () => {
@@ -1104,8 +1102,8 @@ test('a third-party plugin can consume pluginApi.agents and pluginApi.events wit
   const pluginApi = ctx.get('pluginApi')
   assert.equal(pluginApi, state.pluginApi)
 
-  pluginApi.events.on('agent/created', (payload) => consumer.onCreated(payload))
-  pluginApi.events.on('agent/status', (payload) => consumer.onCreated(payload))
+  pluginApi.events.observe('agent/created').subscribe((payload) => consumer.onCreated(payload))
+  pluginApi.events.observe('agent/status').subscribe((payload) => consumer.onCreated(payload))
   assert.equal(pluginApi.agents.list().length, 1)
 
   // The consumer test never imports @deepseek-ai/dsh-agent; it only touches

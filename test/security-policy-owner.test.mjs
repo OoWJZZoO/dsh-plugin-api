@@ -73,9 +73,9 @@ test('healthy owner exposes the four faces and a truthful availability projectio
   assert.equal(typeof owner.api.policy.register, 'function')
   assert.equal(typeof owner.api.redaction.register, 'function')
   assert.equal(typeof owner.api.egress.register, 'function')
-  assert.equal(typeof owner.api.egress.check, 'function')
+  assert.equal(owner.api.egress.check, undefined, 'the consultative check member is deleted')
   assert.equal(typeof owner.api.egress.lease.acquire, 'function')
-  assert.equal(typeof owner.api.audit.query, 'function')
+  assert.equal(typeof owner.api.audit.list, 'function')
   const availability = owner.api.availability
   assert.deepEqual(availability.faces, { policy: 'active', redaction: 'active', egress: 'active', audit: 'active' })
   assert.deepEqual(availability.seams, { approval: 'bound', toolBefore: 'bound', toolAfter: 'bound', modelRequest: 'bound' })
@@ -112,7 +112,7 @@ test('no registered policies leaves the official approval flow completely unchan
   const { listeners, waterfall, owner } = ownerWith()
   const outcome = await waterfall('approval/request', 'unavailable', { toolName: 'bash', reason: 'why' })
   assert.equal(outcome, 'unavailable', 'base next() passes through untouched')
-  assert.equal(owner.api.audit.query({}).records.length, 0, 'no decision, no audit record')
+  assert.equal(owner.api.audit.list({}).records.length, 0, 'no decision, no audit record')
 })
 
 test('approval deny short-circuits with the official rejected outcome and audits the decision', async () => {
@@ -126,7 +126,7 @@ test('approval deny short-circuits with the official rejected outcome and audits
   const outcome = await waterfall('approval/request', 'unavailable', { toolName: 'bash', reason: 'write file' })
   assert.equal(outcome, 'rejected')
   assert.ok(APPROVAL_OUTCOMES.includes(outcome))
-  const view = owner.api.audit.query({})
+  const view = owner.api.audit.list({})
   assert.equal(view.records.length, 1)
   const hit = view.records[0]
   assert.equal(hit.kind, 'decision')
@@ -186,7 +186,7 @@ test('post-execute redaction rewrites content blocks and records a redaction aud
   assert.ok(TOOL_POST_DECISIONS.includes(decision.kind))
   assert.equal(decision.content[0].text, 'result ok', 'untouched block survives')
   assert.equal(decision.content[1].text, 'redacted:mask-keys')
-  const view = owner.api.audit.query({ kind: 'redaction' })
+  const view = owner.api.audit.list({ kind: 'redaction' })
   assert.equal(view.records.length, 1)
   assert.deepEqual(view.records[0].summary.applied, [{ ruleId: 'mask-keys', count: 1 }])
   assert.deepEqual(view.records[0].summary.audiences, ['model', 'ui'])
@@ -199,7 +199,7 @@ test('post-execute with no matching rules passes through unchanged and writes no
   const decision = await waterfall('tools/post-execute', { kind: 'accept', content: result.content }, { name: 'x' }, result)
   assert.equal(decision.kind, 'accept')
   assert.equal(decision.content[0].text, 'unchanged')
-  assert.equal(owner.api.audit.query({ kind: 'redaction' }).records.length, 0)
+  assert.equal(owner.api.audit.list({ kind: 'redaction' }).records.length, 0)
 })
 
 test('post-execute composes after next(): other listeners keep their decisions', async () => {
@@ -225,7 +225,7 @@ test('post-execute never rewrites a block decision: the corrective feedback stay
   assert.equal(decision.kind, 'block')
   assert.equal(decision.feedback, corrective, 'downstream corrective feedback is never replaced')
   // the redaction attempt is still audited with its applied counts
-  const view = owner.api.audit.query({ kind: 'redaction' })
+  const view = owner.api.audit.list({ kind: 'redaction' })
   assert.equal(view.records.length, 1)
   assert.deepEqual(view.records[0].summary.applied, [{ ruleId: 'hide', count: 1 }])
 })
@@ -242,7 +242,7 @@ test('llm/stream denial throws the typed error so the request fails closed', asy
   assert.ok(threw instanceof SecurityPolicyDeniedError)
   assert.equal(threw.code, 'SECURITY_POLICY_DENIED')
   assert.equal(threw.policyId, 'no-models')
-  const view = owner.api.audit.query({})
+  const view = owner.api.audit.list({})
   assert.equal(view.records.length, 1)
   assert.equal(view.records[0].outcome, 'deny')
 })
@@ -283,31 +283,30 @@ test('llm/stream allow/ask/no-policy delegate through next()', async () => {
   owner.api.policy.register('g', { id: 'ok', point: 'model-request-before', decide: () => ({ outcome: 'allow' }) })
   const pass = await waterfall('llm/stream', ['stream-chunk'], { sessionId: 's1' })
   assert.deepEqual(pass, ['stream-chunk'])
-  const view = owner.api.audit.query({})
+  const view = owner.api.audit.list({})
   assert.equal(view.records.length, 1, 'allow decisions are audited too')
 })
 
-test('egress check and grant audited through the owner; grant reuses its check auditId', () => {
+test('egress lease grants are audited with the lease generation', () => {
   const { owner } = ownerWith()
   owner.api.egress.register('gw', { id: 'allow-http', match: (ctx) => ctx.target.kind === 'http', decide: () => ({ outcome: 'allow' }) })
-  const decision = owner.api.egress.check({ kind: 'http', destination: 'ok.example' })
-  assert.equal(decision.outcome, 'allow')
-  assert.equal(owner.api.audit.query({ kind: 'decision' }).records.length, 1)
   const { generation, expiresAt, revoke } = owner.api.egress.lease.acquire({ kind: 'http', destination: 'ok.example' }, 60000)
   assert.equal(typeof generation, 'string')
   assert.equal(typeof expiresAt, 'number')
-  const grant = owner.api.audit.query({ kind: 'egress-grant' })
+  const grant = owner.api.audit.list({ kind: 'egress-grant' })
   assert.equal(grant.records.length, 1)
   assert.equal(grant.records[0].summary.destination, 'ok.example')
   assert.equal(grant.records[0].generation, generation, 'the grant record carries the lease generation')
   assert.equal(revoke(), true)
 })
 
-test('egress default deny surfaces through the owner and is audited', () => {
+test('egress default deny fails closed through the lease acquire', () => {
   const { owner } = ownerWith()
-  const decision = owner.api.egress.check({ kind: 'subprocess', destination: 'evil.example' })
-  assert.equal(decision.outcome, 'deny')
-  assert.equal(owner.api.audit.query({ kind: 'decision' }).records.length, 1)
+  assert.throws(
+    () => owner.api.egress.lease.acquire({ kind: 'subprocess', destination: 'evil.example' }, 60000),
+    (error) => error?.name === 'SecurityEgressDeniedError',
+  )
+  assert.equal(owner.api.audit.list({ kind: 'egress-grant' }).records.length, 0, 'no grant is recorded for a denied acquire')
 })
 
 test('a policy throwing repeatedly degrades and reports through the diagnostics facility', async () => {
@@ -400,7 +399,7 @@ test('redaction with a secret gate denial keeps the secret redacted and audits a
   const decision = await waterfall('tools/post-execute', { kind: 'accept' }, { name: 'x' }, result)
   assert.equal(decision.kind, 'accept')
   assert.equal(decision.content[0].text, 'redacted:show-everything', 'exposure denied: secret stays redacted')
-  const view = owner.api.audit.query({ kind: 'redaction' })
+  const view = owner.api.audit.list({ kind: 'redaction' })
   assert.equal(view.records.length, 1)
   assert.deepEqual(view.records[0].summary.blocked, [{ ruleId: 'show-everything', count: 1 }])
   assert.deepEqual(view.records[0].summary.applied, [], 'no applied entries for the denied exposure')

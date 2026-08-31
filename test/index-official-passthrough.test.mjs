@@ -83,10 +83,12 @@ test('a missing base system-prompt service does not disable valid helper exports
 
   const assembly = { sections: [], contexts: [], tools: [], variables: {} }
   assert.equal(state.pluginApi.prompts.renderContextSnapshot(assembly), '')
-  assert.throws(
-    () => state.pluginApi.prompts.section({}),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'prompts',
-  )
+  // The merged contribution entry is shape-compatible and returns a typed
+  // discriminated result (contribution never throws through the caller)
+  // when the backing system-prompt surface is unavailable.
+  const contribution = state.pluginApi.prompts.contribute({ kind: 'section', section: { id: 's', priority: 1, thought: 't', text: 'x' } })
+  assert.equal(typeof contribution, 'object')
+  assert.equal(contribution.ok, false)
 })
 
 test('official helper cleanup and reapply revoke old references without disturbing the new owner', () => {

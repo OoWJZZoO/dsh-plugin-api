@@ -108,8 +108,8 @@ assert.equal(names[names.length - 14], 'remote', 'remote stays directly before e
   assert.equal(names[names.length - 3], 'profile', 'profile stays directly before llmAdapters')
   assert.equal(names[names.length - 2], 'llmAdapters', 'adapter decoration mounts directly before sessionChannel')
   assert.equal(names[names.length - 1], 'sessionChannel', 'sessionChannel is the last FEATURE_MOUNTERS entry')
-  assert.equal(typeof state.pluginApi.remotes.publish, 'function')
-  assert.equal(typeof state.pluginApi.remotes.dispose, 'function')
+  assert.equal(typeof state.pluginApi.remotes.register, 'function')
+  assert.equal(typeof state.pluginApi.remotes.availability, 'function')
 })
 
 test('pluginApi.remotes and pluginApi.settings.remote coexist without overriding each other', () => {
@@ -118,8 +118,8 @@ test('pluginApi.remotes and pluginApi.settings.remote coexist without overriding
   // Settings remote surface intact (the mounted entry is contribute).
   assert.equal(typeof state.pluginApi.settings.remote.contribute, 'function')
   // Generic top-level surface intact (its own owner semantics, AC 5.4).
-  assert.equal(typeof state.pluginApi.remotes.publish, 'function')
-  assert.notEqual(state.pluginApi.settings.remote.contribute, state.pluginApi.remotes.publish)
+  assert.equal(typeof state.pluginApi.remotes.register, 'function')
+  assert.notEqual(state.pluginApi.settings.remote.contribute, state.pluginApi.remotes.register)
 })
 
 test('remote feature is active while the facade is active (known feature, not disabled)', () => {
@@ -127,14 +127,14 @@ test('remote feature is active while the facade is active (known feature, not di
   assert.doesNotThrow(() => apply(ctx))
   const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((f) => f.name === 'remote')
   assert.deepEqual(feature, { name: 'remote', isActive: true })
-  assert.equal(state.pluginApi.remotes.isActive, true)
+  assert.equal(state.pluginApi.remotes.availability().status, 'active')
 })
 
 test('a healthy generic publish through the mounted facade registers the service via ctx.reflect.provide', () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
   const service = { get() { return { value: { enabled: true } } }, set() { return { ok: true } } }
-  const disposer = state.pluginApi.remotes.publish('extraproAnchorConfig', service)
+  const disposer = state.pluginApi.remotes.register('extraproAnchorConfig', service)
   assert.equal(typeof disposer, 'function')
   const published = state.providedServices.find((s) => s.name === 'extraproAnchorConfig')
   assert.ok(published, 'service published through official boundary')
@@ -151,8 +151,8 @@ test('apply stays fail-safe (feature-disabled disabled surface) when the typert 
   // surface still exists (disabled shape) and apply never threw.
   const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((f) => f.name === 'remote')
   assert.ok(!feature || feature.isActive === false)
-  assert.equal(state.pluginApi.remotes.isActive, false)
-  assert.throws(() => state.pluginApi.remotes.publish('k', { get() {} }), PluginApiFeatureDisabledError)
+  assert.equal(state.pluginApi.remotes.availability().status, 'unavailable')
+  assert.throws(() => state.pluginApi.remotes.register('k', { get() {} }), PluginApiFeatureDisabledError)
 })
 
 test('apply never throws even when remote guard primitives are malformed', () => {

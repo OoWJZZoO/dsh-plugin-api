@@ -55,8 +55,8 @@ test('healthy apply mounts the tasks facade after diagnostics and exposes the fr
   const tasks = state.pluginApi.tasks
   assert.equal(typeof tasks.register, 'function')
   assert.equal(typeof tasks.start, 'function')
-  assert.equal(typeof tasks.claim, 'function')
-  assert.equal(typeof tasks.reassign, 'function')
+  assert.equal(typeof tasks.acquire, 'function')
+  assert.equal(typeof tasks.takeover, 'function')
   assert.equal(typeof tasks.settle, 'function')
   assert.equal(typeof tasks.attach, 'function')
   assert.equal(typeof tasks.get, 'function')
@@ -90,7 +90,7 @@ test('tasks typed results keep other facade surfaces intact and claim works thro
   assert.equal(registered.ok, true)
   await tasks.start('mounted-task-2', { workflowId: 'wf-1' })
   const handle = (await activeCoordinationLease(state.pluginApi)).handle
-  const claimed = await tasks.claim('mounted-task-2', { ownerId: 'owner-1', lease: handle })
+  const claimed = await tasks.acquire('mounted-task-2', { ownerId: 'owner-1', lease: handle })
   assert.equal(claimed.ok, true)
   assert.equal(claimed.code, 'active')
   const invalid = await tasks.register({})

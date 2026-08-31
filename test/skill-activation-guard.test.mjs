@@ -93,7 +93,7 @@ test('KNOWN_FEATURES accepts the skillsActivation feature key with prepared tran
   const owner = {
     registerDescriptor() {}, registerSkill() {}, activate() {}, deactivate() {}, exposure() {}, audit() {},
     availability() { return { active: true } },
-    policy: { registerMinimalCatalogUpdate() {} },
+    policy: { register() {} },
   }
   // Before any mount the projection is the typed disabled surface.
   assert.deepEqual(service.skills.activation.availability(), Object.freeze({ status: 'unavailable', active: false, contract: false }))

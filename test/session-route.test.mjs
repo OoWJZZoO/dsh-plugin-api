@@ -6,15 +6,26 @@ function harness(options = {}) {
   const listeners = new Map()
   const sessions = new Map()
   const eventsApi = options.eventsApi ?? {
-    on(name, listener) {
+    observe(name) {
       const set = listeners.get(name) ?? new Set()
-      set.add(listener)
       listeners.set(name, set)
-      return () => set.delete(listener)
+      const feed = {
+        subscribe(listener) {
+          set.add(listener)
+          return () => set.delete(listener)
+        },
+        dispose() {
+          listeners.delete(name)
+          return true
+        },
+      }
+      return feed
     },
   }
   const emit = (name, ...args) => {
-    for (const listener of [...(listeners.get(name) ?? [])]) listener(...args)
+    // The projection entry delivers the frozen args array for multi-arg
+    // events; the route owner's native adapter unpacks it.
+    for (const listener of [...(listeners.get(name) ?? [])]) listener(args)
   }
   const owner = createSessionRouteOwner({ sessions: {
     get(id) { return sessions.get(id) },
@@ -208,9 +219,10 @@ test('wait validates options, preserves exact abort reason, and current wins ove
 test('native registration failure rolls back prior hook and logger failures stay contained', () => {
   const disposed = []
   const eventsApi = {
-    on(name) {
+    observe(name) {
       if (name === 'session/disposed') throw new Error('registration failure')
-      return () => disposed.push(name)
+      const feed = { subscribe() { return () => true }, dispose() { disposed.push(name); return true } }
+      return feed
     },
   }
   assert.throws(() => harness({ eventsApi }))

@@ -35,13 +35,20 @@ function createMocks() {
   const onDisposer = () => true
   const onceDisposer = () => true
   const eventsApi = {
-    on(name, listener, opts) {
-      delegated.push({ name, listener, opts })
-      return onDisposer
-    },
-    once(name, listener, opts) {
-      delegatedOnce.push({ name, listener, opts })
-      return onceDisposer
+    observe(name, opts) {
+      const listeners = new Set()
+      return {
+        current: () => null,
+        subscribe(listener) {
+          delegated.push({ name, listener, opts })
+          listeners.add(listener)
+          return () => listeners.delete(listener)
+        },
+        dispose() {
+          return true
+        },
+        epoch: 0,
+      }
     },
   }
 
@@ -92,7 +99,7 @@ function createMocks() {
   }
 }
 
-test('session lifecycle: lifecycle names delegate to pluginApi.events.on/once and return its disposer', () => {
+test('session lifecycle: lifecycle names subscribe through the projection handle and return it', () => {
   const mocks = createMocks()
   const api = createSessionApi({
     ctx: mocks.ctx,
@@ -104,7 +111,10 @@ test('session lifecycle: lifecycle names delegate to pluginApi.events.on/once an
   const listener = () => {}
   for (const name of SESSION_LIFECYCLE_EVENT_NAMES) {
     const opts = { priority: 'high' }
-    assert.equal(api.observe(name, listener, opts), mocks.onDisposer)
+    const handle = api.observe(name, listener, opts)
+    assert.equal(typeof handle.subscribe, 'function')
+    assert.equal(typeof handle.dispose, 'function')
+    assert.equal(typeof handle.current, 'function')
   }
   assert.equal(mocks.delegated.length, 4)
   assert.deepEqual(mocks.delegated.map((call) => call.name), [...SESSION_LIFECYCLE_EVENT_NAMES])
@@ -115,7 +125,7 @@ test('session lifecycle: lifecycle names delegate to pluginApi.events.on/once an
 
 })
 
-test('session lifecycle: non-lifecycle names pass through to ctx.on/ctx.once raw and ignore opts', () => {
+test('session lifecycle: every name subscribes through the unified projection entry', () => {
   const mocks = createMocks()
   const api = createSessionApi({
     ctx: mocks.ctx,
@@ -126,16 +136,11 @@ test('session lifecycle: non-lifecycle names pass through to ctx.on/ctx.once raw
 
   const listener = () => {}
   api.observe('goal/changed', listener, { priority: 'high' })
-  assert.equal(mocks.delegated.length, 0)
-  assert.equal(mocks.rawCalls.length, 1)
-  assert.equal(mocks.rawCalls[0].name, 'goal/changed')
-  assert.equal(mocks.rawCalls[0].listener, listener)
-
-  const rawListener = () => {}
-  api.observe('skills/change', rawListener, { priority: 'low' })
-  assert.equal(mocks.rawCalls.length, 2)
-  assert.equal(mocks.rawCalls[1].name, 'skills/change')
-  assert.equal(mocks.rawCalls[1].listener, rawListener)
+  api.observe('skills/change', listener, { priority: 'low' })
+  assert.equal(mocks.delegated.length, 2)
+  assert.equal(mocks.delegated[0].name, 'goal/changed')
+  assert.equal(mocks.delegated[0].listener, listener)
+  assert.deepEqual(mocks.delegated[1].opts, { priority: 'low' })
 })
 
 test('session read surface: get/list/fork delegate to the sessions service with arguments and errors unchanged', () => {

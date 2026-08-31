@@ -6,19 +6,37 @@ import { createChannelRpcDispatch } from '../packages/session-channel-gateway/li
 import { createFencingTable } from '../packages/session-channel-connection/lib/slices.js'
 
 function createMockSessionApi() {
-  const listeners = new Map()
+  const feeds = new Map()
   const api = {
     isActive: true,
-    on(name, listener) { listeners.set(name, listener); return () => listeners.delete(name) },
-    once(name, listener) { listeners.set(name, listener); return () => listeners.delete(name) },
+    observe(name, listener) {
+      const listeners = new Set()
+      const feed = {
+        listeners,
+        subscribe(next) {
+          listeners.add(next)
+          return () => listeners.delete(next)
+        },
+        dispose() {
+          feeds.delete(name)
+          return true
+        },
+      }
+      feeds.set(name, feed)
+      if (typeof listener === 'function') feed.subscribe(listener)
+      return feed
+    },
+    emit(name, data) {
+      const feed = feeds.get(name)
+      if (!feed) return
+      for (const listener of [...feed.listeners]) listener(data)
+    },
     get(id) { return { id, events: [], seq: 0, header: () => ({}) } },
     list() { return [] },
     events(session) { return session?.events ?? [] },
     header(session) { return session?.header() ?? {} },
     sessionEventTypes: ['session/event', 'session/created'],
-    emit(name, data) { const l = listeners.get(name); if (l) l(data) },
   }
-  api.__emit = api.emit
   return api
 }
 
@@ -28,8 +46,12 @@ function createMockService() {
     isActive: true,
     sessions,
     events: {
-      on() { return () => {} },
-      once() { return () => {} },
+      observe() {
+        return {
+          subscribe() { return () => false },
+          dispose() { return true },
+        }
+      },
     },
     prepareFeature(name, api) {
       return {

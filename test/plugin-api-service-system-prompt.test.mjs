@@ -23,17 +23,21 @@ test('active service exposes a disabled systemPrompt stub', () => {
   const service = new ServiceClass(ctx)
 
   assert.equal(service.prompts.isActive, false)
-  for (const method of ['section', 'context', 'variable', 'tools', 'suppressRuntimeContext', 'render', 'renderContextSections']) {
+  for (const method of ['render', 'renderContextSections']) {
     assert.throws(
       () => service.prompts[method](),
-      (error) => {
-        assert.ok(error instanceof PluginApiFeatureDisabledError)
-        assert.equal(error.feature, 'prompts')
-        return true
-      },
+      (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'prompts',
       `${method} should throw feature-disabled`,
     )
   }
+  for (const method of ['renderContextSnapshot', 'joinContextSections']) {
+    assert.throws(
+      () => service.prompts[method](),
+      (error) => error instanceof PluginApiFeatureDisabledError,
+      `${method} should throw feature-disabled with its official helper identity`,
+    )
+  }
+  assert.equal(typeof service.prompts.contribute, 'function', 'the merged contribution entry stays shape-compatible')
 
   assert.equal(ctx.getCalls.length, 0)
 })
@@ -44,9 +48,10 @@ test('inert service throws inactive errors from systemPrompt stub', () => {
   const ctx = mockCtx()
   const service = new ServiceClass(ctx)
 
-  for (const method of ['section', 'context', 'variable', 'tools', 'suppressRuntimeContext', 'render', 'renderContextSections']) {
+  for (const method of ['render', 'renderContextSections', 'renderContextSnapshot', 'joinContextSections']) {
     assert.throws(() => service.prompts[method](), PluginApiInactiveError, `${method} should throw inactive`)
   }
+  assert.equal(typeof service.prompts.contribute, 'function')
 
   assert.equal(ctx.getCalls.length, 0)
 })
@@ -59,7 +64,7 @@ test('mountFeature injects the systemPrompt API', () => {
   const systemPromptApi = { isActive: true, section() {}, render() {} }
   service.mountFeature('systemPrompt', systemPromptApi)
 
-  assert.equal(service.prompts.section, systemPromptApi.section)
+  assert.equal(service.prompts.render, systemPromptApi.render)
   assert.equal(service.prompts.render, systemPromptApi.render)
   assert.ok(Object.isFrozen(service.prompts))
 })

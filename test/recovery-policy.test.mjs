@@ -17,7 +17,7 @@ function createOwner() {
 }
 
 function capability(owner, overrides = {}) {
-  return owner.api.capability.declare({
+  return owner.api.capability.register({
     operationId: 'operation-1',
     ownerId: 'owner-1',
     generation: '1',
@@ -50,7 +50,7 @@ test('capability registration validates declarations and old disposer cannot rem
   assert.equal(oldDispose(), false)
   assert.equal(newDispose(), true)
   assert.throws(
-    () => owner.api.capability.declare({ operationId: 'x', ownerId: 'o', generation: '1', scope: 'bad' }),
+    () => owner.api.capability.register({ operationId: 'x', ownerId: 'o', generation: '1', scope: 'bad' }),
     RecoveryPolicyRegistrationError,
   )
 })
@@ -176,9 +176,10 @@ test('same decision window is stable and consume is identity guarded and single 
   const second = await owner.api.evaluate(input({ decisionWindowId: 'same' }))
   assert.strictEqual(second, first)
   assert.equal(count, 1)
-  assert.deepEqual(owner.api.consume(first.decisionId, { attemptId: 'attempt-2' }).consumed, true)
-  assert.throws(() => owner.api.consume(first.decisionId, { attemptId: 'attempt-2' }), RecoveryPolicyConsumeError)
-  assert.throws(() => owner.api.consume(first.decisionId, { attemptId: 'other' }), RecoveryPolicyConsumeError)
+  // consume was deleted: the decision window stays consultative and the
+  // facade reports the consume capability as a gap.
+  assert.equal(owner.api.consume, undefined)
+  assert.equal(owner.api.visibility.project, undefined)
 })
 
 test('cancellation and stale policy results cannot publish a decision', async () => {
@@ -199,12 +200,12 @@ test('cancellation and stale policy results cannot publish a decision', async ()
   assert.equal(cancelled.reason.code, 'recovery-cancelled')
 })
 
-test('visibility defaults to omission for model and exposes only bounded proposed fields when elevated', async () => {
+test('visibility registration stays surface-shaped after the projection member removal', async () => {
   const owner = createOwner()
   const decision = await owner.api.evaluate({ failure: { class: 'permanent', code: 'denied' }, decisionWindowId: 'visibility' })
-  assert.equal(owner.api.visibility.project(decision, { audience: 'model' }), undefined)
-  const view = owner.api.visibility.project(decision, { audience: 'model', elevate: true })
-  assert.equal(view.proposedAction, 'stop')
-  assert.equal('capabilityEvidence' in view, false)
-  assert.equal('requestBody' in view, false)
+  assert.equal(decision.action, 'stop')
+  // visibility.project was deleted (automatic recovery projection replaces
+  // the manual projection member).
+  assert.equal(owner.api.visibility.project, undefined)
+  assert.equal(typeof owner.api.visibility.register, 'function')
 })

@@ -34,23 +34,21 @@ function assertDisabledView(agents) {
       return true
     })
   }
-  for (const method of ['enter', 'announce', 'setFactory', 'register']) {
-    assert.throws(() => agents.providers[method]('x'), (error) => {
-      assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'agents')
-      assert.match(error.message, new RegExp(`providers\\.${method}`))
-      return true
-    })
-  }
+  assert.throws(() => agents.providers.register({ factory: {} }), (error) => {
+    assert.ok(error instanceof PluginApiFeatureDisabledError)
+    assert.equal(error.feature, 'agents')
+    assert.match(error.message, /providers\.register/)
+    return true
+  })
   assert.equal(agents.providers.isActive, false)
-  assert.deepEqual(Object.keys(agents.providers), ['isActive', 'enter', 'announce', 'setFactory', 'register'])
+  assert.deepEqual(Object.keys(agents.providers), ['isActive', 'register'])
   const availability = agents.availability()
   assert.deepEqual(availability, {
     status: 'unavailable',
     create: false,
     resume: false,
     register: false,
-    providers: { enter: false, announce: false, setFactory: false },
+    providers: { register: false },
   })
   assert.ok(Object.isFrozen(availability))
   assert.ok(Object.isFrozen(agents.providers))
@@ -77,18 +75,16 @@ test('inert service throws inactive errors from every declared agents member', (
   for (const method of ['get', 'list', 'roots', 'create', 'resume', 'register']) {
     assert.throws(() => agents[method]('x'), PluginApiInactiveError)
   }
-  for (const method of ['enter', 'announce', 'setFactory', 'register']) {
-    assert.throws(() => agents.providers[method]('x'), PluginApiInactiveError)
-  }
+  assert.throws(() => agents.providers.register({ factory: {} }), PluginApiInactiveError)
   assert.equal(agents.providers.isActive, false)
-  assert.deepEqual(Object.keys(agents.providers), ['isActive', 'enter', 'announce', 'setFactory', 'register'])
+  assert.deepEqual(Object.keys(agents.providers), ['isActive', 'register'])
   const inertAvailability = agents.availability()
   assert.deepEqual(inertAvailability, {
     status: 'unavailable',
     create: false,
     resume: false,
     register: false,
-    providers: { enter: false, announce: false, setFactory: false },
+    providers: { register: false },
   })
   assert.ok(Object.isFrozen(inertAvailability))
   assert.ok(Object.isFrozen(agents.providers))

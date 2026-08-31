@@ -39,7 +39,7 @@ test('assembly exposes observe/get/history/onChange with frozen committed snapsh
   assert.equal(typeof api.observe, 'function')
   assert.equal(typeof api.get, 'function')
   assert.equal(typeof api.history, 'function')
-  assert.equal(typeof api.onChange, 'function')
+  assert.equal(api.onChange, undefined, 'the merged onChange member is no longer public')
   assert.equal(typeof api.visibility.register, 'function')
 
   runToolCall(listeners, 's1')

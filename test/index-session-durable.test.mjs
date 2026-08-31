@@ -160,7 +160,9 @@ test('apply mounts sessionDurable immediately after session without extending th
   assert.ok(state.pluginApi.sessions.durable.list().every((entry) => entry.descriptor), 'the merged list carries descriptors')
   assert.equal(typeof state.pluginApi.sessions.durable.observe, 'function')
   assert.equal(typeof state.pluginApi.sessions.appendMessage, 'function')
-  assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 4)
+  // One shared observe feed backs the session/event projection subscribers
+  // (durable hub, sessionRoute and sessionChannel share the feed).
+  assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 2)
 })
 
 test('durable cleanup restores feature-disabled, and a stale cleanup cannot revoke a re-mounted epoch', () => {
@@ -180,7 +182,7 @@ test('durable cleanup restores feature-disabled, and a stale cleanup cannot revo
 
   apply(ctx)
   assert.equal(feature(state, 'sessionDurable').isActive, true)
-  assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 4, 'durable remount retains one hub entry beside sessionRoute, execution observer, and sessionChannel')
+  assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 2, 'durable remount reuses the shared session/event feed beside sessionRoute and sessionChannel')
   const secondSessionApi = state.pluginApi.sessions
   const cleanups = state.effects
     .filter((entry) => entry.label === 'dsh-plugin-api: sessionDurable cleanup')
@@ -202,7 +204,7 @@ test('an effect registration failure resets the published durable epoch before d
   assert.doesNotThrow(() => apply(ctx))
 
   assert.equal(feature(state, 'sessionDurable').isActive, false)
-  assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 3, 'failed durable transaction leaves sessionRoute, execution observers and sessionChannel')
+  assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 2, 'failed durable transaction leaves the sessionRoute and sessionChannel feeds intact')
   assert.throws(() => state.pluginApi.sessions.durable.list(), (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
     assert.equal(error.feature, 'sessionDurable')
@@ -219,7 +221,7 @@ test('registry mount failures before and after activation reset the published du
     assert.doesNotThrow(() => apply(ctx))
 
     assert.equal(feature(state, 'sessionDurable').isActive, false)
-    assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 3)
+    assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 2)
     assert.throws(() => state.pluginApi.sessions.durable.observe(), (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
       assert.equal(error.feature, 'sessionDurable')

@@ -21,7 +21,7 @@ function owner(options = {}) {
 }
 
 function declareCapability(recovery, overrides = {}) {
-  return recovery.api.capability.declare({
+  return recovery.api.capability.register({
     operationId: 'operation-1',
     ownerId: 'consumer-1',
     generation: '1',

@@ -44,6 +44,17 @@ function createBusMockCtx() {
 // Mount-time exclusion is the one and only gating mechanism the
 // bus itself performs NO feature gating at subscribe time.
 
+
+/** Observe projection shim: subscribe and unwrap multi-arg payload arrays. */
+function observeOn(events, name, listener, opts) {
+  const handle = events.observe(name, opts)
+  handle.subscribe((payload) => {
+    const args = Array.isArray(payload) ? payload : [payload]
+    listener(...args)
+  })
+  return handle
+}
+
 test('bus subscriptions to settings events are ungated when the entries are cataloged', () => {
   const ctx = createBusMockCtx()
   const bus = createEventsBus({ ctx, catalog: settingsCatalog })
@@ -51,10 +62,10 @@ test('bus subscriptions to settings events are ungated when the entries are cata
   let updated
   let documentUpdated
   assert.doesNotThrow(() => {
-    bus.on('settings/updated', (...args) => {
+    observeOn(bus, 'settings/updated', (...args) => {
       updated = args
     })
-    bus.on('settings/document-updated', (...args) => {
+    observeOn(bus, 'settings/document-updated', (...args) => {
       documentUpdated = args
     })
   })
@@ -140,7 +151,7 @@ test('settings guard failure excludes the settings slice from the composed catal
 
   // non-cataloged name: subscription falls through to raw ctx.on (no facade treatment)
   const listener = () => {}
-  state.pluginApi.events.on('settings/updated', listener)
+  observeOn(state.pluginApi.events, 'settings/updated', listener)
   assert.ok(state.listeners.some((l) => l.name === 'settings/updated'))
 })
 

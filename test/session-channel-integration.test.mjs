@@ -28,6 +28,7 @@ function createRealService() {
     reflect: { provide() {} },
     get() { return undefined },
     on() { return () => {} },
+    once() {},
     effect() {},
   })
   // Pre-mount the session feature so the sessionChannel mounter can resolve it
@@ -89,16 +90,16 @@ test('facade: pluginApi.sessions.channels has correct shape', async () => {
   assert.ok(result.prepared.commit(), 'prepared transaction commits')
   const api = service.sessions.channels
   assert.ok(api, 'pluginApi.sessions.channels must be published')
-  assert.equal(typeof api.open, 'function')
-  assert.equal(typeof api.subscribe, 'function')
+  assert.equal(typeof api.acquire, 'function')
+  assert.equal(typeof api.list, 'function')
   assert.equal(typeof api.ack, 'function')
   assert.equal(typeof api.resume, 'function')
-  assert.equal(typeof api.revoke, 'function')
+  assert.equal(typeof api.release, 'function')
   assert.equal(typeof api.observe, 'function')
-  assert.equal(typeof api.onChange, 'function')
-  assert.equal(typeof api.auth.registerVerifier, 'function')
-  assert.equal(typeof api.auth.registerPairingProvider, 'function')
-  assert.equal(typeof api.auth.registerAuthorizer, 'function')
+  assert.equal(typeof api.observe, 'function')
+  assert.equal(typeof api.auth.register, 'function')
+  assert.equal(typeof api.auth.pairingProvider.register, 'function')
+  assert.equal(typeof api.auth.register, 'function')
   // Coordination surface (non-enumerable, for R packages)
   assert.equal(typeof api.dispatchChannelMethod, 'function', 'dispatchChannelMethod must be exposed directly')
   assert.equal(typeof api.channelGenerationOf, 'function', 'channelGenerationOf must be exposed directly')
@@ -113,7 +114,7 @@ test('facade: open fails closed without verifier (typed unavailable)', async () 
   const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   result.prepared.commit()
   const api = service.sessions.channels
-  const r = await api.open({ device: 'dev1', session: 's1' })
+  const r = await api.acquire({ device: 'dev1', session: 's1' })
   assert.equal(r.ok, false)
   assert.equal(r.error.code, 'unavailable')
   assert.doesNotThrow(() => result.disposer())
@@ -124,8 +125,8 @@ test('facade: open succeeds after registering a verifier', async () => {
   const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   result.prepared.commit()
   const api = service.sessions.channels
-  api.auth.registerVerifier({ id: 'v1', verify: (cred) => ({ deviceId: 'dev1', scope: [] }) })
-  const r = await api.open({ device: 'dev1', session: 's1' })
+  api.auth.register({ kind: 'verifier', id: 'v1', verify: (cred) => ({ deviceId: 'dev1', scope: [] }) })
+  const r = await api.acquire({ device: 'dev1', session: 's1' })
   assert.ok(r.ok, 'open must succeed after verifier registration')
   assert.ok(r.channelId)
   assert.doesNotThrow(() => result.disposer())

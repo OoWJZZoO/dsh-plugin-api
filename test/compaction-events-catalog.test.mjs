@@ -130,7 +130,8 @@ test('the public catalog accessor filters replacement slices by guard while subs
   assert.ok(!('compaction/request' in bus.catalog()))
   // ...but a facade subscription is still wrapped (static full catalog).
   const listener = () => {}
-  bus.on('compaction/request', listener, { priority: 'high' })
+  const handle = bus.observe('compaction/request')
+  handle.subscribe(listener)
   assert.equal(hooks.length, 1)
   assert.equal(hooks[0].name, 'compaction/request')
   assert.notEqual(hooks[0].listener, listener, 'facade subscription must be wrapped, not passed through')

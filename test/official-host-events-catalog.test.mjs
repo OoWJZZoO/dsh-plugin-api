@@ -60,6 +60,17 @@ function createMockCordisCtx() {
   }
 }
 
+
+/** Observe projection shim: subscribe and unwrap multi-arg payload arrays. */
+function observeOn(events, name, listener, opts) {
+  const handle = events.observe(name, opts)
+  handle.subscribe((payload) => {
+    const args = Array.isArray(payload) ? payload : [payload]
+    listener(...args)
+  })
+  return handle
+}
+
 test('the host event leaves contain exactly five groups and nine names', () => {
   assert.deepEqual(
     officialHostEventCatalogSlices.map((slice) => Object.keys(slice.catalog)),
@@ -195,7 +206,7 @@ test('an official emit reaches one facade listener with the original payload ide
   const catalog = Object.assign({}, ...officialHostEventCatalogSlices.map((slice) => slice.catalog))
   const events = createEventsBus({ ctx, catalog })
   const seen = []
-  events.on('domain/changed', (payload) => seen.push(payload))
+  observeOn(events, 'domain/changed', (payload) => seen.push(payload))
 
   const change = { domain: 'session', revision: 3 }
   ctx.emit('domain/changed', change)
@@ -210,10 +221,10 @@ test('emit listener failures are contained and later listeners still receive the
   const catalog = Object.assign({}, ...officialHostEventCatalogSlices.map((slice) => slice.catalog))
   const events = createEventsBus({ ctx, catalog, logger: { warn() {} } })
   const seen = []
-  events.on('agent-preset/selected', () => {
+  observeOn(events, 'agent-preset/selected', () => {
     throw new Error('observer failed')
   })
-  events.on('agent-preset/selected', (...args) => seen.push(args))
+  observeOn(events, 'agent-preset/selected', (...args) => seen.push(args))
 
   const sessionId = { id: 'session-1' }
   const preset = { name: 'default' }
@@ -231,8 +242,8 @@ test('disposing an older bus does not remove a newer native hook', () => {
   const second = createEventsBus({ ctx, catalog })
   const seen = []
 
-  first.on('cordis/request-run', () => seen.push('first'))
-  second.on('cordis/request-run', () => seen.push('second'))
+  observeOn(first, 'cordis/request-run', () => seen.push('first'))
+  observeOn(second, 'cordis/request-run', () => seen.push('second'))
   first.dispose()
 
   const request = { id: 'request-1' }

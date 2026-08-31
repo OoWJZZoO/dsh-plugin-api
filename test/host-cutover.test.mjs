@@ -124,9 +124,9 @@ test('agents publishes the plural providers leaf with typed disabled behavior', 
     create: false,
     resume: false,
     register: false,
-    providers: { enter: false, announce: false, setFactory: false },
+    providers: { register: false },
   })
-  assert.throws(() => agents.providers.enter({}, undefined), (error) => {
+  assert.throws(() => agents.providers.register({ agent: {} }, undefined), (error) => {
     return error instanceof PluginApiFeatureDisabledError && error.feature === 'agents'
   })
 })
@@ -137,12 +137,12 @@ test('disabled surfaces keep the exact target member shape with typed errors', (
   // executions disabled surface shape includes nested recovery
   const executions = service.executions
   assert.equal(typeof executions.observe, 'function')
-  assert.equal(typeof executions.recovery.classify, 'function')
+  assert.equal(typeof executions.recovery.capability.register, 'function')
   assert.throws(() => executions.observe({}), PluginApiFeatureDisabledError)
-  assert.throws(() => executions.recovery.consume({}), PluginApiFeatureDisabledError)
+  assert.equal(executions.recovery.consume, undefined, 'the deleted consume member is absent from the disabled surface')
   // prompts disabled surface shape includes provenance and utility leaves
   const prompts = service.prompts
-  assert.equal(typeof prompts.section, 'function')
+  assert.equal(typeof prompts.contribute, 'function')
   assert.equal(typeof prompts.provenance.contribute, 'function')
   assert.throws(() => prompts.renderContextSnapshot({}), (error) => error instanceof PluginApiFeatureDisabledError)
 })

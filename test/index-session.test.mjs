@@ -125,7 +125,7 @@ test('apply mounts session after events with a composed events catalog', () => {
   assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')[17].isActive, false)
   assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').some((feature) => feature.name === 'compaction'), false)
   const listener = () => {}
-  state.pluginApi.sessions.on('session/event', listener)
+  state.pluginApi.sessions.observe('session/event').subscribe(listener)
   assert.ok(state.listeners.some((l) => l.name === 'session/event'), 'session/event must register a native hook')
 
   assert.ok(Array.isArray(state.pluginApi.sessions.sessionEventTypes))
@@ -211,7 +211,7 @@ assert.equal(features.length, 31)
     },
   )
 
-  assert.equal(typeof state.pluginApi.events.on, 'function')
+  assert.equal(typeof state.pluginApi.events.observe, 'function')
   assert.equal(typeof state.pluginApi.services.web.registerSearchProvider, 'function')
   assert.equal(typeof state.pluginApi.llm.admissionPolicies.register, 'function')
 })

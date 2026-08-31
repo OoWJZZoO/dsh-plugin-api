@@ -50,6 +50,14 @@ test('active service with unmounted session throws feature-disabled from every m
   assert.equal(service.sessions.surfaceEventTypes, undefined)
 
   for (const method of SESSION_METHODS) {
+    if (method === 'observe') {
+      // The projection entry stays shape-compatible: it returns the inert
+      // handle instead of throwing.
+      const inertHandle = service.sessions.observe()
+      assert.equal(typeof inertHandle.subscribe, 'function')
+      assert.equal(inertHandle.epoch, 0)
+      continue
+    }
     assert.throws(
       () => service.sessions[method](),
       (error) => {
@@ -72,6 +80,13 @@ test('inert service session methods throw inactive before touching any official 
 
   assert.equal(service.isActive, false)
   for (const method of SESSION_METHODS) {
+    if (method === 'observe') {
+      // The projection entry stays shape-compatible even when the core is
+      // inactive: it returns the inert handle.
+      const inertHandle = service.sessions.observe()
+      assert.equal(inertHandle.epoch, 0)
+      continue
+    }
     assert.throws(
       () => service.sessions[method](),
       (error) => {

@@ -105,6 +105,17 @@ function createMockCtx(options = {}) {
   return { ctx, state, services, web }
 }
 
+
+/** Observe projection shim: subscribe and unwrap multi-arg payload arrays. */
+function observeOn(events, name, listener, opts) {
+  const handle = events.observe(name, opts)
+  handle.subscribe((payload) => {
+    const args = Array.isArray(payload) ? payload : [payload]
+    listener(...args)
+  })
+  return handle
+}
+
 test('apply mounts events with the frozen catalog and usable bus', () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
@@ -126,7 +137,7 @@ test('apply mounts events with the frozen catalog and usable bus', () => {
   }
 
   const listener = () => {}
-  state.pluginApi.events.on('goal/changed', listener)
+  observeOn(state.pluginApi.events, 'goal/changed', listener)
   assert.ok(state.listeners.some((l) => l.name === 'goal/changed'))
 })
 
@@ -208,14 +219,12 @@ assert.equal(features.length, 31)
   assert.equal(features[28].isActive, true)
 
 
-  assert.throws(
-    () => state.pluginApi.events.on('goal/changed', () => {}),
-    (error) => {
-      assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'events')
-      return true
-    },
-  )
+  // The disabled events surface stays shape-compatible: observe returns the
+  // inert projection handle and the availability reports the state.
+  const inertHandle = state.pluginApi.events.observe('goal/changed')
+  assert.equal(inertHandle.epoch, 0)
+  assert.equal(inertHandle.current(), null)
+  assert.equal(state.pluginApi.events.availability().status, 'unavailable')
   assert.equal(typeof state.pluginApi.services.web.registerSearchProvider, 'function')
 })
 
@@ -287,7 +296,7 @@ assert.equal(features.length, 31)
       return true
     },
   )
-  assert.equal(typeof state.pluginApi.events.on, 'function')
+  assert.equal(typeof state.pluginApi.events.observe, 'function')
 })
 
 const HOST_EVENT_LEAF_NAMES = [

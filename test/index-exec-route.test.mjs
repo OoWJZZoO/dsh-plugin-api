@@ -66,6 +66,17 @@ function execWithRoute(provider = 'provider-a', model = 'model-a') {
   return { agent: { session: { requestContext: () => ({ provider, model }) } } }
 }
 
+
+/** Observe projection shim: subscribe and unwrap multi-arg payload arrays. */
+function observeOn(events, name, listener, opts) {
+  const handle = events.observe(name, opts)
+  handle.subscribe((payload) => {
+    const args = Array.isArray(payload) ? payload : [payload]
+    listener(...args)
+  })
+  return handle
+}
+
 test('healthy apply activates execRoute after dependencies and installs one prepended capture hook', () => {
   const { ctx, state } = createCtx()
   apply(ctx)
@@ -361,10 +372,10 @@ test('route outcome remains available to facade listeners through every dispatch
     seen.push({ stage, agentOutcome, toolsOutcome })
   }
 
-  state.pluginApi.events.on('tools/pre-execute', observe('pre-execute'))
-  state.pluginApi.events.on('tools/execute', observe('execute'))
-  state.pluginApi.events.on('tools/post-execute', observe('post-execute'))
-  state.pluginApi.events.on('tools/result', observe('result'))
+  observeOn(state.pluginApi.events, 'tools/pre-execute', observe('pre-execute'))
+  observeOn(state.pluginApi.events, 'tools/execute', observe('execute'))
+  observeOn(state.pluginApi.events, 'tools/post-execute', observe('post-execute'))
+  observeOn(state.pluginApi.events, 'tools/result', observe('result'))
 
   const signal = { id: 'original-signal' }
   const result = { isError: false, content: [{ type: 'text', text: 'ok' }] }
@@ -417,8 +428,8 @@ test('dispatched final-result paths preserve captured routes or leave unobserved
     agentOutcome: state.pluginApi.llm.routing.forExecution(exec),
     toolsOutcome: state.pluginApi.llm.routing.forExecution(exec),
   })
-  state.pluginApi.events.on('tools/execute', observe)
-  state.pluginApi.events.on('tools/result', observe)
+  observeOn(state.pluginApi.events, 'tools/execute', observe)
+  observeOn(state.pluginApi.events, 'tools/result', observe)
 
   dispatchWaterfall(state, 'tools/pre-execute', [capturedExec], () => ({ kind: 'allow' }))
   const captured = state.pluginApi.llm.routing.forExecution(capturedExec)
@@ -451,20 +462,20 @@ test('route capture leaves dispatched decision, signal, result, and emission sem
   const postDecision = { kind: 'accept' }
   const emitted = []
 
-  state.pluginApi.events.on('tools/pre-execute', (observedExec, next) => {
+  observeOn(state.pluginApi.events, 'tools/pre-execute', (observedExec, next) => {
     assert.equal(state.pluginApi.llm.routing.forExecution(observedExec)?.model, 'model-a')
     return next()
   })
-  state.pluginApi.events.on('tools/execute', (observedExec, next) => {
+  observeOn(state.pluginApi.events, 'tools/execute', (observedExec, next) => {
     assert.equal(state.pluginApi.llm.routing.forExecution(observedExec)?.provider, 'provider-a')
     return next()
   })
-  state.pluginApi.events.on('tools/post-execute', (observedExec, observedResult, next) => {
+  observeOn(state.pluginApi.events, 'tools/post-execute', (observedExec, observedResult, next) => {
     assert.equal(state.pluginApi.llm.routing.forExecution(observedExec)?.model, 'model-a')
     assert.equal(observedResult, result)
     return next()
   })
-  state.pluginApi.events.on('tools/result', (observedExec, observedResult) => {
+  observeOn(state.pluginApi.events, 'tools/result', (observedExec, observedResult) => {
     assert.equal(state.pluginApi.llm.routing.forExecution(observedExec)?.provider, 'provider-a')
     emitted.push(observedResult)
   })
@@ -486,23 +497,23 @@ test('route absence leaves dispatched decision, signal, result, and emission sem
   const postDecision = { kind: 'accept' }
   const emitted = []
 
-  state.pluginApi.events.on('tools/pre-execute', (observedExec, next) => {
+  observeOn(state.pluginApi.events, 'tools/pre-execute', (observedExec, next) => {
     assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
     assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
     return next()
   })
-  state.pluginApi.events.on('tools/execute', (observedExec, next) => {
+  observeOn(state.pluginApi.events, 'tools/execute', (observedExec, next) => {
     assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
     assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
     return next()
   })
-  state.pluginApi.events.on('tools/post-execute', (observedExec, observedResult, next) => {
+  observeOn(state.pluginApi.events, 'tools/post-execute', (observedExec, observedResult, next) => {
     assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
     assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
     assert.equal(observedResult, result)
     return next()
   })
-  state.pluginApi.events.on('tools/result', (observedExec, observedResult) => {
+  observeOn(state.pluginApi.events, 'tools/result', (observedExec, observedResult) => {
     assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
     assert.equal(state.pluginApi.llm.routing.forExecution(observedExec), undefined)
     emitted.push(observedResult)

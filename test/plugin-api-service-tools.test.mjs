@@ -110,7 +110,7 @@ test('mountFeature("tools") activates the tools accessor and delegates to the of
   assert.doesNotThrow(() => service.tools.restrict.register(filter))
   assert.doesNotThrow(() => service.tools.guard.register(guard))
   assert.equal(service.tools.get('tool', scope).name, 'tool')
-  assert.deepEqual(service.tools.schemas(scope), [{ name: 'schema' }])
+  assert.deepEqual(service.tools.list(scope), [{ name: 'schema' }])
   assert.deepEqual(await service.tools.execute(input), { isError: false, content: [] })
   assert.doesNotThrow(() => service.tools.presentation.register('native', 'extra'))
 

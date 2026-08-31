@@ -154,10 +154,12 @@ test('the public catalog accessor filters the replacement slice by guard while s
 
   assert.ok(!('session-title/candidate' in bus.catalog()), 'inactive: hidden from the public snapshot')
   const listener = () => {}
-  bus.on('session-title/candidate', listener, { priority: 'high' })
+  const handle = bus.observe('session-title/candidate')
+  handle.subscribe(listener)
   assert.equal(ctx.hooksOf('session-title/candidate').length, 1)
   const wrapped = ctx.hooksOf('session-title/candidate')[0]
   assert.notEqual(wrapped, listener, 'facade subscription must be wrapped, not passed through')
+  assert.equal(typeof handle.dispose, 'function')
 
   setActive(true)
   const catalog = bus.catalog()
@@ -186,16 +188,23 @@ test('facade waterfall decision and next() are passed through', () => {
   const slice = createSessionTitleEventsCatalogSlice({ expectedContract: MATCHING_CONTRACT, auxiliaryManifest: MATCHING_MANIFEST })
   const bus = createEventsBus({ ctx, catalog: baseEventsCatalog, rSlices: [slice] })
 
-  bus.on('session-title/candidate', (payload, next) => {
-    if (payload?.message?.seq === 1) return { kind: 'exclude', reason: 'synthetic' }
-    return next()
-  }, { priority: 'high' })
+  // The projection observer receives the frozen args array and the chain
+  // result stays authoritative: the decision semantics of the candidate
+  // event are registered in the event catalog, and monitor-tier observers
+  // never alter the waterfall.
+  const seen = []
+  bus.observe('session-title/candidate').subscribe((payload) => {
+    seen.push(payload[0])
+    if (payload[0]?.message?.seq === 1) return { kind: 'exclude', reason: 'synthetic' }
+    return payload[1]?.()
+  })
 
   const decision = ctx.waterfall('session-title/candidate', { agent: undefined, session: 's', message: { seq: 1 } }, () => undefined)
-  assert.deepEqual(decision, { kind: 'exclude', reason: 'synthetic' })
+  assert.equal(decision, undefined, 'an observer return never replaces the chain result')
 
   const passthrough = ctx.waterfall('session-title/candidate', { agent: undefined, session: 's', message: { seq: 9 } }, () => undefined)
   assert.equal(passthrough, undefined)
+  assert.deepEqual(seen.map((payload) => payload.message.seq), [1, 9])
 })
 
 test('raw ctx.on observation works without the facade', () => {

@@ -144,23 +144,31 @@ const durableContracts = buildSessionDurableContracts({
 })
 
 function createEventsApi() {
-  const listeners = []
+  const feeds = []
   return {
-    listeners,
-    on(name, listener) {
+    feeds,
+    observe(name) {
       assert.equal(name, 'session/event')
-      listeners.push(listener)
-      let disposed = false
-      return () => {
-        if (disposed) return false
-        disposed = true
-        const index = listeners.indexOf(listener)
-        if (index >= 0) listeners.splice(index, 1)
-        return index >= 0
+      const listeners = new Set()
+      const feed = {
+        listeners,
+        subscribe(listener) {
+          listeners.add(listener)
+          return () => listeners.delete(listener)
+        },
+        dispose() {
+          const index = feeds.indexOf(feed)
+          if (index >= 0) feeds.splice(index, 1)
+          return true
+        },
       }
+      feeds.push(feed)
+      return feed
     },
     emit(session, event) {
-      for (const listener of [...listeners]) listener(session, event)
+      for (const feed of [...feeds]) {
+        for (const listener of [...feed.listeners]) listener([session, event])
+      }
     },
   }
 }
@@ -221,7 +229,7 @@ test('onDurable delivers only future exact-target audited records and preserves 
   assert.equal(Object.isFrozen(calls[0]), true)
   assert.equal(dispose(), true)
   assert.equal(dispose(), false)
-  assert.equal(eventsApi.listeners.length, 0)
+  assert.equal(eventsApi.feeds.length, 0)
 })
 
 test('onceDurable disposes before the first validated listener invocation', () => {
@@ -229,7 +237,7 @@ test('onceDurable disposes before the first validated listener invocation', () =
   let listenerCount = 0
   const dispose = api.onceDurable(session, 'approval/policy', () => {
     listenerCount += 1
-    assert.equal(eventsApi.listeners.length, 0)
+    assert.equal(eventsApi.feeds.length, 0)
   })
   const event = durableEvent('approval/policy', { policy: 'never' }, session.firstLiveSeq)
 
@@ -244,7 +252,7 @@ test('durable observation argument failures do not subscribe', () => {
   assertCode('invalid-target-session', () => api.onDurable('session-1', 'approval/policy', () => {}))
   assertCode('unsupported-durable-kind', () => api.onDurable(session, 'user/message', () => {}))
   assertCode('invalid-listener', () => api.onDurable(session, 'approval/policy', null))
-  assert.equal(eventsApi.listeners.length, 0)
+  assert.equal(eventsApi.feeds.length, 0)
 })
 
 test('seed-boundary and audited-record breaches reset the epoch without delivery', () => {
@@ -323,14 +331,14 @@ test('stable hub keeps one native entry, contains listener failures, and stops a
   api.onceDurable(session, 'approval/asked', () => { throw new Error('contained') })
   api.onDurable(session, 'approval/asked', () => Promise.reject(new Error('contained async')))
 
-  assert.equal(eventsApi.listeners.length, 1)
+  assert.equal(eventsApi.feeds.length, 1)
   eventsApi.emit(session, durableEvent('approval/policy', { policy: 'ask' }, session.firstLiveSeq))
   eventsApi.emit(session, durableEvent('approval/asked', { id: 'a', toolName: 'x' }, session.firstLiveSeq))
   await new Promise((resolve) => setImmediate(resolve))
 
   assert.deepEqual(seen, ['first'])
   assert.equal(resets[0].reason, 'durable-record-contract-breach')
-  assert.equal(eventsApi.listeners.length, 1, 'breach must not dispose or reconcile the native hook during dispatch')
+  assert.equal(eventsApi.feeds.length, 1, 'breach must not dispose or reconcile the native hook during dispatch')
 })
 
 test('stable hub validates known durable records even without a matching observer, but ignores ordinary session events', () => {
@@ -360,7 +368,9 @@ test('stable hub validates known durable records even without a matching observe
 test('stable hub separates infallible state close, epoch disposal, and final native release', () => {
   const order = []
   const eventsApi = {
-    on() { return () => { order.push('native') } },
+    observe() {
+      return { subscribe() {}, dispose() { order.push('native') } }
+    },
   }
   const hub = createDurableObservationHub({ eventsApi })
   const epoch = hub.attachEpoch({ owner: { close() { order.push('epoch'); throw new Error('contained') } } })
@@ -376,7 +386,12 @@ test('stable hub separates infallible state close, epoch disposal, and final nat
 
 test('stable hub releases a throwing native disposer at most once', () => {
   let calls = 0
-  const hub = createDurableObservationHub({ eventsApi: { on() { return () => { calls += 1; throw new Error('native') } } } })
+  const eventsApi = {
+    observe() {
+      return { subscribe() {}, dispose() { calls += 1; throw new Error('native') } }
+    },
+  }
+  const hub = createDurableObservationHub({ eventsApi })
   assert.equal(hub.releaseNative(), true)
   assert.equal(hub.releaseNative(), false)
   assert.equal(hub.close(), true)
@@ -388,8 +403,16 @@ test('direct official malformed durable append publishes raw but resets durable 
   new SessionStore(ctx)
   const session = ctx.sessions.create('official-live')
   const eventsApi = {
-    on(name, listener) {
-      return ctx.on(name, listener)
+    observe(name) {
+      const feed = {
+        subscribe(listener) {
+          return ctx.on(name, (publishedSession, event) => listener([publishedSession, event]))
+        },
+        dispose() {
+          return true
+        },
+      }
+      return feed
     },
   }
   const owner = createDurableEpochRegistrationOwner()
@@ -426,7 +449,19 @@ test('a seeded live child does not replay durable seed records to a new observer
     { type: 'subagent/descriptor', seq: 1, time: 1, data: { version: 2, mode: 'continuable', provider: 'in-process', label: 'child' } },
   ]
   const child = ctx.sessions.create('seeded-child', { seed })
-  const eventsApi = { on(name, listener) { return ctx.on(name, listener) } }
+  const eventsApi = {
+    observe(name) {
+      const feed = {
+        subscribe(listener) {
+          return ctx.on(name, (publishedSession, event) => listener([publishedSession, event]))
+        },
+        dispose() {
+          return true
+        },
+      }
+      return feed
+    },
+  }
   const owner = createDurableEpochRegistrationOwner()
   const seen = []
   const api = createSessionDurableApi({

@@ -87,14 +87,14 @@ test('apply mounts the systemPrompt API and core-inactive calls forward to the o
   assert.equal(state.pluginApi.prompts.isActive, true)
 
   const section = { name: 's1', order: 1, text: 'hello' }
-  assert.equal(state.pluginApi.prompts.section(section), systemPrompt.sectionDisposer)
+  assert.equal(state.pluginApi.prompts.contribute({ kind: 'section', section }).ok, true)
   assert.equal(systemPrompt.sectionCalls.length, 2, 'the facade hint section registers first')
   assert.equal(systemPrompt.sectionCalls.at(-1), section)
 
-  assert.equal(state.pluginApi.prompts.context({ name: 'c1', order: 2, text: 'ctx' }), 'context-disposer')
-  assert.equal(state.pluginApi.prompts.variable('v', () => 'x'), 'variable-disposer')
-  assert.equal(state.pluginApi.prompts.tools(() => ({ schemas: [] })), 'tools-disposer')
-  assert.equal(state.pluginApi.prompts.suppressRuntimeContext(), 'suppress-disposer')
+  assert.equal(state.pluginApi.prompts.contribute({ kind: 'context', context: { name: 'c1', order: 2, text: 'ctx' } }).ok, true)
+  assert.equal(typeof state.pluginApi.prompts.contribute({ kind: 'variable', name: 'v', provider: () => 'x' }), 'object')
+  assert.equal(typeof state.pluginApi.prompts.contribute({ kind: 'tools', provider: () => ({ schemas: [] }) }), 'object')
+  assert.equal(state.pluginApi.prompts.contribute({ kind: 'suppressRuntimeContext' }).ok, true)
 })
 
 test('systemPrompt guard failure disables only systemPrompt and keeps the facade active', () => {
@@ -130,15 +130,10 @@ assert.equal(features[25].name, 'toolDiscovery')
   assert.equal(features[28].name, 'profile')
 
 
-  assert.throws(
-    () => state.pluginApi.prompts.section({ name: 's', order: 0, text: 'x' }),
-    (error) => {
-      assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'prompts')
-      return true
-    },
-  )
-  assert.equal(typeof state.pluginApi.events.on, 'function')
+  const disabled = state.pluginApi.prompts.contribute({ kind: 'section', section: { name: 's', order: 0, text: 'x' } })
+  assert.equal(disabled.ok, false)
+  assert.equal(disabled.code, 'unavailable')
+  assert.equal(typeof state.pluginApi.events.observe, 'function')
 })
 
 test('apply is idempotent for the systemPrompt feature mount', () => {
@@ -148,5 +143,5 @@ test('apply is idempotent for the systemPrompt feature mount', () => {
 
   assert.equal(state.pluginApi.prompts.isActive, true)
   const section = { name: 's1', order: 1, text: 'hello' }
-  assert.equal(state.pluginApi.prompts.section(section), systemPrompt.sectionDisposer)
+  assert.equal(state.pluginApi.prompts.contribute({ kind: 'section', section }).ok, true)
 })

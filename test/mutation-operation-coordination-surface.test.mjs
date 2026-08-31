@@ -37,13 +37,13 @@ test('coordination renames expose acquire/release and acquire/takeover with the 
   // channels: open -> acquire, revoke -> release
   assert.equal(typeof api.sessions.channels.acquire, 'function')
   assert.equal(typeof api.sessions.channels.release, 'function')
-  assert.equal(typeof api.sessions.channels.open, 'function', 'old paths survive until the subtraction wave')
-  assert.equal(typeof api.sessions.channels.revoke, 'function')
+  assert.equal(api.sessions.channels.open, undefined, 'the old open verb is subtracted')
+  assert.equal(api.sessions.channels.revoke, undefined, 'the old revoke verb is subtracted')
   // tasks: claim -> acquire, reassign -> takeover
   assert.equal(typeof api.tasks.acquire, 'function')
   assert.equal(typeof api.tasks.takeover, 'function')
-  assert.equal(typeof api.tasks.claim, 'function')
-  assert.equal(typeof api.tasks.reassign, 'function')
+  assert.equal(typeof api.tasks.claim, 'undefined')
+  assert.equal(typeof api.tasks.reassign, 'undefined')
   // the facade coordination surface has the full verb set
   for (const verb of ['acquire', 'heartbeat', 'release', 'takeover', 'compareAndSet', 'observe', 'availability']) {
     assert.equal(typeof api.coordination[verb], 'function', `coordination.${verb}`)
