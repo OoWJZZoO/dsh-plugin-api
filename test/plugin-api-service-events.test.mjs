@@ -22,7 +22,8 @@ test('active service exposes disabled events stub', () => {
   const ctx = mockCtx()
   const service = new ServiceClass(ctx)
 
-  assert.equal(service.events.catalog, undefined)
+  assert.deepEqual(service.events.catalog(), {})
+  assert.ok(Object.isFrozen(service.events.catalog()), 'the unavailable vocabulary snapshot must stay frozen')
   for (const method of ['on', 'once', 'emit', 'serial', 'parallel', 'bail', 'waterfall']) {
     assert.throws(
       () => service.events[method]('x', () => {}),
@@ -58,7 +59,7 @@ test('mountFeature injects the events API', () => {
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
   const service = new ServiceClass(mockCtx())
 
-  const eventsApi = { on() {}, catalog: {} }
+  const eventsApi = { on() {}, catalog() { return Object.freeze({}) } }
 
   service.mountFeature('events', eventsApi)
 

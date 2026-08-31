@@ -87,9 +87,9 @@ test('combined host publishes additive immutable compat shapes once without synt
   assert.equal(typeof first.llm.admissionPolicies.register, 'function')
   assert.equal(typeof first.sessions.onDurable, 'function')
   assert.equal(typeof first.sessions.appendMessage, 'function')
-  assert.equal(Object.keys(first.events.catalog).length, 47)
+  assert.equal(Object.keys(first.events.catalog()).length, 47)
   for (const excluded of ['llm/request', 'llm/admission', 'exec.route', 'agent/create', 'compaction/started']) {
-    assert.equal(first.events.catalog[excluded], undefined)
+    assert.equal(first.events.catalog()[excluded], undefined)
   }
   for (const view of views) assert.ok(Object.isFrozen(view))
   assert.equal(Object.keys(first.services).length, 46)

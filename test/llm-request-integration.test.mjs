@@ -134,9 +134,10 @@ function createHarness(options = {}) {
 
 test('no synthetic llm/request catalog entry is exposed', () => {
   const harness = createHarness()
-  assert.equal(harness.state.pluginApi.events.catalog['llm/request'], undefined,
+  const vocabulary = harness.state.pluginApi.events.catalog()
+  assert.equal(vocabulary['llm/request'], undefined,
     'the unified pipeline must not expose a synthetic llm/request event')
-  assert.equal(harness.state.pluginApi.events.catalog['llm/admission'], undefined)
+  assert.equal(vocabulary['llm/admission'], undefined)
 })
 
 test('native-image target bypasses the policy phase and continues with the original request', async () => {

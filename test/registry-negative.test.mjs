@@ -143,3 +143,18 @@ test('rejects a decision event without the three required extras', () => {
   delete decision.conflictConvergence
   expectErrors(copy, 'a decision event requires conflictConvergence')
 })
+
+test('rejects a dispatch member that keeps an operation identity or retry entry', () => {
+  const copy = structuredClone(registry)
+  const emit = copy.members.find((m) => m.publicPath === 'events.emit')
+  emit.identitySource = 'caller plugin context'
+  emit.retryLayer = 'operation'
+  emit.lifecycle = 'identity survives internal attempts; terminal closes it'
+  expectErrors(copy, 'operation identity and retry contract entries as null', 'must record why operation identity and retry are not applicable')
+})
+
+test('rejects an event whose dispatch verb is outside the registered verbs', () => {
+  const copy = structuredClone(registry)
+  copy.eventCatalog[0].dispatch = 'broadcast'
+  expectErrors(copy, 'is not a registered dispatch verb')
+})

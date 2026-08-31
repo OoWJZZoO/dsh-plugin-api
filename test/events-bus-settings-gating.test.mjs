@@ -135,8 +135,8 @@ test('settings guard failure excludes the settings slice from the composed catal
   const settingsFeature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((f) => f.name === 'settings')
   assert.equal(settingsFeature.isActive, false)
 
-  assert.equal(state.pluginApi.events.catalog['settings/updated'], undefined)
-  assert.equal(state.pluginApi.events.catalog['settings/document-updated'], undefined)
+  assert.equal(state.pluginApi.events.catalog()['settings/updated'], undefined)
+  assert.equal(state.pluginApi.events.catalog()['settings/document-updated'], undefined)
 
   // non-cataloged name: subscription falls through to raw ctx.on (no facade treatment)
   const listener = () => {}
@@ -153,6 +153,6 @@ test('settings guard pass keeps the settings slice in the composed catalog', () 
 
   const settingsFeature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((f) => f.name === 'settings')
   assert.equal(settingsFeature.isActive, true)
-  assert.ok(state.pluginApi.events.catalog['settings/updated'])
-  assert.ok(state.pluginApi.events.catalog['settings/document-updated'])
+  assert.ok(state.pluginApi.events.catalog()['settings/updated'])
+  assert.ok(state.pluginApi.events.catalog()['settings/document-updated'])
 })

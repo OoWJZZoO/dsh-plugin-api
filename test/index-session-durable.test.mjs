@@ -148,8 +148,8 @@ test('apply mounts sessionDurable immediately after session without extending th
   ])
   assert.equal(feature(state, 'session').isActive, true)
   assert.equal(feature(state, 'sessionDurable').isActive, true)
-  assert.equal(Object.keys(state.pluginApi.events.catalog).length, 47)
-  assert.equal(state.pluginApi.events.catalog['approval/asked'], undefined)
+  assert.equal(Object.keys(state.pluginApi.events.catalog()).length, 47)
+  assert.equal(state.pluginApi.events.catalog()['approval/asked'], undefined)
   assert.deepEqual(state.pluginApi.sessions.durableEventTypes, [
     'approval/asked',
     'approval/decided',

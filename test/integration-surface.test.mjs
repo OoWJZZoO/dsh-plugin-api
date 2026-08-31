@@ -191,7 +191,7 @@ test('host event contracts: all nine names are cataloged with the exact contract
 
   const { ctx, state } = createHostCtx()
   assert.doesNotThrow(() => apply(ctx))
-  const catalog = state.pluginApi.events.catalog
+  const catalog = state.pluginApi.events.catalog()
   assert.ok(catalog, 'the mounted facade owns a live catalog')
 
   // The 47-name baseline union stays intact inside the mounted catalog.

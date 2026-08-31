@@ -159,7 +159,7 @@ assert.equal(features[25].name, 'toolDiscovery')
   assert.equal(features[28].name, 'profile')
 
 
-  const catalog = state.pluginApi.events.catalog
+  const catalog = state.pluginApi.events.catalog()
   assert.equal(catalog['tools/change']?.mode, 'emit')
   assert.equal(catalog['tools/execute']?.freeze, 'except-signal')
   assert.equal(Object.keys(catalog).length, 47)
@@ -206,9 +206,9 @@ assert.equal(features.length, 31)
   assert.equal(features[10].isActive, false)
   assert.match(features[10].reason, /execRoute cannot resolve the official tools service/)
 
-  assert.equal(state.pluginApi.events.catalog['session/created']?.mode, 'emit')
-  assert.equal(state.pluginApi.events.catalog['tools/change'], undefined)
-  assert.equal(Object.keys(state.pluginApi.events.catalog).length, 41)
+  assert.equal(state.pluginApi.events.catalog()['session/created']?.mode, 'emit')
+  assert.equal(state.pluginApi.events.catalog()['tools/change'], undefined)
+  assert.equal(Object.keys(state.pluginApi.events.catalog()).length, 41)
 
   assert.throws(
     () => state.pluginApi.tools.register({ name: 'x' }),

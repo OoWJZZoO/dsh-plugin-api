@@ -157,9 +157,9 @@ function createFullCtx({ withCompactionReplacement = false } = {}) {
 test('catalog composition after apply covers all 47 stabilized events', () => {
   const { ctx, state } = createFullCtx()
   apply(ctx)
-  assert.equal(Object.keys(state.pluginApi.events.catalog).length, 47)
+  assert.equal(Object.keys(state.pluginApi.events.catalog()).length, 47)
   for (const name of ['session/created', 'agent/created', 'llm/stream', 'system-prompt/assemble', 'settings/updated', 'tools/execute']) {
-    assert.ok(state.pluginApi.events.catalog[name], `${name} must be cataloged`)
+    assert.ok(state.pluginApi.events.catalog()[name], `${name} must be cataloged`)
   }
 })
 
@@ -313,16 +313,16 @@ const COMPACTION_EVENTS = [
 test('without the replacement row the public catalog does not list compaction/* events', () => {
   const { ctx, state } = createFullCtx()
   apply(ctx)
-  assert.equal(Object.keys(state.pluginApi.events.catalog).length, 47)
+  assert.equal(Object.keys(state.pluginApi.events.catalog()).length, 47)
   for (const name of COMPACTION_EVENTS) {
-    assert.ok(!(name in state.pluginApi.events.catalog), `${name} must be hidden when the replacement is inactive`)
+    assert.ok(!(name in state.pluginApi.events.catalog()), `${name} must be hidden when the replacement is inactive`)
   }
 })
 
 test('with the replacement row active the public catalog lists all five compaction replacement events', () => {
   const { ctx, state } = createFullCtx({ withCompactionReplacement: true })
   apply(ctx)
-  const catalog = state.pluginApi.events.catalog
+  const catalog = state.pluginApi.events.catalog()
   assert.equal(Object.keys(catalog).length, 52)
   for (const name of COMPACTION_EVENTS) {
     const entry = catalog[name]
@@ -342,7 +342,7 @@ test('with the replacement row active the public catalog lists all five compacti
 test('compaction/request is wrapped through the facade even while the row is inactive (static metadata)', () => {
   const { ctx, state } = createFullCtx()
   apply(ctx)
-  assert.ok(!('compaction/request' in state.pluginApi.events.catalog))
+  assert.ok(!('compaction/request' in state.pluginApi.events.catalog()))
 
   const bucket = []
   state.pluginApi.events.on('compaction/request', (payload, next) => {

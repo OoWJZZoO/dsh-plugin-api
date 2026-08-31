@@ -115,8 +115,8 @@ test('llm guard failure disables only llm, keeps facade active, and excludes LLM
 
   assert.ok(llmEventsCatalog['llm/stream'])
   assert.ok(llmEventsCatalog['llm/adapters-updated'])
-  assert.equal(state.pluginApi.events.catalog['llm/stream'], undefined, 'disabled feature slice is excluded')
-  assert.equal(state.pluginApi.events.catalog['llm/adapters-updated'], undefined, 'disabled feature slice is excluded')
+  assert.equal(state.pluginApi.events.catalog()['llm/stream'], undefined, 'disabled feature slice is excluded')
+  assert.equal(state.pluginApi.events.catalog()['llm/adapters-updated'], undefined, 'disabled feature slice is excluded')
 
   for (const method of [
     'modelInfo',

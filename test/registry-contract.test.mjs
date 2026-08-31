@@ -137,6 +137,32 @@ test('snapshots group members by idiom, handles, and migration actions from the 
   assert.equal(snapshots.capabilityStatus.clusters.length, registry.capabilityMatrix.length, 'capability status mirrors the matrix')
 })
 
+test('dispatch members register identity and retry as not applicable', () => {
+  const dispatchPaths = ['events.emit', 'events.serial', 'events.parallel', 'events.bail', 'events.waterfall']
+  const rows = registry.members.filter((member) => dispatchPaths.includes(member.publicPath))
+  assert.equal(rows.length, dispatchPaths.length, 'all five dispatch members are registered')
+  for (const member of rows) {
+    assert.equal(member.idiom, 'operation', `${member.publicPath}: dispatch is the operation dispatch variant`)
+    assert.equal(member.identitySource, null, `${member.publicPath}: no independent operation identity`)
+    assert.equal(member.retryLayer, null, `${member.publicPath}: never retried`)
+    assert.match(member.lifecycle, /no independent operation identity/i, `${member.publicPath}: records why identity is not applicable`)
+    assert.match(member.lifecycle, /never retried/i, `${member.publicPath}: records why retry is not applicable`)
+  }
+})
+
+test('the projection observe entry and its handle row are registered with the parent', () => {
+  for (const member of registry.members) {
+    if (member.runtime !== 'host' || !['events.observe', 'events.observe.handle'].includes(member.publicPath)) continue
+    assert.equal(member.idiom, 'projection', `${member.publicPath}: projection subscription`)
+    assert.equal(member.targetPath, member.publicPath, `${member.publicPath}: target path is self`)
+    assert.equal(member.migrationAction, null, `${member.publicPath}: new target leaf without a current counterpart`)
+    assert.equal(member.scope, 'facade')
+  }
+  const leaf = registry.members.find((m) => m.publicPath === 'events.observe' && m.runtime === 'host')
+  const handle = registry.members.find((m) => m.publicPath === 'events.observe.handle' && m.runtime === 'host')
+  assert.ok(leaf && handle, 'both the observe leaf and its handle row must exist')
+})
+
 test('gap resolution records the unavailable owner-scoped publisher as the only gap', () => {
   const gaps = registry.capabilityMatrix.filter((row) => row.status === 'gap')
   assert.equal(gaps.length, 1, 'exactly one capability gap is carried')

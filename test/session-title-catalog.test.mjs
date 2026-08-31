@@ -152,7 +152,7 @@ test('the public catalog accessor filters the replacement slice by guard while s
   const slice = createSessionTitleEventsCatalogSlice({ expectedContract: MATCHING_CONTRACT, auxiliaryManifest: MATCHING_MANIFEST })
   const bus = createEventsBus({ ctx, catalog: baseEventsCatalog, rSlices: [slice] })
 
-  assert.ok(!('session-title/candidate' in bus.catalog), 'inactive: hidden from the public snapshot')
+  assert.ok(!('session-title/candidate' in bus.catalog()), 'inactive: hidden from the public snapshot')
   const listener = () => {}
   bus.on('session-title/candidate', listener, { priority: 'high' })
   assert.equal(ctx.hooksOf('session-title/candidate').length, 1)
@@ -160,7 +160,7 @@ test('the public catalog accessor filters the replacement slice by guard while s
   assert.notEqual(wrapped, listener, 'facade subscription must be wrapped, not passed through')
 
   setActive(true)
-  const catalog = bus.catalog
+  const catalog = bus.catalog()
   assert.equal(Object.keys(catalog).length, Object.keys(baseEventsCatalog).length + 1)
   assert.equal(catalog['session-title/candidate'].feature, 'session-title')
   assert.ok(Object.isFrozen(catalog['session-title/candidate']))

@@ -477,7 +477,7 @@ test('monitor waterfall listeners cannot veto or rewrite the chain result', () =
   assert.equal(called, true)
 })
 
-test('events.emit/serial/parallel/bail/waterfall delegate to ctx and return its result', async () => {
+test('events.emit/serial/parallel/bail/waterfall delegate to ctx and return the discriminated dispatch outcome', async () => {
   const base = createMockCordisCtx()
   const calls = []
   const ctx = { ...base }
@@ -492,24 +492,31 @@ test('events.emit/serial/parallel/bail/waterfall delegate to ctx and return its 
 
   const events = createEventsBus({ ctx, catalog: coreCatalog })
   const received = []
-  events.on('goal/changed', (payload) => received.push(payload))
+  events.on('goal/changed', (payload) => {
+    received.push(payload)
+  })
 
   const payload = { agent: 'a', change: 'x' }
-  events.emit('goal/changed', payload)
+  const emitResult = events.emit('goal/changed', payload)
   assert.equal(received.length, 1)
   assert.deepEqual(calls.shift(), ['emit', 'goal/changed', payload])
+  assert.deepEqual(emitResult, { ok: true, code: 'dispatched', outcome: null })
+  assert.ok(Object.isFrozen(emitResult))
 
-  events.bail('goal/changed', payload)
+  const bailResult = events.bail('goal/changed', payload)
   assert.deepEqual(calls.shift(), ['bail', 'goal/changed', payload])
+  assert.deepEqual(bailResult, { ok: true, code: 'dispatched', outcome: null })
 
-  await events.serial('goal/changed', payload)
+  const serialResult = await events.serial('goal/changed', payload)
   assert.deepEqual(calls.shift(), ['serial', 'goal/changed', payload])
+  assert.deepEqual(serialResult, { ok: true, code: 'dispatched', outcome: null })
 
-  await events.parallel('goal/changed', payload)
+  const parallelResult = await events.parallel('goal/changed', payload)
   assert.deepEqual(calls.shift(), ['parallel', 'goal/changed', payload])
+  assert.deepEqual(parallelResult, { ok: true, code: 'dispatched', outcome: null })
 
   const waterfallResult = events.waterfall('session-telemetry/record', { record: {} }, () => 'done')
-  assert.equal(waterfallResult, 'done')
+  assert.deepEqual(waterfallResult, { ok: true, code: 'dispatched', outcome: 'done' })
   const waterfallCall = calls.shift()
   assert.equal(waterfallCall[0], 'waterfall')
   assert.equal(waterfallCall[1], 'session-telemetry/record')
@@ -1118,7 +1125,7 @@ test('events.waterfall("llm/stream") delegates to ctx.waterfall with the same ar
 
   const result = events.waterfall('llm/stream', options, next)
 
-  assert.equal(result, 'delegated-result')
+  assert.deepEqual(result, { ok: true, code: 'dispatched', outcome: 'delegated-result' })
   assert.equal(calls.length, 1)
   assert.equal(calls[0][0], 'llm/stream')
   assert.equal(calls[0][1], options)

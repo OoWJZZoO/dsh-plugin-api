@@ -33,26 +33,26 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 
 ### [ ] 1. Wave 1 — 基线与完整成员清单（requirements §1、§12、§13、§16；design §Wave 1）
 
-- [ ] **1.1 基线核验**：校验 `contractBaseline.packageVersion === '0.1.0-rc.6-0.1.0'`、`api === '0.1'`、`frozen === true`；主包与本地包 `package.json` version 与 `dsh.api` 与之一致；不为 M8 bump 版本。产出核验结论并记为 Wave 1 证据。
-- [ ] **1.2 Host 叶子枚举（事实来源优先）**：以 `lib/plugin-api-service.js` 的各 `createDisabled*Api` 面与各条件面（`createConditionalMcpSurface` / `createConditionalAttachmentsSurface` / `createConditionalRoutePolicySurface` / `createConditionalLlmAdaptersSurface`）、`_publishRoutingSurface`、以及各域 slice（`host-remote.js`、`storage-binding.js`、`services.js`、`official-host-namespaces.js`）为事实来源，逐域枚举当前公共叶子，至少覆盖：root（`isActive` / `apiVersion` / `assertCompatible` / `capabilities`）、`events`、`llm`（含 `requestTransforms` / `admissionPolicies` / `adapters` / `routing` 的 `policies` / `candidates` / `health` / `circuit` / `decisions` / `forExecution` / `current` / `on` / `once` / `wait`）、`agents`（含 `providers`）、`executions`（含 `recovery` 的 `capability` / `policy` / `visibility` / `adapters`）、`sessions`（含 durable / `branches` / `channels` 的 `auth` / `redaction`）、`tools`（含 `discovery` 的 `catalog` / `audit`）、`skills.activation`、`prompts`（含 `provenance`）、`attachments`（`pipeline` / `projection`）、`mcp`、`tasks`、`coordination`、`workspaces.transactions`、`security`（`policy` / `redaction` / `egress` / `audit`）、`diagnostics`、`settings`（含 `remote`）、`profiles`（含 `snapshot`）、`remotes`、`storage`、`services.*`。
-- [ ] **1.3 Client 叶子枚举**：以 `lib/client-runtime.js` 的 `m3Members` / `buildClient` / root 定义属性与 `CLIENT_CAPABILITY_PATHS` 为事实来源，枚举 `connection`（含 `api`）、`events`（含各官方事件面与 `on`）、`remotes`、`settings`（含 `remote`）、`slots`、`lifecycle`、`codec`、`services.*` 以及 root 四个自述成员。
-- [ ] **1.4 Client lifecycle 与 codec 逐叶子枚举**：按 requirements §13 第 7、8 条与 design §Client，逐个列出 `lifecycle` 与 `codec` 的公共叶子并给出 idiom 归属；`codec` 不得把原始 schema 库实例作为公共 API 暴露。未枚举的 client 叶子不得视为已登记公共成员。
-- [ ] **1.5 公开 handle 叶子枚举**：枚举各注册/订阅/操作/租约 handle 上可观察的成员（policy handle、resource handle、contribution handle、operation handle、coordination lease handle、transaction handle、storage binding handle、projection observe handle），逐成员建条目。
-- [ ] **1.6 落地 `member-inventory.json`**：在本 feature 目录产出机器可读清单，每行一个 current 叶子 / target 叶子 / handle 叶子，字段至少含 `publicPath`、`runtime`、`currentShape`、`targetPath`、`idiom`、`migrationAction`、`shapeNote`；与 `docs/standards/refactor/member-inventory.md` 的表格一一对应，表格未覆盖的实现叶子由本任务补齐。
-- [ ] **1.7 枚举 `services.*` 白名单现状**：列出 host 与 client 两侧 `servicesWhitelist` 现有条目，标注保留/迁移/删除候选，作为 §16 成员级审计输入。
-- [ ] **1.8 缺口解决门**：以上枚举中任何无法从实现事实确定的叶子必须在 Wave 1 内解决（补齐或记为明确缺口），未解决的叶子不得进入 Wave 2。
+- [x] **1.1 基线核验**：校验 `contractBaseline.packageVersion === '0.1.0-rc.6-0.1.0'`、`api === '0.1'`、`frozen === true`；主包与本地包 `package.json` version 与 `dsh.api` 与之一致；不为 M8 bump 版本。产出核验结论并记为 Wave 1 证据。
+- [x] **1.2 Host 叶子枚举（事实来源优先）**：以 `lib/plugin-api-service.js` 的各 `createDisabled*Api` 面与各条件面（`createConditionalMcpSurface` / `createConditionalAttachmentsSurface` / `createConditionalRoutePolicySurface` / `createConditionalLlmAdaptersSurface`）、`_publishRoutingSurface`、以及各域 slice（`host-remote.js`、`storage-binding.js`、`services.js`、`official-host-namespaces.js`）为事实来源，逐域枚举当前公共叶子，至少覆盖：root（`isActive` / `apiVersion` / `assertCompatible` / `capabilities`）、`events`、`llm`（含 `requestTransforms` / `admissionPolicies` / `adapters` / `routing` 的 `policies` / `candidates` / `health` / `circuit` / `decisions` / `forExecution` / `current` / `on` / `once` / `wait`）、`agents`（含 `providers`）、`executions`（含 `recovery` 的 `capability` / `policy` / `visibility` / `adapters`）、`sessions`（含 durable / `branches` / `channels` 的 `auth` / `redaction`）、`tools`（含 `discovery` 的 `catalog` / `audit`）、`skills.activation`、`prompts`（含 `provenance`）、`attachments`（`pipeline` / `projection`）、`mcp`、`tasks`、`coordination`、`workspaces.transactions`、`security`（`policy` / `redaction` / `egress` / `audit`）、`diagnostics`、`settings`（含 `remote`）、`profiles`（含 `snapshot`）、`remotes`、`storage`、`services.*`。
+- [x] **1.3 Client 叶子枚举**：以 `lib/client-runtime.js` 的 `m3Members` / `buildClient` / root 定义属性与 `CLIENT_CAPABILITY_PATHS` 为事实来源，枚举 `connection`（含 `api`）、`events`（含各官方事件面与 `on`）、`remotes`、`settings`（含 `remote`）、`slots`、`lifecycle`、`codec`、`services.*` 以及 root 四个自述成员。
+- [x] **1.4 Client lifecycle 与 codec 逐叶子枚举**：按 requirements §13 第 7、8 条与 design §Client，逐个列出 `lifecycle` 与 `codec` 的公共叶子并给出 idiom 归属；`codec` 不得把原始 schema 库实例作为公共 API 暴露。未枚举的 client 叶子不得视为已登记公共成员。
+- [x] **1.5 公开 handle 叶子枚举**：枚举各注册/订阅/操作/租约 handle 上可观察的成员（policy handle、resource handle、contribution handle、operation handle、coordination lease handle、transaction handle、storage binding handle、projection observe handle），逐成员建条目。
+- [x] **1.6 落地 `member-inventory.json`**：在本 feature 目录产出机器可读清单，每行一个 current 叶子 / target 叶子 / handle 叶子，字段至少含 `publicPath`、`runtime`、`currentShape`、`targetPath`、`idiom`、`migrationAction`、`shapeNote`；与 `docs/standards/refactor/member-inventory.md` 的表格一一对应，表格未覆盖的实现叶子由本任务补齐。
+- [x] **1.7 枚举 `services.*` 白名单现状**：列出 host 与 client 两侧 `servicesWhitelist` 现有条目，标注保留/迁移/删除候选，作为 §16 成员级审计输入。
+- [x] **1.8 缺口解决门**：以上枚举中任何无法从实现事实确定的叶子必须在 Wave 1 内解决（补齐或记为明确缺口），未解决的叶子不得进入 Wave 2。
 
 - **要求**：本 Wave 只产出清单与数据，**不改变任何运行时公共 path**；不得创建运行时 registry 服务。
 
 ### [ ] 2. Wave 2 — Registry 契约与机械证据（requirements §1、§2、§10、§11、§14、§16、§18；design §Registry Contract And Validator）
 
-- [ ] **2.1 扩展 `vocabulary`**：新增 `idiom`、`eventSemantics`、`semanticFace`、`failureSemantics`、`conflictRule`、`migrationAction`、`lifecycleState`、`coordinationCode`、`concurrency`、`reducer`、`qualifier`、`operationTerminal` 等词表；保留 M7 既有词表（`runtime` / `effect` / `composition` / `availability` / `status` / `terminal` / `priority` / `scope` / `implementationChannel` / `deletionCategory`）不回退。新增词表必须给出封闭取值集合，其中 `migrationAction` 取值集合固定为 `rename` / `merge` / `split` / `migrate` / `delete` / `internalize` / `retain`；`gap` 不是迁移动作值，只作为 `capabilityMatrix.status` 的取值。
-- [ ] **2.2 `members` 升级为叶子级**：按 1.2–1.5 的清单把 `members` 从 namespace 级扩展到叶子级；每条含 `publicPath`、`targetPath`、`capability`、`idiom`、`idiomExceptions`、`eventSemantics`、`semanticFace`、`effect`、`composition`、`runtime`、`implementationChannel`、`authority`、`scope`、`resourceKey`、`identitySource`、`conflictRule`、`lifecycle`、`failureSemantics`、`idempotency`、`retryLayer`、`availabilityShape`、`concurrency`、`reducer`、`currentShape`、`migrationAction`、`status`、`verification`；不适用字段一律显式 `null`。
-- [ ] **2.3 新增 `namespaces` 导航记录**：每个公共 namespace 一条，含 `namespace`、`runtime`、`capabilityPath`、`contributingFeatures`、`availabilityMember`、`availabilityExemption`；按冻结决策 5 二选一。**namespace 前缀闭包规则（供 2.7 机械校验）**：`namespaces` 记录的集合显式声明公共 namespace 全集；成员 `publicPath` 的某级前缀属于该全集者必须有导航记录，不属于全集的中间前缀只是路径分组、不产生记录义务，也不得据此把中间层隐含升为公共 namespace。多 feature 组成的 namespace 必须列出全部 contributing feature；导航记录不得携带 idiom 或语义分类。
-- [ ] **2.4 新增 `capabilityMatrix`**：每个能力簇一条，含 `capabilityCluster`、`currentPaths`、`targetPaths`、`status`、`qualifiers`、`replacement`、`gapReason`、`affectedConsumers`、`verification`；`status` 六值唯一且为守恒校验唯一读取字段，`qualifiers` 只取登记词表（`shape` / `split` / `reclassified` / `internalized`）且不得改变守恒类，`deleted` 必须带 `replacement` 或 `gapReason`，`gap` 必须说明缺失能力性质与所需上游/替代性质；一个能力簇的 retained 部分与未证明部分无法用单一 `status` 表达时，必须记为两行 capability 记录，不得写入复合 `status`（requirements §16 第 1/2 条）。
-- [ ] **2.5 扩展 `eventCatalog`**：每条事件含 `name`、`eventSemantics`、`scope`、`payloadShape`、`freeze`、`priority`、`observerFailure`、`producerAuthority`、`dispatch`、`implementationChannel`；decision 事件额外含 `decisionPrecedence`、`conflictConvergence`、`listenerFailureDefault`。
-- [ ] **2.6 扩展 `oldToTargetMapping`**：覆盖全部 current→target，含 `action`（rename / merge / split / migrate / delete / internalize / retain）与关系说明；删除条目的 `targetPath` 记 `null`。
-- [ ] **2.7 扩展 `scripts/registry-validate.mjs`**（纯 Node、零 harness 依赖），至少校验：
+- [x] **2.1 扩展 `vocabulary`**：新增 `idiom`、`eventSemantics`、`semanticFace`、`failureSemantics`、`conflictRule`、`migrationAction`、`lifecycleState`、`coordinationCode`、`concurrency`、`reducer`、`qualifier`、`operationTerminal` 等词表；保留 M7 既有词表（`runtime` / `effect` / `composition` / `availability` / `status` / `terminal` / `priority` / `scope` / `implementationChannel` / `deletionCategory`）不回退。新增词表必须给出封闭取值集合，其中 `migrationAction` 取值集合固定为 `rename` / `merge` / `split` / `migrate` / `delete` / `internalize` / `retain`；`gap` 不是迁移动作值，只作为 `capabilityMatrix.status` 的取值。
+- [x] **2.2 `members` 升级为叶子级**：按 1.2–1.5 的清单把 `members` 从 namespace 级扩展到叶子级；每条含 `publicPath`、`targetPath`、`capability`、`idiom`、`idiomExceptions`、`eventSemantics`、`semanticFace`、`effect`、`composition`、`runtime`、`implementationChannel`、`authority`、`scope`、`resourceKey`、`identitySource`、`conflictRule`、`lifecycle`、`failureSemantics`、`idempotency`、`retryLayer`、`availabilityShape`、`concurrency`、`reducer`、`currentShape`、`migrationAction`、`status`、`verification`；不适用字段一律显式 `null`。
+- [x] **2.3 新增 `namespaces` 导航记录**：每个公共 namespace 一条，含 `namespace`、`runtime`、`capabilityPath`、`contributingFeatures`、`availabilityMember`、`availabilityExemption`；按冻结决策 5 二选一。**namespace 前缀闭包规则（供 2.7 机械校验）**：`namespaces` 记录的集合显式声明公共 namespace 全集；成员 `publicPath` 的某级前缀属于该全集者必须有导航记录，不属于全集的中间前缀只是路径分组、不产生记录义务，也不得据此把中间层隐含升为公共 namespace。多 feature 组成的 namespace 必须列出全部 contributing feature；导航记录不得携带 idiom 或语义分类。
+- [x] **2.4 新增 `capabilityMatrix`**：每个能力簇一条，含 `capabilityCluster`、`currentPaths`、`targetPaths`、`status`、`qualifiers`、`replacement`、`gapReason`、`affectedConsumers`、`verification`；`status` 六值唯一且为守恒校验唯一读取字段，`qualifiers` 只取登记词表（`shape` / `split` / `reclassified` / `internalized`）且不得改变守恒类，`deleted` 必须带 `replacement` 或 `gapReason`，`gap` 必须说明缺失能力性质与所需上游/替代性质；一个能力簇的 retained 部分与未证明部分无法用单一 `status` 表达时，必须记为两行 capability 记录，不得写入复合 `status`（requirements §16 第 1/2 条）。
+- [x] **2.5 扩展 `eventCatalog`**：每条事件含 `name`、`eventSemantics`、`scope`、`payloadShape`、`freeze`、`priority`、`observerFailure`、`producerAuthority`、`dispatch`、`implementationChannel`；decision 事件额外含 `decisionPrecedence`、`conflictConvergence`、`listenerFailureDefault`。
+- [x] **2.6 扩展 `oldToTargetMapping`**：覆盖全部 current→target，含 `action`（rename / merge / split / migrate / delete / internalize / retain）与关系说明；删除条目的 `targetPath` 记 `null`。
+- [x] **2.7 扩展 `scripts/registry-validate.mjs`**（纯 Node、零 harness 依赖），至少校验：
   - 必填字段齐全，不适用者必须为显式 `null`；
   - `idiom` 属于八 idiom，或当且仅当 public path 以 `services.` 开头时为 `passthrough-exception`（双向互斥）；
   - current / target public path 与 capability path 唯一；
@@ -68,22 +68,22 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
   - 同一 public path 的 `members[].migrationAction` 与 `oldToTargetMapping[].action` 一致；`gap` 只允许出现在 `capabilityMatrix.status`，不得作为迁移动作值；
   - host/client 声明 parity 的成员外层契约对齐；
   - `recommended` 成员的组合/authority 证据完整。
-- [ ] **2.8 扩展 `scripts/registry-snapshot.mjs`**：从同一 registry 生成中立制品——host/client 公共面快照、按 idiom 分组、handle 成员、capability 状态、service fixture、事件权威、推荐 profile、migration diff、composition matrix。生成器不检查任意运行时对象、不发现未登记官方成员。
-- [ ] **2.9 治理 token 扫描测试**：扫描 `lib/` / `packages/` / `test/` / `scripts/` / `package.json` / patch 文件与生成制品，断言无治理编号/分类字母/feature 名/需求号泄漏（冻结决策 11）。
-- [ ] **2.10 负向测试**：未登记叶子、非法 idiom、path alias、generation/seq/epoch 语义混用、未登记官方 service、六字段缺失的 idiom 例外、namespace 既无 availabilityMember 又无豁免、namespace 无 registry 导航记录、capabilityMatrix 复合 status、`migrationAction` 与 `oldToTargetMapping.action` 不一致、`gap` 被用作迁移动作值——均能被引擎与测试判定为缺陷。
+- [x] **2.8 扩展 `scripts/registry-snapshot.mjs`**：从同一 registry 生成中立制品——host/client 公共面快照、按 idiom 分组、handle 成员、capability 状态、service fixture、事件权威、推荐 profile、migration diff、composition matrix。生成器不检查任意运行时对象、不发现未登记官方成员。
+- [x] **2.9 治理 token 扫描测试**：扫描 `lib/` / `packages/` / `test/` / `scripts/` / `package.json` / patch 文件与生成制品，断言无治理编号/分类字母/feature 名/需求号泄漏（冻结决策 11）。
+- [x] **2.10 负向测试**：未登记叶子、非法 idiom、path alias、generation/seq/epoch 语义混用、未登记官方 service、六字段缺失的 idiom 例外、namespace 既无 availabilityMember 又无豁免、namespace 无 registry 导航记录、capabilityMatrix 复合 status、`migrationAction` 与 `oldToTargetMapping.action` 不一致、`gap` 被用作迁移动作值——均能被引擎与测试判定为缺陷。
 
 - **要求**：registry 与快照/类型是同一事实源；不得另造平行 registry。
 
 ### [ ] 3. Wave 3 — 共享外层契约与事件语义（requirements §3 第 2/3/5 条、§6、§11；design §Event Semantic Adapter / §Shared Internal Mechanisms）
 
-- [ ] **3.1 私有外层契约 helper**：冻结结果与冻结视图构造、typed unavailable / conflict 结果与错误、owner identity 从调用上下文派生、generation/seq/epoch 生成与 stale 判定、取消信号组合、listener containment。helper 保持 facade/领域私有，不成为通用 SDK 或权限引擎。
-- [ ] **3.2 `events.catalog()`**：由 getter 改为纯自述查询函数，返回冻结的门面事件词表自述；不改变事件名协议。
-- [ ] **3.3 `events.observe`**：`on` / `once` 合并为标准投影订阅入口，句柄提供 `current()` / `subscribe(listener)` / `dispose()` / `epoch`；重复 dispose 幂等、不再通知已废弃 listener、不影响其他订阅者；listener 抛错/reject 只收敛到该 listener。
-- [ ] **3.4 派发为 operation dispatch 变体**：`emit` / `serial` / `parallel` / `bail` / `waterfall` 返回判别式派发结果而非 `undefined`；派发结果与 operation 同外层契约。
-- [ ] **3.5 派发的两条不适用登记**：operation identity 与 retry 契约条目记 `null`，理由为「一次派发无独立身份且永不重试」。
-- [ ] **3.6 decision 事件三项补齐**：登记决策优先顺序、冲突收敛规则、listener 抛错时的 containment 与默认决定；其余 failure/conflict 契约与 policy 一致。fact / observation / notification 事件不得因同一总线而获得决策语义。
-- [ ] **3.7 生产权分离**：canonical 事件派发只由其 producer authority 调用；普通订阅者不因订阅获得派发权。owner-scoped 自定义发布器 `events.define(spec)` 在当前 runtime 无法强制 owner scope 时登记为 unavailable/proposal，不得描述为已存在。
-- [ ] **3.8 测试**：catalog 冻结自述、observe 句柄与幂等 dispose、派发判别式结果、listener containment、生产权拒绝、自定义发布器 unavailable 登记。
+- [x] **3.1 私有外层契约 helper**：冻结结果与冻结视图构造、typed unavailable / conflict 结果与错误、owner identity 从调用上下文派生、generation/seq/epoch 生成与 stale 判定、取消信号组合、listener containment。helper 保持 facade/领域私有，不成为通用 SDK 或权限引擎。事件面本 Wave 只消费冻结视图与 listener containment（与 typed error）；其余 helper 随其消费域（Wave 4–6 的 projection / policy / operation / coordination 面）就地复用或扩展既有领域模块，不在本 Wave 预造。
+- [x] **3.2 `events.catalog()`**：由 getter 改为纯自述查询函数，返回冻结的门面事件词表自述；不改变事件名协议。
+- [x] **3.3 `events.observe`**：`on` / `once` 合并为标准投影订阅入口，句柄提供 `current()` / `subscribe(listener)` / `dispose()` / `epoch`；重复 dispose 幂等、不再通知已废弃 listener、不影响其他订阅者；listener 抛错/reject 只收敛到该 listener。
+- [x] **3.4 派发为 operation dispatch 变体**：`emit` / `serial` / `parallel` / `bail` / `waterfall` 返回判别式派发结果而非 `undefined`；派发结果与 operation 同外层契约。
+- [x] **3.5 派发的两条不适用登记**：operation identity 与 retry 契约条目记 `null`，理由为「一次派发无独立身份且永不重试」。
+- [x] **3.6 decision 事件三项补齐**：登记决策优先顺序、冲突收敛规则、listener 抛错时的 containment 与默认决定；其余 failure/conflict 契约与 policy 一致。fact / observation / notification 事件不得因同一总线而获得决策语义。
+- [x] **3.7 生产权分离**：canonical 事件派发只由其 producer authority 调用；普通订阅者不因订阅获得派发权。owner-scoped 自定义发布器 `events.define(spec)` 在当前 runtime 无法强制 owner scope 时登记为 unavailable/proposal，不得描述为已存在。
+- [x] **3.8 测试**：catalog 冻结自述、observe 句柄与幂等 dispose、派发判别式结果、listener containment、生产权拒绝、自定义发布器 unavailable 登记。
 
 ### [ ] 4. Wave 4 — Projection 与 Self-Description 面（requirements §3、§10；design §Wave 4 / §Availability And Capability Presence）
 

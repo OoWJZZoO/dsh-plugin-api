@@ -127,7 +127,7 @@ test('the public catalog accessor filters replacement slices by guard while subs
   const bus = createEventsBus({ ctx, catalog: baseEventsCatalog, rSlices: [slice] })
 
   // inactive: entries hidden from the public snapshot...
-  assert.ok(!('compaction/request' in bus.catalog))
+  assert.ok(!('compaction/request' in bus.catalog()))
   // ...but a facade subscription is still wrapped (static full catalog).
   const listener = () => {}
   bus.on('compaction/request', listener, { priority: 'high' })
@@ -137,7 +137,7 @@ test('the public catalog accessor filters replacement slices by guard while subs
 
   // active: the same bus instance now exposes all five replacement entries.
   setActive(true)
-  const catalog = bus.catalog
+  const catalog = bus.catalog()
   assert.equal(Object.keys(catalog).length, Object.keys(baseEventsCatalog).length + COMPACTION_EVENT_NAMES.length)
   for (const name of COMPACTION_EVENT_NAMES) {
     assert.equal(catalog[name].feature, 'compaction-events')

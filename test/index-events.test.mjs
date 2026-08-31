@@ -111,7 +111,7 @@ test('apply mounts events with the frozen catalog and usable bus', () => {
 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
-  const catalog = state.pluginApi.events.catalog
+  const catalog = state.pluginApi.events.catalog()
   assert.equal(catalog['tools/change']?.mode, 'emit')
   assert.ok(catalog)
   assert.equal(Object.keys(catalog).length, 47)
@@ -316,7 +316,7 @@ function createHostEventProducers() {
 test('available host event producers contribute exactly nine catalog rows with the fixed schema', () => {
   const { ctx, state } = createMockCtx({ services: createHostEventProducers() })
   apply(ctx)
-  const catalog = state.pluginApi.events.catalog
+  const catalog = state.pluginApi.events.catalog()
   assert.equal(Object.keys(catalog).length, 47 + HOST_EVENT_LEAF_NAMES.length)
   for (const name of HOST_EVENT_LEAF_NAMES) {
     const entry = catalog[name]
@@ -333,7 +333,7 @@ test('available host event producers contribute exactly nine catalog rows with t
 test('missing host event producers keep the catalog at the baseline 47 rows', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
-  const catalog = state.pluginApi.events.catalog
+  const catalog = state.pluginApi.events.catalog()
   assert.equal(Object.keys(catalog).length, 47)
   for (const name of HOST_EVENT_LEAF_NAMES) {
     assert.equal(catalog[name], undefined, `${name} stays omitted when its producer is absent`)
@@ -349,7 +349,7 @@ test('malformed host event producers omit only their own rows', () => {
     },
   })
   apply(ctx)
-  const catalog = state.pluginApi.events.catalog
+  const catalog = state.pluginApi.events.catalog()
   assert.equal(catalog['domain/changed'], undefined)
   assert.equal(catalog['agent-loop/config-start-failed'], undefined)
   assert.equal(catalog['agent-preset/selected'] !== undefined, true)

@@ -141,7 +141,7 @@ test('admission and request prepared surfaces roll back to their disabled shapes
 
 test('immediate mountFeature behavior is unchanged for baseline mounters', () => {
   const service = activeService()
-  const eventsApi = { on() {}, catalog: {} }
+  const eventsApi = { on() {}, catalog() { return Object.freeze({}) } }
   service.mountFeature('events', eventsApi)
   assert.equal(service.events.on, eventsApi.on)
   assert.ok(Object.isFrozen(service.events))

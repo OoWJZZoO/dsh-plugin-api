@@ -22,6 +22,8 @@ const MIGRATION_ACTIONS = ['rename', 'merge', 'split', 'migrate', 'delete', 'int
 const CONSERVATION_STATUS = ['retained', 'renamed', 'merged', 'migrated', 'deleted', 'gap']
 const QUALIFIERS = ['shape', 'split', 'reclassified', 'internalized']
 const EVENT_SEMANTICS = ['decision', 'fact', 'observation', 'notification']
+const DISPATCH_VERBS = ['emit', 'serial', 'parallel', 'bail', 'waterfall']
+const DISPATCH_MEMBERS = new Set(DISPATCH_VERBS.map((verb) => `events.${verb}`))
 const EXCEPTION_FIELDS = ['memberPath', 'baseContract', 'exception', 'reason', 'replacementShape', 'verification']
 const MEMBER_FIELDS = [
   'publicPath', 'targetPath', 'capability', 'kind', 'idiom', 'idiomExceptions', 'eventSemantics',
@@ -242,6 +244,19 @@ export function validateRegistry(registry) {
           errors.push(`${where}: a coordination lease handle must record the release(handle) give-back verb`)
         }
       }
+      // Dispatch members are the operation dispatch variant: one dispatch has
+      // no independent operation identity and is never retried, so the
+      // operation identity and retry contract entries are null and the reason
+      // is recorded in the lifecycle note.
+      if (DISPATCH_MEMBERS.has(member.publicPath)) {
+        if (member.identitySource !== null || member.retryLayer !== null) {
+          errors.push(`${where}: a dispatch member must register the operation identity and retry contract entries as null`)
+        }
+        const note = `${member.lifecycle ?? ''}`
+        if (!/no independent operation identity/i.test(note) || !/never retried/i.test(note)) {
+          errors.push(`${where}: a dispatch member must record why operation identity and retry are not applicable`)
+        }
+      }
       membersByRuntimePath.set(key, member)
     }
   }
@@ -406,6 +421,9 @@ export function validateRegistry(registry) {
         if (!isNonEmptyString(event[field])) {
           errors.push(`${where} requires a non-empty ${field}`)
         }
+      }
+      if (!DISPATCH_VERBS.includes(event.dispatch) && event.dispatch !== 'on') {
+        errors.push(`${where}.dispatch ${JSON.stringify(event.dispatch)} is not a registered dispatch verb`)
       }
       if (event.eventSemantics !== undefined && !EVENT_SEMANTICS.includes(event.eventSemantics)) {
         errors.push(`${where}.eventSemantics ${JSON.stringify(event.eventSemantics)} is not in vocabulary.eventSemantics`)

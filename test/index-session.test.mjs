@@ -101,7 +101,7 @@ test('apply mounts session after events with a composed events catalog', () => {
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
 
-  const catalog = state.pluginApi.events.catalog
+  const catalog = state.pluginApi.events.catalog()
   assert.ok(catalog, 'events catalog must exist')
   assert.equal(Object.keys(catalog).length, 47)
   assert.ok(Object.isFrozen(catalog), 'composed catalog must be frozen')
@@ -170,7 +170,7 @@ test('apply completes every guard pass before pass-2 publication and an early fe
   }
   assert.equal(features.find((feature) => feature.name === 'typert')?.isActive, false)
   assert.equal(features.find((feature) => feature.name === 'settingsRemote')?.isActive, false)
-  assert.equal(state.pluginApi.events.catalog['tools/change'], undefined)
+  assert.equal(state.pluginApi.events.catalog()['tools/change'], undefined)
   assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').some((feature) => feature.name === 'compaction'), false)
 })
 
