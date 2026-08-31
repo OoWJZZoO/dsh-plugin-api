@@ -34,7 +34,7 @@ test('facade acquire returns a handle with owner, generation, expiry, fencing an
   assert.ok(Date.parse(outcome.handle.expiresAt) > START_MS)
   assert.equal(outcome.handle.backend.id, 'memory')
   assert.equal(outcome.handle.backend.durability, 'memory')
-  assert.equal(outcome.availability.status, 'available')
+  assert.equal((await owner.api.availability('process')).durability, 'memory')
   assert.ok(Object.isFrozen(outcome.handle))
   const second = await owner.api.acquire({ resource, ownerId: 'other', leaseMs: 60_000 })
   assert.equal(second.ok, false)
@@ -237,7 +237,7 @@ test('facade backend failures surface as typed unavailable and never escape', as
   const outcome = await owner.api.acquire({ resource, ownerId: 'owner', leaseMs: 60_000 })
   assert.equal(outcome.ok, false)
   assert.equal(outcome.code, 'unavailable')
-  assert.equal(outcome.availability.status, 'available')
+  assert.equal('availability' in outcome, false, 'business outcomes never embed availability')
 })
 
 test('facade provenance from sibling surfaces is preserved and never minted', async () => {

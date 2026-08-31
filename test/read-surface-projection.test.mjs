@@ -39,16 +39,16 @@ test('read projections expose the target get/list/inspect members with frozen vi
   }
 })
 
-test('read projections on the disabled surface stay shape-compatible with typed failure', () => {
+test('read projections on the disabled surface stay shape-compatible with typed failure', async () => {
   const harness = createHarness()
   apply(harness.ctx)
   // Unmounted features keep the target member shape and reject with typed
   // disabled errors; mounted read paths return frozen views.
   const api = harness.state.pluginApi
   // coordination is a self-hosted bounded adapter: it stays live and reports
-  // its backing honestly through the namespace availability
+  // its backing honestly through the (async) namespace availability
   assert.equal(typeof api.coordination.observe, 'function')
-  assert.ok(['active', 'degraded', 'unavailable'].includes(api.coordination.availability().status))
+  assert.ok(['active', 'degraded', 'unavailable'].includes((await api.coordination.availability(undefined)).status), 'coordination availability resolves a status')
   assert.equal(typeof api.diagnostics.observe, 'function')
   assert.equal(typeof api.mcp.observe, 'function')
   assert.throws(() => api.skills.activation.exposure.list(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED')
@@ -57,17 +57,17 @@ test('read projections on the disabled surface stay shape-compatible with typed 
   assert.doesNotThrow(() => api.settings.inspect())
 })
 
-test('namespace availability() reports the three-value status with bounded frozen details', () => {
+test('namespace availability() reports the three-value status with bounded frozen details', async () => {
   const { ctx, state } = createHarness()
   apply(ctx)
   const api = state.pluginApi
   for (const namespace of ['events', 'llm', 'agents', 'executions', 'sessions', 'tools', 'skills', 'prompts', 'attachments', 'mcp', 'tasks', 'coordination', 'workspaces', 'security', 'diagnostics', 'settings', 'profiles', 'remotes', 'storage']) {
-    const view = api[namespace].availability()
+    const view = await api[namespace].availability()
     assert.ok(Object.isFrozen(view), `${namespace}.availability() must be frozen`)
     assert.ok(['active', 'degraded', 'unavailable'].includes(view.status), `${namespace}.availability().status must be three-valued`)
   }
   for (const sub of [['llm', 'routing'], ['executions', 'recovery'], ['sessions', 'branches'], ['sessions', 'channels'], ['tools', 'discovery'], ['skills', 'activation'], ['prompts', 'provenance'], ['attachments', 'projection']]) {
-    const view = api[sub[0]][sub[1]].availability()
+    const view = await api[sub[0]][sub[1]].availability()
     assert.ok(Object.isFrozen(view), `${sub.join('.')}.availability() must be frozen`)
     assert.ok(['active', 'degraded', 'unavailable'].includes(view.status), `${sub.join('.')}.availability().status must be three-valued`)
   }
