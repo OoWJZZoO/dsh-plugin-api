@@ -88,6 +88,7 @@ test('replacement active: pluginApi.skills.activation forwards operations and av
 
   const activation = activationSurface(service)
   assert.deepEqual(activation.availability(), {
+    status: 'active',
     active: true,
     versionMatch: true,
     contract: true,
@@ -118,7 +119,7 @@ test('no replacement marker: mount succeeds but operations reject with the typed
   const activation = activationSurface(service)
   assert.throws(() => activation.registerDescriptor({}), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'skillsActivation')
   assert.throws(() => activation.policy.registerMinimalCatalogUpdate({ kind: 'session', key: 's-1' }), PluginApiFeatureDisabledError)
-  assert.deepEqual(activation.availability(), { active: false, contract: false, versionMatch: true })
+  assert.deepEqual(activation.availability(), { status: 'unavailable', active: false, contract: false, versionMatch: true })
 })
 
 test('version mismatch or absent auxiliary: the facade feature is disabled and never forwards', () => {
@@ -136,7 +137,7 @@ test('version mismatch or absent auxiliary: the facade feature is disabled and n
     })
     assert.equal(mounted, null, 'mount must fail closed so the apply disables the feature')
     assert.equal(calls.length, 0, 'never forwards under version mismatch')
-    assert.deepEqual(activationSurface(service).availability(), Object.freeze({ active: false, contract: false }))
+    assert.deepEqual(activationSurface(service).availability(), Object.freeze({ status: 'unavailable', active: false, contract: false }))
     assert.throws(() => activationSurface(service).activate('demo-skill', {}), PluginApiFeatureDisabledError)
   }
 })
@@ -167,7 +168,7 @@ test('full apply: absent auxiliary keeps the typed disabled surface and leaves o
   assert.doesNotThrow(() => apply(ctx))
   assert.ok(state.pluginApi)
   const activation = state.pluginApi.skills.activation
-  assert.deepEqual(activation.availability(), { active: false, contract: false })
+  assert.deepEqual(activation.availability(), { status: 'unavailable', active: false, contract: false })
   assert.throws(() => activation.activate('demo', {}), (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
     assert.equal(error.feature, 'skillsActivation')

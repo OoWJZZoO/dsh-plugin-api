@@ -66,7 +66,7 @@ test('discovery disabled surface throws inactive and feature-disabled errors bef
   fail(() => active.tools.discovery.activate('a', {}))
   fail(() => active.tools.discovery.deactivate('a'))
   fail(() => active.tools.discovery.audit.query({}))
-  assert.throws(() => active.tools.discovery.availability, PluginApiFeatureDisabledError)
+  assert.deepEqual(active.tools.discovery.availability(), { status: 'unavailable' })
 })
 
 test('mount exposes the discovery surface and delegates to the owner', async () => {
@@ -83,7 +83,7 @@ test('mount exposes the discovery surface and delegates to the owner', async () 
   assert.equal(activated.generation, 'g:1')
   assert.deepEqual(discovery.deactivate('alpha'), { ok: true })
   assert.deepEqual(discovery.audit.query({}), { items: [], truncated: false })
-  assert.deepEqual(discovery.availability, { active: true, catalog: { registered: 1 } })
+  assert.deepEqual(discovery.availability(), { status: 'active', active: true, catalog: { registered: 1 } })
 })
 
 test('mount does not change the tools surface contract', () => {

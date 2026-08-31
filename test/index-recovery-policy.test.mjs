@@ -53,7 +53,7 @@ test('healthy apply mounts a host-only recovery surface after execution and befo
   assert.equal(typeof state.pluginApi.executions.recovery.evaluate, 'function')
   assert.equal(typeof state.pluginApi.executions.recovery.consume, 'function')
   assert.equal(typeof state.pluginApi.executions.recovery.adapters.fromAgentRequestError, 'function')
-  assert.equal(state.pluginApi.executions.recovery.availability.status, 'active')
+  assert.equal(state.pluginApi.executions.recovery.availability().status, 'active')
   assert.equal(Object.prototype.hasOwnProperty.call(state.pluginApi, 'client'), false)
 })
 test('mounted recovery evaluates and consumes a bounded policy decision without executing it', async () => {

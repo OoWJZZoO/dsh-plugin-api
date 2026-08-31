@@ -52,7 +52,7 @@ test('execution disabled surface throws core-inactive and feature-disabled error
     assert.equal(error.feature, 'executions')
     return true
   })
-  assert.deepEqual(active.executions.availability, { sources: {}, epoch: 'none' })
+  assert.deepEqual(active.executions.availability(), { status: 'unavailable', sources: {}, epoch: 'none' })
 })
 
 test('mount exposes the execution surface and delegates to the owner', () => {
@@ -65,7 +65,7 @@ test('mount exposes the execution surface and delegates to the owner', () => {
   const observer = service.executions.observe()
   assert.equal(observer.dispose(), true)
   assert.equal(typeof service.executions.visibility.register, 'function')
-  assert.equal(service.executions.availability.sources.tools, 'available')
+  assert.equal(service.executions.availability().sources.tools, 'available')
 })
 
 test('unmount is token-bound, idempotent and restores the disabled surface', () => {

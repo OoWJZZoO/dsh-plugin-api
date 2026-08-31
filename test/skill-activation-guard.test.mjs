@@ -96,17 +96,17 @@ test('KNOWN_FEATURES accepts the skillsActivation feature key with prepared tran
     policy: { registerMinimalCatalogUpdate() {} },
   }
   // Before any mount the projection is the typed disabled surface.
-  assert.deepEqual(service.skills.activation.availability(), Object.freeze({ active: false, contract: false }))
+  assert.deepEqual(service.skills.activation.availability(), Object.freeze({ status: 'unavailable', active: false, contract: false }))
   const prepared = service.prepareFeature('skillsActivation', owner)
   assert.equal(prepared.commit(), true)
-  assert.deepEqual(service.skills.activation.availability(), { active: true })
+  assert.deepEqual(service.skills.activation.availability(), { status: 'active', active: true })
   // A rollback of a later transaction restores the disabled surface.
   const second = service.prepareFeature('skillsActivation', owner)
   assert.equal(second.commit(), true)
   assert.equal(second.rollback(), true)
-  assert.deepEqual(service.skills.activation.availability(), Object.freeze({ active: false, contract: false }))
+  assert.deepEqual(service.skills.activation.availability(), Object.freeze({ status: 'unavailable', active: false, contract: false }))
   // The full apply path with the disabled auxiliary keeps the surface typed.
   const { ctx: mockCtx, state } = makeMockCtx()
   assert.doesNotThrow(() => apply(mockCtx))
-  assert.deepEqual(state.pluginApi.skills.activation.availability(), Object.freeze({ active: false, contract: false }))
+  assert.deepEqual(state.pluginApi.skills.activation.availability(), Object.freeze({ status: 'unavailable', active: false, contract: false }))
 })

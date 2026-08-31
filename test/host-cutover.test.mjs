@@ -119,7 +119,13 @@ test('agents publishes the plural providers leaf with typed disabled behavior', 
   const agents = service.agents
   assert.equal(agents.providers.isActive, false)
   assert.equal('provider' in agents, false, 'singular provider leaf must not exist')
-  assert.deepEqual(agents.availability.providers, { enter: false, announce: false, setFactory: false })
+  assert.deepEqual(agents.availability(), {
+    status: 'unavailable',
+    create: false,
+    resume: false,
+    register: false,
+    providers: { enter: false, announce: false, setFactory: false },
+  })
   assert.throws(() => agents.providers.enter({}, undefined), (error) => {
     return error instanceof PluginApiFeatureDisabledError && error.feature === 'agents'
   })

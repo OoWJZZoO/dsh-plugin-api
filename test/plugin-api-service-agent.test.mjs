@@ -44,14 +44,15 @@ function assertDisabledView(agents) {
   }
   assert.equal(agents.providers.isActive, false)
   assert.deepEqual(Object.keys(agents.providers), ['isActive', 'enter', 'announce', 'setFactory'])
-  assert.deepEqual(agents.availability, {
+  const availability = agents.availability()
+  assert.deepEqual(availability, {
+    status: 'unavailable',
     create: false,
     resume: false,
     register: false,
     providers: { enter: false, announce: false, setFactory: false },
   })
-  assert.ok(Object.isFrozen(agents.availability))
-  assert.ok(Object.isFrozen(agents.availability.providers))
+  assert.ok(Object.isFrozen(availability))
   assert.ok(Object.isFrozen(agents.providers))
 }
 
@@ -81,14 +82,15 @@ test('inert service throws inactive errors from every declared agents member', (
   }
   assert.equal(agents.providers.isActive, false)
   assert.deepEqual(Object.keys(agents.providers), ['isActive', 'enter', 'announce', 'setFactory'])
-  assert.deepEqual(agents.availability, {
+  const inertAvailability = agents.availability()
+  assert.deepEqual(inertAvailability, {
+    status: 'unavailable',
     create: false,
     resume: false,
     register: false,
     providers: { enter: false, announce: false, setFactory: false },
   })
-  assert.ok(Object.isFrozen(agents.availability))
-  assert.ok(Object.isFrozen(agents.availability.providers))
+  assert.ok(Object.isFrozen(inertAvailability))
   assert.ok(Object.isFrozen(agents.providers))
   assert.equal(ctx.getCalls.length, 0)
 })

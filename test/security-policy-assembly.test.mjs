@@ -57,7 +57,7 @@ test('healthy apply mounts security and exposes the four faces plus availability
   assert.equal(typeof security.egress.check, 'function')
   assert.equal(typeof security.egress.lease.acquire, 'function')
   assert.equal(typeof security.audit.query, 'function')
-  const availability = security.availability
+  const availability = security.availability()
   assert.deepEqual(availability.faces, { policy: 'active', redaction: 'active', egress: 'active', audit: 'active' })
   assert.equal(availability.audit.durable, 'non-durable')
   assert.equal(availability.secretPolicy, 'default-deny')
@@ -153,7 +153,7 @@ test('without a working ctx.on substrate the feature degrades to inert (no enfor
   const feature = featureOf(state, 'security')
   assert.ok(feature)
   assert.equal(feature.isActive, true, 'the typed guard substrate exists; the feature stays mounted')
-  const availability = state.pluginApi.security.availability
+  const availability = state.pluginApi.security.availability()
   assert.deepEqual(availability.seams, {
     approval: 'absent', toolBefore: 'absent', toolAfter: 'absent', modelRequest: 'absent',
   }, 'all seams absent: no enforcement is claimed')
@@ -205,5 +205,6 @@ test('pluginApi service exposes the security disabled surface until mounted', ()
   assert.equal(typeof security.audit.query, 'function')
   // inactive facade: every member fails with the typed inactive contract
   assert.throws(() => security.policy.register('x', { point: 'tool-before', decide: () => ({ outcome: 'allow' }) }), PluginApiInactiveError)
-  assert.throws(() => security.availability, PluginApiInactiveError)
+  assert.deepEqual(security.availability(), { status: 'unavailable' })
+  assert.throws(() => security.policy.register({}), PluginApiInactiveError)
 })

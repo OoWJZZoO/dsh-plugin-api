@@ -183,7 +183,7 @@ test('exposure registration failure degrades only the exposure planes', async ()
   const host = createHost({ throwToolsRegistration: true })
   apply(host.ctx)
   const discovery = host.ctx.get('pluginApi').tools.discovery
-  const availability = discovery.availability
+  const availability = discovery.availability()
   assert.equal(availability.providerRegistered, false, 'provider plane truthfully degraded')
   assert.equal(availability.hintRegistered, true, 'hint plane independent')
   const registered = discovery.catalog.register(DESCRIPTOR)

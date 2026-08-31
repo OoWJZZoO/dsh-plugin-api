@@ -161,7 +161,8 @@ test('mounted agent extension facade preserves all registry lifecycle result ide
   assert.ok(calls.every(({ receiver }) => receiver === agents))
   assert.deepEqual(calls[3].args, [{ id: 'enter' }, ctx])
   assert.equal(agent.providers.isActive, true)
-  assert.deepEqual(agent.availability, {
+  assert.deepEqual(agent.availability(), {
+    status: 'active',
     create: true,
     resume: true,
     register: true,
@@ -182,7 +183,8 @@ test('active composed facade degrades only a missing agent extension leaf', () =
   assert.equal(agent.resume({}), 'resumed')
   assert.equal(agent.providers.enter({}, undefined), 'entered')
   assert.throws(() => agent.providers.setFactory({}), PluginApiFeatureDisabledError)
-  assert.deepEqual(agent.availability, {
+  assert.deepEqual(agent.availability(), {
+    status: 'active',
     create: true,
     resume: true,
     register: true,
@@ -220,7 +222,8 @@ test('active composed facade degrades each missing agent extension leaf independ
         assert.equal(invoke[name](agent), `ok-${name}`)
       }
     }
-    assert.deepEqual(agent.availability, {
+    assert.deepEqual(agent.availability(), {
+      status: 'active',
       create: missing !== 'create',
       resume: missing !== 'resume',
       register: missing !== 'register',
@@ -247,17 +250,17 @@ test('active composed facade availability tracks late member degradation', () =>
   apply(ctx)
 
   const agent = state.pluginApi.agents
-  assert.equal(agent.availability.providers.setFactory, true)
+  assert.equal(agent.availability().providers.setFactory, true)
   agents.setFactory = undefined
 
   assert.throws(
     () => agent.providers.setFactory({}),
     (error) => error instanceof PluginApiFeatureDisabledError && /providers\.setFactory/.test(error.message),
   )
-  assert.equal(agent.availability.providers.setFactory, false)
-  assert.equal(agent.availability.providers.enter, true)
+  assert.equal(agent.availability().providers.setFactory, false)
+  assert.equal(agent.availability().providers.enter, true)
   assert.equal(agent.providers.isActive, false)
-  assert.equal(state.pluginApi.agents.availability.providers.setFactory, false)
+  assert.equal(state.pluginApi.agents.availability().providers.setFactory, false)
 })
 test('active composed agent extension view resolves every official call from the consuming context', () => {
   const { ctx, state, agents: hostAgents } = createMockCtx()
@@ -306,8 +309,8 @@ test('exec-route publication failure leaves active agent extension members uncha
   apply(ctx)
   assert.equal(state.pluginApi.agents.create({}), 'create')
   assert.equal(state.pluginApi.agents.providers.setFactory({}), 'setFactory')
-  assert.equal(state.pluginApi.agents.availability.create, true)
-  assert.equal(state.pluginApi.agents.availability.providers.setFactory, true)
+  assert.equal(state.pluginApi.agents.availability().create, true)
+  assert.equal(state.pluginApi.agents.availability().providers.setFactory, true)
   assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'execRoute')?.isActive, false)
 })
 
@@ -488,7 +491,7 @@ test('exec-route cleanup failure leaves active agent extension members intact', 
   assert.doesNotThrow(() => dispose())
   assert.equal(state.pluginApi.agents.create({}), 'create')
   assert.equal(state.pluginApi.agents.providers.setFactory({}), 'setFactory')
-  assert.equal(state.pluginApi.agents.availability.providers.setFactory, true)
+  assert.equal(state.pluginApi.agents.availability().providers.setFactory, true)
 })
 
 test('successful exec-route disposal leaves active agent extension members intact', () => {
@@ -504,7 +507,7 @@ test('successful exec-route disposal leaves active agent extension members intac
   dispose()
   assert.equal(state.pluginApi.agents.create({}), 'create')
   assert.equal(state.pluginApi.agents.providers.setFactory({}), 'setFactory')
-  assert.equal(state.pluginApi.agents.availability.create, true)
+  assert.equal(state.pluginApi.agents.availability().create, true)
   assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'execRoute')?.isActive, true)
 })
 test('agent extension and exec-route cleanup preserve the other extension and captured route state', () => {
@@ -812,7 +815,7 @@ test('integrated agent extension lifecycle double preserves official identity, o
   facadeFactoryDisposer()
   assert.equal(direct.isFactoryOccupied(), false)
   assert.equal(consumer.isFactoryOccupied(), false)
-  assert.equal(facade.availability.providers.setFactory, true)
+  assert.equal(facade.availability().providers.setFactory, true)
 
   const directPromise = direct.create(directOptions)
   const facadePromise = facade.create(facadeOptions)
@@ -961,7 +964,7 @@ test('integrated agent extension lifecycle double preserves official identity, o
     [['direct', 'direct-created'], ['facade', 'facade-created']],
   )
   assert.ok(state.warnings.some((message) => message.includes('facade listener failure contained')))
-  assert.equal(facade.availability.providers.setFactory, true)
+  assert.equal(facade.availability().providers.setFactory, true)
 })
 test('agent guard failure disables only agent and keeps facade active', () => {
   const { ctx, state } = createMockCtx({ agents: false })
