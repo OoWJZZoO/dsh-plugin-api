@@ -332,7 +332,11 @@ A service passthrough does not acquire an idiom contract merely because its meth
 
 Maintain exact current-to-target records in the registry and a human-readable M8 migration ledger under the feature spec directory. The ledger covers:
 
-- rename, merge, split, migrate, delete and gap actions;
+- rename, merge, split, migrate, delete, internalize and gap actions
+  (`internalize` added during execution: the member leaves the public face
+  as an internal mechanism, e.g. the recovery classifier and the
+  session-channel contract members; the ledger records the sanctioned
+  non-enumerable internal forms);
 - replacement or gap reason for every deletion;
 - affected types, snapshots, tests, package/patch files and consumers;
 - expected unavailable/failure consequences;
