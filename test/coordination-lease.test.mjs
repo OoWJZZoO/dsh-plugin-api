@@ -123,9 +123,10 @@ test('facade compareAndSet publishes only with the active fencing token and expe
     expectedVersion: 0,
     value: { v: 1 },
   })
-  assert.equal(forged.code, 'stale-holder')
+  assert.equal(forged.code, 'conflict', 'a stale credential is reported as conflict')
+  assert.ok(forged.reason, 'the stale condition is carried in reason')
   const conflict = await owner.api.compareAndSet({ resource, handle: acquired.handle, expectedVersion: 5, value: { v: 1 } })
-  assert.equal(conflict.code, 'compare-conflict')
+  assert.equal(conflict.code, 'conflict', 'a CAS version conflict is reported as conflict')
   assert.equal(conflict.ok, false)
   const ok = await owner.api.compareAndSet({ resource, handle: acquired.handle, expectedVersion: 0, value: { v: 1 } })
   assert.equal(ok.ok, true)

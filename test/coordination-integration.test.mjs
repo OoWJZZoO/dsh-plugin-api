@@ -56,7 +56,7 @@ test('sibling features can consume the coordination face for fenced attempts (co
   assert.equal(taken.ok, true)
   const staleWrite = await owner.api.compareAndSet({ resource, handle: acquired.handle, expectedVersion: 1, value: { step: 'late' } })
   assert.equal(staleWrite.ok, false)
-  assert.equal(staleWrite.code, 'superseded')
+  assert.equal(staleWrite.code, 'conflict', 'a stale public write is conflict')
 })
 
 test('the memory adapter never satisfies a cross-process durability assertion', async () => {

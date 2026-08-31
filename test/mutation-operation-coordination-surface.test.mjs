@@ -71,7 +71,7 @@ test('coordination outcomes stay discriminated with the closed code vocabulary a
   const { ctx, state } = createHarness()
   apply(ctx)
   const coordination = state.pluginApi.coordination
-  const acquired = await coordination.acquire({ resource: { scope: 'process', key: 'wave6-resource' }, ownerId: 'owner-1', leaseMs: 1000 })
+  const acquired = await coordination.acquire({ resource: { scope: 'process', key: 'surface-resource' }, ownerId: 'owner-1', leaseMs: 1000 })
   assert.equal(acquired.ok, true)
   assert.equal(acquired.code, 'acquired')
   assert.ok(acquired.handle.id, 'lease handle carries an id')
@@ -93,13 +93,13 @@ test('takeover requires the expected proof and preserves provenance', async () =
   const { ctx, state } = createHarness()
   apply(ctx)
   const coordination = state.pluginApi.coordination
-  const acquired = await coordination.acquire({ resource: { scope: 'process', key: 'wave6-takeover' }, ownerId: 'owner-a', leaseMs: 2000 })
+  const acquired = await coordination.acquire({ resource: { scope: 'process', key: 'surface-takeover' }, ownerId: 'owner-a', leaseMs: 2000 })
   assert.equal(acquired.ok, true)
-  const withoutProof = await coordination.takeover({ resource: { scope: 'process', key: 'wave6-takeover' }, ownerId: 'owner-b', leaseMs: 2000 })
+  const withoutProof = await coordination.takeover({ resource: { scope: 'process', key: 'surface-takeover' }, ownerId: 'owner-b', leaseMs: 2000 })
   assert.equal(withoutProof.ok, false)
   assert.ok(COORDINATION_CODES.includes(withoutProof.code))
   const withProof = await coordination.takeover({
-    resource: { scope: 'process', key: 'wave6-takeover' },
+    resource: { scope: 'process', key: 'surface-takeover' },
     ownerId: 'owner-b',
     leaseMs: 2000,
     expectedProof: { generation: acquired.handle.generation },
@@ -129,9 +129,13 @@ test('transaction operations carry discriminated results with commit state', asy
     assert.equal(typeof wt[verb], 'function', `workspaces.transactions.${verb}`)
   }
   // a missing workspace backing yields typed unavailable, never a fake success
-  const prepared = await wt.prepare({ transactionId: 'tx-w6', workspace: { scope: 'workspace', key: 'w6' }, ownerId: 'owner-1', intent: { kind: 'edit', summary: 's' }, resources: [{ kind: 'config', key: 'dsh.json', scope: 'workspace' }], lease: { handle: {}, resource: { scope: 'workspace', key: 'w6' }, generation: 1, expiresAt: Date.now() + 60000 } })
+  const prepared = await wt.prepare({ transactionId: 'tx-surface', workspace: { scope: 'workspace', key: 'surface-workspace' }, ownerId: 'owner-1', intent: { kind: 'edit', summary: 's' }, resources: [{ kind: 'config', key: 'dsh.json', scope: 'workspace' }], lease: { handle: {}, resource: { scope: 'workspace', key: 'surface-workspace' }, generation: 1, expiresAt: Date.now() + 60000 } })
   assert.equal(prepared.ok, false)
   assert.equal('availability' in prepared, false, 'business outcomes never embed availability')
   assert.equal(typeof prepared.code, 'string')
   assert.ok(Object.isFrozen(prepared))
+  if (prepared.ok === false) {
+    // a successful record would carry the mutation commitState vocabulary
+    assert.ok(!('commitState' in prepared), 'a failed mutation carries no commit state')
+  }
 })

@@ -174,10 +174,10 @@ test('coordinated: memory adapter enforces one active owner with deterministic c
   // can touch B's generation; both are typed superseded results.
   const heartbeatStale = await api.heartbeat(staleA, { leaseMs })
   assert.equal(heartbeatStale.ok, false, 'stale owner heartbeat is a typed stale result')
-  assert.equal(heartbeatStale.code, 'superseded')
+  assert.equal(heartbeatStale.code, 'conflict', 'a stale public heartbeat is conflict with the condition in reason')
   const releaseStale = await api.release(staleA)
   assert.equal(releaseStale.ok, false, 'stale owner release is a typed no-op for the current owner')
-  assert.equal(releaseStale.code, 'superseded')
+  assert.equal(releaseStale.code, 'conflict', 'a stale public release is conflict with the condition in reason')
   assert.equal((await api.heartbeat(acquireSecond.handle, { leaseMs })).ok, true, 'B lease stays alive')
   lease.dispose()
 })
