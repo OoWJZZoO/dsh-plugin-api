@@ -23,9 +23,9 @@
 ### Acceptance Criteria
 
 1. WHEN the M8 public contract is evaluated THEN the registry SHALL contain one entry for every current host leaf, current client leaf, target leaf, and publicly exposed handle member listed by the M8 inventories.
-2. WHEN a registry entry is created or updated THEN it SHALL record `publicPath`, `idiom`, `idiomExceptions`, `eventSemantics`, `semanticFace`, `effect`, `composition`, `runtime`, `implementationChannel`, `authority`, `scope`, `resourceKey`, `identitySource`, `conflictRule`, `lifecycle`, `failureSemantics`, `idempotency`, `retryLayer`, `availabilityShape`, `concurrency`, `reducer`, `currentShape`, `targetPath`, and `migrationAction` as applicable.
+2. WHEN a registry entry is created or updated THEN it SHALL record every one of `publicPath`, `idiom`, `idiomExceptions`, `eventSemantics`, `semanticFace`, `effect`, `composition`, `runtime`, `implementationChannel`, `authority`, `scope`, `resourceKey`, `identitySource`, `conflictRule`, `lifecycle`, `failureSemantics`, `idempotency`, `retryLayer`, `availabilityShape`, `concurrency`, `reducer`, `currentShape`, `targetPath`, and `migrationAction`; a field that does not apply to the member SHALL carry an explicit `null` and SHALL NOT be omitted, so that a missing field remains mechanically distinguishable from a recorded not-applicable value.
 3. WHEN a public leaf or handle member is not present in the registry THEN the M8 contract SHALL be considered incomplete and the delivery SHALL fail validation.
-4. WHERE a member is an official passthrough exception IF it is retained in the public surface THEN its registry path SHALL begin with `services.` and its record SHALL not claim one of the eight idioms.
+4. WHERE a member is an official passthrough exception IF it is retained in the public surface THEN its registry path SHALL begin with `services.` and its `idiom` SHALL be exactly `passthrough-exception`; no member outside `services.*` SHALL use that idiom value and no `services.*` member SHALL use one of the eight idiom names.
 5. WHEN a public namespace is assembled from more than one feature THEN the registry SHALL express every contributing feature for that namespace, and a namespace entry SHALL carry navigation facts only and SHALL NOT carry idiom or semantic classification.
 
 **Classification:** 门面基础；适用于 A/B/C/R 所有公共成员。
@@ -145,13 +145,13 @@
 
 ### Acceptance Criteria
 
-1. WHEN a coordination resource is used THEN the public verbs SHALL be `acquire`, `heartbeat`, `release`, `takeover`, `compareAndSet`, `observe`, and `availability` as applicable, regardless of domain name.
-2. WHEN acquisition succeeds THEN the lease handle SHALL contain `id`, `resource`, `generation`, `fencingToken`, and `expiresAt`, SHALL be treated as a credential rather than a generic disposer handle, and SHALL NOT provide `dispose()`; the handle SHALL be returned only through `release(handle)`.
-3. WHEN a coordination handle is released more than once THEN the release operation SHALL be idempotent; WHEN a stale handle heartbeats or attempts a state change THEN the system SHALL return a typed stale or conflict outcome using the coordination code vocabulary `inactive`, `invalid-input`, `conflict`, `unavailable`, or `unsupported` without throwing through the caller.
+1. WHEN a coordination resource is used THEN the applicable public verbs SHALL be drawn from `acquire`, `heartbeat`, `release`, `takeover`, `compareAndSet`, `observe`, and `availability` regardless of domain name, and every coordination entry SHALL be asynchronous.
+2. WHEN acquisition succeeds THEN `acquire` SHALL return the lease handle containing `id`, `resource`, `generation`, `fencingToken`, and `expiresAt`; the handle SHALL be treated as a credential rather than a generic disposer handle and SHALL NOT provide `dispose()`; the lease SHALL be given back only through the entry verb `release(handle)`.
+3. WHEN a coordination handle is released more than once THEN the release operation SHALL be idempotent; WHEN a stale handle heartbeats or attempts a state change THEN the system SHALL return a discriminated outcome whose `code` is `conflict` drawn from the coordination code vocabulary `inactive`, `invalid-input`, `conflict`, `unavailable`, or `unsupported`, SHALL carry the stale condition as caller-facing `reason` text, and SHALL NOT use `stale` as a machine code or throw through the caller.
 4. WHEN a takeover is requested THEN the request SHALL include the required expected proof, and the result SHALL record the reason and provenance for cross-owner takeover.
 5. WHEN coordination availability is queried THEN availability SHALL be obtained from `availability(scope)` returning `{ status, scope, durability, operations, backend, epoch }`, SHALL explicitly state whether the backing resource actually provides durability, and SHALL NOT be embedded in a business outcome.
 6. WHEN the runtime only provides an in-memory or bounded scope adapter THEN the public contract SHALL report that honest degradation through availability and SHALL not claim durable coordination.
-7. WHERE a coordination member is a synchronous bounded borrow IF the borrow is entered on scope entry and returned on scope exit THEN the expiry and takeover contract entries SHALL be recorded as not applicable and the remaining coordination contract SHALL apply unchanged.
+7. WHERE a coordination member is a synchronous bounded borrow IF the borrow is entered on scope entry and returned on scope exit THEN the expiry and takeover contract entries SHALL be recorded as not applicable and the remaining coordination contract SHALL apply unchanged, including the asynchronous entry requirement.
 
 **Classification:** A/B/R according to the backing authority; unsupported durable behavior remains unavailable rather than being simulated as durable.
 
@@ -167,7 +167,7 @@
 4. WHEN a capability is present in the registry THEN `capabilities.get(path)` SHALL return a status in `active`, `degraded`, or `unavailable`, consistent with the corresponding namespace availability rules.
 5. WHEN availability is queried repeatedly THEN the operation SHALL be side-effect free, idempotent, and non-throwing; WHEN `capabilities.require` is called for an absent capability THEN it SHALL throw the typed capability-unavailable error.
 6. WHEN a public namespace has no currently usable backing service THEN its availability member SHALL remain shape-compatible and SHALL report `unavailable` rather than disappearing from the contract unless the member was explicitly removed by the capability matrix.
-7. WHEN a public namespace is exposed THEN it SHALL provide an `availability()` member whose frozen return value contains `status`; a public namespace without such a member SHALL be recorded as a contract defect.
+7. WHEN a public namespace is exposed THEN it SHALL have a registry namespace record that names its `availability()` member, and that member SHALL return a frozen value containing `status`; a namespace record without an availability member SHALL record an explicit exemption reason, and an unrecorded namespace or an unrecorded exemption SHALL be a contract defect. `services.*` passthrough namespaces SHALL carry the exemption that official passthrough surfaces acquire no facade availability semantics.
 8. WHEN a member returns a discriminated business outcome THEN the outcome SHALL NOT embed an availability field; availability SHALL have `availability()` as its only public entry point and SHALL NOT be replaced by capability presence.
 
 **Classification:** 门面基础；适用于 A/B/C/R 的公开 capability 和 availability 表达。
@@ -256,12 +256,13 @@
 
 ### Acceptance Criteria
 
-1. WHEN an M8 migration is evaluated THEN every current capability cluster SHALL have exactly one final status in the capability matrix that reduces to exactly one of `retained`, `renamed`, `merged`, `migrated`, `deleted`, or `gap`; a compound label such as `split/renamed` or `deleted/gap` SHALL be recorded together with the class it reduces to, and the member-level `migrationAction` field SHALL remain one of `retain`, `rename`, `merge`, `split`, `migrate`, `delete`, or `gap`.
-2. WHEN a capability is marked deleted THEN the matrix SHALL contain a replacement or a specific gap reason, and the delivery report SHALL identify the affected consumers and verification evidence.
-3. WHEN a capability is migrated to `services.*` THEN its official receiver, argument, return, error, availability, cancellation, and visibility behavior SHALL be audited member by member, with no facade semantic claim added.
-4. WHEN an official service member is not in the audited whitelist THEN it SHALL not be exposed through the facade, even if it is discoverable on the runtime service object.
-5. WHEN the public surface is compared with the registry and snapshots THEN there SHALL be no unregistered current path, target path, removed path, or unexplained capability loss.
-6. WHEN an implementation cannot prove that an automatic replacement covers the original trigger, input, output, failure, and observability behavior THEN the capability SHALL remain marked as a gap rather than as retained or replaced.
+1. WHEN an M8 migration is evaluated THEN every current capability cluster SHALL have exactly one final `status` in the capability matrix, and `status` SHALL be exactly one of `retained`, `renamed`, `merged`, `migrated`, `deleted`, or `gap`; `status` SHALL be the only field used for mechanical conservation checks, and a compound label SHALL NOT be written into it.
+2. WHEN a capability cluster carries information beyond its conservation status THEN that information SHALL be recorded in `qualifiers` drawn from `shape`, `split`, `reclassified`, or `internalized`, and SHALL NOT change the conservation class; a cluster whose retained part and unproven part cannot be expressed by one status SHALL be recorded as two capability rows.
+3. WHEN a capability is marked deleted THEN the matrix SHALL contain a replacement or a specific gap reason, and the delivery report SHALL identify the affected consumers and verification evidence.
+4. WHEN a capability is migrated to `services.*` THEN its official receiver, argument, return, error, availability, cancellation, and visibility behavior SHALL be audited member by member, with no facade semantic claim added.
+5. WHEN an official service member is not in the audited whitelist THEN it SHALL not be exposed through the facade, even if it is discoverable on the runtime service object.
+6. WHEN the public surface is compared with the registry and snapshots THEN there SHALL be no unregistered current path, target path, removed path, or unexplained capability loss.
+7. WHEN an implementation cannot prove that an automatic replacement covers the original trigger, input, output, failure, and observability behavior THEN the capability SHALL remain marked as a gap rather than as retained or replaced.
 
 **Classification:** 门面基础；适用于所有 A/B/C/R 能力簇。
 

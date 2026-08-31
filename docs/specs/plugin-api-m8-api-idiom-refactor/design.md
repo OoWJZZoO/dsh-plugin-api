@@ -2,7 +2,19 @@
 
 ## Status
 
-本设计承接已批准的 `goal.md` 与 `requirements.md`。它定义 M8 的目标架构、迁移边界、实现通道、失败路径和验证策略；在 Stage 2 获用户批准前，不创建实现代码、测试代码、Tasks 或生成 registry 快照。
+本设计承接已批准的 `goal.md` 与 `requirements.md`。它定义 M8 的目标架构、迁移边界、实现通道、失败路径和验证策略。
+
+**Stage 2 确认门：已通过（用户明确批准，2026-08-31）。**
+
+批准范围为本文件当前版本，包含按 `docs/standards/refactor/` 完成的 SPEC2 契约细化：
+
+- coordination 入口全部异步、`acquire` 返回租约句柄、归还是入口动词 `release(handle)`、stale 条件以 `code: 'conflict'` + `reason` 表达、同步有界借用例外不豁免异步；
+- 能力矩阵 `status` 为六值封闭词表并作为守恒校验唯一字段，复合信息记入 `qualifiers`；
+- 成员记录字段一律存在，不适用者记显式 `null`；
+- `services.*` 成员的 `idiom` 固定为 `passthrough-exception`，与非 `services.*` 成员双向互斥；
+- 公共 namespace 集合由 registry 的 namespace navigation record 定义，`availabilityMember` 或 `availabilityExemption` 二选一。
+
+批准前未创建实现代码、测试代码、Tasks 或生成 registry 快照。按 AGENTS.md §3.2，Stage 2 完工后创建阶段提交；随后进入 Stage 3，Tasks 不设用户确认门，须经阻塞式只读对抗性审查通过方可进入 Stage 4。
 
 ## Overview
 
@@ -70,9 +82,10 @@ The registry is divided into these logical sections:
 - `contractBaseline`: existing package/runtime/API baseline, unchanged unless a separately approved version decision is made;
 - `vocabulary`: runtime, effect, idiom, event semantics, composition, availability, status, terminal, priority, scope, implementation channel and migration actions;
 - `hostDomainTree` and `clientDomainTree`: navigation roots only;
+- `namespaces`: one navigation record per public namespace, carrying existence, capability path, runtime, contributing features, and the namespace availability member or its recorded exemption;
 - `members`: one record per public callable/value leaf, target leaf, and public handle leaf;
 - `oldToTargetMapping`: exact path migration records, including merge/split/delete relationships;
-- `capabilityMatrix`: capability-cluster conservation status, replacement and gap reason;
+- `capabilityMatrix`: one conservation `status` per capability cluster together with `qualifiers`, replacement and gap reason;
 - `eventCatalog`: event name, event semantics, observe/producer authority, priority, freeze, scope and containment facts;
 - `servicesWhitelist`: official service key/member descriptors and passthrough audit metadata;
 - `profiles`: generated recommended/composable member fixture and evidence references;
@@ -126,7 +139,7 @@ The runtime does not need eight generic runtime classes. Each domain mounter use
 - **Operation adapter:** wraps a caller-visible operation identity or handle, publishes status/observe/terminal outcome, and guards cancellation and stale completion.
 - **Contribution adapter:** records owner-scoped reversible assembly input with `seq`, an identity-bound disposer, and observable eviction.
 - **Resource registry adapter:** registers data or implementations by owner/id/generation and separates registration from `get/list` projection.
-- **Coordination adapter:** owns lease/fencing semantics and uses `acquire/heartbeat/release/takeover/compareAndSet/observe/availability` vocabulary. Its handle is a credential and provides no `dispose()`; return happens only through `release(handle)`. A synchronous bounded borrow registers the expiry and takeover contract entries as not applicable and keeps the rest of the contract unchanged.
+- **Coordination adapter:** owns lease/fencing semantics and uses `acquire/heartbeat/release/takeover/compareAndSet/observe/availability` vocabulary. Every coordination entry is asynchronous. `acquire` returns the lease handle; the handle is a credential, provides no `dispose()`, and is given back through the entry verb `release(handle)`. A synchronous bounded borrow registers the expiry and takeover contract entries as not applicable and keeps the rest of the contract unchanged, including the asynchronous entry requirement.
 - **Self-description adapter:** exposes frozen capability presence and current availability without side effects or handles.
 
 A member may have a domain-specific implementation, but its outer result, handle and failure shape is selected from the idiom contract. Cross-domain differences are limited to domain data, explicitly declared `concurrency`, `reducer`, or documented idiom exception.
@@ -165,10 +178,11 @@ Extend the existing pure validator and snapshot generator rather than introducin
 
 The validator must check:
 
-- required leaf fields, including idiom and event semantics where applicable;
+- every required member field is present, and a field that does not apply carries an explicit `null` rather than being omitted;
+- `idiom` is one of the eight idiom names, or exactly `passthrough-exception` when and only when the public path starts with `services.`;
 - unique current/target public paths and capability paths;
 - handle member paths are present and may have a different idiom from their parent;
-- `services.*` is the only location for passthrough exceptions;
+- a `passthrough-exception` member lives only under `services.`, and every retained `services.*` member carries that idiom value;
 - public path depth and domain relationship rules;
 - vocabulary membership for idiom, effect, composition, runtime, channel, availability, terminal, priority, scope, operation `concurrency` and coordination code;
 - naming vocabulary by idiom, with explicit exception records where necessary;
@@ -176,11 +190,11 @@ The validator must check:
 - every member of one idiom shares the same outer `failureSemantics` and conflict result shape, with domain `concurrency` and `reducer` differences explicitly recorded rather than changing the outer shape;
 - `generation`/`seq`/`epoch` meaning constraints;
 - event authority and event semantic fields;
-- every public namespace records an `availability()` member whose return shape contains `status`;
+- every namespace navigation record names an `availabilityMember` whose return shape contains `status`, or carries a non-empty `availabilityExemption`;
 - `capabilities.get(path)` maps every capability path in the registry to `active`, `degraded`, or `unavailable`;
 - a namespace assembled from several features records every contributing feature, and its namespace entry carries navigation facts only;
 - `recommended` members have completed composition/authority evidence;
-- every current entry maps to exactly one capability-matrix status that reduces to one conservation class;
+- every capability cluster carries exactly one `status` from the closed conservation vocabulary, `qualifiers` only from the registered qualifier vocabulary, and no compound label inside `status`;
 - every deleted entry has a replacement or gap reason;
 - host/client corresponding members have aligned outer contracts where parity is claimed;
 - registry member set matches generated host/client surface snapshots and checked-in type declarations.
@@ -378,7 +392,26 @@ Every public leaf and public handle leaf is represented conceptually as:
 
 `targetPath` is empty only for a deleted member. `idiomExceptions` is empty for normal entries; a non-empty exception must include `memberPath`, `baseContract`, `exception`, `reason`, `replacementShape`, and `verification`.
 
-The exact registry vocabulary is normative and validated mechanically. The example is explanatory and does not itself add a runtime member.
+Every record carries the complete field set. A field that does not apply to the member carries an explicit `null` and is never omitted, which is what lets the validator tell "not applicable" apart from "not yet recorded". The examples in this document are abridged for readability and do not themselves add a runtime member.
+
+The exact registry vocabulary is normative and validated mechanically.
+
+### Namespace Navigation Record
+
+A public namespace is defined by its navigation record, not by an implicit path-depth rule. The namespace set is therefore exactly the set of `namespaces` records, and Wave 1 enumerates it from the member inventory.
+
+```js
+{
+  namespace: 'sessions.channels',
+  runtime: 'host',
+  capabilityPath: 'sessions.channels',
+  contributingFeatures: ['...'],
+  availabilityMember: 'sessions.channels.availability',
+  availabilityExemption: null,
+}
+```
+
+`availabilityMember` names the namespace `availability()` leaf, or is `null` together with a non-empty `availabilityExemption`; a namespace record with neither is a contract defect. A `services.*` passthrough namespace carries the exemption that official passthrough surfaces acquire no facade availability semantics. Navigation records carry no idiom and no semantic classification; classification lives on leaf records only.
 
 ### Handle Leaf Entry
 
@@ -411,6 +444,7 @@ The parent registration may be `resourceRegistry` while a read-only handle membe
   currentPaths: ['tools.discovery.search'],
   targetPaths: ['tools.discovery.list'],
   status: 'renamed',
+  qualifiers: ['split'],
   replacement: null,
   gapReason: null,
   affectedConsumers: ['...'],
@@ -418,7 +452,7 @@ The parent registration may be `resourceRegistry` while a read-only handle membe
 }
 ```
 
-Allowed final statuses are `retained`, `renamed`, `merged`, `migrated`, `deleted`, and `gap`. `deleted` requires `replacement` or `gapReason`; `gap` requires a statement of the missing capability property and its expected upstream or replacement nature.
+`status` is a closed vocabulary of `retained`, `renamed`, `merged`, `migrated`, `deleted`, and `gap`, and is the only field a conservation check reads; a compound label is never written into it. `qualifiers` carries the additional shape information drawn from `shape`, `split`, `reclassified`, and `internalized`, and never changes the conservation class. A cluster whose retained part and unproven part cannot be expressed by one status is recorded as two capability rows instead of one compound row. `deleted` requires `replacement` or `gapReason`; `gap` requires a statement of the missing capability property and its expected upstream or replacement nature.
 
 ### Result And Handle Shapes
 
@@ -430,7 +464,7 @@ policy handle:          { id, ownerId, generation, dispose() }
 resource handle:        { id, ownerId, generation, dispose() }
 contribution handle:    { id, ownerId, seq, dispose() }
 operation handle:       { id, ownerId, status(), observe(), dispose() }
-coordination lease:     { id, resource, generation, fencingToken, expiresAt }  # no dispose(); release(handle)
+coordination lease:     { id, resource, generation, fencingToken, expiresAt }  # returned by acquire(); no dispose(); give-back verb is release(handle)
 ```
 
 Handle extensions are registered as documented variants, not as new idioms:
@@ -439,7 +473,7 @@ Handle extensions are registered as documented variants, not as new idioms:
 - a storage binding handle extends the operation handle with `purge()`, registered as an explicit mutation extension that must satisfy the mutation `commitState` contract;
 - `close`, `finish`, and `settle` are not valid destruction verbs on any handle.
 
-Business outcomes are frozen discriminated results with `{ ok, code, reason, ... }`. Operation terminal values are `success | error | aborted | denied | superseded`; mutation uses `commitState`; resource lifecycle uses `lifecycleState`. Coordination outcomes additionally use the fixed code vocabulary `inactive | invalid-input | conflict | unavailable | unsupported`.
+Business outcomes are frozen discriminated results with `{ ok, code, reason, ... }`. Operation terminal values are `success | error | aborted | denied | superseded`; mutation uses `commitState`; resource lifecycle uses `lifecycleState`. Coordination outcomes additionally use the fixed code vocabulary `inactive | invalid-input | conflict | unavailable | unsupported`. A stale-handle condition is reported as `code: 'conflict'` with the stale condition carried in `reason`; `stale` is never used as a machine code.
 
 Uniform field names are mechanically validated: `ok` is the boolean success flag, `code` is the stable machine code, `reason` is caller-facing text, `id` is identity, `ownerId` is owner, `generation` is the concurrency token, `seq` is registration order, `observedAt` is the observation instant, and `epoch` is freshness. Availability is never embedded in a business outcome and is obtained only from the namespace `availability()` member, or from `availability(scope)` for coordination.
 
@@ -553,7 +587,7 @@ For every async adapter, remote mount, observer, lease, replacement, operation o
 
 ### Availability And Disabled Surfaces
 
-Every retained public namespace has a stable shape and an `availability()` member. A missing optional backing service produces a frozen unavailable state and typed unavailable behavior at the member level. An explicitly removed member is absent from the target surface and registry status, and its capability conservation record explains the replacement or gap.
+The public namespace set is the set of namespace navigation records, not an implicit path-depth rule; Wave 1 enumerates it from the member inventory. Every namespace in that set has a stable shape and either an `availability()` member named by its navigation record or a recorded exemption. A missing optional backing service produces a frozen unavailable state and typed unavailable behavior at the member level. An explicitly removed member is absent from the target surface and registry status, and its capability conservation record explains the replacement or gap.
 
 Availability is never expressed by returning `undefined`. A member may return `undefined` only for a domain-defined legitimate absence that is explicitly recorded in its registry entry with the member path and the meaning of the absence; that member must still express unavailable or degraded capability through `availability()` or a typed unavailable result.
 
@@ -752,4 +786,6 @@ The `docs/standards/refactor/` documents define the target and the current `docs
 
 ## Design Completion Condition
 
-Stage 2 is complete only after the user explicitly approves this Design. After approval, Stage 2 is committed and Stage 3 may produce the dependency-ordered Tasks. Under AGENTS.md, Tasks then require a blocking read-only adversarial review and do not require a separate user confirmation gate; Stage 4 proceeds only after that review returns no deviation. No implementation file, package metadata, test code, deletion ledger, or generated registry snapshot is created as part of Stage 2.
+Stage 2 gate status: approved by the user on 2026-08-31 for the current version of this Design, including the SPEC2 contract refinements listed under Status. Stage 2 is therefore complete, and this approval boundary is the Stage 2 completion commit.
+
+Stage 3 may now produce the dependency-ordered Tasks. Under AGENTS.md, Tasks require a blocking read-only adversarial review and do not require a separate user confirmation gate; Stage 4 proceeds only after that review returns no deviation. No implementation file, package metadata, test code, deletion ledger, or generated registry snapshot was created as part of Stage 2.
