@@ -1,107 +1,174 @@
-# API idiom 总则与分组方法（M8）
+# API idiom 总则（未来目标）
 
-> 本文是 M8 公共 API 语义重构的目标规范，不是当前仓库现状。写作语气为“重构后应当”。
-> 目录：[`member-contract-registry.md`](member-contract-registry.md)（登记规则）、[`idiom-catalogue.md`](idiom-catalogue.md)（八个 idiom 的具体契约）、[`events-and-passthrough.md`](events-and-passthrough.md)（边界）。
+> 本文规定「一个 API 属于哪一类」的判据，以及「归属确定后它必须长成什么样」。
+> 目录：[`idiom-catalogue.md`](idiom-catalogue.md)（八个 idiom 的标准形状）、[`api-migration.md`](api-migration.md)（现状处置对照）、[`events-semantics.md`](events-semantics.md)（事件）、[`member-contract-registry.md`](member-contract-registry.md)（登记规则）。
 
 ## 1. 什么是 idiom
 
-**API idiom** = 调用方必须掌握的固定用法套路。它不是本体分类（这个 API 与领域状态是什么关系），而是语用分类（调用方跟这类 API 打交道时脑子里要装哪一套套路）。
+**API idiom** = 调用方必须掌握的固定用法套路。它不是本体分类（这个 API 与领域状态是什么关系），而是语用分类（调用方跟这类 API 打交道时要装哪一套套路）。
 
-> 判据：**如果两个 API 要求调用方遵循的套路相同，它们就是同一类；套路不同就该分开。与它们在领域逻辑上谁包含谁无关。**
+> 判据：**如果两个 API 要求调用方遵循的套路相同，它们就是同一类；套路不同就该分开。与它们在领域逻辑上谁包含谁、现在叫什么、由哪个包实现，都无关。**
 
-因此逻辑上的“包含”不构成并列障碍：一次 operation 在实现上可能内部调用 policy chain 并落一次 commit，但在调用方视角下它与两者是不同套路，可以并列。类比 HTTP 方法：POST 能涵盖 GET/PUT/DELETE 的效果，但分类轴是“这次交互的契约是什么”，不是“这次操作是什么”。
+因此逻辑上的「包含」不构成并列障碍：一次 operation 在实现上可能内部调用 policy 链并落一次 commit，但调用方视角下它与两者是不同套路，可以并列。类比 HTTP 方法：分类轴是「这次交互的契约是什么」，不是「这次操作的效果是什么」。
 
-## 2. “最大公共交互契约”的准确含义
+## 2. 判定的唯一依据：语义
 
-每组 idiom 要固定的那份东西称为**公共交互契约**。取“最大”的正确口径是：
+判定归属时只问：
 
-> **先综合多个因素形成平衡、可记忆、覆盖真实成员的 idiom 分组；分组确定后，再在每组内部提炼该组成员共同遵守的最大公共交互契约。**
+> **按这个能力的语义，调用方跟它打交道时，脑子里要装哪一套套路？**
 
-“最大”是**在已定好的分组之内寻求完备**，不是“为了提高契约密度而不断细分，也不是把类别数量推到最多”。
+明确**不**作为判据的：
 
-### 2.1 平衡分组的综合判据
+| 不得作为判据 | 为什么 |
+|---|---|
+| 它现在的形状 | 现状是实现的结果，正是本轮要纠正的对象 |
+| 它现在的名字 | 名字由分类决定，不是分类由名字决定 |
+| 它由哪个官方包 / 哪个 feature 实现 | 实现通道是正交维度 |
+| 它属于哪个 namespace | namespace 是正交维度 |
+| 它在领域上「是读还是写」 | 领域读写与交互套路是两个轴；一次「读取」可能是 operation，一次「写入」可能是 contribution |
+| 它已经交付 / 已有测试 | 纯本地开发阶段不构成约束（`AGENTS.md` §3.0.1） |
 
-分组时至少综合以下因素，不单看其中一项：
+### 2.1 由语义判据直接得出的结论
 
-- 调用方的主要心智动作和使用套路；
-- 入口、返回值、handle/disposer 的交互形状；
-- 生命周期、owner、generation 和资源身份；
-- 失败、冲突、幂等、retry 和 availability 语义；
-- 组合模式、authority 关系和 scope；
-- host/client 是否真的要求同构；
-- 类别是否足够覆盖真实成员，且不会为少数例外制造无意义的类别。
+一个成员的归属可能与其现状归类不同。下表是几个已经判定的典型，完整处置见 [`api-migration.md`](api-migration.md)：
 
-### 2.2 由平衡判据直接得出的四条纪律
+| 成员 | 现状归类 | 语义判据 | 正确归属 |
+|---|---|---|---|
+| `sessions.branches.graph / plan / preview` | mutation | 它们不写任何东西，只是把已提交事实折叠成冻结视图 | projection |
+| `sessions.channels.open / heartbeat / revoke` | operation | 签发 channel 世代、TTL 续期、撤销后不可复活——这是租约的全部语义 | coordination |
+| `tasks.claim / reassign` | operation | `reassign` 携带 expected proof 调 takeover，`claim` 写入 fencing token——这是抢占与世代 | coordination |
+| `agents.register` | operation | 它登记一个 agent 实现供系统按 id 查用，与同 namespace 的 `providers.*` 同类 | resourceRegistry |
+| `profiles.snapshot.validate` | mutation | 它返回带进度订阅与终态的句柄，是发起一次求值 | operation |
+| `security.egress.check` | policy 求值面 | 策略注册后不自动生效，才需要一个「你自己来问」的入口——这是能力缺口，不是一类 API | 删除 + 能力缺口登记 |
 
-1. **类别数量不是优化目标本身。** 不得为了减少类别把套路不同的成员塞进同一 idiom，也不得为了“契约更完整”无止境拆分。
-2. **契约越完整不代表必须继续拆类。** 只有在现有分组无法形成有用、可复用的公共套路时才考虑拆分。
-3. **若某个 API 与同类只共享极少约定，优先检查能否调整该 API 的形状以适配已有 idiom**，而不是为它单开一类。本仓库处于纯本地开发阶段（AGENTS.md §3.0.1），API 形状是可改的。
-4. **小类别可以合并；无法消除的例外必须在该 idiom 中显式登记**，不得靠隐藏维持表面统一。
+## 3. 分类决定形状
 
-### 2.3 最大化的边界
+归属一旦确定，成员必须采用所属 idiom 的**标准形状**。标准形状包括：
 
-判据：**这条能不能不含任何领域名词地说完？**
+1. **入口动词**（见各 idiom 的命名词表）；
+2. **返回值与 handle 的成员名**；
+3. **判别式结果的字段名**；
+4. **失败方式**（抛 typed error / 返回判别式 / 静默 no-op，三选一，由 idiom 统一）；
+5. **冲突规则**（拒绝 / latest-wins / CAS，三选一，由 idiom 统一）；
+6. **生命周期与 disposer 行为**；
+7. **新鲜度 / 世代字段的语义**。
 
-- 能 → 公共交互契约。例：“注册返回 identity-bound disposer；重复 dispose 是 typed no-op；disposer 不会移除继任者的注册。”
-- 不能 → 领域语义，归各 API 自己的文档。例：“`appendMessage` 的 kind 只接受 `user/message` / `assistant/message` / `tool/result`。”
+**领域习惯不得对抗标准形状。** 一个领域历史上用 `open`，不构成在 coordination idiom 中保留 `open` 的理由；同理 `claim`、`revoke`、`watch`、`on/once`、`entries` 等都由所属 idiom 的词表统一。
 
-即：**最大化的边界是领域语义的边界，不是篇幅的边界。**
+### 3.1 允许的差异
 
-目标函数不是“契约条目数最多”，而是**可推导性最大**：调用方从 idiom 契约能推出多少，还需要查领域文档的部分有多小。
+跨领域同构的**唯一**允许差异是领域数据的类型：
 
-## 3. 契约条目清单
+- spec 里的领域字段（`channels` 的 `ttlMs`、`tools` 的 `parameters`）；
+- 视图里的领域字段（`sessions` 的 `transcript`、`executions` 的 `attempts`）。
 
-每个 idiom 的公共交互契约应当覆盖以下九条；不适用者写明“不适用”并说明理由：
+除领域数据类型外，动词名、handle 成员名、结果判别字段名、失败方式、冲突规则一律不得因领域而异。
+
+## 4. 跨领域同构
+
+同一 idiom 的成员应当接近同构。目标是：调用方在一个领域学会套路后，能直接在另一个领域复用，**不需要重读文档**。
+
+同构的具体要求由 [`idiom-catalogue.md`](idiom-catalogue.md) 每个 idiom 的「同构要求」小节给出。共同部分：
+
+| 概念 | 统一名 | 禁止的等价名 |
+|---|---|---|
+| 判别式结果成功标志 | `ok`（布尔） | `success`、`result`、`status`（作成功标志时） |
+| 判别式结果原因码 | `code`（字符串，稳定词表） | `reason`（作机器码时）、`errorCode`、`kind` |
+| 人类可读说明 | `reason`（字符串） | `message`（面向调用方的说明） |
+| 身份 | `id` | `key`、`name`（作身份时） |
+| owner | `ownerId` | `owner`、`ownerIdentity`、`ownerName` |
+| 并发控制令牌 | `generation` | `revision`、`version`、`channelGeneration`、`leaseGeneration`（作 fencing 时） |
+| 注册序号（非并发控制） | `seq` | `generation`（作序号时）、`index` |
+| 观察时刻 | `observedAt` | `at`、`timestamp` |
+| 新鲜度（只用于判新） | `epoch` | `generation`、`revision`（作新鲜度时） |
+| 句柄销毁 | `dispose()` | `close()`（在 handle 上）、`remove()`、`unsubscribe()`（在 handle 上）、`revoke()`（在 handle 上）。例外：coordination 的租约句柄不提供 `dispose()`，其归还是入口动词 `release(handle)`（见 [`idiom-catalogue.md`](idiom-catalogue.md) §7） |
+
+`generation` 与 `seq` 的区分是硬性的：**`generation` 只能是并发控制令牌（可比较、用于 CAS/fencing），`seq` 只能是注册序号（只作身份）。** 把注册序号命名为 `generation` 会让契约第 3 条（owner/key/generation）失去约束力。
+
+## 5. 形状不合时的处置顺序
+
+当一个成员的现状与其 idiom 的标准形状冲突时，按以下顺序选择处置。**不得跳过靠前的选项直接采用靠后的选项**，除非靠前选项被明确记录为不适用。
+
+### 处置 1：对齐
+
+纯包装即可，不动能力边界：
+
+- 改返回值形状（例如裸 disposer → handle 对象）；
+- 改命名（动词、字段名）；
+- 补 owner 派生（从调用方 context 派生，不接受调用方自报）；
+- 补冻结、补 typed error、补 typed no-op。
+
+### 处置 2：重构
+
+需要动能力边界，但能力仍归门面：
+
+- **拆分混合成员**：一个成员横跨两套套路时，拆成两个成员各归各的 idiom（例：`tools.restrict(filter)` 是决策 → 拆为 `tools.restrict.register(spec)` 归 policy；`sessions.channels` 拆为 coordination + projection + policy + resourceRegistry 四组）；
+- **合并重复入口**：同一能力两个入口时合并（例：`settings.installSettingsSection` 并入 `settings.register`）；
+- **拆散不对称命名**：`on` / `once` 这种不对称对改为 `observe` + 对称变体。
+
+### 处置 3：迁移
+
+能力不属于门面，或门面给不出正确的语义保证：
+
+- **降级为 `services.*` 直通**：该能力是官方工具箱的一部分，门面不该给它一等领域语义（例：`llm.createUserMessage` / `contentHasImage` / `BlockAssembler`、`executions.recovery.adapters.*`、`recovery.classify`）；
+- **退为内部机制**：只服务于门面内部流程，不该出现在公共面（例：错误适配、输入归一化）。
+
+### 处置 4：删除
+
+- 重复入口（已有一等领域 API 覆盖）；
+- 内部转换泄漏为公共入口；
+- **反直觉的咨询式入口**（见 §5.1）。
+
+### 处置 5：登记为能力缺口
+
+语义上该能力正确、但门面在当前实现通道下无法兑现约定时，**规范侧仍然给出确定的结论**，只把兑现手段排除在规范之外。
+
+能力缺口的登记内容是：
+
+1. 该成员按语义属于哪个 idiom；
+2. 该 idiom 的哪一条契约当前无法兑现；
+3. 兑现需要什么性质的能力迁移（例如「需要在官方出站路径上获得决策点」）。
+
+**规范不登记、也不暗示由哪个官方组件包承载该能力迁移。** 归属包的判定是实施期决策，受 `../capability-strategy.md` 约束。
+
+### 5.1 咨询式入口一律删除
+
+特别列出这一条，因为它最容易被误当成一类 API：
+
+> 若某类「注册」按语义是声明（声明后由系统消费），但系统实际不在任何决策点回调它，因而需要调用方自己来询问或自己来执行——那么**不得**为此提供咨询式入口。
+
+咨询式入口的存在本身就是能力缺口的证据，正确处置是：删除入口 + 按处置 5 登记缺口。当前已知的此类成员见 [`idiom-catalogue.md`](idiom-catalogue.md) §2 的「能力缺口」与 [`api-migration.md`](api-migration.md)。
+
+## 6. passthrough 只保留 `services.*`
+
+严格意义上 passthrough 不是一个 idiom——它共享的恰恰是「**不共享**」：其契约即官方契约，门面不附加任何套路。
+
+**处置：不为 passthrough 设计 idiom 或公共交互契约；passthrough 类别只保留 `services.*` 一项。**
+
+- `services.*` 的定位、分级与白名单纪律见 `../capability-strategy.md` §6。
+- 除 `services.*` 外，门面公共面上的任何成员都必须归入某个 idiom。历史上被标为 passthrough 的其余成员（prompt 装配面、tools 面、官方 namespace leaf 等）按 §5 的处置顺序处置，完整清单见 [`api-migration.md`](api-migration.md)。
+- 绕过门面直连官方内部包是 **unsupported escape hatch**，与受控的 `services.*` 直通是两个概念，不适用本节。
+
+## 7. 契约条目
+
+每个 idiom 的标准形状应当覆盖以下九条；不适用者写明「不适用」并说明理由：
 
 | # | 条目 | 说明 |
 |---|---|---|
-| 1 | 入口形状 | 函数签名套路、参数归类、同步/异步 |
-| 2 | 返回值与句柄 | 返回值是判别式结果、冻结视图、handle 还是裸 disposer；句柄携带哪些身份字段 |
-| 3 | owner / key / generation | 谁的身份、key 冲突域、generation 的含义（并发控制令牌 vs 注册序号） |
+| 1 | 入口形状 | 动词、参数归类、同步/异步 |
+| 2 | 返回值与句柄 | 判别式结果 / 冻结视图 / handle / 裸值；handle 携带哪些成员 |
+| 3 | owner / key / generation | 谁的身份、key 冲突域、generation 的含义 |
 | 4 | 生命周期与 disposer | disposer 是否幂等、stale disposer 的行为、谁负责清理 |
-| 5 | 失败语义 | 抛 typed error / 返回 `ok:false` / 静默 no-op，三者只能取一种并统一 |
-| 6 | 冲突规则 | 重复 key 抛错 / latest-wins / 拒绝已注册，三者只能取一种并统一 |
+| 5 | 失败语义 | 抛 typed error / 返回判别式 / 静默 no-op，三者只能取一种并统一 |
+| 6 | 冲突规则 | 拒绝 / latest-wins / CAS，三者只能取一种并统一 |
 | 7 | 组合语义 | 多 owner 并存时的顺序、reducer、containment |
-| 8 | 幂等与重试 | 是否幂等、是否允许自动 retry、retry 归属 attempt 还是 execution |
+| 8 | 幂等与重试 | 是否幂等、retry 归属 attempt 还是 execution |
 | 9 | availability 形状 | 该 idiom 如何表达不可用与降级 |
 
-## 4. 三个正交维度
+第 5 与第 6 条是全仓库统一性的关键：同一 idiom 内所有成员的这两项必须取到同一个值，例外必须登记到具体成员。
 
-idiom 与以下两个维度**正交**，idiom 契约不得泄漏它们的组织方式：
+## 8. 一个成员只有一个主 idiom
 
-| 维度 | 问题 | 权威 |
-|---|---|---|
-| 实现通道（官方直通 / 门面转译 / upstream proposal / 已登记替换） | 这个能力**怎么来的** | `../capability-strategy.md` |
-| namespace / 心智模型 | 这个能力**在哪找** | `../public-api-shape.md` |
-| **API idiom** | 这个 API **怎么用** | 本目录 |
+一个成员只登记**一个主 idiom**；确实横跨两套套路的成员登记主 idiom，并在 `idiomExceptions` 中写明第二套路。不允许双主 idiom——那会使一致性校验失去意义。
 
-同一 idiom 可以横跨多个 namespace 和多种实现通道；同一 namespace 内部可以同时存在多个 idiom。这是当前仓库的既成事实（`prompts.provenance` 一个 namespace 内就有 contribution、projection、policy 三套套路），也是 registry 必须下沉到 member 级的直接原因。
-
-## 5. 与语义三面的关系
-
-`../api-shape.md` 的三面（projection / policy registry / durable mutation）继续作为**语义权威**保留。idiom 是**交互权威**。二者关系：
-
-- 三面中的 projection、policy、durable mutation 分别对应 idiom 目录中的 projection、policy、mutation 三组的主要来源；
-- **operation 在三面中没有对应项**，是 idiom 维度新增的第四组；
-- **contribution 必须从 mutation 中分出**：两者在可逆性、写入物的领域事实地位、失败语义和 generation 含义上不同，共用一套契约会使契约稀薄到无约束力（证据见 [`idiom-catalogue.md`](idiom-catalogue.md) §5）；
-- **resource/capability registry 必须从 policy 中分出**：两者的区别不是“注册了什么”，而是“注册完谁调用谁”。
-
-## 6. 分组的验证义务
-
-一个 idiom 进入 [`idiom-catalogue.md`](idiom-catalogue.md) 需要两类验证，**二者当前状态不同，不得混为一谈**：
-
-### A. 分组验证（本目录成文时已完成）
-
-1. 至少三个真实公共成员作为样本，且证据落到**叶子成员**与实现位置；
-2. 九条契约条目中每一条都已判定“统一值”或“已知例外”，例外登记到具体成员；
-3. 已说明该 idiom 与其余 idiom 的差异，且差异可以用不含领域名词的语言表述。
-
-### B. 登记落地（M8 实施的交付物，尚未完成）
-
-4. 每个样本的成员级登记（入口、返回值、失败、冲突、生命周期、idiom）已在公共契约 registry 中落盘，并通过 [`member-contract-registry.md`](member-contract-registry.md) §5 的一致性校验。
-
-### 由两类验证的区分直接得出的表述纪律
-
-- 本目录的 idiom 分组是**按 A 确认的 M8 目标分组**，不是“已实现”或“已验收”的结论。
-- 在 B 完成前，不得把任一 idiom 描述为“已在 registry 中落地”“当前 API 已提供该契约”或“已验证的现行能力”。
-- 不满足 A 的分组不得进入 [`idiom-catalogue.md`](idiom-catalogue.md)；本目录不留未决条目，也不引用临时研究文档。
+横跨两套套路的成员应当优先按处置 2 拆分，而不是长期以「混合成员」形态存在。例外需要说明理由。
