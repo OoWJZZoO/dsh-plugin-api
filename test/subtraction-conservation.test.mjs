@@ -288,3 +288,49 @@ test('subtraction (registry-driven): renamed/merged/migrated targets exist on th
     assert.ok(getPath(api, target) !== undefined, `target ${target} (from ${row.publicPath}) must exist`)
   }
 })
+
+// -- capability conservation (8.7): every cluster has exactly one status, the
+//    conserved actions carry their target paths, deletions carry replacement
+//    or gap reason, and the walked surface holds no unexplained legacy path. --
+test('conservation: every capability cluster carries exactly one status and consistent evidence', () => {
+  const STATUS_SET = new Set(['retained', 'renamed', 'merged', 'migrated', 'deleted', 'gap'])
+  const rows = registry.capabilityMatrix
+  assert.ok(rows.length >= 70, 'the capability matrix is populated')
+  for (const row of rows) {
+    assert.ok(STATUS_SET.has(row.status), `${row.capabilityCluster}: exactly one closed status value`)
+    if (row.status === 'retained') {
+      // An internalized row legitimately records its internal disposition.
+      const internalized = Array.isArray(row.qualifiers) && row.qualifiers.includes('internalized')
+      if (!internalized) {
+        assert.ok(!row.replacement && !row.gapReason, `${row.capabilityCluster}: retained carries no replacement/gap`)
+      }
+    }
+    if (row.status === 'renamed' || row.status === 'merged' || row.status === 'migrated') {
+      assert.ok(Array.isArray(row.targetPaths) && row.targetPaths.length > 0, `${row.capabilityCluster}: conserved actions carry target paths`)
+    }
+    if (row.status === 'deleted') {
+      assert.ok(row.replacement || row.gapReason, `${row.capabilityCluster}: deleted carries a replacement or gap reason`)
+    }
+    if (row.status === 'gap') {
+      assert.ok(row.gapReason, `${row.capabilityCluster}: a gap explains the missing capability and its needed nature`)
+    }
+    if (Array.isArray(row.qualifiers)) {
+      for (const qualifier of row.qualifiers) {
+        assert.ok(['shape', 'split', 'reclassified', 'internalized'].includes(qualifier), `${row.capabilityCluster}: qualifiers take the closed vocabulary`)
+      }
+    }
+  }
+})
+
+test('conservation: the walked surface has no unexplained legacy path token', () => {
+  const { ctx, state } = createHarness()
+  apply(ctx)
+  const keys = new Set(walkSurface(state.pluginApi))
+  const legacyTokens = ['durableEventTypes', 'durableEventDescriptors', 'getDurableEventDescriptor', 'onDurable', 'onceDurable', 'onChange', 'mountRemoteContribution', 'registerFace', 'installSettingsSection', '$on', '$dispatch', 'startProbe', 'completeProbe', 'registerMinimalCatalogUpdate', 'presentAs', 'schemas', 'publish']
+  for (const token of legacyTokens) {
+    for (const key of keys) {
+      const segments = key.split('.')
+      assert.equal(segments.includes(token), false, `no residual member named ${token} (found ${key})`)
+    }
+  }
+})

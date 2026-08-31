@@ -155,7 +155,35 @@ registry 目标行已登记。
   （llm / agents / sessions / settings / prompts / tools / recovery / storage），
   全部经成员级白名单；全量命名空间 key 数由 46 增至 53（含既有 storage）。
 
-## 8. 预期 unavailable 与失败后果
+## 7b. 消费者迁移记录（tasks 8.1 / 8.2 / 8.3 / 8.6）
+
+- **dsh-read-image**（`../dsh-read-image`，已提交 2bf6730）：改用门面作为主契约——
+  inject `pluginApi`；设置命名空间经 `pluginApi.settings.register` + `services.settings.get` +
+  scope handle `watch`；配置桥从手搓 `TypertRemoteService` 子类 + markRemote 删除，
+  改 `remotes.register` 发布纯 get/set 服务（签名校验）；A1（resolveModelInfo 包装）与
+  A2（llm/stream 重入投影）删除，改注册 `llm.admissionPolicies.register` 图片准入策略
+  （process 承担严格图片归约投影）；真值表经 `services.llm.listProviders/listModels` +
+  `llm.modelInfo`；`llm/adapters-updated` / `session/created` 订阅迁
+  `events.observe`；A6 私有 route 遍历删除，改 `llm.routing.forExecution`；
+  client 面板改 `client.services.locale` / `client.remotes.contribute` / `client.slots`。
+  每 agent read_image 工具注册与提示词段保留官方 agent 作用域表面（契约外精度，见下）。
+- **dsh-pro-ex-ability-anchor**（`../dsh-pro-ex-ability-anchor`，已提交 1edb9fe + eaee387）：
+  `remotes.register`（availability 守卫）；虚拟轮上屏写入迁 `sessions.durable.appendMessage`；
+  panel 客户端 `client.remotes.contribute`；API requirement/peer 对齐 0.1；
+  全部 123 个单测迁移后全绿。
+- **8.3 契约外行为处置**（登记，不隐式拓宽公共契约）：
+  (a) anchor 的 assemble 时 system-prompt 替换（整体 sections 替换 + tools 过滤）超出
+  投影 observe 只读与 contribution 追加语义，保留官方 Cordis `system-prompt/assemble`
+  钩子 + 提议（M8 交付报告列出）；
+  (b) read-image 的每 agent 工具注册/提示词段保留官方 agent 作用域表面；
+  (c) 两仓库的 `session.append` 原始写入（surface-op 之外的事件类型）与
+  `agent.session` 私有读取保持 raw（dsh-read-image/dsh-pro-ex 各自注释说明）。
+- **8.6 冒烟证据**：在本仓库解析上下文内做了集成 headless 冒烟（facade + 两消费者
+  apply，`temp/m8-consumer-smoke.mjs`，用后即删）——无消费者 activation 错误；
+  观测到 `llm/adapters-updated` / `session/created` / `session/event` /
+  `system-prompt/assemble` 订阅注册与 admission 策略注册。真实 dev boot 仍受环境阻塞：
+  消费者仓库的 `@deepseek-ai` 解析指向官方共享安装树（root 属主、不可写），本地无法
+  把门面接入解析路径；按 requirements §18 末条以阻塞记录处理（与 M7 交付一致）。
 
 - 旧 path 访问：在公共面不存在（7.7a 断言，registry 驱动）；不存在兼容别名、
   dormant fallback 或隐藏兼容分支（7.7b）。

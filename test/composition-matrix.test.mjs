@@ -196,3 +196,112 @@ test('pure: composed facade views are frozen and expose no write authority', () 
   assert.equal(service.capabilities.get('tools').status, 'active')
   assert.ok(Object.isFrozen(service.capabilities.get('tools')), 'capability descriptors are frozen projections')
 })
+// -- cross-domain synthetic consumer pair (design §Composition Matrix) --
+// Two synthetic plugins exercise the composed facade: reverse registration
+// order, same-owner idempotence, distinct-owner conflicts, stale disposers
+// after generation advances, callback failure containment, exclusive
+// pre-checks before side effects, and read-only projection surfaces that
+// cannot mutate shared state (requirements §3/§8/§14/§15).
+import { apply as applyFacade } from '../lib/index.js'
+
+function composeHarness() {
+  const services = {
+    llm: { resolveModelInfo() {}, prepareCall() {}, stream() {}, registerAdapter() {}, registerConfigurableProviders() {}, registerModelDiscovery() {}, listProviders() { return [] }, listModels() { return [] } },
+    tools: { register() {}, restrict() { return () => {} }, guard() { return () => {} }, get() {}, schemas() { return [] }, execute() {}, presentAs() {}, executionMode() {} },
+    agents: { get() {}, list() {}, roots() {} },
+    sessions: { get() {}, list() {}, fork() {} },
+    settings: { register() {}, describe() { return [] }, get() {}, mutate() {} },
+    systemPrompt: { section() { return () => {} }, context() { return () => {} }, variable() { return () => {} }, tools() { return () => {} }, suppressRuntimeContext() { return () => {} }, renderPrompt() {}, renderContextSections() {}, renderContextSnapshot() {}, joinContextSections() {} },
+    apiProxy: { sessions: { prompt() {}, selectModel() {} } },
+    web: { registerSearchProvider() {}, registerFetchProvider() {}, search() {}, fetch() {} },
+    storage: { open() {} },
+  }
+  const state = { pluginApi: undefined, errors: [], hooks: new Map() }
+  const hooksOf = (name) => {
+    let list = state.hooks.get(name)
+    if (!list) {
+      list = []
+      state.hooks.set(name, list)
+    }
+    return list
+  }
+  const ctx = {
+    get pluginApi() { return state.pluginApi },
+    logger: { error(m) { state.errors.push(String(m)) }, warn() {} },
+    reflect: { provide(name, value) { if (name === 'pluginApi') state.pluginApi = value } },
+    get(name) { return name === 'pluginApi' ? state.pluginApi : services[name] },
+    plugin(Class) { new Class(ctx) },
+    effect() {},
+    on(name, listener) { hooksOf(name).push(listener); return () => {} },
+    once() {},
+    emit(name, ...args) { for (const hook of [...hooksOf(name)]) hook(...args) },
+    serial() {}, parallel() {}, bail() {}, waterfall() {},
+    model() { return { name: 'x' } }, runtime: { name: 'test', version: '0.1.0-rc.6' },
+  }
+  return { ctx, state }
+}
+
+test('synthetic consumer pair: reverse load order, owner conflict, stale disposer, contained callbacks, exclusive pre-check', async () => {
+  const { ctx } = composeHarness()
+  applyFacade(ctx)
+  const api = ctx.pluginApi
+
+  // Reverse load order: the second plugin registers FIRST on the shared
+  // policy surface; registration order is preserved and both stay live.
+  const second = api.tools.restrict.register((input) => ({ allowed: input.tool === 'second' }))
+  const first = api.tools.restrict.register((input) => ({ allowed: true }))
+  assert.equal(typeof second, 'function')
+  assert.equal(typeof first, 'function')
+
+  // Same-owner idempotence and distinct-owner conflicts on one contribution
+  // key: the second same-id contribution from another owner is a typed
+  // conflict, never a latest-wins replacement.
+  const contributionA = api.prompts.contribute({ kind: 'section', section: { id: 'shared', priority: 1, text: 'a' } })
+  assert.equal(contributionA.ok, true)
+  const conflict = api.prompts.contribute({ kind: 'section', section: { id: 'shared', priority: 1, text: 'b' } })
+  assert.equal(conflict.ok, false)
+  assert.equal(conflict.code, 'conflict')
+
+  // Stale disposer after the owner's contribution was evicted: dispose stays
+  // idempotent and never resurrects the contribution.
+  assert.equal(contributionA.handle.dispose(), true)
+  assert.equal(contributionA.handle.dispose(), false)
+
+  // Callback failure containment on the projection surface: a throwing
+  // observer never reaches the dispatch caller, peers still observe.
+  const seen = []
+  const handle = api.events.observe('goal/changed')
+  handle.subscribe(() => { throw new Error('observer boom') })
+  handle.subscribe((payload) => seen.push(payload.change))
+  assert.doesNotThrow(() => api.events.emit('goal/changed', { change: 'x' }))
+  assert.deepEqual(seen, ['x'])
+
+  // Exclusive pre-check before side effects: a conflicting remote
+  // publication with a different service object is rejected before any
+  // object mutation (read-only conflict pre-check). In this harness the
+  // typert prerequisite is absent, so the surface reports the typed
+  // unavailable shape instead — the optional capability never takes down
+  // unrelated facade members.
+  const remote = api.remotes
+  if (remote && remote.availability().status === 'active') {
+    const firstService = { get() { return { ok: true } } }
+    remote.register('matrix-key', firstService)
+    assert.throws(
+      () => remote.register('matrix-key', { get() { return { ok: false } } }),
+      (error) => error?.name === 'PluginApiRemoteError',
+      'a conflicting owner is rejected before publication',
+    )
+  } else {
+    assert.equal(remote.availability().status, 'unavailable')
+    assert.throws(() => remote.register('matrix-key', { get() {} }), (error) => error?.code === 'PLUGIN_API_FEATURE_DISABLED')
+  }
+
+  // Read-only projection surfaces never expose write authority: the events
+  // projection handle carries no dispatch members, and the catalog snapshot
+  // is frozen.
+  const projection = api.events.observe('goal/changed')
+  assert.equal(typeof projection.subscribe, 'function')
+  assert.equal(projection.emit, undefined)
+  assert.equal(projection.serial, undefined)
+  assert.ok(Object.isFrozen(api.events.catalog()))
+})

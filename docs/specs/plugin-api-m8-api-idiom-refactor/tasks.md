@@ -125,13 +125,13 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 
 ### [ ] 8. Wave 8 — 消费者、安装与最终证据（requirements §17、§18；design §Consumer And Boot Acceptance）
 
-- [ ] **8.1 消费者迁移 — `dsh-read-image`**（工作区外仓库 `../dsh-read-image`）：改用目标公共 path（image admission、request transform、settings/remote、execution route 访问），删除对应私有 monkey-patch 与私有 route 遍历，迁移后不得以 dormant fallback 或 unsupported escape hatch 留存。
-- [ ] **8.2 消费者迁移 — `dsh-pro-ex-ability-anchor`**（工作区外仓库 `../dsh-pro-ex-ability-anchor`）：迁移 session append、prompt、settings remote、services、panel client 到目标 path，移除手写协议 fallback，panel 不再使用公共 `.client` 包装。
-- [ ] **8.3 契约外行为处置**：消费者需要批准契约之外的行为时，保留既有官方 path 或单独 proposal，不得隐式拓宽公共契约。
-- [ ] **8.4 装配等价与安装模式**：full 聚合 bundle 与「主包 + 显式选择辅助包」在同一基线装配出同一组主包行/替代行与行为，无双跑、无替代行语义改变；main-only 安装或可选辅助包不可用时只让受影响能力报 typed unavailable/disabled，不影响无关门面能力；`A.B.C` 错配只停用该能力且不让官方行处于「disabled 且无功能替代」空洞；移除替代后恢复官方行；反向受支持插件加载顺序行为确定。
-- [ ] **8.5 组合矩阵**：至少两个合成插件覆盖逆序注册/加载、同 owner/id 幂等与同/异 owner 冲突、owner 与 scope 隔离、重复注册与缺失 dispose、stale disposer/generation、callback 抛错与共享异步管线失败、ordered reducer 可重复性与声明的顺序依赖、协调租约过期/stale fencing/takeover proof/CAS/transaction rollback、exclusive 预检先于副作用拒绝、authority closure 与显式低层 bypass、纯 projection 不能改共享状态、client remote/slot/settings/lifecycle 等价项。
-- [ ] **8.6 消费者 headless 冒烟与文档化 dev boot**：按冻结基线通过且无 activation 错误，保留 route absence、message ordering、prompt 组合、provenance、client remote/slot、typed unavailable/failure 行为证据。若消费者仓库 `node_modules/@deepseek-ai` 指向官方共享安装树导致本地无法把门面接入解析路径，按 requirements §18 末条以阻塞记录处理，并在最终报告列出，不得伪造通过。
-- [ ] **8.7 能力守恒测试**：对每个能力簇断言恰一个最终 `status`、renamed/merged/migrated 有 target path、deleted 有 replacement 或 gapReason、自动替代证据覆盖触发/输入/输出/失败/可观察性、registry/快照/消费者引用中无未解释的现有 path。
+- [x] **8.1 消费者迁移 — `dsh-read-image`**（工作区外仓库 `../dsh-read-image`）：改用目标公共 path（image admission、request transform、settings/remote、execution route 访问），删除对应私有 monkey-patch 与私有 route 遍历，迁移后不得以 dormant fallback 或 unsupported escape hatch 留存。
+- [x] **8.2 消费者迁移 — `dsh-pro-ex-ability-anchor`**（工作区外仓库 `../dsh-pro-ex-ability-anchor`）：迁移 session append、prompt、settings remote、services、panel client 到目标 path，移除手写协议 fallback，panel 不再使用公共 `.client` 包装。
+- [x] **8.3 契约外行为处置**：消费者需要批准契约之外的行为时，保留既有官方 path 或单独 proposal，不得隐式拓宽公共契约。
+- [x] **8.4 装配等价与安装模式**：full 聚合 bundle 与「主包 + 显式选择辅助包」在同一基线装配出同一组主包行/替代行与行为，无双跑、无替代行语义改变；main-only 安装或可选辅助包不可用时只让受影响能力报 typed unavailable/disabled，不影响无关门面能力；`A.B.C` 错配只停用该能力且不让官方行处于「disabled 且无功能替代」空洞；移除替代后恢复官方行；反向受支持插件加载顺序行为确定。
+- [x] **8.5 组合矩阵**：至少两个合成插件覆盖逆序注册/加载、同 owner/id 幂等与同/异 owner 冲突、owner 与 scope 隔离、重复注册与缺失 dispose、stale disposer/generation、callback 抛错与共享异步管线失败、ordered reducer 可重复性与声明的顺序依赖、协调租约过期/stale fencing/takeover proof/CAS/transaction rollback、exclusive 预检先于副作用拒绝、authority closure 与显式低层 bypass、纯 projection 不能改共享状态、client remote/slot/settings/lifecycle 等价项。
+- [x] **8.6 消费者 headless 冒烟与文档化 dev boot**：按冻结基线通过且无 activation 错误，保留 route absence、message ordering、prompt 组合、provenance、client remote/slot、typed unavailable/failure 行为证据。若消费者仓库 `node_modules/@deepseek-ai` 指向官方共享安装树导致本地无法把门面接入解析路径，按 requirements §18 末条以阻塞记录处理，并在最终报告列出，不得伪造通过。
+- [x] **8.7 能力守恒测试**：对每个能力簇断言恰一个最终 `status`、renamed/merged/migrated 有 target path、deleted 有 replacement 或 gapReason、自动替代证据覆盖触发/输入/输出/失败/可观察性、registry/快照/消费者引用中无未解释的现有 path。
 
 ### [ ] 9. 终验、登记与交付（requirements §18；AGENTS.md §3.2 / §6 / §8）
 

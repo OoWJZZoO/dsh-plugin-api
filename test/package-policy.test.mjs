@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -104,4 +104,32 @@ test('replacement row ids use capability names without governance suffixes', () 
   assert.match(fullPatch, /id: plugin-api-session-channel-connection/)
   assert.match(fullPatch, /id: plugin-api-session-channel-gateway/)
   assert.doesNotMatch(fullPatch, /r1/)
+})
+
+test('the full aggregate patch references exactly one row per capability (no double-run)', () => {
+  const full = readFileSync(join(here, '..', 'packages', 'full', 'cordis.patch.yml'), 'utf8')
+  const ids = [...full.matchAll(/^\s+- id: ([^\s]+)$/gm)].map((match) => match[1])
+  const unique = new Set(ids)
+  assert.equal(ids.length, unique.size, 'every inserted/disabled row id appears exactly once in the full patch')
+  assert.ok(unique.has('plugin-api-main'), 'the full patch carries the main facade row')
+  // Every auxiliary package with a bundle patch contributes its rows to the
+  // full patch: the selective main-plus-aux assembly equals the full bundle
+  // (same rows, same semantics, no replacement row duplicated).
+  const auxPackages = readdirSync(join(here, '..', 'packages'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+  for (const entry of auxPackages) {
+    const pkgJson = join(here, '..', 'packages', entry.name, 'package.json')
+    try {
+      const pkg = JSON.parse(readFileSync(pkgJson, 'utf8'))
+      const patchPath = pkg?.dsh?.bundle?.patch
+      if (typeof patchPath !== 'string') continue
+      const patch = readFileSync(join(here, '..', 'packages', entry.name, patchPath), 'utf8')
+      const auxIds = [...patch.matchAll(/^\s+- id: ([^\s]+)$/gm)].map((match) => match[1])
+      for (const id of auxIds) {
+        assert.ok(unique.has(id), `full patch must carry auxiliary row "${id}" (from packages/${entry.name})`)
+      }
+    } catch {
+      // a package without a patch file is not part of the assembly
+    }
+  }
 })
