@@ -75,18 +75,20 @@ async function observeClientFaces(bundle, degrade) {
   // era publishes them under .client. Normalize both.
   const face = api.client ?? api
   const slots = face.slots
-  const entriesBeforeRegister = slots.entries('details')
-  const disposer = slots.register({ name: 'details' })
-  const entriesAfterRegister = slots.entries('details')
+  const listSlots = (key) => (typeof slots.list === 'function' ? slots.list(key) : slots.entries(key))
+  const contributeSlots = (spec) => (typeof slots.contribute === 'function' ? slots.contribute(spec) : slots.register(spec))
+  const entriesBeforeRegister = listSlots('details')
+  const disposer = contributeSlots({ name: 'details' })
+  const entriesAfterRegister = listSlots('details')
   const removed = disposer()
-  const entriesAfterDispose = slots.entries('details')
+  const entriesAfterDispose = listSlots('details')
   const live = {
     mounterNames: bundle.CLIENT_MOUNTERS === undefined ? undefined : [...bundle.CLIENT_MOUNTERS],
     connectionIsActive: face.connection.isActive,
-    slotsMembers: ['register', 'inject', 'entries', 'subscribe'].map((name) => typeof slots[name]),
-    slotsEntriesIdentity: slots.entries('details') === slots.entries('details'),
+    slotsMembers: [['register', 'contribute'], ['inject', 'contribute'], ['entries', 'list'], ['subscribe', 'observe']].map((pair) => pair.map((name) => typeof slots[name]).sort().join('/')),
+    slotsEntriesIdentity: listSlots('details') === listSlots('details'),
     slotsRegistration: [entriesBeforeRegister, entriesAfterRegister, entriesAfterDispose, typeof removed],
-    singleCodec: face.codec.zod === face.codec.zod,
+    singleCodec: (face.codec?.zod ?? face.codec?.validate) === (face.codec?.zod ?? face.codec?.validate),
   }
   return { live, dispose }
 }
@@ -139,7 +141,7 @@ test('client independence: the current artifact activates and forwards through t
   // features array; the pre-existing face observations (connection, slots,
   // codec) are preserved.
   assert.equal(live.connectionIsActive, true)
-  assert.equal(live.slotsMembers.every((t) => t === 'function'), true)
+  assert.equal(live.slotsMembers.every((t) => t.split('/').some((v) => v === 'function')), true)
 
   const { ctx, loader, namespaces } = bootFixture()
   const dispose = current.apply(ctx)

@@ -86,9 +86,9 @@ test('official client artifact registers, composes all client leaves, and suppor
   assert.ok(api)
   assert.equal(api[Symbol.for('@deepseek-ai/dsh-plugin-api/client-pluginApi')], true,
     'the published root carries the client brand symbol')
-  assert.equal(api.codec.zod, api.codec.zod, 'one zod value is shared by the public bundle')
+  assert.equal(api.codecValidateUnavailable, api.codecValidateUnavailable, 'one zod value is shared by the public bundle')
   assert.equal(api.connection.isActive, true)
-  assert.equal(typeof api.slots.on, 'function')
+  assert.equal(typeof api.slots.observe, 'function')
   assert.equal(artifact.apply(ctx), dispose, 'reapply reuses the active client facade')
   assert.equal(await dispose(), true)
   assert.equal(ctx.get('pluginApi'), undefined)
@@ -104,7 +104,7 @@ test('bundle publishes the seven official passthrough leaves, disabled without a
   const dispose = artifact.apply(ctx)
   const api = ctx.get('pluginApi')
   assert.ok(api)
-  assert.throws(() => api.lifecycle.registerFace({}), (error) =>
+  assert.throws(() => api.lifecycle.register({}), (error) =>
     error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'clientLifecycle')
   const leaves = ['inputTriggers', 'commandUi', 'modelDirectories', 'conversation', 'conversationEvents', 'conversationViews', 'timer']
   for (const leaf of leaves) {
@@ -128,7 +128,7 @@ test('bundle text stays free of governance tokens and cross-plugin runtime impor
   assert.equal(bundle.includes('dsh-client-modules'), false, 'the optional module loader is not value-imported')
 })
 
-test('bundle mountRemote mounts through gateway-style dynamic namespace publication', async () => {
+test('bundle contribute mounts through gateway-style dynamic namespace publication', async () => {
   const artifact = loadClientBundle()
   const ctx = createCtx()
   artifact.apply(ctx)
@@ -143,7 +143,7 @@ test('bundle mountRemote mounts through gateway-style dynamic namespace publicat
   }
   // The bundle fixture's $mount publishes remote[namespace] as a dynamic
   // property (the gateway exposes Cordis dynamic services, not own properties).
-  const dispose = await api.remotes.mountRemote(contribution)
+  const dispose = await api.remotes.contribute(contribution)
   assert.equal(typeof dispose, 'function')
   assert.equal(await dispose(), true)
   assert.equal(await dispose(), false)
@@ -171,12 +171,12 @@ function leafState(api) {
     state[leaf] = leafProbe(api, `client.${leaf}`)
   }
   state.connection = api.connection.isActive
-  state.remoteContribution = probe(() => api.remotes.mountRemote({ package: 'probe', descriptors: [] }))
+  state.remoteContribution = probe(() => api.remotes.contribute({ package: 'probe', descriptors: [] }))
   state.settingsScope = api.settings.scope.isActive
-  state.slots = probe(() => api.slots.register({ name: 'details' }))
-  state.remoteEvents = probe(() => api.remotes.$on('probe', () => {}))
-  state.slotEvents = typeof api.slots.on === 'function'
-  state.settingsRemote = typeof api.settings.remote.mountRemoteContribution === 'function'
+  state.slots = probe(() => api.slots.contribute({ name: 'details' }))
+  state.remoteEvents = probe(() => api.remotes.observe('probe', () => {}))
+  state.slotEvents = typeof api.slots.observe === 'function'
+  state.settingsRemote = typeof api.settings.remote.contribute === 'function'
   return state
 }
 
@@ -230,7 +230,7 @@ test('malformed or throwing optional services also disable only the owning leaf'
   const dispose = artifact.apply(ctx)
   const api = ctx.get('pluginApi')
   assert.ok(api)
-  assert.equal(probe(() => api.slots.register({ name: 'details' })), false,
+  assert.equal(probe(() => api.slots.contribute({ name: 'details' })), false,
     'the slots face stays registered in its disabled shape when ctx.get throws')
   assert.equal(api.connection.isActive, true)
   dispose()

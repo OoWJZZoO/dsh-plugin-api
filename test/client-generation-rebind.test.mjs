@@ -47,7 +47,7 @@ function createFixture({ withGraph = false } = {}) {
     },
     ready: { capabilities: ['remote.read'], payload: 'must-not-project' },
     other: { capabilities: ['remote.read'] },
-    $on(name, listener) {
+    observe(name, listener) {
       const bucket = remoteListeners.get(name) ?? new Set()
       bucket.add(listener)
       remoteListeners.set(name, bucket)
@@ -211,12 +211,12 @@ test('registry exposes frozen owner-local generation, revision, contribution and
   const fixture = createFixture()
   const { lifecycle } = createLifecycle(fixture)
   const binds = []
-  const first = lifecycle.api.registerFace(remoteRegistration('face', 'owner-a', (input, context) => {
+  const first = lifecycle.api.register(remoteRegistration('face', 'owner-a', (input, context) => {
     binds.push({ input, context })
     return () => {}
   }))
-  const duplicate = lifecycle.api.registerFace(remoteRegistration('face', 'owner-a', () => () => {}))
-  const second = lifecycle.api.registerFace(remoteRegistration('face', 'owner-b', () => () => {}))
+  const duplicate = lifecycle.api.register(remoteRegistration('face', 'owner-a', () => () => {}))
+  const second = lifecycle.api.register(remoteRegistration('face', 'owner-b', () => () => {}))
   await tick()
 
   assert.equal(first, duplicate)
@@ -236,22 +236,22 @@ test('registry exposes frozen owner-local generation, revision, contribution and
   assert.equal(Object.isFrozen(snapshot.reasons), true)
   assert.equal('payload' in snapshot, false)
   assert.equal(JSON.stringify(snapshot).includes('must-not-project'), false)
-  assert.equal(lifecycle.api.scan().length, 2)
+  assert.equal(lifecycle.api.list().length, 2)
 })
 
 test('connection, modules, remote, slot and settings epochs advance independently from public evidence', async () => {
   const fixture = createFixture({ withGraph: true })
   const { lifecycle } = createLifecycle(fixture)
-  const handle = lifecycle.api.registerFace(remoteRegistration('face', 'owner', () => () => {}))
+  const handle = lifecycle.api.register(remoteRegistration('face', 'owner', () => () => {}))
   let slotBinds = 0
   let slotCleanups = 0
   let settingsBinds = 0
   let settingsCleanups = 0
-  const slotHandle = lifecycle.api.registerFace({
+  const slotHandle = lifecycle.api.register({
     faceId: 'slot-face', ownerId: 'owner', scope: 'client', kind: 'slot',
     require: { slot: { key: 'details' } }, bind() { slotBinds += 1; return () => { slotCleanups += 1 } },
   })
-  const settingsHandle = lifecycle.api.registerFace({
+  const settingsHandle = lifecycle.api.register({
     faceId: 'settings-face', ownerId: 'owner', scope: 'client', kind: 'settings',
     require: { settings: { namespace: 'settings' } }, bind() { settingsBinds += 1; return () => { settingsCleanups += 1 } },
   })
@@ -324,7 +324,7 @@ test('official slot declaration collapse teardown invalidates the old face befor
   const { lifecycle } = createLifecycle(fixture)
   let binds = 0
   let cleanups = 0
-  const handle = lifecycle.api.registerFace({
+  const handle = lifecycle.api.register({
     faceId: 'collapse-slot',
     ownerId: 'owner',
     scope: 'client',
@@ -362,7 +362,7 @@ test('public projection is pure and does not observe private graph changes or sc
   const { lifecycle } = createLifecycle(fixture)
   let binds = 0
   let cleanups = 0
-  const handle = lifecycle.api.registerFace(remoteRegistration('pure', 'owner', () => {
+  const handle = lifecycle.api.register(remoteRegistration('pure', 'owner', () => {
     binds += 1
     return () => { cleanups += 1 }
   }))
@@ -371,7 +371,7 @@ test('public projection is pure and does not observe private graph changes or sc
   fixture.modules.graph = () => ({ graphVersion: 99, generation: 'private-only', attempt: 999 })
   fixture.modules.loadCache.set('private-only', { exports: { marker: 'not-an-event' } })
   const projected = handle.availability()
-  const scanned = lifecycle.api.scan()[0]
+  const scanned = lifecycle.api.list()[0]
   assert.equal(projected.epochs.modules, before.epochs.modules)
   assert.equal(scanned.epochs.modules, before.epochs.modules)
   assert.equal(binds, 1)
@@ -394,7 +394,7 @@ test('raw modules invalidate fallback is explicit and advances the modules epoch
   const { lifecycle, diagnostics } = createLifecycle(fixture)
   let binds = 0
   let cleanups = 0
-  const handle = lifecycle.api.registerFace(remoteRegistration('raw-modules', 'owner', () => {
+  const handle = lifecycle.api.register(remoteRegistration('raw-modules', 'owner', () => {
     binds += 1
     return () => { cleanups += 1 }
   }))
@@ -421,7 +421,7 @@ test('official remote mount and disposer advance the remote epoch without synthe
   let binds = 0
   let cleanups = 0
   const contribution = remoteContribution('official-remote-owner', 'mounted')
-  const handle = lifecycle.api.registerFace(remoteRegistration('remote-face', 'owner', () => {
+  const handle = lifecycle.api.register(remoteRegistration('remote-face', 'owner', () => {
     binds += 1
     return () => { cleanups += 1 }
   }, { remote: { namespace: 'mounted', contribution } }))
@@ -447,10 +447,10 @@ test('shared official remote mount leases isolate lifecycle owners', async () =>
   const contribution = remoteContribution('shared-remote-owner', 'shared')
   let aCleanups = 0
   let bCleanups = 0
-  const a = lifecycle.api.registerFace(remoteRegistration('shared-a', 'owner-a', () => () => { aCleanups += 1 }, {
+  const a = lifecycle.api.register(remoteRegistration('shared-a', 'owner-a', () => () => { aCleanups += 1 }, {
     remote: { namespace: 'shared', contribution },
   }))
-  const b = lifecycle.api.registerFace(remoteRegistration('shared-b', 'owner-b', () => () => { bCleanups += 1 }, {
+  const b = lifecycle.api.register(remoteRegistration('shared-b', 'owner-b', () => () => { bCleanups += 1 }, {
     remote: { namespace: 'shared', contribution },
   }))
   await tick()
@@ -482,8 +482,8 @@ test('stale bind settlement is cleaned without publishing as current or touching
   let secondCleanup = 0
   const notifications = []
   const { lifecycle } = createLifecycle(fixture)
-  lifecycle.api.onRebind((notification) => notifications.push(notification))
-  const handle = lifecycle.api.registerFace(remoteRegistration('face', 'owner', () => {
+  lifecycle.api.observe((notification) => notifications.push(notification))
+  const handle = lifecycle.api.register(remoteRegistration('face', 'owner', () => {
     bindCount += 1
     if (bindCount === 1) return firstGate.promise.then(() => () => { firstCleanup += 1 })
     return secondGate.promise.then(() => () => { secondCleanup += 1 })
@@ -520,11 +520,11 @@ test('slot and settings adapters retain official bind/inject ownership and clean
   const originalBind = fixture.settingsScope.bind
   fixture.settingsScope.bind = (...args) => { settingsBinds += 1; return originalBind.apply(fixture.settingsScope, args) }
   const { lifecycle } = createLifecycle(fixture)
-  const slot = lifecycle.api.registerFace({
+  const slot = lifecycle.api.register({
     faceId: 'slot-face', ownerId: 'owner', scope: 'client', kind: 'slot',
     require: { contractVersion: 'runtime-1', slot: { key: 'details' } }, bind() { return () => {} },
   })
-  const settings = lifecycle.api.registerFace({
+  const settings = lifecycle.api.register({
     faceId: 'settings-face', ownerId: 'owner', scope: 'client', kind: 'settings',
     require: { contractVersion: 'runtime-1', settings: { namespace: 'settings' } }, bind() { return () => {} },
   })
@@ -535,7 +535,7 @@ test('slot and settings adapters retain official bind/inject ownership and clean
   assert.equal(settingsBinds, 1)
   slot.dispose()
   settings.dispose()
-  assert.equal(lifecycle.api.scan().length, 0)
+  assert.equal(lifecycle.api.list().length, 0)
   assert.equal(fixture.settingsScopeDisposals, 1)
 })
 
@@ -549,11 +549,11 @@ test('settings scope initialization failure disposes the partial scope and keeps
   }
   const { lifecycle, diagnostics } = createLifecycle(fixture)
   let goodBinds = 0
-  const settings = lifecycle.api.registerFace({
+  const settings = lifecycle.api.register({
     faceId: 'settings-failure', ownerId: 'owner', scope: 'client', kind: 'settings',
     require: { settings: { namespace: 'settings' } }, bind() { throw new Error('must not bind') },
   })
-  const good = lifecycle.api.registerFace(remoteRegistration('good-after-settings-failure', 'owner', () => {
+  const good = lifecycle.api.register(remoteRegistration('good-after-settings-failure', 'owner', () => {
     goodBinds += 1
     return () => {}
   }))
@@ -578,11 +578,11 @@ test('caller-bound lifecycle cleanup owns only that caller registration and no g
   assert.equal('dispose' in lifecycle.api, false)
   let aCleanups = 0
   let bCleanups = 0
-  const a = apiA.registerFace(remoteRegistration('caller-a', 'owner-a', () => () => { aCleanups += 1 }))
-  const b = apiB.registerFace(remoteRegistration('caller-b', 'owner-b', () => () => { bCleanups += 1 }))
+  const a = apiA.register(remoteRegistration('caller-a', 'owner-a', () => () => { aCleanups += 1 }))
+  const b = apiB.register(remoteRegistration('caller-b', 'owner-b', () => () => { bCleanups += 1 }))
   await tick()
-  assert.equal(apiA.scan().length, 2)
-  assert.equal(apiB.scan().length, 2)
+  assert.equal(apiA.list().length, 2)
+  assert.equal(apiB.list().length, 2)
   assert.equal(callerA.cleanups.length, 1)
   assert.equal(callerB.cleanups.length, 1)
 
@@ -591,7 +591,7 @@ test('caller-bound lifecycle cleanup owns only that caller registration and no g
   assert.equal(aCleanups, 1)
   assert.equal(b.availability().state, 'available')
   assert.equal(bCleanups, 0)
-  assert.equal(lifecycle.api.scan().length, 1)
+  assert.equal(lifecycle.api.list().length, 1)
   b.dispose()
   assert.equal(bCleanups, 1)
 })
@@ -600,10 +600,10 @@ test('contract and capability mismatches degrade only one face and diagnostics a
   const fixture = createFixture()
   const { lifecycle, diagnostics } = createLifecycle(fixture)
   let goodBinds = 0
-  const bad = lifecycle.api.registerFace(remoteRegistration('bad', 'owner', () => { throw new Error('must not bind') }, {
+  const bad = lifecycle.api.register(remoteRegistration('bad', 'owner', () => { throw new Error('must not bind') }, {
     contractVersion: 'runtime-999',
   }))
-  const good = lifecycle.api.registerFace(remoteRegistration('good', 'owner', () => { goodBinds += 1; return () => {} }))
+  const good = lifecycle.api.register(remoteRegistration('good', 'owner', () => { goodBinds += 1; return () => {} }))
   await tick()
   assert.equal(bad.availability().state, 'unavailable')
   assert.equal(good.availability().state, 'available')
@@ -620,18 +620,18 @@ test('listener, subscriber, disposer and diagnostic failures remain contained', 
     logger: { error(message) { logs.push(message) } },
     publishDiagnostic() { throw new Error('diagnostic sink failed') },
   })
-  lifecycle.api.onChange(() => { throw new Error('listener failed') })
-  lifecycle.api.onChange(() => Promise.reject(new Error('listener rejected')))
-  lifecycle.api.onRebind(() => { throw new Error('rebind listener failed') })
-  const first = lifecycle.api.registerFace(remoteRegistration('first', 'owner', () => () => { throw new Error('cleanup failed') }))
-  const second = lifecycle.api.registerFace(remoteRegistration('second', 'owner', () => () => {}, { remote: { namespace: 'other' } }))
+  lifecycle.api.observe(() => { throw new Error('listener failed') })
+  lifecycle.api.observe(() => Promise.reject(new Error('listener rejected')))
+  lifecycle.api.observe(() => { throw new Error('rebind listener failed') })
+  const first = lifecycle.api.register(remoteRegistration('first', 'owner', () => () => { throw new Error('cleanup failed') }))
+  const second = lifecycle.api.register(remoteRegistration('second', 'owner', () => () => {}, { remote: { namespace: 'other' } }))
   await tick()
   fixture.ctx.emit('connection/reset')
   await tick()
   assert.equal(lifecycle.api.isActive, true)
   assert.equal(first.availability().state, 'available')
   assert.equal(second.availability().state, 'available')
-  assert.equal(typeof lifecycle.api.registerFace(remoteRegistration('third', 'owner', () => () => {})).dispose, 'function')
+  assert.equal(typeof lifecycle.api.register(remoteRegistration('third', 'owner', () => () => {})).dispose, 'function')
   await tick()
   assert.ok(logs.length > 0)
 })
@@ -645,7 +645,7 @@ test('evidence subscriber failure and lifecycle initialization failure use separ
     logger: { error(message) { logs.push(message) } },
   })
   assert.equal(operational.isActive, true)
-  const handle = operational.api.registerFace(remoteRegistration('face', 'owner', () => () => {}))
+  const handle = operational.api.register(remoteRegistration('face', 'owner', () => () => {}))
   await tick()
   assert.equal(handle.availability().state, 'available')
   assert.ok(logs.some((message) => /subscription failed/i.test(message)))
@@ -674,7 +674,7 @@ test('missing core official services produce only the disabled lifecycle surface
   })
   assert.equal(lifecycle.isActive, false)
   assert.equal(lifecycle.api.isActive, false)
-  assert.deepEqual(lifecycle.api.scan(), [])
-  assert.throws(() => lifecycle.api.registerFace({}), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'clientLifecycle')
+  assert.deepEqual(lifecycle.api.list(), [])
+  assert.throws(() => lifecycle.api.register({}), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'clientLifecycle')
   assert.equal(diagnostics[0].reason, 'core official client service is unavailable')
 })

@@ -122,7 +122,7 @@ test('migration-shaped settings, slot, and remote consumers use official lifecyc
     assert.equal(context.guard(input.ownerId), input.ownerId)
     return () => { cleanups[kind] += 1 }
   }
-  const remoteFace = api.lifecycle.registerFace({
+  const remoteFace = api.lifecycle.register({
     faceId: 'migration-remote',
     ownerId: 'migration-consumer',
     scope: 'client',
@@ -130,7 +130,7 @@ test('migration-shaped settings, slot, and remote consumers use official lifecyc
     require: { capabilities: ['remote.read'], remote: { namespace: 'migration', contribution: contribution('migration-consumer', 'migration') } },
     bind: bind('remote'),
   })
-  const slotFace = api.lifecycle.registerFace({
+  const slotFace = api.lifecycle.register({
     faceId: 'migration-slot',
     ownerId: 'migration-consumer',
     scope: 'client',
@@ -138,7 +138,7 @@ test('migration-shaped settings, slot, and remote consumers use official lifecyc
     require: { capabilities: ['slot.read'], slot: { key: 'details' } },
     bind: bind('slot'),
   })
-  const settingsFace = api.lifecycle.registerFace({
+  const settingsFace = api.lifecycle.register({
     faceId: 'migration-settings',
     ownerId: 'migration-consumer',
     scope: 'client',

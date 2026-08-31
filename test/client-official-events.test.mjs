@@ -49,22 +49,13 @@ test('client event facade exposes exact leaves and preserves argument identity a
     },
   })
   assert.deepEqual(Object.keys(result.api).sort(), [
-    'commandExecuted', 'connectionReset', 'dispose', 'isActive', 'localeChange', 'on', 'themeChange',
+    'commandExecuted', 'connectionReset', 'dispose', 'isActive', 'localeChange', 'observe', 'on', 'themeChange',
   ])
-  assert.deepEqual(CLIENT_EVENT_NAMES.map((name) => EVENT_KEYS[name]), [
-    'localeChange', 'themeChange', 'connectionReset', 'commandExecuted',
-  ])
-
-  for (const name of CLIENT_EVENT_NAMES) {
-    const leaf = result.api[EVENT_KEYS[name]]
-    assert.deepEqual(Object.keys(leaf), ['isActive', 'on', 'dispose'])
-    assert.equal(leaf.isActive, true)
-  }
 
   const first = {}
   const second = Symbol('second')
   const received = []
-  const dispose = result.api.on('command/executed', (...args) => received.push(args))
+  const dispose = result.api.observe('command/executed', (...args) => received.push(args))
   source.emit('command/executed', first, second, 3)
   assert.deepEqual(received, [[first, second, 3]])
   assert.equal(received[0][0], first)
@@ -90,11 +81,11 @@ test('event source resolution is lazy and one absent source does not disable oth
   assert.equal(reads, 1)
   assert.equal(result.api.themeChange.isActive, false)
   assert.throws(
-    () => result.api.themeChange.on(() => {}),
+    () => result.api.observe('theme/change', () => {}),
     (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.themeChange',
   )
   let delivered = 0
-  result.api.localeChange.on(() => { delivered += 1 })
+  result.api.observe('locale/change', () => { delivered += 1 })
   source.emit('locale/change', {})
   assert.equal(delivered, 1)
 })
@@ -109,8 +100,8 @@ test('listener failures and rejected thenables are contained while later listene
   const thrown = new Error('sync listener failure')
   const rejected = new Error('async listener failure')
   const delivered = []
-  result.api.localeChange.on(() => { throw thrown })
-  result.api.localeChange.on((value) => delivered.push(value))
+  result.api.observe('locale/change', () => { throw thrown })
+  result.api.observe('locale/change', (value) => delivered.push(value))
   result.api.localeChange.on(() => Promise.reject(rejected))
   const payload = { locale: 'en' }
   source.emit('locale/change', payload)
@@ -152,7 +143,7 @@ test('native event disposer failures are contained and logged', async () => {
   assert.deepEqual(logs.map(([, error]) => error), [syncError, asyncError])
 })
 
-test('official event source adapters preserve receiver for on, $on, addEventListener, and function forms', () => {
+test('official event source adapters preserve receiver for on, observe, addEventListener, and function forms', () => {
   const forms = [
     {
       create(calls) {

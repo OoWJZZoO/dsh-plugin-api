@@ -23,7 +23,9 @@ test('the root and all seven pending shells are observable synchronously while t
   const api = ctx.get('pluginApi')
   assert.ok(api)
   assert.equal(api.connection.isActive, true)
-  assert.equal(typeof api.slots.register, 'function')
+  assert.equal(typeof api.slots.contribute, 'function')
+  assert.equal(typeof api.slots.list, 'function')
+  assert.equal(typeof api.slots.observe, 'function')
   assert.equal(typeof api.codec, 'object')
   // Top-level capability paths match the published root members.
   const expectedPaths = ['isActive', 'apiVersion', 'assertCompatible', 'capabilities', 'connection',
@@ -218,7 +220,7 @@ test('an absent module loader disables all seven leaves with missing-service whi
   assert.equal(typeof dispose, 'function')
   const api = ctx.get('pluginApi')
   assert.ok(api)
-  assert.equal(typeof api.slots.register, 'function', 'existing client faces stay published without the module loader')
+  assert.equal(typeof api.slots.contribute, 'function', 'existing client faces stay published without the module loader')
   // All seven official leaves are published under services.* and are disabled.
   for (const surfaceKey of CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => d.surfaceKey)) {
     assert.equal(leafState(api, surfaceKey), false, `${surfaceKey} must be disabled without the module loader`)

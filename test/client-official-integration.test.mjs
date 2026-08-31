@@ -154,7 +154,7 @@ test('joined client surface exposes exact services, event, and llm faces with id
   const passthroughNames = CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => d.serviceName)
   assert.deepEqual(Object.keys(api.services), ['isActive', ...SERVICE_NAMES, ...passthroughNames])
   assert.equal(api.services.isActive, true)
-  assert.deepEqual(Object.keys(api.events), ['isActive', 'localeChange', 'themeChange', 'connectionReset', 'commandExecuted', 'on'])
+  assert.deepEqual(Object.keys(api.events), ['isActive', 'observe'])
 
   for (const name of SERVICE_NAMES) {
     const face = api.services[name]
@@ -173,7 +173,7 @@ test('joined client surface exposes exact services, event, and llm faces with id
   }
 
   assert.equal(api.connection.isActive, true)
-  assert.equal(typeof api.connection.api.settings.describe, 'function')
+  assert.equal(typeof api.connection.api.get.describe, 'function')
   const llm = api.connection.api.llm
   assert.deepEqual(Object.keys(llm), ['providers', 'models', 'discoverModels'])
   assert.equal(llm.isActive, undefined, 'the llm face carries only the approved members')
@@ -218,10 +218,10 @@ test('client events subscribe through the live source with identity, order, and 
   const delivered = []
   const first = { id: 1 }
   const second = { id: 2 }
-  const off = events.localeChange.on((...args) => delivered.push(['a', ...args]))
-  events.themeChange.on(() => { throw new Error('observer failure must be contained') })
-  events.themeChange.on((...args) => delivered.push(['b', ...args]))
-  events.localeChange.on((...args) => delivered.push(['c', ...args]))
+  const off = events.observe('locale/change', (...args) => delivered.push(['a', ...args]))
+  events.observe('theme/change', () => { throw new Error('observer failure must be contained') })
+  events.observe('theme/change', (...args) => delivered.push(['b', ...args]))
+  events.observe('locale/change', (...args) => delivered.push(['c', ...args]))
 
   ctx.emit('locale/change', first)
   ctx.emit('theme/change', second)
@@ -231,12 +231,12 @@ test('client events subscribe through the live source with identity, order, and 
   ctx.emit('locale/change', first)
   assert.deepEqual(delivered, [['a', first], ['c', first], ['b', second], ['c', first]])
 
-  events.commandExecuted.on((sessionId, commandName, result) => {
+  events.observe('command/executed', (sessionId, commandName, result) => {
     delivered.push(['e', sessionId, commandName, result])
   })
   ctx.emit('command/executed', 's-1', 'run', { ok: true })
   assert.deepEqual(delivered.at(-1), ['e', 's-1', 'run', { ok: true }])
-  assert.throws(() => events.on('unsupported/event', () => {}), /unsupported client event/)
+  assert.throws(() => events.observe('unsupported/event', () => {}), /unsupported client event/)
   dispose()
 })
 
@@ -293,7 +293,7 @@ test('the joined facade keeps connection.isActive when the connection service is
   const api = ctx.get('pluginApi')
 
   assert.equal(api.connection.isActive, false, 'the existing connection face degrades through its own path')
-  assert.throws(() => api.connection.api.settings.describe(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'clientConnection')
+  assert.throws(() => api.connection.api.get.describe(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'clientConnection')
   assert.throws(() => api.connection.api.llm.providers(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.connection')
   dispose()
 })
