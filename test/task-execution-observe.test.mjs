@@ -120,7 +120,7 @@ test('observe returns a frozen projection with state, active attempt, run links,
   assert.equal(current.task.state, 'registered')
   assert.equal(current.task.ownerId, 'owner-1')
   assert.equal(current.task.scope.key, 'repo-a')
-  assert.ok(current.availability)
+  assert.ok(owner.api.availability, 'availability lives on the observation api, never in business results')
   assert.equal(Object.isFrozen(current), true)
   assert.equal(Object.isFrozen(current.task), true)
   assert.equal(Object.isFrozen(current.task.attempts), true)
@@ -203,8 +203,8 @@ test('reconnect reconstruction from durable evidence identifies the observation 
   // observation epoch/generation of the second facade
   assert.equal(current.task.state, 'registered')
   assert.equal(current.task.revision >= 1, true)
-  assert.ok(current.availability.epoch)
-  assert.equal(current.availability.durability, 'durable')
+  assert.ok(owner2.api.availability.epoch)
+  assert.equal(owner2.api.availability.durability, 'durable')
   subscription.dispose()
 })
 

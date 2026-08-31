@@ -94,7 +94,7 @@ test('end-to-end prepare -> record -> preview -> commit over a confirmed capabil
   assert.equal(ledger.entries.length, 1)
   const got = await wtOwner.api.get('e2e-tx')
   assert.equal(got.transaction.state, 'committed')
-  assert.equal(got.transaction.availability.durability, 'memory')
+  assert.equal(wtOwner.availability.durability, 'memory')
   wtOwner.dispose()
   coordinationOwner.dispose()
 })

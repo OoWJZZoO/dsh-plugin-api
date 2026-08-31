@@ -98,7 +98,7 @@ test('replacement active: pluginApi.skills.activation forwards operations and av
   })
   activation.activate('demo-skill', { scope: { kind: 'session', key: 's-1' } })
   assert.deepEqual(calls.at(-1), ['activate', ['demo-skill', { scope: { kind: 'session', key: 's-1' } }]])
-  const exposure = activation.exposure('demo-skill', 'g-9')
+  const exposure = activation.exposure.list('demo-skill', 'g-9')
   assert.equal(exposure.exposure.skillId, 'demo-skill')
   assert.deepEqual(calls.at(-1)[0], 'exposure')
   activation.policy.registerMinimalCatalogUpdate({ kind: 'session', key: 's-1' })

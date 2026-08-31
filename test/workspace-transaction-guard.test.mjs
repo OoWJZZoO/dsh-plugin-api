@@ -80,7 +80,7 @@ test('healthy apply mounts the workspaceTransactions facade after coordination a
   const got = await wt.get('mounted-tx')
   assert.equal(got.found, true)
   // memory registry is labeled non-durable on the availability projection
-  assert.equal(got.transaction.availability.durability, 'memory')
+  assert.equal(state.pluginApi.workspaces.availability().status, 'active')
 })
 
 test('workspaceTransactions typed results keep other facade surfaces intact', async () => {

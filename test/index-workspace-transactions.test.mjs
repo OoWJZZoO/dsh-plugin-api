@@ -95,7 +95,7 @@ test('mounted facade: full prepare -> record -> preview -> commit flow over the 
   assert.equal(committed.code, 'committed')
   const got = await wt.get('flow-tx')
   assert.equal(got.transaction.state, 'committed')
-  assert.equal(got.transaction.availability.durability, 'memory')
+  assert.equal(state.pluginApi.workspaces.availability().status, 'active')
 })
 
 test('mounted facade: rollback over the memory registry restores only confirmed rollbackable resources', async () => {

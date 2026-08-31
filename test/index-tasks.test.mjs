@@ -67,7 +67,7 @@ test('mounted facade: full register -> start -> claim -> settle flow with fenced
   const got = await tasks.get('flow-task')
   assert.equal(got.task.state, 'settled')
   assert.equal(got.task.terminalOutcome, 'success')
-  assert.equal(got.task.availability.durability, 'memory')
+  assert.equal(state.pluginApi.tasks.availability().durability, 'memory')
 })
 
 test('mounted facade: observe and history rebuild state and report bounded windows', async () => {
@@ -126,8 +126,8 @@ test('mounted facade: no scheduler/poller side effect and memory registry report
   const got = await tasks.get('neg-task')
   // the tasks facade never schedules workers; the listener/effect budget stays
   // bounded to facade wiring, and the memory registry is explicit
-  assert.equal(got.task.availability.durability, 'memory')
-  assert.equal(got.task.availability.backend.id, 'memory')
+  assert.equal(state.pluginApi.tasks.availability().durability, 'memory')
+  assert.equal(state.pluginApi.tasks.availability().backend.id, 'memory')
   assert.ok(state.effects.length >= effectsBefore)
   // the mounted feature wired its evidence bridges: jobs/workflow/subagent
   // change observations are consumed as bounded provenance

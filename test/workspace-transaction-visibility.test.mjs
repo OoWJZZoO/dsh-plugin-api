@@ -122,7 +122,7 @@ test('get/observe projections are deep-frozen, redacted, and carry availability 
   assert.equal(Object.isFrozen(got), true)
   assert.equal(Object.isFrozen(got.transaction), true)
   assert.equal(got.transaction.audience, 'ui')
-  assert.ok(got.transaction.availability)
+  assert.ok(owner.api.availability, 'availability lives on the owner api, never in business results')
   // mutations accept secret-looking keys and never leak them
   await owner.api.record('tx-1', {
     resource: { kind: 'file', key: 'a.txt', scope: 'workspace' },
@@ -146,7 +146,7 @@ test('get/observe projections are deep-frozen, redacted, and carry availability 
   assert.equal(current.transaction.state, 'prepared')
   assert.equal(Object.isFrozen(current), true)
   assert.equal(Object.isFrozen(current.transaction.attempts !== undefined ? current.transaction.attempts : current.transaction.mutations), true)
-  assert.ok(current.availability)
+  assert.ok(owner.api.availability)
   subscription.dispose()
 })
 

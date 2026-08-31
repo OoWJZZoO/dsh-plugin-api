@@ -443,7 +443,7 @@ test('recover over a durable bridge continues an interrupted commit from ledger 
   const owner = bundle.owner
   const prepared = await acquireAndPrepare(bundle)
   assert.equal(prepared.ok, true)
-  assert.equal(bundle.owner.availability.durability, 'durable')
+  assert.equal(bundle.owner.api.availability.durability, 'durable')
   await owner.api.record('tx-1', fileMutation)
   // simulate an interrupted commit: write the committing record directly into
   // the durable domain, then let recover() settle it from ledger evidence
