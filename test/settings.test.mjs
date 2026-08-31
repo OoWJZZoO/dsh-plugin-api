@@ -213,7 +213,7 @@ test('dispose clears the facade scope registry', () => {
   assert.throws(() => api.scope('a'), PluginApiSettingsNamespaceError)
 })
 
-test('describe delegates to official settings.describe and returns its result', () => {
+test('describe delegates to official settings.inspect and returns its result', () => {
   const service = createMockSettingsService()
   const descriptors = [{ ns: 'a', schema: {}, value: { a: 1 }, revision: 1, applies: 'live' }]
   service.describe = (options) => {
@@ -223,14 +223,14 @@ test('describe delegates to official settings.describe and returns its result', 
   }
   const api = createSettingsApi({ ctx: createMockCtx(service) })
 
-  assert.equal(api.describe({ redactSecrets: true }), descriptors)
+  assert.equal(api.inspect({ redactSecrets: true }), descriptors)
   assert.equal(service.describeCalls, 1)
   assert.deepEqual(service.describeOptions, { redactSecrets: true })
 })
 
 test('describe throws PluginApiServiceUnavailableError when settings service is absent', () => {
   const api = createSettingsApi({ ctx: createMockCtx(undefined) })
-  assert.throws(() => api.describe(), PluginApiServiceUnavailableError)
+  assert.throws(() => api.inspect(), PluginApiServiceUnavailableError)
 })
 
 test('installSettingsSection wires attach through ctx.inject with base entry and validate', () => {

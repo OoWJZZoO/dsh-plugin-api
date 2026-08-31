@@ -178,7 +178,7 @@ function createLlmConnection() {
   }
   return {
     rpc: { call() { return Promise.resolve({}) } },
-    api: { settings: { describe() { return 'settings' } }, llm },
+    api: { settings: { inspect() { return 'settings' } }, llm },
   }
 }
 

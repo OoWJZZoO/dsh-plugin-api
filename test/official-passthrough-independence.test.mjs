@@ -275,6 +275,8 @@ const BRANCH_ADDED_FEATURES = ['security', 'execution', 'recovery', 'coordinatio
     // the public-surface deltas below are excluded from the face equality.
     const REMOVED_FEATURES = ['officialPassthrough']
     const REMOVED_TOOLS_MEMBERS = ['routeOf']
+    // Members removed by the public-surface subtraction wave (old paths gone).
+    const CUTOVER_REMOVED_TOOLS_MEMBERS = ['presentAs', 'executionMode']
     const ADDED_PROMPTS_MEMBERS = ['provenance']
     const currentFeatureNames = current.face.featureNames.filter((name) =>
       !BRANCH_ADDED_FEATURES.includes(name) && !REMOVED_FEATURES.includes(name))
@@ -299,7 +301,8 @@ const BRANCH_ADDED_FEATURES = ['security', 'execution', 'recovery', 'coordinatio
       featureNames: boundary.face.featureNames.filter((name) => !REMOVED_FEATURES.includes(name)),
       featureActivity: boundary.face.featureActivity.filter((_, index) =>
         !REMOVED_FEATURES.includes(boundary.face.featureNames[index])),
-      toolsMembers: boundary.face.toolsMembers.filter((name) => !REMOVED_TOOLS_MEMBERS.includes(name)),
+      toolsMembers: boundary.face.toolsMembers.filter((name) =>
+        !REMOVED_TOOLS_MEMBERS.includes(name) && !CUTOVER_REMOVED_TOOLS_MEMBERS.includes(name)),
     }
     assert.deepEqual(currentFace, boundaryFace, 'the current host must not alter any pre-existing host face')
     assert.deepEqual(current.lifecycle, boundary.lifecycle, 'host reapply/dispose/cleanup observations must be unchanged')

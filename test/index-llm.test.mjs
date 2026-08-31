@@ -74,16 +74,12 @@ test('llm feature guard passes: apply mounts all six llm methods and keeps admis
   assert.equal(state.pluginApi.isActive, true)
   assert.equal(state.pluginApi.llm.isActive, true)
 
-  for (const method of [
-    'modelInfo',
-    'prepareCall',
-    'stream',
-    'registerAdapter',
-    'registerConfigurableProviders',
-    'registerModelDiscovery',
-  ]) {
+  for (const method of ['modelInfo', 'prepareCall', 'stream']) {
     assert.equal(typeof state.pluginApi.llm[method], 'function', `missing llm.${method}`)
   }
+  assert.equal(typeof state.pluginApi.llm.adapters.register, 'function')
+  assert.equal(typeof state.pluginApi.llm.providers.register, 'function')
+  assert.equal(typeof state.pluginApi.llm.models.register, 'function')
   assert.equal(typeof state.pluginApi.llm.admissionPolicies, 'object')
   assert.equal(typeof state.pluginApi.llm.admissionPolicies.register, 'function')
   // admission.isActive is retired; the feature registry is the sole signal.
@@ -118,14 +114,7 @@ test('llm guard failure disables only llm, keeps facade active, and excludes LLM
   assert.equal(state.pluginApi.events.catalog()['llm/stream'], undefined, 'disabled feature slice is excluded')
   assert.equal(state.pluginApi.events.catalog()['llm/adapters-updated'], undefined, 'disabled feature slice is excluded')
 
-  for (const method of [
-    'modelInfo',
-    'prepareCall',
-    'stream',
-    'registerAdapter',
-    'registerConfigurableProviders',
-    'registerModelDiscovery',
-  ]) {
+  for (const method of ['modelInfo', 'prepareCall', 'stream']) {
     assert.throws(
       () => state.pluginApi.llm[method](),
       (error) => {
@@ -134,6 +123,10 @@ test('llm guard failure disables only llm, keeps facade active, and excludes LLM
         return true
       },
     )
+  }
+  for (const member of ['adapters.register', 'providers.register', 'models.register']) {
+    const target = member.split('.').reduce((view, key) => view[key], state.pluginApi.llm)
+    assert.throws(() => target({}), (error) => error instanceof PluginApiFeatureDisabledError, `${member} types as disabled`)
   }
 })
 

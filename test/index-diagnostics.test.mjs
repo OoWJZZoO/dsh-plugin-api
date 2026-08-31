@@ -68,7 +68,7 @@ assert.equal(names.indexOf('diagnostics'), names.indexOf('workspaceTransactions'
   const diag = state.pluginApi.diagnostics
   assert.equal(typeof diag.register, 'function')
   assert.equal(typeof diag.get, 'function')
-  assert.equal(typeof diag.onChange, 'function')
+  assert.equal(typeof diag.observe, 'function')
 
   const dispose = diag.register({
     ownerId: 'o', checkId: 'c', scope: 'plugin',

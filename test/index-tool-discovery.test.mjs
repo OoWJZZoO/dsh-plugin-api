@@ -137,12 +137,12 @@ test('full discovery lifecycle through the facade apply', async () => {
   const hint = after.sections.find((section) => section.name === 'discovery:hints')
   assert.ok(hint.text.includes('Alpha vision tool'))
 
-  const search = discovery.search('vision', { scope: 's1' })
+  const search = discovery.list('vision', { scope: 's1' })
   assert.equal(search.descriptors.length, 1)
   assert.equal(search.descriptors[0].sourceKind, 'plugin')
   assert.equal(search.constraint.status, 'none', 'no route-policy replacement in this composition')
 
-  const audit = discovery.audit.query({ kind: 'activate' })
+  const audit = discovery.audit.list({ kind: 'activate' })
   assert.equal(audit.items.length, 1)
   assert.equal(audit.items[0].owner, 'owner-a')
 
@@ -156,7 +156,7 @@ test('feature guard failure disables only the discovery face and keeps boot aliv
   const host = createHost({ services: { systemPrompt: undefined } })
   apply(host.ctx)
   const service = host.ctx.get('pluginApi')
-  assert.throws(() => service.tools.discovery.search('x'), (error) => {
+  assert.throws(() => service.tools.discovery.list('x'), (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
     assert.equal(error.feature, 'toolDiscovery')
     return true
@@ -189,7 +189,7 @@ test('exposure registration failure degrades only the exposure planes', async ()
   const registered = discovery.catalog.register(DESCRIPTOR)
   const handle = await discovery.activate('alpha', { session: { id: 's1' } })
   assert.equal(host.systemPrompt.assemble({ scope: { session: { id: 's1' } } }).tools.length, 0, 'no exposure without a provider')
-  assert.equal(discovery.search('', { scope: 's1' }).descriptors.length, 1, 'catalog stays usable')
+  assert.equal(discovery.list('', { scope: 's1' }).descriptors.length, 1, 'catalog stays usable')
   handle.dispose()
   registered.dispose()
 })

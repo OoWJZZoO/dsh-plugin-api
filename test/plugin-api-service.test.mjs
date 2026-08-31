@@ -110,7 +110,7 @@ test('inert service exposes settings stub that throws inactive error without ser
   for (const call of [
     () => service.settings.register('ns', {}),
     () => service.settings.scope('ns'),
-    () => service.settings.describe(),
+    () => service.settings.inspect(),
     () => service.settings.installSettingsSection({}, 'ns', {}, {}, {}),
   ]) {
     assert.throws(call, (error) => {
@@ -131,7 +131,7 @@ test('active service with unmounted settings feature throws feature-disabled err
   for (const call of [
     () => service.settings.register('ns', {}),
     () => service.settings.scope('ns'),
-    () => service.settings.describe(),
+    () => service.settings.inspect(),
     () => service.settings.installSettingsSection({}, 'ns', {}, {}, {}),
   ]) {
     assert.throws(call, (error) => {
@@ -149,7 +149,7 @@ test('mountFeature injects the settings API', () => {
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
   const service = instantiate(ServiceClass, mockCtx())
 
-  const settingsApi = { isActive: true, register() {}, scope() {}, describe() {}, installSettingsSection() {} }
+  const settingsApi = { isActive: true, register() {}, scope() {}, inspect() {}, installSettingsSection() {} }
   service.mountFeature('settings', settingsApi)
   assert.equal(service.settings.register, settingsApi.register)
   assert.ok(Object.isFrozen(service.settings))

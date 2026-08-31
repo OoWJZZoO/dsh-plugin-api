@@ -50,7 +50,7 @@ function makeDiscoveryOwner() {
 
 test('discovery disabled surface throws inactive and feature-disabled errors before touching owners', () => {
   const inactive = makeService({ coreActive: false })
-  assert.throws(() => inactive.tools.discovery.search('x'), PluginApiInactiveError)
+  assert.throws(() => inactive.tools.discovery.list('x'), PluginApiInactiveError)
   assert.throws(() => inactive.tools.discovery.activate('a', {}), PluginApiInactiveError)
 
   const active = makeService({ coreActive: true })
@@ -62,10 +62,10 @@ test('discovery disabled surface throws inactive and feature-disabled errors bef
     })
   }
   fail(() => active.tools.discovery.catalog.register({}))
-  fail(() => active.tools.discovery.search('x'))
+  fail(() => active.tools.discovery.list('x'))
   fail(() => active.tools.discovery.activate('a', {}))
   fail(() => active.tools.discovery.deactivate('a'))
-  fail(() => active.tools.discovery.audit.query({}))
+  fail(() => active.tools.discovery.audit.list({}))
   assert.deepEqual(active.tools.discovery.availability(), { status: 'unavailable' })
 })
 
@@ -77,12 +77,12 @@ test('mount exposes the discovery surface and delegates to the owner', async () 
   const discovery = service.tools.discovery
   const registered = discovery.catalog.register({ id: 'alpha', owner: 'o' })
   assert.equal(registered.generation, 'g:alpha')
-  const search = discovery.search('alpha')
+  const search = discovery.list('alpha')
   assert.equal(search.descriptors[0].id, 'alpha')
   const activated = await discovery.activate('alpha', { session: { id: 's1' } })
   assert.equal(activated.generation, 'g:1')
   assert.deepEqual(discovery.deactivate('alpha'), { ok: true })
-  assert.deepEqual(discovery.audit.query({}), { items: [], truncated: false })
+  assert.deepEqual(discovery.audit.list({}), { items: [], truncated: false })
   assert.deepEqual(discovery.availability(), { status: 'active', active: true, catalog: { registered: 1 } })
 })
 
@@ -92,7 +92,7 @@ test('mount does not change the tools surface contract', () => {
   service.mountFeature('toolDiscovery', makeDiscoveryOwner())
   assert.equal(service.tools.isActive, true)
   assert.equal(typeof service.tools.register, 'function')
-  assert.equal(typeof service.tools.discovery.search, 'function')
+  assert.equal(typeof service.tools.discovery.list, 'function')
 })
 
 test('unmount restores the disabled discovery surface', () => {
@@ -101,7 +101,7 @@ test('unmount restores the disabled discovery surface', () => {
   const token = service.mountFeature('toolDiscovery', owner)
   assert.equal(service.tools.discovery.deactivate('a').ok, true)
   assert.equal(service.unmountFeature('toolDiscovery', token), true)
-  assert.throws(() => service.tools.discovery.search('x'), PluginApiFeatureDisabledError)
+  assert.throws(() => service.tools.discovery.list('x'), PluginApiFeatureDisabledError)
   assert.equal(service.unmountFeature('toolDiscovery', token), false, 'second unmount is a no-op')
 })
 
@@ -111,8 +111,8 @@ test('a stale mounted slot cannot be used after remount', () => {
   const staleSurface = service.tools.discovery
   const second = service.mountFeature('toolDiscovery', makeDiscoveryOwner())
   assert.notEqual(first, second)
-  assert.throws(() => staleSurface.search('x'), PluginApiFeatureDisabledError, 'stale surface rejected')
-  assert.equal(typeof service.tools.discovery.search, 'function', 'current surface works')
+  assert.throws(() => staleSurface.list('x'), PluginApiFeatureDisabledError, 'stale surface rejected')
+  assert.equal(typeof service.tools.discovery.list, 'function', 'current surface works')
 })
 
 test('core inactivity rejects mounted discovery operations with the inactive error', async () => {
@@ -123,7 +123,7 @@ test('core inactivity rejects mounted discovery operations with the inactive err
   const service = new Service(ctx)
   service.mountFeature('toolDiscovery', makeDiscoveryOwner())
   coreActive = false
-  assert.throws(() => service.tools.discovery.search('x'), PluginApiInactiveError)
+  assert.throws(() => service.tools.discovery.list('x'), PluginApiInactiveError)
   assert.throws(() => service.tools.discovery.activate('a', {}), PluginApiInactiveError)
 })
 
@@ -137,9 +137,9 @@ test('invalid owners are rejected at mount time', () => {
 test('prepared transactions can publish discovery and roll back cleanly', () => {
   const service = makeService({ coreActive: true })
   const prepared = service.prepareFeature('toolDiscovery', makeDiscoveryOwner())
-  assert.throws(() => service.tools.discovery.search('x'), PluginApiFeatureDisabledError, 'prepared but unpublished')
+  assert.throws(() => service.tools.discovery.list('x'), PluginApiFeatureDisabledError, 'prepared but unpublished')
   assert.equal(prepared.commit(), true)
-  assert.equal(typeof service.tools.discovery.search, 'function')
+  assert.equal(typeof service.tools.discovery.list, 'function')
   assert.equal(prepared.commit(), false, 'commit is at-most-once')
   assert.throws(() => service.prepareFeature('unknownFeature', {}), PluginApiFeatureDisabledError)
 })

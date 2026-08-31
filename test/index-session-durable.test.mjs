@@ -150,14 +150,15 @@ test('apply mounts sessionDurable immediately after session without extending th
   assert.equal(feature(state, 'sessionDurable').isActive, true)
   assert.equal(Object.keys(state.pluginApi.events.catalog()).length, 47)
   assert.equal(state.pluginApi.events.catalog()['approval/asked'], undefined)
-  assert.deepEqual(state.pluginApi.sessions.durableEventTypes, [
+  assert.deepEqual(state.pluginApi.sessions.durable.list().map((entry) => entry.name), [
     'approval/asked',
     'approval/decided',
     'approval/policy',
     'schedule/change',
     'subagent/descriptor',
   ])
-  assert.equal(typeof state.pluginApi.sessions.onDurable, 'function')
+  assert.ok(state.pluginApi.sessions.durable.list().every((entry) => entry.descriptor), 'the merged list carries descriptors')
+  assert.equal(typeof state.pluginApi.sessions.durable.observe, 'function')
   assert.equal(typeof state.pluginApi.sessions.appendMessage, 'function')
   assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 4)
 })
@@ -170,7 +171,7 @@ test('durable cleanup restores feature-disabled, and a stale cleanup cannot revo
 
   assert.equal(firstCleanup(), true)
   assert.equal(feature(state, 'sessionDurable').isActive, false)
-  assert.throws(() => firstSessionApi.onDurable(), (error) => {
+  assert.throws(() => firstSessionApi.durable.observe(), (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
     assert.equal(error.feature, 'sessionDurable')
     return true
@@ -202,7 +203,7 @@ test('an effect registration failure resets the published durable epoch before d
 
   assert.equal(feature(state, 'sessionDurable').isActive, false)
   assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 3, 'failed durable transaction leaves sessionRoute, execution observers and sessionChannel')
-  assert.throws(() => state.pluginApi.sessions.durableEventTypes, (error) => {
+  assert.throws(() => state.pluginApi.sessions.durable.list(), (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
     assert.equal(error.feature, 'sessionDurable')
     return true
@@ -219,7 +220,7 @@ test('registry mount failures before and after activation reset the published du
 
     assert.equal(feature(state, 'sessionDurable').isActive, false)
     assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 3)
-    assert.throws(() => state.pluginApi.sessions.onDurable(), (error) => {
+    assert.throws(() => state.pluginApi.sessions.durable.observe(), (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
       assert.equal(error.feature, 'sessionDurable')
       return true
@@ -264,7 +265,7 @@ test('apply-time durable failure routes contain absent and throwing loggers', ()
       const { ctx, state } = createMockCtx({ ...options, logger })
       assert.doesNotThrow(() => apply(ctx))
       assert.equal(feature(state, 'sessionDurable').isActive, false)
-      assert.throws(() => state.pluginApi.sessions.onDurable(), PluginApiFeatureDisabledError)
+      assert.throws(() => state.pluginApi.sessions.durable.observe(), PluginApiFeatureDisabledError)
     }
   }
 })
@@ -281,7 +282,7 @@ test('host audit and public contract mismatches retain baseline session while di
     assert.equal(feature(packageMismatch.state, 'session').isActive, true)
     assert.equal(feature(packageMismatch.state, 'sessionDurable').isActive, false)
     assert.equal(typeof packageMismatch.state.pluginApi.sessions.get, 'function')
-    assert.throws(() => packageMismatch.state.pluginApi.sessions.onDurable(), PluginApiFeatureDisabledError)
+    assert.throws(() => packageMismatch.state.pluginApi.sessions.durable.observe(), PluginApiFeatureDisabledError)
 
     scheduleManifest.version = originalScheduleVersion
     assert.equal(KNOWN_SESSION_EVENT_TYPES.delete(scheduleType), true)

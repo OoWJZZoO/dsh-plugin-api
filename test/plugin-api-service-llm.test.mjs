@@ -27,9 +27,9 @@ const LLM_METHODS = [
   'modelInfo',
   'prepareCall',
   'stream',
-  'registerAdapter',
-  'registerConfigurableProviders',
-  'registerModelDiscovery',
+  'adapters',
+  'providers',
+  'models',
 ]
 
 function activeService() {
@@ -43,16 +43,16 @@ test('unmounted llm namespace exposes isActive false and feature-disabled errors
 
   assert.equal(service.llm.isActive, false)
   for (const method of LLM_METHODS) {
-    assert.equal(typeof service.llm[method], 'function')
-    assert.throws(
-      () => service.llm[method](),
-      (error) => {
-        assert.ok(error instanceof PluginApiFeatureDisabledError)
-        assert.equal(error.code, 'PLUGIN_API_FEATURE_DISABLED')
-        assert.equal(error.feature, 'llm')
-        return true
-      },
-    )
+    const member = service.llm[method]
+    assert.ok(member, `llm.${method} exists`)
+    if (typeof member === 'function') {
+      assert.throws(
+        () => member(),
+        (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm',
+      )
+    } else {
+      assert.throws(() => member.register({}), (error) => error instanceof PluginApiFeatureDisabledError)
+    }
   }
 })
 
@@ -62,16 +62,15 @@ test('inert service throws PluginApiInactiveError from llm methods before touchi
   const ctx = mockCtx()
   const service = instantiate(ServiceClass, ctx)
 
-  for (const method of LLM_METHODS) {
+  for (const method of ['modelInfo', 'prepareCall', 'stream']) {
     assert.throws(
       () => service.llm[method](),
-      (error) => {
-        assert.ok(error instanceof PluginApiInactiveError)
-        assert.equal(error.code, 'PLUGIN_API_INACTIVE')
-        return true
-      },
+      (error) => error instanceof PluginApiInactiveError && error.code === 'PLUGIN_API_INACTIVE',
     )
   }
+  assert.throws(() => service.llm.adapters.register({}), (error) => error instanceof PluginApiInactiveError)
+  assert.throws(() => service.llm.providers.register({}), (error) => error instanceof PluginApiInactiveError)
+  assert.throws(() => service.llm.models.register({}), (error) => error instanceof PluginApiInactiveError)
   assert.equal(ctx.getCalls.length, 0)
 })
 
@@ -83,18 +82,15 @@ test('mountFeature("llm", api) installs all methods and isActive true', () => {
     modelInfo: () => calls.push('modelInfo'),
     prepareCall: () => calls.push('prepareCall'),
     stream: () => calls.push('stream'),
-    registerAdapter: () => calls.push('registerAdapter'),
-    registerConfigurableProviders: () => calls.push('registerConfigurableProviders'),
-    registerModelDiscovery: () => calls.push('registerModelDiscovery'),
   }
 
   service.mountFeature('llm', llmApi)
 
   assert.equal(service.llm.isActive, true)
-  for (const method of LLM_METHODS) {
+  for (const method of ['modelInfo', 'prepareCall', 'stream']) {
     service.llm[method]()
   }
-  assert.deepEqual(calls, LLM_METHODS)
+  assert.deepEqual(calls, ['modelInfo', 'prepareCall', 'stream'])
 })
 
 test('unmounted llm request surface throws core-inactive/feature-disabled before registration validation', () => {

@@ -64,7 +64,7 @@ function callerCtx(name = 'my-plugin') {
 
 /** Decorate through a caller-bound surface so owner derivation resolves. */
 function decorateViaCaller(service, definition, name = 'my-plugin') {
-  return service._llmAdaptersForCaller(callerCtx(name)).decorate(definition)
+  return service._llmAdaptersForCaller(callerCtx(name)).register(definition)
 }
 
 const validDefinition = {
@@ -103,10 +103,10 @@ test('the llmAdapters guard fails when the loader is unavailable', () => {
 
 test('pluginApi.llm.adapters exists but throws typed errors while the registry is inactive', () => {
   const { service } = activeService({ ctx: makeCtx() })
-  assert.equal(typeof service.llm.adapters.decorate, 'function')
-  assert.equal(typeof service.llm.adapters.snapshot, 'function')
+  assert.equal(typeof service.llm.adapters.register, 'function')
+  assert.equal(typeof service.llm.adapters.list, 'function')
   assert.throws(
-    () => service.llm.adapters.decorate({}),
+    () => service.llm.adapters.register({}),
     (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
       assert.equal(error.feature, 'llmAdapters')
@@ -121,17 +121,17 @@ test('pluginApi.llm.adapters throws PluginApiInactiveError when the facade is in
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: false })
   const service = new ServiceClass(ctx)
   assert.throws(
-    () => service.llm.adapters.decorate({}),
+    () => service.llm.adapters.register({}),
     (error) => error instanceof PluginApiInactiveError,
   )
 })
 
-test('decorate with an unresolved replacement facet throws a typed disabled error', () => {
+test('register with an unresolved replacement facet throws a typed disabled error', () => {
   const registry = createFeatureRegistry()
   registry.mount('llmAdapters')
   const { service } = activeService({ ctx: makeCtx(), registry, provider: () => null })
   assert.throws(
-    () => service.llm.adapters.decorate({}),
+    () => service.llm.adapters.register({}),
     (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
       return true
@@ -139,7 +139,7 @@ test('decorate with an unresolved replacement facet throws a typed disabled erro
   )
 })
 
-test('decorate without a resolvable caller owner throws typed unavailable (never the facade)', () => {
+test('register without a resolvable caller owner throws typed unavailable (never the facade)', () => {
   const registry = createFeatureRegistry()
   registry.mount('llmAdapters')
   const attached = makeReplacementFacet()
@@ -148,7 +148,7 @@ test('decorate without a resolvable caller owner throws typed unavailable (never
   // facade must not invent an owner.
   const anonymousCtx = { effect() {} }
   assert.throws(
-    () => service._llmAdaptersForCaller(anonymousCtx).decorate(validDefinition),
+    () => service._llmAdaptersForCaller(anonymousCtx).register(validDefinition),
     (error) => {
       assert.ok(error instanceof LlmAdaptersUnavailableError)
       return true
@@ -184,7 +184,7 @@ test('a caller-owned decoration succeeds, returns a handle, and is reflected in 
     effect() {},
   }
   const surface = service._llmAdaptersForCaller(callerCtx)
-  const decoHandle = surface.decorate({
+  const decoHandle = surface.register({
     id: 'metrics',
     match: () => true,
     capabilities: { execution: { phases: ['stream'], retry: 'none' } },
@@ -192,10 +192,10 @@ test('a caller-owned decoration succeeds, returns a handle, and is reflected in 
   })
   assert.equal(typeof decoHandle.dispose, 'function')
   assert.equal(typeof decoHandle.snapshot, 'function')
-  const snapshot = decoHandle.snapshot()
-  assert.equal(snapshot.id, 'metrics')
-  assert.equal(snapshot.owner, 'my-plugin')
-  assert.ok(Object.isFrozen(snapshot))
+  const list = decoHandle.snapshot()
+  assert.equal(list.id, 'metrics')
+  assert.equal(list.owner, 'my-plugin')
+  assert.ok(Object.isFrozen(list))
   handle()
 })
 
@@ -248,7 +248,7 @@ test('a caller whose loader entry resolves to the facade itself is rejected as u
   // access through a caller context that resolves to the facade's own row
   const facadeCtx = callerCtx('@deepseek-ai/dsh-plugin-api-main')
   assert.throws(
-    () => service._llmAdaptersForCaller(facadeCtx).decorate({
+    () => service._llmAdaptersForCaller(facadeCtx).register({
       id: 'metrics',
       match: () => true,
       capabilities: { execution: { phases: ['stream'], retry: 'none' } },
@@ -267,7 +267,9 @@ test('pluginApi.llm existing members are unaffected by the adapters surface', ()
   assert.equal(typeof service.llm.modelInfo, 'function')
   assert.equal(typeof service.llm.prepareCall, 'function')
   assert.equal(typeof service.llm.stream, 'function')
-  assert.equal(typeof service.llm.registerAdapter, 'function')
+  assert.equal(typeof service.llm.adapters.register, 'function')
+  assert.equal(typeof service.llm.providers.register, 'function')
+  assert.equal(typeof service.llm.models.register, 'function')
 })
 
 test('resolveMarkedLlmDecoration resolves the replacement facet when the marker, composition and version agree', () => {

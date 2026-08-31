@@ -24,8 +24,7 @@ function mockCtx() {
 }
 
 const SESSION_METHODS = [
-  'on',
-  'once',
+  'observe',
   'get',
   'list',
   'fork',

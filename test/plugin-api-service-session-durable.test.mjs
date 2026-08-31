@@ -9,9 +9,6 @@ import { createPluginApiService } from '../lib/plugin-api-service.js'
 
 const DURABLE_METHODS = [
   'isDurableEventType',
-  'getDurableEventDescriptor',
-  'onDurable',
-  'onceDurable',
   'appendMessage',
 ]
 
@@ -41,8 +38,8 @@ test('durable session stubs report feature-disabled while core is active', () =>
   const { getCalls, service } = instantiate(true)
 
   for (const method of DURABLE_METHODS) assertFeatureDisabled(() => service.sessions[method]())
-  assertFeatureDisabled(() => service.sessions.durableEventTypes)
-  assertFeatureDisabled(() => service.sessions.durableEventDescriptors)
+  assertFeatureDisabled(() => service.sessions.durable.list())
+  assertFeatureDisabled(() => service.sessions.durable.list())
   assert.deepEqual(getCalls, [])
 })
 
@@ -52,8 +49,8 @@ test('durable session stubs report core-inactive while core is inactive', () => 
   for (const method of DURABLE_METHODS) {
     assert.throws(() => service.sessions[method](), PluginApiInactiveError)
   }
-  assert.throws(() => service.sessions.durableEventTypes, PluginApiInactiveError)
-  assert.throws(() => service.sessions.durableEventDescriptors, PluginApiInactiveError)
+  assert.throws(() => service.sessions.durable.list(), PluginApiInactiveError)
+  assert.throws(() => service.sessions.durable.list(), PluginApiInactiveError)
   assert.deepEqual(getCalls, [])
 })
 
@@ -90,12 +87,12 @@ test('session composition preserves baseline descriptors without eager getter ac
   assert.ok(Object.isFrozen(service.sessions))
   assertFeatureDisabled(() => service.sessions.appendMessage())
   const durableKeys = [
-    'durableEventTypes',
-    'durableEventDescriptors',
+    
+    
     'isDurableEventType',
-    'getDurableEventDescriptor',
-    'onDurable',
-    'onceDurable',
+    
+    
+    
     'appendMessage',
   ]
   assert.deepEqual(
@@ -127,14 +124,13 @@ test('published durable epoch stays unavailable until the registry activates it'
   }
 
   const epoch = service.mountFeature('sessionDurable', { facade, closeEpoch() {} })
-  assertFeatureDisabled(() => service.sessions.durableEventTypes)
-  assertFeatureDisabled(() => service.sessions.onDurable())
+  assertFeatureDisabled(() => service.sessions.durable.list())
+  assertFeatureDisabled(() => service.sessions.durable.observe())
 
   registry.mount('sessionDurable')
-  assert.deepEqual(service.sessions.durableEventTypes, ['approval/asked'])
+  assert.deepEqual(service.sessions.durable.list(), ['approval/asked'])
   assert.equal(service.sessions.isDurableEventType('approval/asked'), true)
-  assert.equal(service.sessions.onDurable(), 'on')
-  assert.equal(service.sessions.onceDurable(), 'once')
+  assert.equal(service.sessions.durable.observe(), 'on', 'the merged observe entry is the standard subscription')
   assert.equal(service.sessions.appendMessage(), 'append')
   assert.equal(service.resetSessionDurable(epoch), true)
   assertFeatureDisabled(() => service.sessions.appendMessage())
@@ -165,7 +161,7 @@ test('durable reset revokes retained session facades and closes an epoch once', 
   assert.equal(service.resetSessionDurable(epoch), false)
   assert.equal(closes, 1)
   assertFeatureDisabled(() => retainedSession.appendMessage())
-  assertFeatureDisabled(() => retainedSession.durableEventTypes)
+  assertFeatureDisabled(() => retainedSession.durable.list())
 })
 
 test('stale durable cleanup cannot reset a later epoch or its base session API', () => {
@@ -242,7 +238,7 @@ test('retained durable facade reports core-inactive after core deactivation', ()
 
   coreActive = false
   assert.throws(() => retainedSession.appendMessage(), PluginApiInactiveError)
-  assert.throws(() => retainedSession.durableEventTypes, PluginApiInactiveError)
+  assert.throws(() => retainedSession.durable.list(), PluginApiInactiveError)
 })
 
 test('durable epoch token is opaque and cannot bypass subsequent cleanup', () => {
@@ -320,5 +316,5 @@ test('retained feature-disabled durable stubs report core-inactive after reconci
 
   service.reconcile({ registry, coreActive: false })
   assert.throws(() => retainedSession.appendMessage(), PluginApiInactiveError)
-  assert.throws(() => retainedSession.durableEventTypes, PluginApiInactiveError)
+  assert.throws(() => retainedSession.durable.list(), PluginApiInactiveError)
 })

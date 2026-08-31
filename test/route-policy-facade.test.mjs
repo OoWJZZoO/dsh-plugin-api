@@ -37,6 +37,6 @@ test('route policy facade is additive and typed-unavailable until replacement ga
   owner = createOwner()
   assert.equal(typeof service.llm.routing.policies.register, 'function')
   assert.equal(typeof service.llm.routing.health.observe, 'function')
-  assert.equal(typeof service.llm.routing.circuit.status, 'function')
+  assert.equal(typeof service.llm.routing.circuit.inspect, 'function')
   assert.equal(typeof service.llm.routing.decisions.history, 'function')
 })

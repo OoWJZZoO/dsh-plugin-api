@@ -50,7 +50,7 @@ test('healthy apply mounts the host coordination surface after recovery and befo
   assert.equal(typeof coordination.release, 'function')
   assert.equal(typeof coordination.takeover, 'function')
   assert.equal(typeof coordination.compareAndSet, 'function')
-  assert.equal(typeof coordination.watch, 'function')
+  assert.equal(typeof coordination.observe, 'function')
   assert.equal(typeof coordination.availability, 'function')
   const acquired = await coordination.acquire({ resource, ownerId: 'owner', leaseMs: 60_000 })
   assert.equal(acquired.ok, true)

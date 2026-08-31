@@ -77,11 +77,11 @@ test('pluginApi.mcp is a fixed face that fails closed when no MCP replacement ma
   assert.equal(typeof mcp.servers, 'function')
   assert.equal(typeof mcp.tools, 'function')
   assert.equal(typeof mcp.resolvePublicName, 'function')
-  assert.equal(typeof mcp.onChange, 'function')
+  assert.equal(typeof mcp.observe, 'function')
   assertMcpDisabled(() => mcp.servers())
   assertMcpDisabled(() => mcp.tools())
   assertMcpDisabled(() => mcp.resolvePublicName('mcp__s__t'))
-  assertMcpDisabled(() => mcp.onChange(() => {}))
+  assertMcpDisabled(() => mcp.observe(() => {}))
 })
 
 test('pluginApi.mcp fails closed when a catalog exists but the component marker is absent', () => {
@@ -115,7 +115,7 @@ test('pluginApi.mcp delegates queries to the marked replacement catalog when act
   const resolved = mcp.resolvePublicName('mcp__s1__t1')
   assert.deepEqual(resolved, { identity: { serverName: 's1', rawName: 't1' }, publicName: 'mcp__s1__t1' })
 
-  const disposer = mcp.onChange(() => {})
+  const disposer = mcp.observe(() => {})
   assert.equal(typeof disposer, 'function')
 
   assert.deepEqual(catalog.calls.map(([method]) => method), ['servers', 'resolvePublicName', 'onChange'])

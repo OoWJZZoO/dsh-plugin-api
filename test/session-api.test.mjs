@@ -104,7 +104,7 @@ test('session lifecycle: lifecycle names delegate to pluginApi.events.on/once an
   const listener = () => {}
   for (const name of SESSION_LIFECYCLE_EVENT_NAMES) {
     const opts = { priority: 'high' }
-    assert.equal(api.on(name, listener, opts), mocks.onDisposer)
+    assert.equal(api.observe(name, listener, opts), mocks.onDisposer)
   }
   assert.equal(mocks.delegated.length, 4)
   assert.deepEqual(mocks.delegated.map((call) => call.name), [...SESSION_LIFECYCLE_EVENT_NAMES])
@@ -113,12 +113,6 @@ test('session lifecycle: lifecycle names delegate to pluginApi.events.on/once an
     assert.deepEqual(call.opts, { priority: 'high' })
   }
 
-  const onceListener = () => {}
-  for (const name of SESSION_LIFECYCLE_EVENT_NAMES) {
-    assert.equal(api.once(name, onceListener, { priority: 'low' }), mocks.onceDisposer)
-  }
-  assert.equal(mocks.delegatedOnce.length, 4)
-  assert.deepEqual(mocks.delegatedOnce.map((call) => call.name), [...SESSION_LIFECYCLE_EVENT_NAMES])
 })
 
 test('session lifecycle: non-lifecycle names pass through to ctx.on/ctx.once raw and ignore opts', () => {
@@ -131,18 +125,17 @@ test('session lifecycle: non-lifecycle names pass through to ctx.on/ctx.once raw
   })
 
   const listener = () => {}
-  api.on('goal/changed', listener, { priority: 'high' })
+  api.observe('goal/changed', listener, { priority: 'high' })
   assert.equal(mocks.delegated.length, 0)
   assert.equal(mocks.rawCalls.length, 1)
   assert.equal(mocks.rawCalls[0].name, 'goal/changed')
   assert.equal(mocks.rawCalls[0].listener, listener)
 
-  const onceListener = () => {}
-  api.once('skills/change', onceListener, { priority: 'low' })
-  assert.equal(mocks.delegatedOnce.length, 0)
-  assert.equal(mocks.rawOnceCalls.length, 1)
-  assert.equal(mocks.rawOnceCalls[0].name, 'skills/change')
-  assert.equal(mocks.rawOnceCalls[0].listener, onceListener)
+  const rawListener = () => {}
+  api.observe('skills/change', rawListener, { priority: 'low' })
+  assert.equal(mocks.rawCalls.length, 2)
+  assert.equal(mocks.rawCalls[1].name, 'skills/change')
+  assert.equal(mocks.rawCalls[1].listener, rawListener)
 })
 
 test('session read surface: get/list/fork delegate to the sessions service with arguments and errors unchanged', () => {
