@@ -14609,7 +14609,7 @@
       "concurrency": "exclusive",
       "reducer": "none",
       "currentShape": "lease handle returned by acquire",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
