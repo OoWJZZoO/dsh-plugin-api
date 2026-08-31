@@ -1,6 +1,6 @@
 # 现状 API → 目标形状 处置对照（未来目标）
 
-> 本文是 [`idiom-catalogue.md`](idiom-catalogue.md) 标准形状的配套表格，也是本目录**唯一**记录现状的地方。
+> 本文是 [`idiom-catalogue.md`](idiom-catalogue.md) 标准形状的配套表格，也是本目录的**迁移决策记录**；实现事实清单见 [`member-inventory.md`](member-inventory.md)，能力覆盖见 [`capability-matrix.md`](capability-matrix.md)。
 > 判据与处置顺序见 [`api-idiom.md`](api-idiom.md) §2、§5。
 >
 > **本文只给验收目标，不给实施顺序。** 谁先改、分几批、由哪个 feature 承接，都不属于本目录的范围。
@@ -46,8 +46,8 @@
 | `sessions.on` / `once` | `sessions.observe` |
 | `sessions.onDurable` / `onceDurable` | `sessions.durable.observe` |
 | `sessions.channels.observe` + `channels.onChange` | `channels.observe`（合二为一） |
-| `sessions.channels.fetchEvents` | `channels.list({ cursor, limit })` |
-| `executions.onChange` | `executions.observe` |
+| `sessions.channels.ack` | `channels.ack` |
+| `sessions.channels.resume` | `channels.resume` |
 | `mcp.onChange` | `mcp.observe` |
 | `coordination.watch` | `coordination.observe` |
 | `diagnostics.onChange` | `diagnostics.observe` |
@@ -128,7 +128,7 @@
 | 成员 | 拆分为 |
 |---|---|
 | `sessions.branches` | `graph` / `plan` / `preview` → projection；`create` / `commit` / `rollback` / `restore` → mutation |
-| `sessions.channels` | `acquire` / `heartbeat` / `release` → coordination；`observe` / `list` / `ack` / `resume` → projection/operation；`auth.register` → policy；`auth.pairingProvider.register` / `redaction.register` → resourceRegistry |
+| `sessions.channels` | `acquire` / `heartbeat` / `release` → coordination；`observe` / `list` → projection；`ack` / `resume` → operation；`auth.register` → policy；`auth.pairingProvider.register` / `redaction.register` → resourceRegistry |
 | `workspaces.transactions` | `prepare` / `commit` / `rollback` / `recover` → operation；`record` → mutation；`get` / `observe` → projection |
 | `tasks` | `acquire` / `takeover` → coordination；`register` / `start` / `settle` / `attach` → operation；`get` / `list` / `history` / `observe` → projection |
 | `agents` | `register` → resourceRegistry；`create` / `resume` → operation；`get` / `list` / `roots` → projection |

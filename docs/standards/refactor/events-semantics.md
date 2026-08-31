@@ -56,4 +56,4 @@
 2. **冲突时的收敛规则**；
 3. **监听者抛错时的 containment 与默认决定**。
 
-补齐后，这类能力与 `register` 形式的策略共享 policy 的失败语义（抛 typed error）与冲突规则（同 owner 同 id latest-wins、跨 owner 拒绝）。
+补齐后，事件式 policy 与 `register` 形式的策略共享同一外层失败和冲突契约：决策失败返回该策略点定义的默认决定并隔离监听者；注册冲突仍按 policy 的 typed registration error 处理（同 owner 同 id latest-wins、跨 owner 拒绝）。事件派发本身仍是 operation outcome，不得把监听者异常直接抛穿。

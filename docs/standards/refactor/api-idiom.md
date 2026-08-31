@@ -139,7 +139,17 @@
 
 咨询式入口的存在本身就是能力缺口的证据，正确处置是：删除入口 + 按处置 5 登记缺口。当前已知的此类成员见 [`idiom-catalogue.md`](idiom-catalogue.md) §2 的「能力缺口」与 [`api-migration.md`](api-migration.md)。
 
-## 6. passthrough 只保留 `services.*`
+### 5.2 外层契约与领域参数
+
+为降低跨领域学习成本，每个 idiom 只统一调用方可观察的外层契约：入口动词、结果/handle 形状、失败呈现、生命周期和冲突错误形状。领域参数只能出现在 `spec` 或 `options` 的领域数据字段中。
+
+- operation 的统一外层冲突语义是“返回确定的判别式 outcome，不抛穿”；领域可在 `concurrency` 中选择 `exclusive | latest-wins | queue | compare-and-swap | deduplicate`，但必须说明资源 key、裁决时机和 terminal 结果。该选择不是 idiom 的第二套失败语义。
+- mutation 的业务失败统一返回冻结判别式结果 `{ ok: false, code, commitState }`；只有参数类型错误、违反公共契约或不可恢复的编程错误才抛 typed error。这样 `fail-closed` 描述的是默认拒绝行为，不再与返回形式冲突。
+- resourceRegistry 的重复登记按三层判定：同 owner + 同 id + 同内容返回既有 handle（幂等）；同 owner + 同 id + 不同内容抛 `conflict`；跨 owner 冲突抛独立 owner-conflict。不得把幂等重放误报为冲突。
+- coordination 的租约 handle 是凭证，不提供 `dispose()`；统一归还入口为 `release(handle)`。这是一条登记在 idiom 标准中的固定例外，不影响其它 idiom 的 disposer 规则。
+
+例外格式固定为：`memberPath`、`baseContract`、`exception`、`reason`、`replacementShape`、`verification`；未具备这六项的例外无效。
+
 
 严格意义上 passthrough 不是一个 idiom——它共享的恰恰是「**不共享**」：其契约即官方契约，门面不附加任何套路。
 
@@ -159,13 +169,13 @@
 | 2 | 返回值与句柄 | 判别式结果 / 冻结视图 / handle / 裸值；handle 携带哪些成员 |
 | 3 | owner / key / generation | 谁的身份、key 冲突域、generation 的含义 |
 | 4 | 生命周期与 disposer | disposer 是否幂等、stale disposer 的行为、谁负责清理 |
-| 5 | 失败语义 | 抛 typed error / 返回判别式 / 静默 no-op，三者只能取一种并统一 |
-| 6 | 冲突规则 | 拒绝 / latest-wins / CAS，三者只能取一种并统一 |
+| 5 | 失败语义 | 外层统一：typed-throw / discriminated-result / silent-no-op 之一；领域不得另造失败形状 |
+| 6 | 冲突规则 | 外层统一冲突结果与错误形状；领域并发策略必须登记为 `concurrency`，不得改变外层契约 |
 | 7 | 组合语义 | 多 owner 并存时的顺序、reducer、containment |
 | 8 | 幂等与重试 | 是否幂等、retry 归属 attempt 还是 execution |
 | 9 | availability 形状 | 该 idiom 如何表达不可用与降级 |
 
-第 5 与第 6 条是全仓库统一性的关键：同一 idiom 内所有成员的这两项必须取到同一个值，例外必须登记到具体成员。
+第 5 与第 6 条要求的是**外层调用契约**全仓库一致：同一 idiom 的成员不得改变失败呈现或冲突结果形状。领域的资源策略、reducer 和并发选择可以不同，但必须通过 `concurrency` / `reducer` 字段显式登记，并按本节例外格式给出验证方式。
 
 ## 8. 一个成员只有一个主 idiom
 

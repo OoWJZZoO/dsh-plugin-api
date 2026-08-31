@@ -24,7 +24,7 @@
 publicPath             # 叶子级公共 dot path（含 handle 成员）
 idiom                  # projection | policy | mutation | operation |
                        # contribution | resourceRegistry | coordination |
-                       # selfDescription | passthrough
+                       # selfDescription；services.* 使用 passthrough-exception
 idiomExceptions        # 第二套路与处理方式（无则空）
 eventSemantics         # decision | fact | observation | notification（非事件成员为空）
 semanticFace           # projection | policy | durableMutation（语义三面，可为空）
@@ -42,13 +42,16 @@ failureSemantics       # typed-throw | discriminated-result | silent-no-op
 idempotency            # 幂等 / 不幂等 / 终态幂等
 retryLayer             # attempt | operation | 不适用
 availabilityShape      # 该成员如何表达不可用
-bypasses               # 是否绕过其它高层 authority
-status                 # removed | disabled | advanced | recommended
+concurrency            # operation 的领域并发策略；其它 idiom 为不适用或固定值
+reducer                # ordered/decision 领域的结果收敛规则
+currentShape           # 当前实现返回/handle/失败形状
+targetPath             # 目标公共 path；删除则为空
+migrationAction        # retain | rename | merge | split | migrate | delete | gap
 ```
 
-`failureSemantics` 与 `conflictRule` 是全仓库统一性的关键：同一 idiom 内所有成员的这两项必须取到同一个值，例外必须登记到具体成员。
+`failureSemantics` 与 `conflictRule` 必须表达统一的**外层**调用契约；领域并发选择登记在 `concurrency`，领域 reducer 登记在 `reducer`。同一 idiom 不得改变外层失败呈现或冲突结果形状。
 
-`idiom` 取 `passthrough` 时，该成员的 `publicPath` 必须位于 `services.` 之下（见 §4 校验 3）。
+`idiom` 只能取八类名称；`services.*` 成员使用 `passthrough-exception`，并且必须位于 `services.` 路径下。
 
 `effect` 只描述动作类型，**不承担套路区分**——套路区分由 `idiom` 承担，两者不得互相替代。
 
@@ -56,9 +59,9 @@ status                 # removed | disabled | advanced | recommended
 
 registry 应当提供（或由测试提供）以下机械校验，任一不通过即为契约缺陷：
 
-1. 每个叶子成员都有 `idiom` 且取值在枚举内。
-2. 同一 `idiom` 内所有成员的 `failureSemantics` 与 `conflictRule` 一致，或该成员已在 `idiomExceptions` 中登记例外。
-3. **标为 `passthrough` 的成员，其 `publicPath` 一律以 `services.` 开头；非 `services.*` 成员不得标 `passthrough`。**
+1. 每个叶子成员都有 `idiom` 且取值为八类名称，或明确标为 `passthrough-exception`。
+2. 同一 `idiom` 内所有成员的外层 `failureSemantics` 与冲突结果形状一致；领域 `concurrency`/`reducer` 差异必须显式登记。
+3. **标为 `passthrough-exception` 的成员，其 `publicPath` 一律以 `services.` 开头；非 `services.*` 成员不得使用该标记。**
 4. **每个 idiom 内所有成员的入口动词都取自该 idiom 的命名词表**（[`idiom-catalogue.md`](idiom-catalogue.md) 各 §命名词表），或已在 `idiomExceptions` 中登记例外。
 5. **`generation` 只出现在承担并发控制令牌语义的成员上**；注册序号必须登记为 `seq`，新鲜度必须登记为 `epoch`。三者不得混用。
 6. handle 成员已按其 dot path 登记，且其 `idiom` 不因与父成员不同而报错。
@@ -69,7 +72,11 @@ registry 应当提供（或由测试提供）以下机械校验，任一不通�
 
 校验 3–6 是本轮新增：它们把 [`api-idiom.md`](api-idiom.md) §3、§4 的「同构」要求变成可机械判定的条件，否则「同构」只是口号。
 
-## 5. 与生成物的关系
+## 6. M8 完整性门槛
+
+在 M8 开工前，registry 必须覆盖 [`member-inventory.md`](member-inventory.md) 的每个 current 叶子、每个目标叶子和每个公开 handle 成员；覆盖状态必须与 [`capability-matrix.md`](capability-matrix.md) 一致，具体问题必须可追溯到 [`anti-intuitive-inventory.md`](anti-intuitive-inventory.md)。未登记成员不得作为“隐含 API”继续扩展。
+
+## 7. 与生成物的关系
 
 registry 继续作为单一事实源，可生成或验证：`HostPluginApi` / `ClientPluginApi` 类型、capability/claim 类型、API reference、active/disabled surface snapshot、多插件组合测试矩阵，以及本目录要求的 idiom 一致性报告。
 

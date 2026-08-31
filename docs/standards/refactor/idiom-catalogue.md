@@ -172,7 +172,7 @@
 | 2 | 返回值与句柄 | 判别式结果 `{ ok, code, commitState, generation, ... }`；**不返回可撤销句柄** |
 | 3 | owner / key / generation | 记录身份 = `id` + `generation` + `commitState`；`generation` 是并发控制令牌，可 CAS 比较 |
 | 4 | 生命周期与 disposer | **不提供 disposer**；已提交事实不可撤销，清理只能由显式补偿操作完成 |
-| 5 | 失败语义 | fail-closed + typed failure；未声明的操作默认拒绝；审计可追溯（who / what / when / generation） |
+| 5 | 失败语义 | 业务失败返回冻结判别式结果；契约破坏/编程错误才抛 typed error；默认拒绝并可审计 |
 | 6 | 冲突规则 | CAS/fencing on `generation`；同 key 已有终态时拒绝改写 |
 | 7 | 组合语义 | `coordinated`：所有受保证的同资源写路径纳入同一 authority，旁路写路径显式登记 |
 | 8 | 幂等与重试 | 终态重试返回既有终态并标注 `idempotent: true`；未声明默认不自动 retry |
@@ -180,7 +180,7 @@
 
 ### 同构要求
 
-- 所有写入返回判别式结果并携带 `commitState`，不得直接返回官方写入结果。
+- 所有写入的业务失败统一返回冻结判别式结果并携带 `commitState`；契约破坏或编程错误才抛 typed error。
 - 事务的三段动词全仓库一致：`prepare`（operation）→ `record`（mutation）→ `commit` / `rollback`（operation）。
 
 ### 领域实例（目标形状）
@@ -221,7 +221,7 @@
 | 3 | owner / key / generation | operation 身份独立于事件序列；`attempt` 是 operation 之下的层级，重试只加 attempt、不换 operation 身份 |
 | 4 | 生命周期与 disposer | handle 的 `dispose()` 只请求停止，不保证已停止；正确性由 generation guard 保证 |
 | 5 | 失败语义 | 判别式 typed result；取消 → `aborted`，取代 → `superseded`，故障 → `error`，超时归 `error` 并以原因字段标记 timeout |
-| 6 | 冲突规则 | 同一逻辑资源的并发操作按领域声明的并发策略（`exclusive` / `latest-wins` / `queue` / `compare-and-swap` / `deduplicate`）裁决 |
+| 6 | 冲突规则 | 外层统一返回确定 outcome；领域在 `concurrency` 中声明 `exclusive` / `latest-wins` / `queue` / `compare-and-swap` / `deduplicate`，不得改变 outcome 形状 |
 | 7 | 组合语义 | `coordinated` 或 `exclusive`；多调用方同时发起时结果确定 |
 | 8 | 幂等与重试 | 内部 retry 不创建新 operation，只新增 attempt；外部重新发起即创建新 operation，即使参数相同 |
 | 9 | availability | 入口不可用时返回 typed unavailable result，不抛穿 |
@@ -231,7 +231,7 @@
 ### 同构要求
 
 - 所有 handle 一律 `{ id, ownerId, status(), observe(), dispose() }`；事务 handle 追加 `record / preview / commit / rollback`，不得另造 `close` / `finish` / `settle`（作销毁时）。
-- 所有 outcome 一律 `{ ok, code, operation, terminal }`。
+- operation 的外层冲突结果和失败呈现统一；领域并发策略登记在 `concurrency`，不得新增领域专用 outcome 形状。
 
 ### 领域实例（目标形状）
 
@@ -242,7 +242,7 @@
 - `attachments.pipeline.ingest / transform / cleanup`
 - `workspaces.transactions.prepare / commit / rollback / recover`
 - `profiles.snapshot.validate`（`handleVerb`，带进度订阅与终态）
-- `storage.open` → handle `{ id, ownerId, status(), observe(), dispose(), purge() }`
+- `storage.open` → handle `{ id, ownerId, status(), observe(), dispose(), purge() }`；其中 `dispose()` 只结束本次绑定，`purge()` 是显式 mutation 扩展，必须单独登记并遵守 mutation 的 commitState 契约。
 - `skills.activation.activate / deactivate`
 - `tools.discovery.activate / deactivate`
 - `sessions.channels.auth.initiatePairing / approvePairing / rejectPairing`
@@ -330,7 +330,7 @@ contribution 是「加入集合后被统一消费」（装配器把所有人投�
 | 3 | owner / key / generation | `ownerId` 派生；`id` 在 owner namespace 内唯一；`generation` 是该条登记的并发控制令牌 |
 | 4 | 生命周期与 disposer | `dispose()` 幂等；dispose 后可重新注册为全新生命周期（**受支持的恢复路径**） |
 | 5 | 失败语义 | **抛** typed registration error；冲突使用独立 typed conflict error 子类 |
-| 6 | 冲突规则 | 重复 id 抛 conflict；**不 latest-wins**（覆盖一个被他人引用的实现是不可见的破坏） |
+| 6 | 冲突规则 | 同 owner + 同 id + 同内容幂等返回既有条目；同 owner + 同 id + 不同内容返回 typed `conflict`；跨 owner 返回 owner-conflict |
 | 7 | 组合语义 | `additive`；多 owner 条目互不覆盖；用户可见全局名（tool 名、remote service key）走共享/claim 规则，不静默改名 |
 | 8 | 幂等与重试 | 登记幂等（同 owner 同 id 同内容重复登记返回既有条目）；不自动重试 |
 | 9 | availability | 由 `availability()` 表达 |

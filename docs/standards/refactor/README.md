@@ -33,9 +33,11 @@
 |---|---|
 | [`api-idiom.md`](api-idiom.md) | idiom 总则：判定判据、形状由分类决定、跨领域同构与统一命名、契约条目、形状不合时的处置顺序、passthrough 的边界 |
 | [`idiom-catalogue.md`](idiom-catalogue.md) | 八个 idiom 的**标准形状**：命名词表、结构契约、同构要求、领域实例、能力缺口 |
-| [`api-migration.md`](api-migration.md) | 现状 API → 目标形状的处置对照（重命名 / 删除 / 迁移 / 重构），是本目录唯一的现状记录 |
-| [`events-semantics.md`](events-semantics.md) | 事件语义分类轴与事件成员的 idiom 归属 |
-| [`member-contract-registry.md`](member-contract-registry.md) | 成员级契约登记规则与一致性校验 |
+| [`api-migration.md`](api-migration.md) | 现状 API → 目标形状的迁移决策（重命名 / 删除 / 迁移 / 重构）；实现事实见成员清单 |
+| [`member-contract-registry.md`](member-contract-registry.md) | 成员级契约登记规则、host/client parity 与机械校验 |
+| [`member-inventory.md`](member-inventory.md) | 基于实现事实的 host/client 逐叶子成员清单与目标归属 |
+| [`capability-matrix.md`](capability-matrix.md) | 能力覆盖、删除替代和能力守恒验收矩阵 |
+| [`anti-intuitive-inventory.md`](anti-intuitive-inventory.md) | 绑定具体 public path 的反直觉结构与 M8 目标清单 |
 
 ## 4. 与其他维度的关系
 
@@ -48,7 +50,17 @@
 
 三者正交，idiom 契约不得泄漏它们的组织方式。同一 idiom 横跨多个 namespace 与多种实现通道；同一 namespace 内部可以同时存在多个 idiom。这是本目录要求登记粒度下沉到成员的直接原因。
 
-## 5. 纪律
+## 5. M8 使用方式
+
+M8 的目标设计必须同时满足：
+
+- [`member-inventory.md`](member-inventory.md) 中的每个 current 叶子都有唯一目标归属；
+- [`capability-matrix.md`](capability-matrix.md) 中没有未说明的删除或能力损失；
+- [`anti-intuitive-inventory.md`](anti-intuitive-inventory.md) 中的每个问题都有目标形状和验证证据；
+- [`member-contract-registry.md`](member-contract-registry.md) 的叶子级 registry 能机械验证 host/client parity、handle 覆盖、命名、失败和冲突外层契约。
+
+八个 idiom 的公共契约只统一跨领域可观察的调用套路；领域数据、领域 reducer 和 operation 的内部并发策略通过显式字段登记。这样新增 B/R 能力时可以扩展能力，不必为每个领域重新发明一套调用方式。
+
 
 - 本目录不留未决条目。每一条要么是明确结论，要么不写。
 - **「能力缺口」不是未决条目**：它记录的是已经确定的政策结论（例如「策略注册后必须自动生效」），只是兑现它需要能力迁移。缺口的**规范结论**是确定的，只有**实现路径**不在本目录范围内。
