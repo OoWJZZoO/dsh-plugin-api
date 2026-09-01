@@ -16330,7 +16330,7 @@
       "oldPath": "executions.recovery.consume",
       "targetPath": null,
       "action": "delete",
-      "relation": "consultation-style entry whose policy is automatically applied elsewhere; capability gap recorded where automatic consumption cannot be proven"
+      "relation": "consultation-style entry whose policy is automatically applied by the internal recovery authority (decide/commit single consumption per operation window) on the supported official failure paths"
     },
     {
       "oldPath": "executions.recovery.adapters.fromAgentRequestError",
@@ -16666,7 +16666,7 @@
       "oldPath": "security.egress.check",
       "targetPath": null,
       "action": "delete",
-      "relation": "consultation entry whose policy is applied automatically at the decision point; capability gap recorded where automatic application cannot be proven"
+      "relation": "consultation entry whose policy is applied automatically at the decision point by the internal egress authority on the supported official paths (llm model discovery, mcp stdio/http transport)"
     },
     {
       "oldPath": "security.audit.query",
@@ -19076,8 +19076,8 @@
       "targetPaths": [],
       "status": "deleted",
       "qualifiers": [],
-      "replacement": "executions.recovery.visibility.project -> automatic recovery projection driven by the recovery owner",
-      "gapReason": "executions.recovery.consume: consultation-style acknowledgement; conservation requires automatic consumption evidence, otherwise a gap until that evidence exists",
+      "replacement": "executions.recovery.consume -> automatic single consumption: the internal recovery authority decides and commits at most one consumption per operation window on the supported official failure paths (agent/model request, tool dispatch, facade task/transaction); cooperative callers use executions.recovery.evaluate",
+      "gapReason": null,
       "affectedConsumers": [],
       "verification": [
         "member-inventory",
@@ -19772,8 +19772,8 @@
       "targetPaths": [],
       "status": "deleted",
       "qualifiers": [],
-      "replacement": null,
-      "gapReason": "security.egress.check: consultation-style check; the policy applies automatically at the decision point, gap until automatic application is proven",
+      "replacement": "security.egress.check -> automatic admission: registered egress policies are evaluated by the internal egress authority before any outbound side effect on the supported official paths (llm model discovery, mcp stdio/http transport); cooperative callers register policies and acquire/release typed leases",
+      "gapReason": null,
       "affectedConsumers": [],
       "verification": [
         "member-inventory",

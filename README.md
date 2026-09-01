@@ -7,6 +7,8 @@ DeepSeek Harness 社区插件 API 门面（主包 `@deepseek-ai/dsh-plugin-api-m
 > host 公共领域根：`agents` / `sessions`（含 `sessions.branches`、`sessions.channels`）/ `executions`（含 `executions.recovery`）/ `llm`（含 `llm.routing`、`llm.adapters`、`llm.requestTransforms`、`llm.admissionPolicies`）/ `prompts`（含 `prompts.provenance`）/ `tools`（含 `tools.discovery`）/ `skills.activation` / `attachments` / `mcp` / `tasks` / `coordination` / `workspaces.transactions` / `security` / `diagnostics` / `settings` / `profiles` / `remotes` / `storage` / `services`；client 为 `ctx.pluginApi` 直接根成员（已无 `.client` 子命名空间）：`connection` / `events` / `remotes` / `settings` / `slots` / `lifecycle` / `codec` / `services`。marker 门控的 R 类投影：`attachments` / `llm.adapters` / `sessions.branches` / `skills.activation` / `mcp`。
 >
 > 现行公共 path、成员状态与版本基线的唯一事实源是 `docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json`（旧 path → 目标 path 映射见其 `oldToTargetMapping`）。主包与全部辅助包统一 full version `0.1.0-rc.6-0.1.0`、`dsh.api: 0.1`；consumer 仍须按 capability availability 做 fail-safe 降级。
+>
+> 政策强制闭合约定（2026-09-01）：`security.egress` 对已登记受支持官方路径（llm model discovery、mcp stdio/http transport）自动管治，合作型第三方在调用公共接口（`security.egress.register` / `lease.acquire|release`）时受支持，直接绕过（裸网络/进程原语）不在保证内；`executions.recovery` 自动消费单窗口至多一次，合作型求值走 `executions.recovery.evaluate`；`events.define` 提供合作型自定义事件生产（canonical/custom 分域、owner-conflict 确定性拒绝、stale publisher 失效），不提供对抗性同进程隔离；其余官方路径与具名 edge gap（web/subprocess/terminal/shell/connection/telemetry/llm-provider/remote）的边界见 `docs/specs/plugin-api-policy-enforcement-closure/delivery-report.md`。
 
 ## 安装
 

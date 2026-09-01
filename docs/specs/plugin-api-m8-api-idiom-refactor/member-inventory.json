@@ -13,8 +13,8 @@
     "handleLeaves": 51,
     "servicesWhitelistHost": 46,
     "note": "counts derived from the leaves array; re-derived mechanically when the registry changes",
-    "leaves": 332,
-    "handles": 52
+    "leaves": 333,
+    "handles": 53
   },
   "leaves": [
     {
@@ -166,6 +166,26 @@
       "idiom": "operation",
       "migrationAction": "retain",
       "shapeNote": "dispatch outcome; identity/retry null"
+    },
+    {
+      "publicPath": "events.define",
+      "runtime": "host",
+      "kind": "leaf",
+      "currentShape": "events.define(spec) returns a frozen publisher handle",
+      "targetPath": "events.define",
+      "idiom": "resourceRegistry",
+      "migrationAction": null,
+      "shapeNote": "prescribed custom-event definition verb with registered idiom exception; deterministic owner-conflict rejection"
+    },
+    {
+      "publicPath": "events.define.handle",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": "frozen { id, ownerId, generation, name, emit(payload), dispose() }",
+      "targetPath": "events.define.handle",
+      "idiom": "operation",
+      "migrationAction": null,
+      "shapeNote": "operation-dispatch variant: one dispatch has no independent operation identity and is never retried; capacity-limited to the declared custom event identity"
     },
     {
       "publicPath": "events.availability",

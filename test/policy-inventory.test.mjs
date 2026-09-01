@@ -113,6 +113,29 @@ test('s6 reclassification: the generated capability matrix mirror stays in sync'
   assert.ok(libSource.includes(quoted), 'lib/capability-matrix.js replacement text mirrors the registry')
 })
 
+test('the capability matrix mirror is a full mechanical parity of every registry cluster', () => {
+  const libSource = readFileSync(CAPABILITY_MATRIX_LIB_PATH, 'utf8')
+  for (const row of registry.capabilityMatrix) {
+    const fields = [
+      `"capabilityCluster": ${JSON.stringify(row.capabilityCluster)}`,
+      `"status": ${JSON.stringify(row.status)}`,
+    ]
+    for (const field of fields) {
+      assert.ok(libSource.includes(field), `lib/capability-matrix.js must carry ${field}`)
+    }
+    for (const key of ['qualifiers', 'replacement', 'gapReason']) {
+      const value = row[key]
+      const encoded = value === null ? 'null' : JSON.stringify(value)
+      assert.ok(
+        libSource.includes(`"${key}": ${encoded}`),
+        `lib/capability-matrix.js cluster ${row.capabilityCluster} must mirror ${key}`,
+      )
+    }
+  }
+  const mirrowed = (libSource.match(/"capabilityCluster": "/g) ?? []).length
+  assert.equal(mirrowed, registry.capabilityMatrix.length, 'no cluster is missing or duplicated in the mirror')
+})
+
 test('validator rejects an unregistered policy member', () => {
   const copy = structuredClone(inventory)
   copy.inventory = copy.inventory.filter((row) => row.policyPath !== 'security.egress')

@@ -134,12 +134,12 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 
 ### [ ] 7. Wave 7 — Registry、生成物、能力与文档同步（§14、§15）
 
-- [ ] **7.1 registry 扩展**：按冻结决策 5 增改成员行与 handle 行；登记 `events.define` 的 prescribed-verb exception（六字段齐全）；登记 `security.egress.lease.acquire` 形状重塑的 `oldToTargetMapping` 行；修正 `security.egress removals`、`executions.recovery removals`、`storage removals`、`events.define` 四个簇的 `replacement` / `gapReason` / `status`；每条新成员携带完整 M8 字段集，不适用字段显式 `null`。
-- [ ] **7.2 生成物与能力记录**：从 canonical registry 重新生成/同步 M8 制品（member inventory、old-to-target mapping、capability matrix、host/client 快照、handle inventory、types、migration ledger）；同步 `lib/capability-descriptors.js`、`lib/capability-matrix.js`、namespace `availability()` 结果与 `capabilityMatrix()` 条目，全部以公共语义路径表述，不含包/行/mounter/替代身份；`capabilities.get` 对每个 capability path 映射到三值之一。
-- [ ] **7.3 契约与规范符合性**：`scripts/registry-validate.mjs` 与 registry/surface 一致性检查全绿；新增/改变的叶子与 handle 全部通过 M8 idiom 校验（无未登记叶子、无省略或非法 idiom、无缺字段混合语义面、无非统一字段名、无 legacy alias、运行时形状与 registry 契约一致）；host/client 同 idiom 成员的外层契约对齐。
-- [ ] **7.4 文档与登记**：`docs/specs/plugin-api-features/feature-list.md` 登记本 feature（spec 链接、状态、关键约束、跨组件 replacement 协作记录）；新增本 feature 交付报告，逐条列出每个 policy disposition、每个自动官方路径、每个合作型接口、每个具名 edge gap 及其验证引用；egress 文档声明「已登记受支持官方路径自动受管 + 合作型第三方路径在调用公共接口时受支持 + 直接绕过不在保证内」；recovery 文档区分自动消费与合作型求值；`events.define` 文档声明合作型归属与 canonical/custom 分域，不声称对抗性同进程隔离；`README.md` 公共契约现状注同步。
-- [ ] **7.5 replacement 登记**：每个新增或扩展的 replacement package 登记：被替代官方行、归属官方组件、唯一 owner、boot 自检项、版本锁定、fail-safe 行为、冲突检测、U-series 上游提案、退役条件；跨组件协作在 feature-list 报备，不产生跨组件全局 replacement。
-- [ ] **7.6 测试**：registry 与生成物/快照/类型一致且同为单一事实源；能力守恒（每簇恰一个最终 status、deleted 有 replacement 或已闭合证据、无 gapReason 残留矛盾）；文档与运行时保证边界一致；新 replacement 的 full/选择性安装、官方行恢复、无双跑、`A.B.C` 错配路径局部降级、客户端半边 parity（如适用）、官方包零修改。
+- [x] **7.1 registry 扩展**：按冻结决策 5 增改成员行与 handle 行；登记 `events.define` 的 prescribed-verb exception（六字段齐全）；登记 `security.egress.lease.acquire` 形状重塑的 `oldToTargetMapping` 行；修正 `security.egress removals`、`executions.recovery removals`、`storage removals`、`events.define` 四个簇的 `replacement` / `gapReason` / `status`；每条新成员携带完整 M8 字段集，不适用字段显式 `null`。
+- [x] **7.2 生成物与能力记录**：从 canonical registry 重新生成/同步 M8 制品（member inventory、old-to-target mapping、capability matrix、host/client 快照、handle inventory、types、migration ledger）；同步 `lib/capability-descriptors.js`、`lib/capability-matrix.js`、namespace `availability()` 结果与 `capabilityMatrix()` 条目，全部以公共语义路径表述，不含包/行/mounter/替代身份；`capabilities.get` 对每个 capability path 映射到三值之一。
+- [x] **7.3 契约与规范符合性**：`scripts/registry-validate.mjs` 与 registry/surface 一致性检查全绿；新增/改变的叶子与 handle 全部通过 M8 idiom 校验（无未登记叶子、无省略或非法 idiom、无缺字段混合语义面、无非统一字段名、无 legacy alias、运行时形状与 registry 契约一致）；host/client 同 idiom 成员的外层契约对齐。
+- [x] **7.4 文档与登记**：`docs/specs/plugin-api-features/feature-list.md` 登记本 feature（spec 链接、状态、关键约束、跨组件 replacement 协作记录）；新增本 feature 交付报告，逐条列出每个 policy disposition、每个自动官方路径、每个合作型接口、每个具名 edge gap 及其验证引用；egress 文档声明「已登记受支持官方路径自动受管 + 合作型第三方路径在调用公共接口时受支持 + 直接绕过不在保证内」；recovery 文档区分自动消费与合作型求值；`events.define` 文档声明合作型归属与 canonical/custom 分域，不声称对抗性同进程隔离；`README.md` 公共契约现状注同步。
+- [x] **7.5 replacement 登记**：每个新增或扩展的 replacement package 登记：被替代官方行、归属官方组件、唯一 owner、boot 自检项、版本锁定、fail-safe 行为、冲突检测、U-series 上游提案、退役条件；跨组件协作在 feature-list 报备，不产生跨组件全局 replacement。
+- [x] **7.6 测试**：registry 与生成物/快照/类型一致且同为单一事实源；能力守恒（每簇恰一个最终 status、deleted 有 replacement 或已闭合证据、无 gapReason 残留矛盾）；文档与运行时保证边界一致；新 replacement 的 full/选择性安装、官方行恢复、无双跑、`A.B.C` 错配路径局部降级、客户端半边 parity（如适用）、官方包零修改。
 
 ### [ ] 8. 终验、全局终审与交付（§16；AGENTS.md §3.2）
 

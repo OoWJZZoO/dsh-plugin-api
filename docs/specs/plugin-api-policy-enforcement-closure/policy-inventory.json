@@ -153,7 +153,7 @@
       "cooperativeInterface": "executions.recovery.evaluate (operation; caller honors the returned action)",
       "observableEvidence": "existing recovery-policy tests; Wave 4 recovery-consumption tests",
       "failureAndCancellation": "callback failure contained; fail-safe recovery default; stale/duplicate consumed at most once; cancellation never starts an automatic retry",
-      "coverageStatus": "planned-automatic",
+      "coverageStatus": "automatic",
       "verification": "inventory-validate; wave4 recovery-consumption tests",
       "retirementCondition": null,
       "enforcementPaths": [
@@ -180,7 +180,7 @@
       "cooperativeInterface": "recovery decision/history projection reads",
       "observableEvidence": "existing recovery-policy tests; Wave 4 recovery-consumption tests",
       "failureAndCancellation": "callback failure contained; official default; projection stays read-only",
-      "coverageStatus": "planned-automatic",
+      "coverageStatus": "automatic",
       "verification": "inventory-validate; wave4 recovery-consumption tests",
       "retirementCondition": null,
       "enforcementPaths": [
@@ -372,7 +372,7 @@
       "cooperativeInterface": "security.egress.lease.acquire / release (coordination)",
       "observableEvidence": "existing security-policy-egress tests; Wave 3 egress-enforcement tests",
       "failureAndCancellation": "fail-closed on contract absence or callback failure; redirect/reconnect/retry re-evaluates; AbortSignal preserved",
-      "coverageStatus": "planned-automatic",
+      "coverageStatus": "automatic",
       "verification": "inventory-validate; wave3 egress-enforcement tests",
       "retirementCondition": null,
       "enforcementPaths": [
@@ -506,7 +506,7 @@
       "componentOwner": "agent-loop replacement",
       "implementationChannel": "R",
       "reentry": "official retry provider normalizes into the same decision window; no second retry",
-      "coverageStatus": "planned-automatic",
+      "coverageStatus": "automatic",
       "verification": "wave4 recovery-consumption tests"
     },
     {
@@ -515,7 +515,7 @@
       "componentOwner": "agent-loop scheduler",
       "implementationChannel": "R",
       "reentry": "started calls keep operation identity; skipped/aborted keep official ordering",
-      "coverageStatus": "planned-automatic",
+      "coverageStatus": "automatic",
       "verification": "wave4 recovery-consumption tests"
     },
     {
@@ -524,7 +524,7 @@
       "componentOwner": "facade task owner",
       "implementationChannel": "facade",
       "reentry": "same decision window as other recovery owners; no hidden mutation",
-      "coverageStatus": "planned-automatic",
+      "coverageStatus": "automatic",
       "verification": "wave4 recovery-consumption tests"
     },
     {
@@ -533,7 +533,7 @@
       "componentOwner": "facade transaction owner",
       "implementationChannel": "facade",
       "reentry": "prepare/record/commit/rollback outer shape unchanged; recovery is not a generic rollback disposer",
-      "coverageStatus": "planned-automatic",
+      "coverageStatus": "automatic",
       "verification": "wave4 recovery-consumption tests"
     },
     {
@@ -587,7 +587,7 @@
       "componentOwner": "recovery decision projection owner",
       "implementationChannel": "R",
       "reentry": "closes with the Wave 4 recovery authority",
-      "coverageStatus": "planned-automatic",
+      "coverageStatus": "automatic",
       "verification": "wave4 recovery-consumption tests"
     },
     {
