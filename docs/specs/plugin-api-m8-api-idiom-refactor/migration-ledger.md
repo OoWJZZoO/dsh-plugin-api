@@ -157,7 +157,7 @@ registry 目标行已登记。
 
 ## 7b. 消费者迁移记录（tasks 8.1 / 8.2 / 8.3 / 8.6）
 
-- **dsh-read-image**（`../dsh-read-image`，已提交 2bf6730）：改用门面作为主契约——
+- **dsh-read-image**（`../dsh-read-image`，已提交 2bf6730 + 855b602）：改用门面作为主契约——
   inject `pluginApi`；设置命名空间经 `pluginApi.settings.register` + `services.settings.get` +
   scope handle `watch`；配置桥从手搓 `TypertRemoteService` 子类 + markRemote 删除，
   改 `remotes.register` 发布纯 get/set 服务（签名校验）；A1（resolveModelInfo 包装）与
@@ -165,12 +165,16 @@ registry 目标行已登记。
   （process 承担严格图片归约投影）；真值表经 `services.llm.listProviders/listModels` +
   `llm.modelInfo`；`llm/adapters-updated` / `session/created` 订阅迁
   `events.observe`；A6 私有 route 遍历删除，改 `llm.routing.forExecution`；
-  client 面板改 `client.services.locale` / `client.remotes.contribute` / `client.slots`。
+  client 面板弃用 `.client` 包装（M7 已删），改直接 root 成员
+  `pluginApi.services.locale` / `pluginApi.remotes.contribute` / `pluginApi.slots.contribute`；
+  守卫套件随门面契约迁移（23/23 绿）。
   每 agent read_image 工具注册与提示词段保留官方 agent 作用域表面（契约外精度，见下）。
 - **dsh-pro-ex-ability-anchor**（`../dsh-pro-ex-ability-anchor`，已提交 1edb9fe + eaee387）：
   `remotes.register`（availability 守卫）；虚拟轮上屏写入迁 `sessions.durable.appendMessage`；
-  panel 客户端 `client.remotes.contribute`；API requirement/peer 对齐 0.1；
-  全部 123 个单测迁移后全绿。
+  panel 客户端弃用 `.client` 包装（M7 已删），改直接 root 成员
+  `pluginApi.services.locale` / `pluginApi.remotes.contribute` / `pluginApi.slots.contribute`；
+  tool aborted 错误构建改 `pluginApi.services.tools.toolAbortedError`（migrate 目标）；
+  API requirement/peer 对齐 0.1；全部 123 个单测迁移后全绿。
 - **8.3 契约外行为处置**（登记，不隐式拓宽公共契约）：
   (a) anchor 的 assemble 时 system-prompt 替换（整体 sections 替换 + tools 过滤）超出
   投影 observe 只读与 contribution 追加语义，保留官方 Cordis `system-prompt/assemble`
