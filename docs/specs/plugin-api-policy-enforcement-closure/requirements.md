@@ -14,6 +14,8 @@ SPEC1 Stage 1：已获用户确认（2026-09-01）。批准包含本版对 M8 id
 
 “官方路径”指锁定 runtime 中由官方行、官方服务、官方 provider/transport 或本仓库已批准 replacement owner 承载的受支持执行路径。“第三方自有路径”指合作型第三方插件自己拥有副作用或终态提交、并主动调用公共 policy 接口的路径。
 
+本 feature 在 AGENTS.md §3.0.1 的当前冻结基线内交付：不步进 runtime identity `A`、API 世代/增量 `B.C` 或包本地维护号 `D`；所有新增或修订的能力都在该基线内完成，并同步 canonical registry 与 capability/availability 记录。
+
 ## Requirement 1: Canonical Policy Inventory And Enforcement Matrix
 
 **User Story:** As a maintainer, I want every public policy and every official decision path inventoried, so that no registered policy silently remains advisory or unconsumed.
@@ -55,7 +57,7 @@ SPEC1 Stage 1：已获用户确认（2026-09-01）。批准包含本版对 M8 id
 2. WHEN a third-party plugin invokes a cooperative policy interface THEN the system SHALL normalize and validate the supplied context, evaluate the same active policies used by automatic enforcement, and return a frozen typed decision or authorization outcome with stable machine fields and bounded caller-facing reason text.
 3. WHEN a cooperative invocation is denied, unavailable, malformed, or affected by a policy callback failure THEN the interface SHALL expose the domain's documented typed result or typed error and SHALL NOT claim that the caller's external side effect was prevented when the facade does not own that side effect.
 4. WHERE a domain requires a time-bounded authorization IF a cooperative caller requests authority for its own side effect THEN the system SHALL bind the authorization to the normalized target, scope, owner, generation, and expiry, and SHALL NOT authorize another target or a later generation implicitly.
-5. WHEN a cooperative caller receives a decision or authorization THEN the caller SHALL remain responsible for honoring it on its own path, and the public documentation SHALL distinguish this cooperative contract from automatic enforcement of official paths.
+5. WHEN a cooperative caller receives a decision or authorization THEN the system SHALL state that the caller remains responsible for honoring it on its own path, and the public documentation SHALL distinguish this cooperative contract from automatic enforcement of official paths.
 6. WHEN a cooperative invocation produces a decision or authorization THEN the system SHALL record it through the same bounded audit or decision projection used by the corresponding automatic path, with provenance identifying the cooperative invocation.
 7. WHEN a policy's semantics cannot be represented safely as a raw decision for a caller-owned path THEN the system SHALL expose a capability-limited execution or authorization operation instead of a generic unrestricted evaluator.
 
@@ -155,7 +157,7 @@ SPEC1 Stage 1：已获用户确认（2026-09-01）。批准包含本版对 M8 id
 2. WHEN the publisher emits a declared custom event THEN the system SHALL validate and freeze the declared payload as specified, dispatch it through the custom event contract, and return the documented typed dispatch outcome.
 3. WHEN a publisher attempts through the supported API to emit an undeclared event or a canonical official event THEN the system SHALL reject the operation before dispatch.
 4. WHEN two normal plugins define conflicting custom event identities THEN the system SHALL apply a documented deterministic owner/key conflict rule and SHALL NOT silently replace one owner with another.
-5. WHEN a publisher handle is disposed more than once THEN disposal SHALL be idempotent; WHEN a stale publisher emits after disposal, reload, or generation replacement THEN it SHALL not dispatch or remove a newer publisher.
+5. WHEN a publisher handle is disposed more than once THEN disposal SHALL be idempotent; WHEN a stale publisher emits after disposal, reload, or generation replacement THEN it SHALL NOT dispatch or remove a newer publisher.
 6. WHEN caller-bound owner identity is available THEN the system SHALL derive it from the actual plugin context for attribution and lifecycle; WHERE the cooperative plugin model applies IF malicious code forges identity or bypasses the facade THEN the system SHALL treat that behavior as out of scope rather than keeping `events.define` unavailable.
 7. WHEN a custom event observer fails THEN the system SHALL contain the failure according to the custom event's declared dispatch contract and SHALL NOT corrupt unrelated custom or canonical event registrations.
 8. WHEN `events.define` availability is queried THEN the system SHALL report it active when the cooperative custom-event contract is usable and SHALL NOT require adversarial same-process owner isolation as an activation condition.

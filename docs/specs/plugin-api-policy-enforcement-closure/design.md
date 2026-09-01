@@ -18,7 +18,7 @@ M8 idiom 契约是本 feature 的公共形状基线。所有新增或改变的�
 
 ## Current-State Findings
 
-设计阶段对锁定 runtime、当前 facade、M8 registry 和已有 replacement 的核对得到以下事实：
+设计阶段对锁定 runtime、当前 facade、canonical registry 和已有 replacement 的核对得到以下事实：
 
 - 已有 policy-shaped public members 包括 LLM request transform/admission、routing/circuit、execution visibility/recovery、channel auth、tool restrict/guard、skill activation、prompt provenance、security policy/redaction/egress 等；不能只修 egress 和 recovery。
 - 已有自动消费点包括 `llm/request` 的 transform/admission、官方 approval/tool seams、route decision、tool restriction/guard、channel verifier/authorizer、execution visibility、context composition policy 和 skill catalog policy。
@@ -79,23 +79,28 @@ No component may call an internal method before its guard and availability check
 
 ### 2. Policy inventory and enforcement matrix
 
-The feature creates a build-time/test-time inventory derived from the M8 canonical registry plus semantic inspection of implementation facts. It is not imported as mutable runtime state. Each row records:
+The feature creates a build-time/test-time inventory derived from the canonical registry plus semantic inspection of implementation facts. It is not imported as mutable runtime state. Each row records:
 
 ```text
 policyPath
-registrationShape
+registrationShape          # public registration member
 primaryIdiom
-automaticDecisionPoint
-protectedAction
-componentOwner
-cooperativeInterface
-defaultDecision
+policyOwner                # owner of the policy semantics
+componentOwner             # official component that owns the protected action
+decisionVocabulary
 reducer/conflictRule
+defaultDecision
+automaticDecisionPoint     # last stable pre-action decision point
+protectedAction
+cooperativeInterface
+observableEvidence         # verification reference for the claimed disposition
 failureAndCancellation
 coverageStatus
 verification
-retirementCondition
+retirementCondition        # required only for a retained gap
 ```
+
+The row field set is a superset of the fields Requirement 1 AC2 requires: `registrationShape` is the public registration member, `policyOwner` separates policy ownership from the official component that owns the protected action, `observableEvidence` names the evidence a disposition is claimed from, and `verification` is the mechanized check id. A row missing any required field is incomplete and fails validation.
 
 The initial disposition is:
 
@@ -116,21 +121,59 @@ The initial disposition is:
 
 A policy-shaped member discovered to be an official passthrough, projection, resource registry, or contribution is reclassified in the registry instead of receiving artificial automatic enforcement. A registration with no automatic owner and no cooperative interface is incomplete unless it is a named edge-path gap with the required evidence.
 
+#### Named edge-path gap record
+
+A retained gap is not free-text justification. Its inventory row is accompanied by a gap record carrying exactly the Requirement 10 AC2 fields:
+
+```text
+gapPath                  # public semantic path of the uncovered protected action
+component                # official component that owns the action
+trigger
+protectedAction
+missingPreActionPoint
+failedChannels           # official binding / facade translation / replacement extension / new replacement, each with why it failed
+observableConsequence
+affectedInstallationModes
+evidence                 # verification reference
+retirementCondition
+```
+
+Validation accepts a gap record only when every field carries evidence. A gap for a common path, a materially security- or correctness-relevant path, or a path already owned by an approved replacement component is rejected rather than recorded (Requirement 10 AC4), and one path's gap never generalizes to another path whose closure is proven.
+
 ## Components And Interfaces
 
-### 1. M8 contract and version boundary
+### 1. M8 contract, version boundary, and idiom assignment
 
-This feature adds public capability and changes existing public result shapes, but the repository's current API/package/version contract is explicitly frozen. This feature SHALL fit the existing frozen contract rather than introduce a version step:
+#### Frozen version baseline
+
+This feature adds public capability and changes existing public result shapes, but the repository's current API/package/version contract is explicitly frozen (AGENTS.md §3.0.1). This feature SHALL fit the existing frozen contract rather than introduce a version step:
 
 - runtime identity `A` remains the locked `0.1.0-rc.6`;
-- main, every auxiliary package and the full aggregate remain exactly at their current `A.B.C.D` package versions (currently `0.1.0-rc.6-0.1.0`) and retain `dsh.api: 0.1`;
-- no Stage 4 implementation, generated artifact, replacement package, or documentation synchronization may bump `A`, `B`, `C`, or package-local `D`;
-- new public members and changed semantics are delivered within the frozen local-development contract and must be reflected in the canonical registry and capability negotiation without changing the version fields;
+- main, every auxiliary package and the full aggregate keep their current complete package version `A-B.C.D` — currently `0.1.0-rc.6-0.1.0`, i.e. API generation/increment `B.C` = `0.1` and package-local maintenance number `D` = `0` — and retain `dsh.api: 0.1`;
+- no Stage 4 implementation, generated artifact, replacement package, or documentation synchronization may step `A`, `B`, `C`, or `D`;
+- new public members and changed semantics are delivered within the frozen local-development contract and MUST be reflected both in the canonical registry and in the capability/availability records (capability descriptors, namespace `availability()`, `capabilityMatrix()`), without changing any version field;
 - any future version step requires a separate explicit human version decision and is outside this feature;
 - mismatched optional enforcement package disables only its component coverage and never leaves an official row disabled without a working official-contract fallback;
 - wire and durable revisions remain independent and are added only if a real host/client or durable boundary needs them.
 
-The canonical M7 registry is extended in place. New/changed members include the egress coordination release operation, per-path coverage/self-description, recovery automatic-consumption evidence, custom event definition/publisher leaves, and the revised storage removal accounting. No parallel policy registry is created.
+#### Registry extension and idiom assignment
+
+The canonical public contract registry (`docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json`, extended in place by M8 — referred to throughout this design as “the canonical registry”) is extended in place. No parallel policy registry is created. New/changed members and their M8 primary idiom:
+
+| Public member | Change | Primary idiom | Notes |
+|---|---|---|---|
+| `security.egress.register` | registration retained; automatic enforcement added | policy | owner-bound `id` / `ownerId` / `generation`, identity-bound idempotent `dispose()` |
+| `security.egress.lease.acquire` | reshaped to an asynchronous coordination entry returning a typed outcome | coordination | lease credential carries `id`, `resource`, `generation`, `fencingToken`, `expiresAt`; no `dispose()` and no legacy `revoke()` |
+| `security.egress.lease.release` | new | coordination | `release(handle)` give-back verb, idempotent, typed conflict on stale handle |
+| `security.egress.coverage` | new | selfDescription | three-part per-path coverage projection (registration / cooperative / automatic) |
+| `executions.recovery.capability.register`, `executions.recovery.policy.register` | retained | policy | unchanged registration shape |
+| `executions.recovery.evaluate` | retained as the cooperative operation | operation | frozen `RecoveryOperationOutcome`; not a `consume` acknowledgement |
+| `executions.recovery.coverage` | new | selfDescription | the same three-part coverage shape as egress, so recovery also satisfies Requirement 8 AC1 |
+| `events.define` | new prescribed verb | contribution or resourceRegistry by its actual registration semantics, plus a registered prescribed-verb exception | dispatch uses the M8 operation-dispatch outcome |
+| `events.define(...)` publisher handle | new | resourceRegistry handle | `id`, `ownerId`, `generation`, `emit(payload)`, idempotent `dispose()` |
+| `storage.open.handle.close` | accounting correction only | — | old path stays deleted, `replacement` = operation handle `dispose()`, `gapReason` = `null` |
+
+Every row above carries the complete M8 field set in the registry; the `events.define` verb exception records `memberPath`, `baseContract`, `exception`, `reason`, `replacementShape` and `verification`. Registry validation rejects an unregistered leaf, an omitted or invalid idiom, a mixed semantic face without a complete exception, a nonuniform field name, and any legacy alias (Requirement 14 AC1/AC10).
 
 ### 2. Egress authority and public cooperative API
 
@@ -149,6 +192,7 @@ pluginApi.security.egress.coverage() -> FrozenCoverageView
 - `lease.acquire` and `lease.release` are coordination operations and are asynchronous. A successful acquire returns a frozen lease credential containing `id`, `resource`, `generation`, `fencingToken`, and `expiresAt`; the credential does not expose `dispose()` or `revoke()`.
 - `release(handle)` is idempotent. A stale heartbeat/state change/release is a typed `code: 'conflict'` or documented idempotent result with the stale condition in `reason`.
 - `coverage()` is a selfDescription projection of registration availability, cooperative invocation availability, and per-path automatic enforcement status. It contains public semantic paths only; it does not expose package, row, mounter or writable registry identities.
+- `coverage()` does not replace the availability vocabulary. Namespace-level presence stays on the existing `pluginApi.security.availability()` (and `pluginApi.executions.recovery.availability()`), capability negotiation stays on `capabilities.get/list/require`, and conservation accounting stays on the root `capabilityMatrix()`. `security.egress` therefore gains no second availability member: `coverage()` is the per-path detail layered on those existing members.
 - The deleted consultation-style `security.egress.check` is not restored. Internal transport owners use the private `egress.admit` method; cooperative third-party code uses the lease coordination path.
 
 #### Target normalization and authorization
@@ -183,8 +227,11 @@ The matrix is closed by evidence, not by package naming. A component is not mark
 pluginApi.executions.recovery.capability.register(spec)
 pluginApi.executions.recovery.policy.register(spec)
 pluginApi.executions.recovery.evaluate(input) -> Promise<RecoveryOperationOutcome>
+pluginApi.executions.recovery.coverage() -> FrozenCoverageView
 pluginApi.executions.recovery.availability()
 ```
+
+`coverage()` mirrors `security.egress.coverage()`: registration availability, cooperative invocation availability, and per-path automatic consumption status for each inventoried official failure owner. It exists because Requirement 8 AC1 requires per-path automatic coverage to be distinguishable whenever policy capability status is queried, and namespace-level `availability()` is not per-path. `availability()` keeps its current namespace-level semantics; neither member exposes package, row, mounter or replacement identities.
 
 `evaluate` remains the cooperative operation for a third-party-owned operation. It returns a frozen M8 operation outcome carrying operation identity, terminal/decision status, normalized action, bounded reason/provenance, execution identity and proposed attempt/bounds where applicable. It does not claim that the caller's private operation was changed; the caller is responsible for honoring the returned action.
 
@@ -266,6 +313,19 @@ The feature includes a narrow repository-maintenance component:
 - if a real in-repository generator is found, fix its temporary-home construction and cleanup; if not, record the files as historical external test products and do not invent a runtime change;
 - correct the M8 capability record for `storage.open.handle.close`: keep the old path deleted, set `replacement` to the operation handle `dispose()` contract, set `gapReason` to `null`, and regenerate/synchronize the capability matrix and migration ledger.
 
+### 7. Registry, documentation, and delivery synchronization
+
+Registry, generated-artifact and documentation updates belong to the implementation task, not to a follow-up (Requirement 15). One synchronization set covers:
+
+- **canonical registry**: new/changed member rows and handle rows, the §1 idiom assignment table, the `events.define` prescribed-verb exception, the `storage.open.handle.close` accounting correction, and the two coverage leaves; the `security.egress.lease.acquire` reshape (from the current synchronous `{ lease, decision, revoke }` result to an asynchronous typed `Outcome<Lease>` with `release(handle)`) is recorded as an old-to-target mapping row, not applied silently;
+- **M8 generated artifacts**: member inventory, old-to-target mapping, capability matrix, generated host/client snapshots, handle inventory, types and migration ledger — all regenerated from the canonical registry;
+- **capability/availability records**: capability descriptors, namespace `availability()` results and `capabilityMatrix()` entries, stated in public semantic paths and never in package, row, mounter or replacement identities;
+- **feature registration**: the `docs/specs/plugin-api-features/feature-list.md` row plus the cross-component collaboration record for every R slice;
+- **delivery report**: one disposition per policy member, every automatic official path, every cooperative interface and every named edge-path gap, each with its verification reference;
+- **public API documentation**: egress states automatic governance of the listed supported official paths plus the cooperative and bypass boundaries; recovery distinguishes automatic consumption from cooperative evaluation; `events.define` states cooperative ownership and canonical/custom separation without claiming adversarial isolation.
+
+A member is not declared delivered until its registry row, generated artifacts, capability/availability record and documentation all state the same boundary.
+
 ## Data Models
 
 ### 1. Internal enforcement request
@@ -329,7 +389,30 @@ RecoveryOperationOutcome {
 
 Automatic consumption stores a bounded decision-window record keyed by operation/execution/attempt identity. The public outcome does not expose the mutable internal decision registry.
 
-### 4. Coverage view
+### 4. Bounded decision evidence record
+
+Automatic and cooperative decisions share the domain's bounded audit authority. One record is:
+
+```js
+DecisionEvidence {
+  decisionId,
+  point,             // public semantic capability path of the decision point
+  outcome,           // the domain's own decision vocabulary
+  channel,           // 'automatic' | 'cooperative'
+  policyIds,         // bounded consulted policy identities
+  ownerIds,          // owner attribution (non-enumerable where the domain already hides it)
+  executionId,
+  operationId,
+  attemptId,
+  observedAt,
+  reason,            // bounded caller-facing reason
+  redactedContext,   // bounded, redacted input description
+}
+```
+
+Records never carry credentials, authorization headers, command secrets, private payloads or full provider responses, and host redaction precedes any client serialization. A failed audit append leaves the decision effective and exposes a bounded audit-gap marker instead of a fabricated record; intentionally non-durable audit storage is stated as such in availability and documentation (Requirement 7 AC3–AC6).
+
+### 5. Coverage view
 
 ```js
 {
@@ -349,9 +432,11 @@ Automatic consumption stores a bounded decision-window record keyed by operation
 }
 ```
 
-A coverage view is selfDescription, not a security proof against code that bypasses the facade. It must not use a single namespace boolean to hide a missing component path.
+The same shape is used by `security.egress.coverage()` and `executions.recovery.coverage()`; only the `automatic` path keys differ, and each key is a public semantic path registered in the inventory. Additional named paths appear only after inventory registration, so a newly observed path reports `unavailable`/unverified rather than inheriting a neighbour's status.
 
-### 5. Custom event definition and dispatch
+A coverage view is selfDescription, not a security proof against code that bypasses the facade. It must not use a single namespace boolean to hide a missing component path, and it never exposes package, row, mounter or replacement identities.
+
+### 6. Custom event definition and dispatch
 
 ```js
 CustomEventSpec {
@@ -437,11 +522,15 @@ Automatic and cooperative decisions share the existing bounded audit authority f
 ### 1. Pure contract and registry tests
 
 - inventory completeness: every policy member, automatic path, cooperative path, and named edge gap has one disposition;
-- M8 idiom validation for every new/changed leaf and handle;
+- inventory row completeness against the Requirement 1 AC2 field set, including `policyOwner`, `decisionVocabulary` and `observableEvidence`;
+- gap-record completeness: every retained gap carries all Requirement 10 AC2 fields, and a gap for a common, materially relevant or already-owned path is rejected;
+- M8 idiom validation for every new/changed leaf and handle, including the §1 idiom assignment table and the `events.define` prescribed-verb exception;
 - policy register handles, operation outcomes, coordination lease fields, `release(handle)`, uniform names, availability separation and no legacy aliases;
 - canonical/custom event separation, `events.define` exception record, publisher handle, custom dispatch outcome and no raw schema object;
+- decision-evidence records: `channel` attribution, bounded/redacted fields, no secrets, and a bounded audit-gap marker when the append fails;
 - storage removal accounting (`replacement` present, `gapReason` null) and generated artifact equality;
-- coverage view uses per-path statuses and never overclaims an unregistered path.
+- both coverage views (`security.egress.coverage`, `executions.recovery.coverage`) use per-path statuses, stay in agreement with capability descriptors and `capabilityMatrix()`, and never overclaim an unregistered path;
+- registry, generated artifacts, capability/availability records and documentation state the same boundary for every delivered member.
 
 ### 2. Egress automatic enforcement tests
 
@@ -489,6 +578,7 @@ Two synthetic normal plugins cover reverse registration order, custom identity c
 
 - exact artifact deletion and post-test recurrence scan;
 - registry/surface/snapshot/type consistency;
+- capability/availability records, the delivery report and the runtime coverage projection state the same dispositions;
 - consumer or component integration tests at real owner boundaries;
 - guarded `npm test`, `git diff --check`, official-package modification audit and clean worktree;
 - delivery report distinguishes automatic official coverage, cooperative support, named official edge gaps, third-party bypass, and dev-boot/environment evidence.

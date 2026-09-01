@@ -73,6 +73,10 @@ SPEC1 Stage 0：已获用户确认（2026-09-01）。本文定义本 feature 的
 - 不把公开的第三方主动调用 API当作官方路径自动执行的替代证据；两者必须分别验证。
 - 不借仓库清扫扩大到与本 feature 无关的历史 `temp/` 文件、依赖目录或全仓重构。
 
+### Delivery Constraints
+
+- 本 feature 在 AGENTS.md §3.0.1 的当前冻结基线内交付：不步进 runtime identity `A`、API 世代/增量 `B.C` 或包本地维护号 `D`；新增与修订的能力都在该基线内完成，并同步 canonical registry 与 capability/availability 记录。任何版本字段变更都需要独立的人类版本决策，不属于本 feature 的交付动作。
+
 ## Capability Strategy
 
 本 feature 采用主门面与 component-local replacement slices 的组合：
