@@ -102,15 +102,15 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 - [x] **3.8 fail-closed 与旁路边界**：fail-closed 路径在契约缺失或求值失败时无任何出站副作用、返回 typed denied/unavailable；第三方直接使用底层网络/socket/WebSocket/进程/原生/外部进程能力不入账为被拦截。
 - [x] **3.9 测试**：每个官方 owner 用契约忠实的副作用 spy 证明「注册后自动求值（调用方无第二次咨询）」「deny 发生在 fetch/WebSocket/transport 创建/spawn/exporter send 之前」「allow 绑定精确目标/owner/generation/expiry」「目标或动作变化重新求值」「callback 失败与 authority 不可用 fail-closed」「各 owner coverage 独立」「第三方裸调用不被伪称为已拦截」。
 
-### [ ] 4. Wave 4 — Recovery 自动单一消费（§5、§7）
+### [x] 4. Wave 4 — Recovery 自动单一消费（§5、§7）
 
-- [ ] **4.1 内部 decide/commit**：`recovery.decide(input)` 归一化失败并对当前 operation 窗口求值一次；`recovery.commit(decision, operation)` 原子消费一次，校验 owner、generation、execution 身份、attempt 身份、终态、取消与资源占有。accepted retry 在同一 execution 下新建 attempt；aborted/denied/superseded/已提交终态不得再起 attempt。
-- [ ] **4.2 agent/model 请求失败**：`packages/agent-loop` replacement 在 `agent/request-error` 边界归一化失败、求值并应用 retry/fallback/abort/surface，在下一次 attempt 或终态提交之前生效；官方 retry provider 仍是「无自定义 policy / 默认路径」，其结果被归一化进同一决定窗口，保证不会二次重试。
-- [ ] **4.3 tool 调度失败**：agent-loop 调度器把 dispatch/preparation 失败路由到同一 recovery authority，在提交终态 step 结果之前应用决定；已启动 call 保留其 operation 身份，skipped/aborted 保留官方顺序与结果语义。
-- [ ] **4.4 门面自有 task / transaction**：task settlement 与 workspace transaction recovery 在终态提交、retry 或 rollback 之前调用同一私有 authority；`prepare/record/commit/rollback` 的 operation/mutation 外形保持不变，recovery 不变成隐藏 mutation 或通用 rollback disposer。
-- [ ] **4.5 合作型接口保持**：`executions.recovery.evaluate` 保留为 operation，返回冻结 M8 operation outcome（operation 身份、terminal/decision 状态、归一化 action、bounded reason/provenance、execution 身份与建议 attempt/bounds）；它不声称改变了调用方私有 operation；不使用同一 policy generation 与 reducer 之外的第二套逻辑。
-- [ ] **4.6 失败与陈旧**：重复/陈旧失败在同一 operation generation 至多消费一次；recovery authority 或求值不可用/失败时套用文档化 fail-safe 默认，绝不静默表现得像发生了 policy 批准的重试或 fallback；第三方自行 settle 自己 operation 的路径记为 authority 之外，不推断也不改写其私有终态。
-- [ ] **4.7 测试**：自动求值并消费一次、无自定义 policy 时官方 fallback 行为不变、自定义 retry 保留 execution 身份并递增 attempt、fallback/abort/stop 在终态提交前应用、tool 调度与 task/transaction 同窗口、重复与陈旧失败不起第二 attempt、取消/截止/denied/superseded 不触发重试、合作型 `evaluate` 同 generation 同 reducer 且副作用责任显式。
+- [x] **4.1 内部 decide/commit**：`recovery.decide(input)` 归一化失败并对当前 operation 窗口求值一次；`recovery.commit(decision, operation)` 原子消费一次，校验 owner、generation、execution 身份、attempt 身份、终态、取消与资源占有。accepted retry 在同一 execution 下新建 attempt；aborted/denied/superseded/已提交终态不得再起 attempt。
+- [x] **4.2 agent/model 请求失败**：`packages/agent-loop` replacement 在 `agent/request-error` 边界归一化失败、求值并应用 retry/fallback/abort/surface，在下一次 attempt 或终态提交之前生效；官方 retry provider 仍是「无自定义 policy / 默认路径」，其结果被归一化进同一决定窗口，保证不会二次重试。
+- [x] **4.3 tool 调度失败**：agent-loop 调度器把 dispatch/preparation 失败路由到同一 recovery authority，在提交终态 step 结果之前应用决定；已启动 call 保留其 operation 身份，skipped/aborted 保留官方顺序与结果语义。
+- [x] **4.4 门面自有 task / transaction**：task settlement 与 workspace transaction recovery 在终态提交、retry 或 rollback 之前调用同一私有 authority；`prepare/record/commit/rollback` 的 operation/mutation 外形保持不变，recovery 不变成隐藏 mutation 或通用 rollback disposer。
+- [x] **4.5 合作型接口保持**：`executions.recovery.evaluate` 保留为 operation，返回冻结 M8 operation outcome（operation 身份、terminal/decision 状态、归一化 action、bounded reason/provenance、execution 身份与建议 attempt/bounds）；它不声称改变了调用方私有 operation；不使用同一 policy generation 与 reducer 之外的第二套逻辑。
+- [x] **4.6 失败与陈旧**：重复/陈旧失败在同一 operation generation 至多消费一次；recovery authority 或求值不可用/失败时套用文档化 fail-safe 默认，绝不静默表现得像发生了 policy 批准的重试或 fallback；第三方自行 settle 自己 operation 的路径记为 authority 之外，不推断也不改写其私有终态。
+- [x] **4.7 测试**：自动求值并消费一次、无自定义 policy 时官方 fallback 行为不变、自定义 retry 保留 execution 身份并递增 attempt、fallback/abort/stop 在终态提交前应用、tool 调度与 task/transaction 同窗口、重复与陈旧失败不起第二 attempt、取消/截止/denied/superseded 不触发重试、合作型 `evaluate` 同 generation 同 reducer 且副作用责任显式。
 
 ### [ ] 5. Wave 5 — `events.define` 自定义事件生产入口（§9、§14）
 

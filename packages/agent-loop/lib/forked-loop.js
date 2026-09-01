@@ -23,6 +23,11 @@ import { ROUTE_POLICY_ACTIVE_SYMBOL, ROUTE_POLICY_COMPONENT_SYMBOL } from "./rou
 // capability (observes the render boundary, never decides). Internal imports
 // only — the module's exported surface stays identical to the official one.
 import { EVIDENCE_ACTIVE_SYMBOL, emitAssembledEvidence } from "./evidence-slice.js";
+// replacement patch: automatic recovery consumption at the two failure
+// boundaries owned by this component (model request error, tool dispatch /
+// preparation failure). Additive internal import; the exported surface stays
+// identical to the official one.
+import { consumeRequestRecovery, consumeToolRecovery } from "./recovery-slice.js";
 //#region lib/types/runtime-context.js
 /**
 * Durable projection state for dynamic runtime context.
@@ -205,21 +210,64 @@ async function runGroup(ctx, turn, step, group, mode, signal, acceptContext) {
 		const call = group[index];
 		callSeqs[index] = appendToolCall(session, turn, step, call.block);
 		started++;
-		const prepared = await ctx.tools[TOOL_RUNTIME_SCHEDULER].prepare(call.exec);
+		let prepared;
+		try {
+			prepared = await ctx.tools[TOOL_RUNTIME_SCHEDULER].prepare(call.exec);
+		} catch (error) {
+			// replacement patch: preparation failures route through the recovery
+			// authority once per call window before the official scheduler
+			// failure semantics apply.
+			const recovery = await consumeToolRecovery({
+				loopCtx: ctx,
+				session,
+				turn,
+				step,
+				callId: call.block.id,
+				toolName: call.block.name,
+				failure: error,
+				signal
+			});
+			if (!(recovery?.governs && recovery.action?.kind === "retry")) throw error;
+			prepared = await ctx.tools[TOOL_RUNTIME_SCHEDULER].prepare(call.exec);
+		}
 		throwSchedulerFailure();
 		switch (prepared.kind) {
 			case "dispatch": {
-				const promise = ctx.tools[TOOL_RUNTIME_SCHEDULER].dispatch(prepared.exec).then((outcome) => {
-					slots[index] = {
-						exec: prepared.exec,
-						result: outcome.result,
-						needsPost: outcome.kind === "post-result"
-					};
+				const promise = (async () => {
+					try {
+						const outcome = await ctx.tools[TOOL_RUNTIME_SCHEDULER].dispatch(prepared.exec);
+						slots[index] = {
+							exec: prepared.exec,
+							result: outcome.result,
+							needsPost: outcome.kind === "post-result"
+						};
+					} catch (error) {
+						// replacement patch: dispatch failures route through the
+						// recovery authority once per call window; the started call
+						// keeps its operation identity (same call seq and exec).
+						const recovery = await consumeToolRecovery({
+							loopCtx: ctx,
+							session,
+							turn,
+							step,
+							callId: call.block.id,
+							toolName: call.block.name,
+							failure: error,
+							signal
+						});
+						if (recovery?.governs && recovery.action?.kind === "retry") {
+							const retried = await ctx.tools[TOOL_RUNTIME_SCHEDULER].dispatch(prepared.exec);
+							slots[index] = {
+								exec: prepared.exec,
+								result: retried.result,
+								needsPost: retried.kind === "post-result"
+							};
+							return index;
+						}
+						schedulerFailure ??= { error };
+					}
 					return index;
-				}, (error) => {
-					schedulerFailure ??= { error };
-					return index;
-				});
+				})();
 				inFlight.set(index, promise);
 				break;
 			}
@@ -688,6 +736,32 @@ var ReactLoopAgent = class {
 					signal
 				}, () => Promise.resolve(void 0));
 				signal.throwIfAborted();
+				// replacement patch: automatic recovery consumption at the request-
+				// error boundary. A registered recovery policy is evaluated and
+				// committed once per attempt window; when no policy matches (or the
+				// internal authority is unavailable) the official retry waterfall
+				// result below governs unchanged.
+				const recovery = await consumeRequestRecovery({
+					loopCtx: this.loopCtx,
+					session: this.session,
+					turn,
+					attemptEpoch: this.routeWindow?.attemptEpoch,
+					provider: request.provider,
+					failure: finish.failure,
+					retryPolicy: preparedCall?.retryPolicy,
+					signal
+				});
+				if (recovery?.governs) {
+					if (recovery.action?.kind === "retry") {
+						this.routeWindow = {
+							...this.routeWindow,
+							attemptEpoch: String(Number(this.routeWindow.attemptEpoch) + 1)
+						};
+						this.routeFallbackCause = recovery.action.cause ?? action?.cause ?? action?.failure;
+						continue;
+					}
+					throw new LlmError(finish.failure.message, finish.failure.code, finish.failure);
+				}
 				if (action?.kind !== "retry") throw new LlmError(finish.failure.message, finish.failure.code, finish.failure);
 				// replacement patch: retry ownership remains with the official loop;
 				// only the route window advances for the new attempt.
