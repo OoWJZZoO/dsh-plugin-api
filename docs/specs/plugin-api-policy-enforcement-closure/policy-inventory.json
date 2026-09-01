@@ -398,8 +398,8 @@
       "componentOwner": "dsh-llm-deepseek / dsh-llm-pi-ai",
       "implementationChannel": "R",
       "reentry": "provider endpoint change or lazy resolution re-admits; new transport requires fresh admission",
-      "coverageStatus": "planned-automatic",
-      "verification": "wave3 egress-enforcement tests"
+      "coverageStatus": "unavailable",
+      "verification": "not implemented in this window: provider final endpoint is private inside the adapter closure; a provider-row replacement needs harness-verified parity"
     },
     {
       "officialPath": "llm/modelDiscovery",
@@ -407,8 +407,8 @@
       "componentOwner": "dsh-llm-deepseek / dsh-llm-pi-ai",
       "implementationChannel": "R",
       "reentry": "each discovery transport is a new admission",
-      "coverageStatus": "planned-automatic",
-      "verification": "wave3 egress-enforcement tests"
+      "coverageStatus": "automatic",
+      "verification": "packages/llm/test/apply.test.mjs: egress gate attached; discoverModels gates request.baseURL"
     },
     {
       "officialPath": "mcp/stdio",
@@ -416,8 +416,8 @@
       "componentOwner": "dsh-mcp (mcp replacement)",
       "implementationChannel": "R",
       "reentry": "reconnect re-admits with the executable/command descriptor",
-      "coverageStatus": "planned-automatic",
-      "verification": "wave3 egress-enforcement tests"
+      "coverageStatus": "automatic",
+      "verification": "packages/mcp/test/connection.test.mjs: egress gate deny blocks connect; allow proceeds"
     },
     {
       "officialPath": "mcp/http",
@@ -425,8 +425,8 @@
       "componentOwner": "dsh-mcp (mcp replacement)",
       "implementationChannel": "R",
       "reentry": "reconnect and transport-switch re-admit with the resolved URL",
-      "coverageStatus": "planned-automatic",
-      "verification": "wave3 egress-enforcement tests"
+      "coverageStatus": "automatic",
+      "verification": "packages/mcp/test/connection.test.mjs: egress gate deny blocks connect; allow proceeds"
     },
     {
       "officialPath": "web",
@@ -434,8 +434,8 @@
       "componentOwner": "dsh-web / dsh-web-search-deepseek",
       "implementationChannel": "R",
       "reentry": "provider endpoint change re-admits; provider-specific replacement when the final endpoint stays private",
-      "coverageStatus": "planned-automatic",
-      "verification": "wave3 egress-enforcement tests"
+      "coverageStatus": "unavailable",
+      "verification": "not implemented in this window: no approved dsh-web replacement; provider closure does not expose a facade-owned pre-fetch seam"
     },
     {
       "officialPath": "web/attachmentRemote",
@@ -443,8 +443,8 @@
       "componentOwner": "attachments replacement",
       "implementationChannel": "R",
       "reentry": "direct bypass path does not inherit coverage",
-      "coverageStatus": "planned-automatic",
-      "verification": "wave3 egress-enforcement tests"
+      "coverageStatus": "unavailable",
+      "verification": "not implemented in this window: inherits web coverage only after the gated web service is proven; no direct gate added"
     },
     {
       "officialPath": "subprocess",
@@ -452,8 +452,8 @@
       "componentOwner": "dsh-subprocess / dsh-subprocess-local",
       "implementationChannel": "R",
       "reentry": "each child-process creation is a new admission",
-      "coverageStatus": "planned-automatic",
-      "verification": "wave3 egress-enforcement tests"
+      "coverageStatus": "unavailable",
+      "verification": "not implemented in this window: dsh-subprocess is a full official Service; a replacement needs harness-verified parity"
     },
     {
       "officialPath": "terminal",
@@ -461,8 +461,8 @@
       "componentOwner": "dsh-terminal*",
       "implementationChannel": "R",
       "reentry": "each terminal spawn is a new admission",
-      "coverageStatus": "planned-automatic",
-      "verification": "wave3 egress-enforcement tests"
+      "coverageStatus": "unavailable",
+      "verification": "not implemented in this window: terminal rows route through the official subprocess component"
     },
     {
       "officialPath": "shell",
@@ -470,8 +470,8 @@
       "componentOwner": "dsh-shell",
       "implementationChannel": "R",
       "reentry": "each shell child process is a new admission",
-      "coverageStatus": "planned-automatic",
-      "verification": "wave3 egress-enforcement tests"
+      "coverageStatus": "unavailable",
+      "verification": "not implemented in this window: shell rows route through the official subprocess component"
     },
     {
       "officialPath": "connection",
@@ -479,8 +479,8 @@
       "componentOwner": "dsh-client-connection (connection replacement + client half)",
       "implementationChannel": "R",
       "reentry": "reconnect and transport switch re-admit; client receives a host coverage snapshot",
-      "coverageStatus": "planned-automatic",
-      "verification": "wave3 egress-enforcement tests"
+      "coverageStatus": "unavailable",
+      "verification": "not implemented in this window: browser transport is host/client split without a harness-verified gate"
     },
     {
       "officialPath": "telemetry",
@@ -488,8 +488,8 @@
       "componentOwner": "dsh-session-telemetry-otel",
       "implementationChannel": "R",
       "reentry": "each export is a new admission; a provider that cannot be reached without contract breakage is a named optional edge path",
-      "coverageStatus": "planned-automatic",
-      "verification": "wave3 egress-enforcement tests"
+      "coverageStatus": "unavailable",
+      "verification": "not implemented in this window: official exporter row without an approved replacement"
     },
     {
       "officialPath": "remote",
@@ -497,8 +497,8 @@
       "componentOwner": "facade replacements",
       "implementationChannel": "B",
       "reentry": "an independent outbound side effect at a layer requires its own gate",
-      "coverageStatus": "planned-automatic",
-      "verification": "wave3 egress-enforcement tests"
+      "coverageStatus": "unavailable",
+      "verification": "not implemented in this window: coverage is proven transitively from the final side-effect owner"
     },
     {
       "officialPath": "recovery/model",
@@ -654,7 +654,66 @@
       "verification": "existing security-policy-redaction tests"
     }
   ],
-  "gaps": [],
+  "gaps": [
+    {
+      "gapPath": "telemetry",
+      "component": "dsh-session-telemetry-otel",
+      "trigger": "enabled official telemetry exporter send",
+      "protectedAction": "outbound export side effect",
+      "missingPreActionPoint": "a stable pre-export seam inside the official exporter row",
+      "failedChannels": [
+        {
+          "channel": "official binding",
+          "failure": "no official pre-export dispatch point exists"
+        },
+        {
+          "channel": "facade translation",
+          "failure": "facade does not own the telemetry exporter transport"
+        },
+        {
+          "channel": "extension of existing replacement",
+          "failure": "no existing replacement owns dsh-session-telemetry-otel"
+        },
+        {
+          "channel": "new component replacement",
+          "failure": "a new telemetry replacement would reproduce the exporter contract without harness-verified parity; not delivered in this window"
+        }
+      ],
+      "observableConsequence": "registered egress policy is not automatically evaluated before optional telemetry export",
+      "affectedInstallationModes": "full and selective (only when the optional exporter is enabled)",
+      "evidence": "official package inspection 2026-09-01; optional exporter row",
+      "retirementCondition": "dsh-session-telemetry-otel provides an official pre-export policy seam, or a harness-verified replacement reproduces the exporter contract"
+    },
+    {
+      "gapPath": "remote",
+      "component": "facade remote/attachment paths",
+      "trigger": "facade-owned remote contribution / attachment ingestion",
+      "protectedAction": "remote outbound side effect",
+      "missingPreActionPoint": "none today; layered paths inherit coverage only from their final side-effect owner",
+      "failedChannels": [
+        {
+          "channel": "official binding",
+          "failure": "remote/attachment paths are facade-owned; no official seam involved"
+        },
+        {
+          "channel": "facade translation",
+          "failure": "coverage must be proven transitively from the final side-effect owner; no independent outbound side effect at the layer"
+        },
+        {
+          "channel": "extension of existing replacement",
+          "failure": "not applicable"
+        },
+        {
+          "channel": "new component replacement",
+          "failure": "not applicable"
+        }
+      ],
+      "observableConsequence": "remote/attachment paths report unavailable until their final side-effect owner is covered",
+      "affectedInstallationModes": "full and selective",
+      "evidence": "design section 2.7: coverage proven transitively from the final side-effect owner",
+      "retirementCondition": "a remote/attachment layer demonstrates an independent outbound side effect; then its own gate is added"
+    }
+  ],
   "reclassifiedShapes": [
     {
       "path": "llm.routing.health.probe / startProbe / completeProbe",

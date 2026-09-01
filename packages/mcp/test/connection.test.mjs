@@ -7,6 +7,7 @@ import {
   RECONNECT_DEFAULTS,
   GENERATION_CLOSE_TIMEOUT_MS,
 } from '../lib/connection.js'
+import { transportTarget } from '../lib/transports.js'
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -250,4 +251,92 @@ test('reconnect-disabled publishes unavailable with code reconnect-disabled', as
 
 test('GENERATION_CLOSE_TIMEOUT_MS is a bounded positive constant', () => {
   assert.ok(Number.isFinite(GENERATION_CLOSE_TIMEOUT_MS) && GENERATION_CLOSE_TIMEOUT_MS > 0)
+})
+
+test('egress gate deny fails closed before any transport connection', async () => {
+  const { published, hooks } = makeHarness()
+  let connectCalls = 0
+  hooks.gate = () => ({ ok: false, outcome: 'deny', reason: 'blocked by egress policy' })
+  hooks.createClient = () => {
+    const { client } = makeFakeClient()
+    const originalConnect = client.connect
+    client.connect = (...args) => {
+      connectCalls += 1
+      return originalConnect(...args)
+    }
+    return client
+  }
+  const ctx = {
+    logger: { error() {}, warn() {}, info() {} },
+    tools: {
+      register(def) {
+        return () => {}
+      },
+    },
+  }
+  const handle = startConnection(ctx, baseConfig, policy, hooks)
+  const ready = await handle.ready
+  assert.ok(ready.error, 'a denied connection surfaces an initial error')
+  assert.equal(connectCalls, 0, 'the transport connect is never invoked on deny')
+  const denied = published.filter((p) => p.reason?.code === 'egress-denied')
+  assert.ok(denied.length >= 1, 'egress-denied is published')
+  assert.equal(denied[0].lifecycleState, 'unavailable')
+  await handle.dispose()
+})
+
+test('egress gate allow lets the connection proceed normally', async () => {
+  const { published, created, hooks } = makeHarness()
+  hooks.gate = () => ({ ok: true, outcome: 'allow' })
+  const ctx = {
+    logger: { error() {}, warn() {}, info() {} },
+    tools: {
+      register(def) {
+        return () => {}
+      },
+    },
+  }
+  const handle = startConnection(ctx, baseConfig, policy, hooks)
+  const ready = await handle.ready
+  assert.deepEqual(ready, {})
+  assert.equal(created.length, 1, 'exactly one client generation connects')
+  const states = new Map(published.map((p) => [p.lifecycleState, p]))
+  assert.ok(states.has('available'))
+  await handle.dispose()
+})
+
+test('a throwing egress gate is contained to a fail-closed deny', async () => {
+  const { published, hooks } = makeHarness()
+  let connectCalls = 0
+  hooks.gate = () => { throw new Error('gate exploded') }
+  hooks.createClient = () => {
+    const { client } = makeFakeClient()
+    const originalConnect = client.connect
+    client.connect = (...args) => {
+      connectCalls += 1
+      return originalConnect(...args)
+    }
+    return client
+  }
+  const ctx = {
+    logger: { error() {}, warn() {}, info() {} },
+    tools: {
+      register(def) {
+        return () => {}
+      },
+    },
+  }
+  const handle = startConnection(ctx, baseConfig, policy, hooks)
+  const ready = await handle.ready
+  assert.ok(ready.error)
+  assert.equal(connectCalls, 0, 'a throwing gate never reaches the transport')
+  const denied = published.filter((p) => p.reason?.code === 'egress-denied')
+  assert.ok(denied.length >= 1)
+  await handle.dispose()
+})
+
+test('stdio gate target uses the command descriptor and http uses the url', () => {
+  const stdio = transportTarget({ transport: 'stdio', command: 'npx' })
+  assert.deepEqual(stdio, { kind: 'subprocess', destination: 'npx' })
+  const http = transportTarget({ transport: 'streamable-http', url: 'https://mcp.example/endpoint' })
+  assert.deepEqual(http, { kind: 'http', destination: 'https://mcp.example/endpoint' })
 })

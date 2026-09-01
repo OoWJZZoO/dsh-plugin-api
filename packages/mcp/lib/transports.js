@@ -46,3 +46,16 @@ export function createTransport(config) {
 export function transportKind(config) {
   return config.transport === 'streamable-http' ? 'streamable-http' : 'stdio'
 }
+
+/**
+ * Normalized egress target descriptor for one transport attempt. HTTP uses the
+ * resolved URL; stdio uses the executable/command descriptor. The destination
+ * is the exact bound target the egress gate evaluates; redirects or reconnects
+ * create a fresh transport and therefore re-evaluate.
+ */
+export function transportTarget(config) {
+  if (config.transport === 'streamable-http') {
+    return { kind: 'http', destination: typeof config.url === 'string' ? config.url : '' }
+  }
+  return { kind: 'subprocess', destination: typeof config.command === 'string' ? config.command : '' }
+}

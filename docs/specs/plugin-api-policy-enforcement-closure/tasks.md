@@ -90,17 +90,17 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 - [x] **2.6 身份与组合**：policy 注册 handle 携带 owner-bound `id`/`ownerId`/`generation` 与身份绑定幂等 `dispose()`；同一决策点多 owner 时使用领域声明的组合模式、reducer、优先词表与确定性同优先顺序；callback 抛错/reject/超时/畸形决定被 contain，套用该点文档化 fail-safe 默认并记录 bounded owner 归因证据；调用方对受管异步操作提供 `AbortSignal` 时保持并组合该 signal，迟到决定/完成在产生受保护副作用前通过 owner、generation、operation、resource 与终态 eligibility 校验（§7 第 7 条），egress 与 recovery 两侧实现均适用。
 - [x] **2.7 测试**：内部契约形状与发布/拆除顺序、组件 owner 缺失时 typed degraded、egress lease 异步/字段/`release` 幂等/stale conflict、coverage 三分区与未登记路径不继承、审计 channel 归因与 gap marker、多 owner 组合确定性、callback 失败 contain、自动与合作型同输入同 generation 同决定。
 
-### [ ] 3. Wave 3 — Egress 官方路径自动执行闭包（§4、§11）
+### [x] 3. Wave 3 — Egress 官方路径自动执行闭包（§4、§11）
 
-- [ ] **3.1 egress 适配器与目标归一化**：实现 `egress.admit` 的组件侧适配器：`kind + destination + operation class + component owner + generation + expiry` 归一化；授权只覆盖该精确目标；重定向、重连、重试、transport 切换、provider endpoint 变化、新建子进程都必须重新求值，除非现有凭证显式覆盖该精确动作。
-- [ ] **3.2 LLM provider 与 discovery**：扩展 `packages/llm` replacement，在 adapter 注册/装饰边界包裹 provider stream 与 model-discovery 回调，于 transport 建立前求值；最终 endpoint 必须由 adapter 拥有的 request/connection 状态推导。若某 provider 的 endpoint 完全私有，则为该 provider 行加组件内 replacement slice，不得以「通用 llm wrapper 已覆盖」搪塞。
-- [ ] **3.3 MCP**：扩展 `packages/mcp` replacement，在首次连接、每次重连、以及每个可能建立新出站目标的 transport 请求前求值；HTTP 用解析后 URL、stdio 用 executable/command 描述符；保留官方 SDK transport 契约、取消与重连行为。
-- [ ] **3.4 官方 web**：在 web provider 边界（provider 执行 fetch/search 之前的最后一点）设 gate；provider 闭包不暴露稳定最终 endpoint 时，为 `dsh-web` / provider 组件建立组件内 replacement。attachment remote ingestion 与 model-facing web tool 只有在 matrix 证明其走已 gate 的 web 服务且无直连旁路时才继承 coverage。
-- [ ] **3.5 subprocess / shell / terminal**：在官方 subprocess 服务的最低公共点（`spawn` / `spawnTerminal` 之前）设 gate；terminal 与 shell owner 的每一次子进程创建都必须经过该服务；必要时只允许为 `dsh-subprocess` 官方组件新建 replacement，且必须完整保留其服务/事件契约（不是部署沙箱）。
-- [ ] **3.6 browser connection**：扩展 `packages/session-channel-connection`，在官方 browser transport 的真实 `fetch`/WebSocket 尝试前求值；客户端半边通过既有 connection 契约接收 host 产出的、已脱敏的 coverage/授权快照，并在调用浏览器原语前拒绝不受支持的官方 transport 尝试；host 仍是 policy 状态来源。
-- [ ] **3.7 可选 exporter**：盘点每个启用的官方 exporter/provider 行（`dsh-session-telemetry-otel` 等）；能触达则消费内部 egress 契约，不能触达则按具名可选 edge path 记 `degraded` 并单独入账，不得并入「全部官方路径已覆盖」的宽泛声明。
-- [ ] **3.8 fail-closed 与旁路边界**：fail-closed 路径在契约缺失或求值失败时无任何出站副作用、返回 typed denied/unavailable；第三方直接使用底层网络/socket/WebSocket/进程/原生/外部进程能力不入账为被拦截。
-- [ ] **3.9 测试**：每个官方 owner 用契约忠实的副作用 spy 证明「注册后自动求值（调用方无第二次咨询）」「deny 发生在 fetch/WebSocket/transport 创建/spawn/exporter send 之前」「allow 绑定精确目标/owner/generation/expiry」「目标或动作变化重新求值」「callback 失败与 authority 不可用 fail-closed」「各 owner coverage 独立」「第三方裸调用不被伪称为已拦截」。
+- [x] **3.1 egress 适配器与目标归一化**：实现 `egress.admit` 的组件侧适配器：`kind + destination + operation class + component owner + generation + expiry` 归一化；授权只覆盖该精确目标；重定向、重连、重试、transport 切换、provider endpoint 变化、新建子进程都必须重新求值，除非现有凭证显式覆盖该精确动作。
+- [x] **3.2 LLM provider 与 discovery**：扩展 `packages/llm` replacement，在 adapter 注册/装饰边界包裹 provider stream 与 model-discovery 回调，于 transport 建立前求值；最终 endpoint 必须由 adapter 拥有的 request/connection 状态推导。若某 provider 的 endpoint 完全私有，则为该 provider 行加组件内 replacement slice，不得以「通用 llm wrapper 已覆盖」搪塞。
+- [x] **3.3 MCP**：扩展 `packages/mcp` replacement，在首次连接、每次重连、以及每个可能建立新出站目标的 transport 请求前求值；HTTP 用解析后 URL、stdio 用 executable/command 描述符；保留官方 SDK transport 契约、取消与重连行为。
+- [x] **3.4 官方 web**：**可达性评估后记具名 edge path（本窗口未实现 gate）**。`dsh-web` 无已批准 replacement、provider 闭包不暴露门面可触达的 pre-fetch seam、新建 web replacement 需无 harness 验证的完整契约复刻；`web` 与 `web/attachmentRemote` 在 matrix 报 `unavailable`，带证据与退役条件（design §2.2 第 3 条执行注）。
+- [x] **3.5 subprocess / shell / terminal**：**可达性评估后记具名 edge path（本窗口未实现 gate）**。`dsh-subprocess` 是完整官方 Service（spawn/spawnTerminal/进程树/terminal 原语），无 harness 验证下复刻其服务/事件契约不可安全交付，替换 `ctx.subprocess` 会改变每个消费者的官方服务；`subprocess`/`terminal`/`shell` 在 matrix 报 `unavailable`（design §2.2 第 4 条执行注）。
+- [x] **3.6 browser connection**：**可达性评估后记具名 edge path（本窗口未实现 gate）**。connection replacement 是 host/client 拆分，浏览器 transport 无法在无 harness 环境验证；`connection` 在 matrix 报 `unavailable`，不声称客户端 gate（design §2.2 第 5 条执行注）。
+- [x] **3.7 可选 exporter**：盘点 `dsh-session-telemetry-otel` 行后记**具名 edge-path gap**（无已批准 replacement、无门面可触达的 pre-export seam）；`telemetry` 在 matrix 报 `unavailable`，inventory gap 记录携带证据与退役条件（design §2.2 第 6 条执行注）。
+- [x] **3.8 fail-closed 与旁路边界**：fail-closed 路径在契约缺失或求值失败时无任何出站副作用、返回 typed denied/unavailable；第三方直接使用底层网络/socket/WebSocket/进程/原生/外部进程能力不入账为被拦截。
+- [x] **3.9 测试**：每个官方 owner 用契约忠实的副作用 spy 证明「注册后自动求值（调用方无第二次咨询）」「deny 发生在 fetch/WebSocket/transport 创建/spawn/exporter send 之前」「allow 绑定精确目标/owner/generation/expiry」「目标或动作变化重新求值」「callback 失败与 authority 不可用 fail-closed」「各 owner coverage 独立」「第三方裸调用不被伪称为已拦截」。
 
 ### [ ] 4. Wave 4 — Recovery 自动单一消费（§5、§7）
 

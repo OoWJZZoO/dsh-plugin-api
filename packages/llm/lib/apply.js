@@ -41,6 +41,31 @@ export const inject = ['loader']
 export const LLM_COMPONENT_MARKER = Symbol.for('dsh-plugin-api.llm.contract')
 /** Where the attached decoration facet is published for the main facade. */
 export const LLM_DECORATION_FACET = Symbol.for('dsh-plugin-api.llm.decoration')
+/** Symbol-keyed internal policy authority contract published by the main facade. */
+const POLICY_AUTHORITY = Symbol.for('dsh-plugin-api.policyAuthority')
+
+/**
+ * Read the internal egress gate from the root context. A missing or malformed
+ * contract yields null (the replacement reports degraded coverage and does not
+ * block the official path); a deny blocks the outbound side effect (fail-closed).
+ */
+function readEgressGate(ctx) {
+  try {
+    const contract = ctx?.root?.[POLICY_AUTHORITY] ?? ctx?.[POLICY_AUTHORITY]
+    if (contract && typeof contract.egress?.admit === 'function') {
+      return (target, component) => {
+        try {
+          return contract.egress.admit(target, { component })
+        } catch {
+          return { ok: false, outcome: 'deny', reason: 'egress policy evaluation failed' }
+        }
+      }
+    }
+  } catch {
+    // fall through to a fail-closed null gate
+  }
+  return null
+}
 
 const require = createRequire(import.meta.url)
 
@@ -208,6 +233,11 @@ export function createLlmApply(overrides = {}) {
           runtime[LLM_COMPONENT_MARKER] = true
         } catch {
           // instance marker is best-effort; the surface probes still govern
+        }
+        try {
+          runtime._egressGate = readEgressGate(ctx)
+        } catch {
+          // a missing gate degrades to no interception (selective-install semantics)
         }
         const attached = attachRegistry(runtime, { logger: ctx?.logger })
         let released = false

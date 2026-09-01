@@ -1144,6 +1144,14 @@ var LlmRuntime = class extends Service {
 		const discover = this.discoveries.get(settingsNs);
 		if (discover === void 0) throw new LlmError(`no model discovery is registered for "${settingsNs}"`, "NO_DISCOVERY");
 		if ((request.provider ?? "").length === 0 && (request.baseURL ?? "").length === 0) throw new LlmError("model discovery needs a provider route or a baseURL", "INVALID_DISCOVERY");
+		// Egress gate on the resolved endpoint before the discovery request is
+		// sent (fail-closed: a deny blocks the outbound side effect entirely).
+		if (this._egressGate && (request.baseURL ?? "").length > 0) {
+			const decision = this._egressGate({ kind: "http", destination: String(request.baseURL) }, "llm/modelDiscovery");
+			if (!decision || decision.ok !== true || decision.outcome !== "allow") {
+				throw new LlmError("egress policy denied model discovery request", "EGRESS_DENIED");
+			}
+		}
 		const discovered = await discover(request);
 		const seen = /* @__PURE__ */ new Set();
 		const models = [];

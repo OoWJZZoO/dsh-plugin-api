@@ -125,6 +125,52 @@ test('package entry exports the loader-facing named exports', () => {
   assert.deepEqual(inject, ['loader'])
 })
 
+test('apply attaches the egress gate when the policy authority contract is present', () => {
+  const apply = createLlmApply({
+    ...makeVersionReaders(),
+    forkedRuntime: FakeForkedRuntime,
+    officialRuntime: FakeOfficialRuntime,
+  })
+  const { ctx, services } = makeApplyCtx({
+    entries: [officialEntry({ disabled: true }), replacementEntry()],
+  })
+  const admitted = []
+  ctx[Symbol.for('dsh-plugin-api.policyAuthority')] = {
+    version: 1,
+    egress: {
+      admit: (target, context) => {
+        admitted.push({ target, context })
+        return { ok: true, outcome: 'allow' }
+      },
+      release: async () => ({ ok: true, code: 'released' }),
+    },
+    recovery: { decide: async () => ({ ok: true }), commit: async () => ({ ok: true }) },
+    policy: { status: () => 'unavailable' },
+  }
+  apply(ctx)
+  const runtime = services.get('llm')
+  assert.equal(typeof runtime._egressGate, 'function', 'the runtime carries the egress gate')
+  const decision = runtime._egressGate({ kind: 'http', destination: 'https://models.example' }, 'llm/modelDiscovery')
+  assert.equal(decision.ok, true)
+  assert.equal(admitted.length, 1)
+  assert.deepEqual(admitted[0].target, { kind: 'http', destination: 'https://models.example' })
+  assert.equal(admitted[0].context.component, 'llm/modelDiscovery')
+})
+
+test('apply leaves the egress gate null when the contract is absent (selective-install semantics)', () => {
+  const apply = createLlmApply({
+    ...makeVersionReaders(),
+    forkedRuntime: FakeForkedRuntime,
+    officialRuntime: FakeOfficialRuntime,
+  })
+  const { ctx, services } = makeApplyCtx({
+    entries: [officialEntry({ disabled: true }), replacementEntry()],
+  })
+  apply(ctx)
+  const runtime = services.get('llm')
+  assert.equal(runtime._egressGate, null, 'no contract means no interception and degraded coverage')
+})
+
 test('parseFullVersion and fullVersionContractsMatch follow the main facade rule', () => {
   assert.deepEqual(parseFullVersion('0.1.0-rc.6-0.1.0'), { runtime: '0.1.0-rc.6', api: '0.1', maintenance: '0' })
   assert.equal(parseFullVersion('0.1.0-rc.6'), null)

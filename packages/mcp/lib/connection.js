@@ -14,8 +14,48 @@
 import { MAX_TIMER_DELAY_MS } from '@deepseek-ai/dsh-timeout'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { ToolListChangedNotificationSchema } from '@modelcontextprotocol/sdk/types.js'
-import { createTransport, transportKind } from './transports.js'
+import { createTransport, transportKind, transportTarget } from './transports.js'
 import { syncTools } from './sync.js'
+
+/**
+ * Symbol-keyed internal policy authority contract published by the main facade
+ * (`lib/policy-authority.js`). Global symbol so the replacement package reads
+ * it across the package boundary.
+ */
+const POLICY_AUTHORITY = Symbol.for('dsh-plugin-api.policyAuthority')
+
+/**
+ * Read the internal egress gate from the root context. A missing or malformed
+ * contract yields null; callers then fail closed (never establish the
+ * transport). A throwing policy evaluation is contained to a deny.
+ */
+function readEgressGate(ctx) {
+  try {
+    const contract = ctx?.root?.[POLICY_AUTHORITY] ?? ctx?.[POLICY_AUTHORITY]
+    if (contract && typeof contract.egress?.admit === 'function') {
+      return (target, component) => {
+        try {
+          return contract.egress.admit(target, { component })
+        } catch {
+          return { ok: false, outcome: 'deny', reason: 'egress policy evaluation failed' }
+        }
+      }
+    }
+  } catch {
+    // fall through to a fail-closed null gate
+  }
+  return null
+}
+
+function boundedReason(decision) {
+  try {
+    const reason = decision?.reason
+    if (typeof reason === 'string' && reason) return reason.slice(0, 160)
+  } catch {
+    // bounded best-effort
+  }
+  return 'egress policy denied this target'
+}
 
 /** Defaults shared by the Config schema and {@link resolveReconnectPolicy}. */
 export const RECONNECT_DEFAULTS = Object.freeze({
@@ -83,7 +123,7 @@ export function resolveReconnectPolicy(config, path) {
  * @returns {PromiseLike<{ ready: Promise<object>, dispose: () => Promise<void> }>}
  */
 export function startConnection(ctx, config, policy, hooks = {}) {
-  const { onPublish, createClient = defaultCreateClient } = hooks
+  const { onPublish, createClient = defaultCreateClient, gate = readEgressGate(ctx) } = hooks
   const label = `mcp-client(${config.serverName})`
   const transport = transportKind(config)
   const opts = {
@@ -284,8 +324,39 @@ export function startConnection(ctx, config, policy, hooks = {}) {
       provenance: { source: startup ? 'config' : 'reconnect', certainty: 'inferred' },
       tools: [],
     })
+    // Egress gate: fail-closed before any transport creation or connection
+    // establishment. A missing contract or a deny blocks the outbound side
+    // effect entirely; reconnect re-evaluates each attempt.
+    const runtimeTransport = createTransport(config)
+    if (gate) {
+      const target = transportTarget(config)
+      let decision
+      try {
+        decision = gate(target, 'mcp')
+      } catch {
+        // a throwing gate is contained to a fail-closed deny; never allow
+        decision = { ok: false, outcome: 'deny', reason: 'egress policy evaluation failed' }
+      }
+      if (!decision || decision.ok !== true || decision.outcome !== 'allow') {
+        if (isCurrent(generation)) {
+          ctx.logger.warn(`${label}: egress policy denied ${transportKind(config)} target: ${boundedReason(decision)}`)
+        }
+        publishUnavailable(genId, 'egress-denied', 'config')
+        try {
+          await generation.close()
+        } catch {
+          // best-effort close of the unconnected generation
+        }
+        attemptSettled = true
+        if (!isCurrent(generation)) return
+        client = undefined
+        clientClosed = undefined
+        if (!disposed) scheduleReconnect()
+        return
+      }
+    }
     try {
-      await generation.connect(createTransport(config))
+      await generation.connect(runtimeTransport)
       if (hasClosed()) {
         attemptSettled = true
         generationDown(generation)
