@@ -123,14 +123,14 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 
 ### [ ] 6. Wave 6 — 仓库清扫与 storage 记账修正（§12、§13）
 
-- [ ] **6.1 精确删除**：从 Git 与工作树删除且仅删除 `undefined\dsh-cost-meter-test-home/storages/cost-meter/ledger.json`、`undefined\dsh-cost-meter-test-legacy-home/storages/cost-meter/ledger.json`、`undefined\dsh-cost-meter-test-mig-home/storages/cost-meter/ledger.json`，并移除其空父目录。
-- [ ] **6.2 不使用宽泛规则**：不新增 `*undefined*` / `*dsh-cost-meter-test*` 或等价 ignore/删除规则；若发现仓库内确有测试会重新生成该产物，先修正该测试临时 home 的构造与清理，再宣告清扫完成；若确无仓库内生成器，则记为 M8 引入的历史外部测试产物，不臆造运行时修补。
-- [ ] **6.3 storage 记账修正**：
+- [x] **6.1 精确删除**：从 Git 与工作树删除且仅删除 `undefined\dsh-cost-meter-test-home/storages/cost-meter/ledger.json`、`undefined\dsh-cost-meter-test-legacy-home/storages/cost-meter/ledger.json`、`undefined\dsh-cost-meter-test-mig-home/storages/cost-meter/ledger.json`，并移除其空父目录。
+- [x] **6.2 不使用宽泛规则**：不新增 `*undefined*` / `*dsh-cost-meter-test*` 或等价 ignore/删除规则；若发现仓库内确有测试会重新生成该产物，先修正该测试临时 home 的构造与清理，再宣告清扫完成；若确无仓库内生成器，则记为 M8 引入的历史外部测试产物，不臆造运行时修补。
+- [x] **6.3 storage 记账修正**：
   - canonical registry 的 `storage removals` 簇：`replacement` 改为 operation handle `dispose()` 销毁契约，`gapReason` 置 `null`；
   - 登记 `storage.open.handle.dispose` 成员（operation handle 叶子，含完整 M8 字段集与 handle 行）；
   - 运行时按 registry 落地：`lib/storage-binding.js` 的 handle 以 `dispose()` 取代 `close()`，不提供兼容别名；
   - 同步生成物、迁移账本与交付文档，全部使用同一 replacement 结论。
-- [ ] **6.4 测试**：删除后受护栏全量测试完成再扫描上述三条精确路径与根级 `undefined\dsh-cost-meter-test-*` 模式，复发即失败；surface 验证证明旧 `close()` 路径已不存在、受支持 operation handle 暴露已登记的 `dispose()` 销毁契约、且没有兼容别名。
+- [x] **6.4 测试**：删除后受护栏全量测试完成再扫描上述三条精确路径与根级 `undefined\dsh-cost-meter-test-*` 模式，复发即失败；surface 验证证明旧 `close()` 路径已不存在、受支持 operation handle 暴露已登记的 `dispose()` 销毁契约、且没有兼容别名。
 
 ### [ ] 7. Wave 7 — Registry、生成物、能力与文档同步（§14、§15）
 

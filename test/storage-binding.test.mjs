@@ -60,13 +60,14 @@ test('binding publishes only the owner/scope envelope contract and namespaces th
   assert.equal(facility.opened[0].version, 1)
   assert.deepEqual(Object.keys(facility.opened[0].tables), ['items'], 'plugin tables pass through untouched')
 
-  // close() closes without deleting any record.
+  // dispose() closes without deleting any record; no legacy close() alias.
   table.records.set('k1', { data: 1 })
-  const closed = await result.handle.close()
-  assert.equal(closed.ok, true)
-  assert.equal(closed.code, 'closed')
+  assert.equal(result.handle.close, undefined, 'the operation handle exposes dispose(), not a close alias')
+  const disposed = await result.handle.dispose()
+  assert.equal(disposed.ok, true)
+  assert.equal(disposed.code, 'disposed')
   assert.equal(domainStub.closeCalls, 1)
-  assert.equal(domainStub.deleteCalls, 0, 'close never deletes data')
+  assert.equal(domainStub.deleteCalls, 0, 'dispose never deletes data')
   assert.equal(table.records.has('k1'), true)
 
   // purge() is the explicit deletion operation.

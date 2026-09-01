@@ -12,7 +12,9 @@
     "clientLeaves": 53,
     "handleLeaves": 51,
     "servicesWhitelistHost": 46,
-    "note": "counts derived from the leaves array; re-derived mechanically when the registry changes"
+    "note": "counts derived from the leaves array; re-derived mechanically when the registry changes",
+    "leaves": 332,
+    "handles": 52
   },
   "leaves": [
     {
@@ -2994,6 +2996,16 @@
       "idiom": "mutation",
       "migrationAction": "retain",
       "shapeNote": "explicit mutation extension on the storage binding handle; satisfies the mutation commitState contract"
+    },
+    {
+      "publicPath": "storage.open.handle.dispose",
+      "runtime": "host",
+      "kind": "handle",
+      "currentShape": "handle dispose action returning a discriminated result",
+      "targetPath": "storage.open.handle.dispose",
+      "idiom": "operation",
+      "migrationAction": null,
+      "shapeNote": "operation handle destruction verb; replaces the deleted close() and no compat alias exists"
     },
     {
       "publicPath": "storage.open.handle.domain",
