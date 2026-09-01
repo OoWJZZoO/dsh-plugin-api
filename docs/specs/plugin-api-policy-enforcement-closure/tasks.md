@@ -68,17 +68,17 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 
 ---
 
-### [ ] 1. Wave 1 — Policy inventory、enforcement matrix 与机械校验（§1、§6、§10）
+### [x] 1. Wave 1 — Policy inventory、enforcement matrix 与机械校验（§1、§6、§10）
 
-- [ ] **1.1 inventory 制品**：新增 `docs/specs/plugin-api-policy-enforcement-closure/policy-inventory.json`，为构建期/测试期数据（不被运行时 import 为可变状态）。枚举 canonical registry 与实际 host/client 公共面中的全部 policy 或 policy-shaped 成员 —— 至少覆盖：llm request transforms / admission、route policy 与 health circuit、execution visibility、recovery policy 与 recovery visibility、channel auth、tool restrict/guard、skill activation、prompt provenance、security policy/redaction/egress，以及按语义检查（而非仅名称匹配）发现的其他成员。每行携带冻结决策 9 的全字段。
-- [ ] **1.2 enforcement matrix**：为 inventory 中每条 policy 登记其声明的官方决策点：最后一个稳定的副作用前/终态前决策点、受保护动作、实际执行副作用的官方组件 owner、重定向/重连/重试/新子进程的重入点。egress 至少覆盖 LLM provider 与 model discovery、MCP stdio/HTTP、官方 web 与 web provider、subprocess/shell/terminal、attachment remote ingestion、remote/connection transport、可选 telemetry exporter；recovery 至少覆盖 model、tool、agent-loop、task、transaction 及其他官方失败/重试/降级路径。
-- [ ] **1.3 gap 记录**：对每条未闭合路径写 gap 记录，携带冻结决策 8 的全字段；`failedChannels` 必须逐通道说明「官方直绑 / 门面转译 / 扩展现有 replacement / 新增组件 replacement」为何失败。
-- [ ] **1.4 机械校验**：新增 `scripts/policy-inventory-validate.mjs`（由测试调用）：对未登记 policy 成员、未声明官方受保护路径、无自动/合作型 disposition 的注册、overbroad coverage 声明、缺字段 gap 记录、以及「常见或已由已批准 replacement 拥有的路径被记为 edge gap」一律失败；registry、生成物、matrix 与 inventory 相互矛盾时失败且不得静默择一（§1 第 5 条）。
-- [ ] **1.5 §6 语义重判**：
+- [x] **1.1 inventory 制品**：新增 `docs/specs/plugin-api-policy-enforcement-closure/policy-inventory.json`，为构建期/测试期数据（不被运行时 import 为可变状态）。枚举 canonical registry 与实际 host/client 公共面中的全部 policy 或 policy-shaped 成员 —— 至少覆盖：llm request transforms / admission、route policy 与 health circuit、execution visibility、recovery policy 与 recovery visibility、channel auth、tool restrict/guard、skill activation、prompt provenance、security policy/redaction/egress，以及按语义检查（而非仅名称匹配）发现的其他成员。每行携带冻结决策 9 的全字段。
+- [x] **1.2 enforcement matrix**：为 inventory 中每条 policy 登记其声明的官方决策点：最后一个稳定的副作用前/终态前决策点、受保护动作、实际执行副作用的官方组件 owner、重定向/重连/重试/新子进程的重入点。egress 至少覆盖 LLM provider 与 model discovery、MCP stdio/HTTP、官方 web 与 web provider、subprocess/shell/terminal、attachment remote ingestion、remote/connection transport、可选 telemetry exporter；recovery 至少覆盖 model、tool、agent-loop、task、transaction 及其他官方失败/重试/降级路径。
+- [x] **1.3 gap 记录**：对每条未闭合路径写 gap 记录，携带冻结决策 8 的全字段；`failedChannels` 必须逐通道说明「官方直绑 / 门面转译 / 扩展现有 replacement / 新增组件 replacement」为何失败。
+- [x] **1.4 机械校验**：新增 `scripts/policy-inventory-validate.mjs`（由测试调用）：对未登记 policy 成员、未声明官方受保护路径、无自动/合作型 disposition 的注册、overbroad coverage 声明、缺字段 gap 记录、以及「常见或已由已批准 replacement 拥有的路径被记为 edge gap」一律失败；registry、生成物、matrix 与 inventory 相互矛盾时失败且不得静默择一（§1 第 5 条）。
+- [x] **1.5 §6 语义重判**：
   - 修正 `llm.routing.health removals` 的 `replacement` 文案：若没有真实调度调用者，删除「automatic probe execution」声明，改为如实登记实际存在的成员与行为；
   - 对发现的 policy-shaped 成员逐个判定：确为 projection / contribution / resourceRegistry / operation 的，在 registry 与 inventory 中改语义分类，不得为其臆造自动执行（§6 第 7 条）；
   - 已自动执行的 policy（transform/admission、route/circuit、visibility、channel auth、tool guard/restrict、skill activation、prompt provenance）保留行为、补 coverage 证据行，并核实其合作型接口存在。
-- [ ] **1.6 测试**：inventory 完备性（每条 policy 恰一个 disposition）、行字段完备性、gap 字段完备性与 AC4 拒绝规则、§6 重判结论与生成物一致、校验器对上述六种缺陷均能失败。
+- [x] **1.6 测试**：inventory 完备性（每条 policy 恰一个 disposition）、行字段完备性、gap 字段完备性与 AC4 拒绝规则、§6 重判结论与生成物一致、校验器对上述六种缺陷均能失败。
 
 ### [ ] 2. Wave 2 — 内部 policy authority、公共 egress/recovery 重塑与 coverage（§2、§3、§7、§8）
 

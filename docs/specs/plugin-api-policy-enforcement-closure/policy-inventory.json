@@ -1,0 +1,758 @@
+{
+  "$comment": "Build/test-time policy inventory + enforcement matrix for plugin-api-policy-enforcement-closure. Derived from the canonical registry and the actual host public surface; never imported as mutable runtime state. Each inventory row carries the full 16-field set (freeze decision 9); non-applicable fields are explicit null. Validated by scripts/policy-inventory-validate.mjs.",
+  "schemaVersion": 1,
+  "baseline": {
+    "runtime": "0.1.0-rc.6",
+    "api": "0.1",
+    "packageVersion": "0.1.0-rc.6-0.1.0",
+    "frozen": true
+  },
+  "generatedFrom": "docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json",
+  "coverageStatuses": [
+    "automatic",
+    "planned-automatic",
+    "cooperative-only",
+    "unavailable",
+    "named-gap"
+  ],
+  "inventory": [
+    {
+      "policyPath": "llm.requestTransforms",
+      "registrationShape": "llm.requestTransforms.register",
+      "registeredMembers": [
+        "llm.requestTransforms.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade llm request owner",
+      "componentOwner": "official llm request owner and adapter preparation",
+      "decisionVocabulary": "transform pipeline registration (order-preserving pure callbacks)",
+      "reducer/conflictRule": "registration order pipeline; same owner replaces its prior generation",
+      "defaultDecision": "no registered transform: request passes through unchanged",
+      "automaticDecisionPoint": "llm/request-transform (request preparation before adapter stream begins)",
+      "protectedAction": "outgoing llm request transformation",
+      "cooperativeInterface": "llm.prepareCall / llm request path",
+      "observableEvidence": "existing llm request transform tests; registry/surface consistency",
+      "failureAndCancellation": "callback failure contained; abort propagates; generation-bound dispose",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "llm/request-transform"
+      ]
+    },
+    {
+      "policyPath": "llm.admissionPolicies",
+      "registrationShape": "llm.admissionPolicies.register",
+      "registeredMembers": [
+        "llm.admissionPolicies.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade llm admission owner",
+      "componentOwner": "official llm request admission gateway",
+      "decisionVocabulary": "admission allow | deny for an llm request",
+      "reducer/conflictRule": "admission composition; deny wins; deterministic same-precedence order",
+      "defaultDecision": "official default admission",
+      "automaticDecisionPoint": "llm/admission (RPC admission gateway before request dispatch)",
+      "protectedAction": "llm request admission",
+      "cooperativeInterface": "llm request path",
+      "observableEvidence": "existing llm-admission-gateway tests; registry/surface consistency",
+      "failureAndCancellation": "callback failure contained; fail-safe official default; abort propagated",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "llm/admission"
+      ]
+    },
+    {
+      "policyPath": "llm.routing.policies",
+      "registrationShape": "llm.routing.policies.register",
+      "registeredMembers": [
+        "llm.routing.policies.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade llm routing owner",
+      "componentOwner": "official llm route decision owner",
+      "decisionVocabulary": "route selection decision for an llm call",
+      "reducer/conflictRule": "route policy reducer; deterministic same-precedence order",
+      "defaultDecision": "official default route selection",
+      "automaticDecisionPoint": "route (route decision owner before route commit)",
+      "protectedAction": "llm route selection",
+      "cooperativeInterface": "llm.routing operations (forExecution/current/observe)",
+      "observableEvidence": "existing exec-route and llm routing tests; registry/surface consistency",
+      "failureAndCancellation": "callback failure contained; official default; no second decision on late completion",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "route"
+      ]
+    },
+    {
+      "policyPath": "llm.routing.health.circuitPolicy",
+      "registrationShape": "llm.routing.health.circuitPolicy.register",
+      "registeredMembers": [
+        "llm.routing.health.circuitPolicy.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade llm routing health owner",
+      "componentOwner": "official llm routing health transition owner",
+      "decisionVocabulary": "circuit state transition (open | closed | half-open)",
+      "reducer/conflictRule": "circuit policy reducer; latest generation replaces previous; dispose is identity-bound",
+      "defaultDecision": "official default circuit transition",
+      "automaticDecisionPoint": "circuit (health transition owner on status change)",
+      "protectedAction": "circuit state transition",
+      "cooperativeInterface": "llm.routing.health.get/history/observe projections; probe.register",
+      "observableEvidence": "existing llm routing health tests; registry/surface consistency",
+      "failureAndCancellation": "callback failure contained; official default transition; stale generation cannot flip a newer state",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "circuit"
+      ]
+    },
+    {
+      "policyPath": "executions.visibility",
+      "registrationShape": "executions.visibility.register",
+      "registeredMembers": [
+        "executions.visibility.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade execution visibility owner",
+      "componentOwner": "official execution projection owner",
+      "decisionVocabulary": "audience / visibility decision for an execution record",
+      "reducer/conflictRule": "visibility policy reducer; deterministic same-precedence order",
+      "defaultDecision": "official default execution visibility",
+      "automaticDecisionPoint": "visibility (execution projection before audience publication)",
+      "protectedAction": "execution record visibility publication",
+      "cooperativeInterface": "executions.get/history/observe with audience options",
+      "observableEvidence": "existing execution-visibility tests; registry/surface consistency",
+      "failureAndCancellation": "callback failure contained; official default audience; projection stays read-only",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "visibility"
+      ]
+    },
+    {
+      "policyPath": "executions.recovery.policy",
+      "registrationShape": "executions.recovery.policy.register",
+      "registeredMembers": [
+        "executions.recovery.policy.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade recovery owner",
+      "componentOwner": "agent-loop request-error owner; facade task/transaction terminal owners",
+      "decisionVocabulary": "recovery action (retry | fallback | abort | stop | no-op)",
+      "reducer/conflictRule": "recovery action validation and retry bounds; single consumption per operation window",
+      "defaultDecision": "official retry waterfall / documented fail-safe default",
+      "automaticDecisionPoint": "recovery/model, recovery/tool, recovery/task, recovery/transaction (single-consumption authority in Wave 4)",
+      "protectedAction": "next attempt, fallback or terminal outcome commit after a failure",
+      "cooperativeInterface": "executions.recovery.evaluate (operation; caller honors the returned action)",
+      "observableEvidence": "existing recovery-policy tests; Wave 4 recovery-consumption tests",
+      "failureAndCancellation": "callback failure contained; fail-safe recovery default; stale/duplicate consumed at most once; cancellation never starts an automatic retry",
+      "coverageStatus": "planned-automatic",
+      "verification": "inventory-validate; wave4 recovery-consumption tests",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "recovery/model",
+        "recovery/tool",
+        "recovery/task",
+        "recovery/transaction"
+      ]
+    },
+    {
+      "policyPath": "executions.recovery.visibility",
+      "registrationShape": "executions.recovery.visibility.register",
+      "registeredMembers": [
+        "executions.recovery.visibility.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade recovery owner",
+      "componentOwner": "recovery decision projection owner",
+      "decisionVocabulary": "audience / visibility decision for a recovery decision record",
+      "reducer/conflictRule": "recovery visibility reducer; deterministic same-precedence order",
+      "defaultDecision": "official default recovery decision visibility",
+      "automaticDecisionPoint": "recovery-visibility (recovery decision projection; closes with Wave 4 recovery authority)",
+      "protectedAction": "recovery decision record publication",
+      "cooperativeInterface": "recovery decision/history projection reads",
+      "observableEvidence": "existing recovery-policy tests; Wave 4 recovery-consumption tests",
+      "failureAndCancellation": "callback failure contained; official default; projection stays read-only",
+      "coverageStatus": "planned-automatic",
+      "verification": "inventory-validate; wave4 recovery-consumption tests",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "recovery-visibility"
+      ]
+    },
+    {
+      "policyPath": "sessions.channels.auth",
+      "registrationShape": "sessions.channels.auth.register",
+      "registeredMembers": [
+        "sessions.channels.auth.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade session channel owner",
+      "componentOwner": "official session channel verifier/authorizer",
+      "decisionVocabulary": "channel authorization allow | deny for a possession-gated action",
+      "reducer/conflictRule": "official verifier/authorizer combination; latest generation replaces previous; dispose is identity-bound",
+      "defaultDecision": "official default channel authorization",
+      "automaticDecisionPoint": "channel-auth (verifier/authorizer gate before possession-gated action)",
+      "protectedAction": "session channel possession-gated operation",
+      "cooperativeInterface": "sessions.channels operations",
+      "observableEvidence": "existing session-channel-auth tests; registry/surface consistency",
+      "failureAndCancellation": "callback failure contained; typed remote denial; identity-bound dispose",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "channel-auth"
+      ]
+    },
+    {
+      "policyPath": "tools.restrict",
+      "registrationShape": "tools.restrict.register",
+      "registeredMembers": [
+        "tools.restrict.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade tools owner",
+      "componentOwner": "official tools pre-execute owner",
+      "decisionVocabulary": "tool restriction allow | deny | restrict",
+      "reducer/conflictRule": "restriction filter composition; deterministic preflight order",
+      "defaultDecision": "no restriction filter blocks the tool",
+      "automaticDecisionPoint": "tool-restrict (official tools pre-execute preparation)",
+      "protectedAction": "tool execution",
+      "cooperativeInterface": "tools.execute and related domain operations",
+      "observableEvidence": "existing tools-guard tests; registry/surface consistency",
+      "failureAndCancellation": "callback failure contained; official preflight default; abort propagated",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "tool-restrict"
+      ]
+    },
+    {
+      "policyPath": "tools.guard",
+      "registrationShape": "tools.guard.register",
+      "registeredMembers": [
+        "tools.guard.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade tools owner",
+      "componentOwner": "official tools pre-execute owner",
+      "decisionVocabulary": "tool guard allow | deny for a guarded call",
+      "reducer/conflictRule": "guard composition; deterministic preflight order",
+      "defaultDecision": "no guard blocks the call",
+      "automaticDecisionPoint": "tool-guard (official tools pre-execute preparation)",
+      "protectedAction": "guarded tool call execution",
+      "cooperativeInterface": "tools.execute and related domain operations",
+      "observableEvidence": "existing tools-guard tests; registry/surface consistency",
+      "failureAndCancellation": "callback failure contained; official preflight default; abort propagated",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "tool-guard"
+      ]
+    },
+    {
+      "policyPath": "skills.activation.policy",
+      "registrationShape": "skills.activation.policy.register",
+      "registeredMembers": [
+        "skills.activation.policy.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade skills activation owner",
+      "componentOwner": "official skill activation/catalog assembly owner",
+      "decisionVocabulary": "minimal catalog update allow | deny",
+      "reducer/conflictRule": "minimal-update policy semantics; latest generation replaces previous; dispose is identity-bound",
+      "defaultDecision": "official default catalog update behavior",
+      "automaticDecisionPoint": "skill-activation (activation/catalog assembly before activation commit)",
+      "protectedAction": "skill activation / catalog update",
+      "cooperativeInterface": "skills.activation.activate and related operations",
+      "observableEvidence": "existing skill-activation tests; registry/surface consistency",
+      "failureAndCancellation": "callback failure contained; typed outcomes; identity-bound dispose",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "skill-activation"
+      ]
+    },
+    {
+      "policyPath": "prompts.provenance.policy",
+      "registrationShape": "prompts.provenance.policy.register",
+      "registeredMembers": [
+        "prompts.provenance.policy.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade context provenance owner",
+      "componentOwner": "official context composition owner",
+      "decisionVocabulary": "provenance composition ordering rule",
+      "reducer/conflictRule": "ordered composition reducer; redaction boundaries preserved",
+      "defaultDecision": "official default context composition",
+      "automaticDecisionPoint": "prompt-provenance (context composition before its projection is published)",
+      "protectedAction": "context provenance composition / publication",
+      "cooperativeInterface": "prompts.provenance.compose and projection reads",
+      "observableEvidence": "existing context-provenance tests; registry/surface consistency",
+      "failureAndCancellation": "callback failure contained; official composition default; generation-bound dispose",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "prompt-provenance"
+      ]
+    },
+    {
+      "policyPath": "security.policy",
+      "registrationShape": "security.policy.register",
+      "registeredMembers": [
+        "security.policy.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade security owner",
+      "componentOwner": "official approval / tool before-after / model request owners",
+      "decisionVocabulary": "domain policy decision at each declared security point",
+      "reducer/conflictRule": "security policy composition; deterministic same-precedence order per point",
+      "defaultDecision": "official fail-safe default per declared point",
+      "automaticDecisionPoint": "security-policy (approval gate; tool before/after; model request)",
+      "protectedAction": "approval-gated / tool / model-request side effects",
+      "cooperativeInterface": "corresponding official domain operations",
+      "observableEvidence": "existing security-policy tests; registry/surface consistency",
+      "failureAndCancellation": "callback failure contained; fail-safe default; generation-bound dispose",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "security-policy"
+      ]
+    },
+    {
+      "policyPath": "security.redaction",
+      "registrationShape": "security.redaction.register",
+      "registeredMembers": [
+        "security.redaction.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade security owner",
+      "componentOwner": "official visibility/redaction owners",
+      "decisionVocabulary": "redaction rule for a protected payload",
+      "reducer/conflictRule": "redaction composition; deterministic same-precedence order",
+      "defaultDecision": "official default redaction",
+      "automaticDecisionPoint": "security-redaction (visibility/redaction before serialization/publication)",
+      "protectedAction": "redacted payload publication",
+      "cooperativeInterface": "corresponding domain operations and projections",
+      "observableEvidence": "existing security-policy-redaction tests; registry/surface consistency",
+      "failureAndCancellation": "callback failure contained; official default redaction; secrets never reach audit",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "security-redaction"
+      ]
+    },
+    {
+      "policyPath": "security.egress",
+      "registrationShape": "security.egress.register",
+      "registeredMembers": [
+        "security.egress.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade security owner",
+      "componentOwner": "multiple official outbound owners (llm provider, mcp, web, subprocess, connection, telemetry)",
+      "decisionVocabulary": "egress allow | deny for a normalized outbound target",
+      "reducer/conflictRule": "egress precedence with default deny; deterministic same-precedence order; exact-target binding",
+      "defaultDecision": "deny (fail-closed)",
+      "automaticDecisionPoint": "egress/admit per matrix path (last stable pre-side-effect point; automatic authority in Wave 3)",
+      "protectedAction": "official outbound side effect (connection, request, transport, child process)",
+      "cooperativeInterface": "security.egress.lease.acquire / release (coordination)",
+      "observableEvidence": "existing security-policy-egress tests; Wave 3 egress-enforcement tests",
+      "failureAndCancellation": "fail-closed on contract absence or callback failure; redirect/reconnect/retry re-evaluates; AbortSignal preserved",
+      "coverageStatus": "planned-automatic",
+      "verification": "inventory-validate; wave3 egress-enforcement tests",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "llm/provider",
+        "llm/modelDiscovery",
+        "mcp/stdio",
+        "mcp/http",
+        "web",
+        "web/attachmentRemote",
+        "subprocess",
+        "terminal",
+        "shell",
+        "connection",
+        "telemetry",
+        "remote"
+      ]
+    }
+  ],
+  "enforcementMatrix": [
+    {
+      "officialPath": "llm/provider",
+      "decisionPoint": "adapter registration/decoration boundary before provider transport starts",
+      "componentOwner": "dsh-llm-deepseek / dsh-llm-pi-ai",
+      "implementationChannel": "R",
+      "reentry": "provider endpoint change or lazy resolution re-admits; new transport requires fresh admission",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave3 egress-enforcement tests"
+    },
+    {
+      "officialPath": "llm/modelDiscovery",
+      "decisionPoint": "model-discovery callback wrapper before discovery transport starts",
+      "componentOwner": "dsh-llm-deepseek / dsh-llm-pi-ai",
+      "implementationChannel": "R",
+      "reentry": "each discovery transport is a new admission",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave3 egress-enforcement tests"
+    },
+    {
+      "officialPath": "mcp/stdio",
+      "decisionPoint": "MCP stdio initial connection and each reconnect before transport creation",
+      "componentOwner": "dsh-mcp (mcp replacement)",
+      "implementationChannel": "R",
+      "reentry": "reconnect re-admits with the executable/command descriptor",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave3 egress-enforcement tests"
+    },
+    {
+      "officialPath": "mcp/http",
+      "decisionPoint": "MCP HTTP connect/send after URL resolution, before request transmission",
+      "componentOwner": "dsh-mcp (mcp replacement)",
+      "implementationChannel": "R",
+      "reentry": "reconnect and transport-switch re-admit with the resolved URL",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave3 egress-enforcement tests"
+    },
+    {
+      "officialPath": "web",
+      "decisionPoint": "web provider boundary immediately before fetch/search",
+      "componentOwner": "dsh-web / dsh-web-search-deepseek",
+      "implementationChannel": "R",
+      "reentry": "provider endpoint change re-admits; provider-specific replacement when the final endpoint stays private",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave3 egress-enforcement tests"
+    },
+    {
+      "officialPath": "web/attachmentRemote",
+      "decisionPoint": "attachment remote ingestion (inherited only when it provably uses the gated web service)",
+      "componentOwner": "attachments replacement",
+      "implementationChannel": "R",
+      "reentry": "direct bypass path does not inherit coverage",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave3 egress-enforcement tests"
+    },
+    {
+      "officialPath": "subprocess",
+      "decisionPoint": "official subprocess service lowest common point before spawn",
+      "componentOwner": "dsh-subprocess / dsh-subprocess-local",
+      "implementationChannel": "R",
+      "reentry": "each child-process creation is a new admission",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave3 egress-enforcement tests"
+    },
+    {
+      "officialPath": "terminal",
+      "decisionPoint": "official subprocess service before spawnTerminal",
+      "componentOwner": "dsh-terminal*",
+      "implementationChannel": "R",
+      "reentry": "each terminal spawn is a new admission",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave3 egress-enforcement tests"
+    },
+    {
+      "officialPath": "shell",
+      "decisionPoint": "official subprocess service before shell child-process creation",
+      "componentOwner": "dsh-shell",
+      "implementationChannel": "R",
+      "reentry": "each shell child process is a new admission",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave3 egress-enforcement tests"
+    },
+    {
+      "officialPath": "connection",
+      "decisionPoint": "official browser transport real fetch/WebSocket attempt",
+      "componentOwner": "dsh-client-connection (connection replacement + client half)",
+      "implementationChannel": "R",
+      "reentry": "reconnect and transport switch re-admit; client receives a host coverage snapshot",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave3 egress-enforcement tests"
+    },
+    {
+      "officialPath": "telemetry",
+      "decisionPoint": "optional exporter send before export",
+      "componentOwner": "dsh-session-telemetry-otel",
+      "implementationChannel": "R",
+      "reentry": "each export is a new admission; a provider that cannot be reached without contract breakage is a named optional edge path",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave3 egress-enforcement tests"
+    },
+    {
+      "officialPath": "remote",
+      "decisionPoint": "facade replacement remote/attachment outbound paths (transitive from final side-effect owner)",
+      "componentOwner": "facade replacements",
+      "implementationChannel": "B",
+      "reentry": "an independent outbound side effect at a layer requires its own gate",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave3 egress-enforcement tests"
+    },
+    {
+      "officialPath": "recovery/model",
+      "decisionPoint": "agent/request-error boundary before the next attempt or terminal error commit",
+      "componentOwner": "agent-loop replacement",
+      "implementationChannel": "R",
+      "reentry": "official retry provider normalizes into the same decision window; no second retry",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave4 recovery-consumption tests"
+    },
+    {
+      "officialPath": "recovery/tool",
+      "decisionPoint": "tool dispatch/preparation failure before terminal step commit",
+      "componentOwner": "agent-loop scheduler",
+      "implementationChannel": "R",
+      "reentry": "started calls keep operation identity; skipped/aborted keep official ordering",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave4 recovery-consumption tests"
+    },
+    {
+      "officialPath": "recovery/task",
+      "decisionPoint": "task settlement before terminal commit, retry or rollback",
+      "componentOwner": "facade task owner",
+      "implementationChannel": "facade",
+      "reentry": "same decision window as other recovery owners; no hidden mutation",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave4 recovery-consumption tests"
+    },
+    {
+      "officialPath": "recovery/transaction",
+      "decisionPoint": "workspace transaction recovery before terminal commit/rollback",
+      "componentOwner": "facade transaction owner",
+      "implementationChannel": "facade",
+      "reentry": "prepare/record/commit/rollback outer shape unchanged; recovery is not a generic rollback disposer",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave4 recovery-consumption tests"
+    },
+    {
+      "officialPath": "llm/request-transform",
+      "decisionPoint": "request preparation before adapter stream begins",
+      "componentOwner": "official llm request owner and adapter preparation",
+      "implementationChannel": "A",
+      "reentry": "re-entered request evaluates the effective transforms exactly once",
+      "coverageStatus": "automatic",
+      "verification": "existing llm request transform tests"
+    },
+    {
+      "officialPath": "llm/admission",
+      "decisionPoint": "RPC admission gateway before request dispatch",
+      "componentOwner": "official llm request admission gateway",
+      "implementationChannel": "A",
+      "reentry": "each request admission is evaluated once",
+      "coverageStatus": "automatic",
+      "verification": "existing llm-admission-gateway tests"
+    },
+    {
+      "officialPath": "route",
+      "decisionPoint": "route decision owner before route commit",
+      "componentOwner": "official llm route decision owner",
+      "implementationChannel": "A",
+      "reentry": "each route selection is evaluated once",
+      "coverageStatus": "automatic",
+      "verification": "existing exec-route / llm routing tests"
+    },
+    {
+      "officialPath": "circuit",
+      "decisionPoint": "health transition owner on status change",
+      "componentOwner": "official llm routing health transition owner",
+      "implementationChannel": "A",
+      "reentry": "stale generation cannot flip a newer state",
+      "coverageStatus": "automatic",
+      "verification": "existing llm routing health tests"
+    },
+    {
+      "officialPath": "visibility",
+      "decisionPoint": "execution projection before audience publication",
+      "componentOwner": "official execution projection owner",
+      "implementationChannel": "A",
+      "reentry": "projection stays read-only",
+      "coverageStatus": "automatic",
+      "verification": "existing execution-visibility tests"
+    },
+    {
+      "officialPath": "recovery-visibility",
+      "decisionPoint": "recovery decision projection before publication",
+      "componentOwner": "recovery decision projection owner",
+      "implementationChannel": "R",
+      "reentry": "closes with the Wave 4 recovery authority",
+      "coverageStatus": "planned-automatic",
+      "verification": "wave4 recovery-consumption tests"
+    },
+    {
+      "officialPath": "channel-auth",
+      "decisionPoint": "verifier/authorizer gate before possession-gated action",
+      "componentOwner": "official session channel verifier/authorizer",
+      "implementationChannel": "A",
+      "reentry": "typed remote denial on failure",
+      "coverageStatus": "automatic",
+      "verification": "existing session-channel-auth tests"
+    },
+    {
+      "officialPath": "tool-restrict",
+      "decisionPoint": "official tools pre-execute preparation",
+      "componentOwner": "official tools pre-execute owner",
+      "implementationChannel": "A",
+      "reentry": "deterministic preflight order",
+      "coverageStatus": "automatic",
+      "verification": "existing tools-guard tests"
+    },
+    {
+      "officialPath": "tool-guard",
+      "decisionPoint": "official tools pre-execute preparation",
+      "componentOwner": "official tools pre-execute owner",
+      "implementationChannel": "A",
+      "reentry": "deterministic preflight order",
+      "coverageStatus": "automatic",
+      "verification": "existing tools-guard tests"
+    },
+    {
+      "officialPath": "skill-activation",
+      "decisionPoint": "activation/catalog assembly before activation commit",
+      "componentOwner": "official skill activation/catalog assembly owner",
+      "implementationChannel": "A",
+      "reentry": "typed outcomes",
+      "coverageStatus": "automatic",
+      "verification": "existing skill-activation tests"
+    },
+    {
+      "officialPath": "prompt-provenance",
+      "decisionPoint": "context composition before its projection is published",
+      "componentOwner": "official context composition owner",
+      "implementationChannel": "A",
+      "reentry": "ordered composition; redaction boundaries preserved",
+      "coverageStatus": "automatic",
+      "verification": "existing context-provenance tests"
+    },
+    {
+      "officialPath": "security-policy",
+      "decisionPoint": "approval gate; tool before/after; model request",
+      "componentOwner": "official approval / tool / model-request owners",
+      "implementationChannel": "A",
+      "reentry": "each declared point evaluated independently",
+      "coverageStatus": "automatic",
+      "verification": "existing security-policy tests"
+    },
+    {
+      "officialPath": "security-redaction",
+      "decisionPoint": "visibility/redaction before serialization/publication",
+      "componentOwner": "official visibility/redaction owners",
+      "implementationChannel": "A",
+      "reentry": "host redaction precedes client serialization",
+      "coverageStatus": "automatic",
+      "verification": "existing security-policy-redaction tests"
+    }
+  ],
+  "gaps": [],
+  "reclassifiedShapes": [
+    {
+      "path": "llm.routing.health.probe / startProbe / completeProbe",
+      "registryClassification": "operation (deleted manual probe driver)",
+      "finding": "not decision policies; no facade automatic scheduler invokes probe; registry replacement wording claiming automatic probe execution was corrected in this feature (llm.routing.health removals replacement and oldToTargetMapping relation)",
+      "conservation": "llm.routing.health.probe.register (resourceRegistry) + llm.routing.health.observe (projection)"
+    },
+    {
+      "path": "llm.providerRetryPolicy",
+      "registryClassification": "passthrough-exception (official passthrough)",
+      "finding": "official provider retry forwarding leaf, not a public policy registration surface",
+      "conservation": "retained as official passthrough"
+    },
+    {
+      "path": "executions.recovery.capability.declare / capability.register",
+      "registryClassification": "resourceRegistry",
+      "finding": "recovery capability declaration registry, not a decision policy",
+      "conservation": "retained as resourceRegistry"
+    },
+    {
+      "path": "executions.recovery.evaluate",
+      "registryClassification": "operation",
+      "finding": "cooperative recovery evaluation interface; policy registration stays on executions.recovery.policy.register",
+      "conservation": "retained as operation"
+    },
+    {
+      "path": "executions.recovery.adapters.*",
+      "registryClassification": "passthrough-exception",
+      "finding": "official error adapter toolbox, not a policy registration",
+      "conservation": "retained as passthrough"
+    },
+    {
+      "path": "sessions.channels.redaction.register / registerProfile",
+      "registryClassification": "resourceRegistry",
+      "finding": "redaction profile registration, not a decision policy",
+      "conservation": "retained as resourceRegistry"
+    },
+    {
+      "path": "skills.activation.register / registerDescriptor / registerSkill",
+      "registryClassification": "resourceRegistry",
+      "finding": "skill/resource registration, not a decision policy",
+      "conservation": "retained as resourceRegistry"
+    },
+    {
+      "path": "prompts.provenance.contribute",
+      "registryClassification": "contribution",
+      "finding": "provenance contribution, not a decision policy",
+      "conservation": "retained as contribution"
+    },
+    {
+      "path": "attachments.projection.provenance",
+      "registryClassification": "projection",
+      "finding": "attachment provenance projection, not a decision policy",
+      "conservation": "retained as projection"
+    },
+    {
+      "path": "security.egress.lease.acquire",
+      "registryClassification": "coordination",
+      "finding": "cooperative egress coordination entry, not a decision policy; release(handle) give-back is added in Wave 2",
+      "conservation": "retained as coordination; legacy revoke() reshaped to release(handle)"
+    }
+  ],
+  "plannedMembers": [
+    {
+      "path": "security.egress.lease.release",
+      "idiom": "coordination",
+      "wave": "2",
+      "note": "idempotent give-back verb; stale handle typed conflict"
+    },
+    {
+      "path": "security.egress.coverage",
+      "idiom": "selfDescription",
+      "wave": "2",
+      "note": "three-part per-path coverage projection"
+    },
+    {
+      "path": "executions.recovery.coverage",
+      "idiom": "selfDescription",
+      "wave": "2",
+      "note": "three-part per-path coverage projection"
+    },
+    {
+      "path": "events.define",
+      "idiom": "contribution or resourceRegistry + prescribed-verb exception",
+      "wave": "5",
+      "note": "custom event definition verb; dispatch uses the operation-dispatch outcome"
+    },
+    {
+      "path": "events.define.handle",
+      "idiom": "resourceRegistry handle",
+      "wave": "5",
+      "note": "frozen publisher handle with emit(payload) and idempotent dispose()"
+    },
+    {
+      "path": "storage.open.handle.dispose",
+      "idiom": "operation handle",
+      "wave": "6",
+      "note": "storage handle destruction verb; replaces deleted close()"
+    }
+  ]
+}

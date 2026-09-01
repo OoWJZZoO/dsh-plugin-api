@@ -16117,7 +16117,7 @@
       "oldPath": "llm.routing.health.probe",
       "targetPath": null,
       "action": "delete",
-      "relation": "replaced by probe registry plus health.observe; capability conserved via automatic probe execution"
+      "relation": "replaced by probe registry plus health.observe; probe execution is caller-driven and the facade has no automatic scheduler"
     },
     {
       "oldPath": "llm.routing.health.startProbe",
@@ -18748,7 +18748,7 @@
       "targetPaths": [],
       "status": "deleted",
       "qualifiers": [],
-      "replacement": "llm.routing.health.probe -> llm.routing.health.probe.register plus automatic probe execution with llm.routing.health.observe; llm.routing.health.startProbe -> llm.routing.health.probe.register plus automatic probe execution with llm.routing.health.observe; llm.routing.health.completeProbe -> llm.routing.health.probe.register plus automatic probe execution with llm.routing.health.observe",
+      "replacement": "llm.routing.health.probe -> llm.routing.health.probe.register; llm.routing.health.startProbe -> llm.routing.health.probe.register; llm.routing.health.completeProbe -> llm.routing.health.probe.register; probe execution remains caller-driven via the probe registry and health.observe projection; the facade has no automatic probe scheduler",
       "gapReason": null,
       "affectedConsumers": [],
       "verification": [
