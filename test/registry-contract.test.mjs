@@ -163,8 +163,12 @@ test('the projection observe entry and its handle row are registered with the pa
   assert.ok(leaf && handle, 'both the observe leaf and its handle row must exist')
 })
 
-test('gap resolution records the unavailable owner-scoped publisher as the only gap', () => {
+test('gap resolution: the owner-scoped publisher gap is closed by the custom define registry', () => {
   const gaps = registry.capabilityMatrix.filter((row) => row.status === 'gap')
-  assert.equal(gaps.length, 1, 'exactly one capability gap is carried')
-  assert.match(gaps[0].capabilityCluster, /events\.define/, 'the gap is the owner-scoped custom event publisher')
+  assert.equal(gaps.length, 0, 'no capability gap remains recorded after the custom publisher closure')
+  const cluster = registry.capabilityMatrix.find((row) => row.capabilityCluster === 'events.define')
+  assert.ok(cluster, 'the events.define capability cluster is registered')
+  assert.equal(cluster.status, 'retained')
+  assert.equal(cluster.gapReason, null)
+  assert.deepEqual(cluster.currentPaths, ['events.define', 'events.define.handle'])
 })

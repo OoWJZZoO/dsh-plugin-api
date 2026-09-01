@@ -754,7 +754,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "standard projection subscription handle; observes cataloged canonical events and separately defined custom events through the same contract",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -788,6 +788,90 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "bare disposer",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "events.define",
+      "targetPath": "events.define",
+      "capability": "events",
+      "kind": "leaf",
+      "idiom": "resourceRegistry",
+      "idiomExceptions": [
+        {
+          "memberPath": "events.define",
+          "baseContract": "resourceRegistry",
+          "exception": "the definition verb is a prescribed custom-event definition verb whose dispatch member is the operation-dispatch variant",
+          "reason": "the registry records and publishes a custom event identity that owners can observe; the verb is prescribed rather than a generic register verb, and one dispatch has no independent operation identity and is never retried",
+          "replacementShape": "the publisher handle { id, ownerId, generation, name, emit(payload), dispose() } carries the resource/contribution lifecycle identity and emit returns the operation-dispatch outcome",
+          "verification": "member-inventory, registry-validation, composition matrix"
+        }
+      ],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "register",
+      "composition": "additive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "event producer authority",
+      "scope": "facade",
+      "resourceKey": "custom event name",
+      "identitySource": "caller plugin context",
+      "conflictRule": "owner-conflict",
+      "lifecycle": "definition registry lifetime; publisher handles are invalidated by dispose or bus reload",
+      "failureSemantics": "typed-throw",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "events.define(spec) returns a frozen publisher handle",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "events.define.handle",
+      "targetPath": "events.define.handle",
+      "capability": "events",
+      "kind": "handle",
+      "idiom": "operation",
+      "idiomExceptions": [
+        {
+          "memberPath": "events.define.handle",
+          "baseContract": "operation",
+          "exception": "the handle carries a resource/contribution lifecycle identity and an idempotent disposer alongside the publish verb",
+          "reason": "the publisher handle is the definition record plus the capability-limited emit verb; emit is the operation-dispatch variant with no independent operation identity and no retry, while dispose is the resource lifecycle verb",
+          "replacementShape": "frozen { id, ownerId, generation, name, emit(payload), dispose() }",
+          "verification": "member-inventory, registry-validation, composition matrix"
+        }
+      ],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "exclusive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "event producer authority",
+      "scope": "facade",
+      "resourceKey": "custom event name",
+      "identitySource": "parent handle generation",
+      "conflictRule": "not-applicable",
+      "lifecycle": "one dispatch has no independent operation identity and is never retried; the handle identity is invalidated by dispose, generation replacement or bus reload",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "deduplicate",
+      "reducer": "none",
+      "currentShape": "frozen { id, ownerId, generation, name, emit(payload), dispose() }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -20360,14 +20444,22 @@
     },
     {
       "capabilityCluster": "events.define",
-      "currentPaths": [],
-      "targetPaths": [],
-      "status": "gap",
+      "currentPaths": [
+        "events.define",
+        "events.define.handle"
+      ],
+      "targetPaths": [
+        "events.define",
+        "events.define.handle"
+      ],
+      "status": "retained",
       "qualifiers": [],
       "replacement": null,
-      "gapReason": "the runtime cannot enforce owner scope for custom event dispatch; requires an upstream owner-scoped publisher seam (unavailable/proposal capability)",
+      "gapReason": null,
       "affectedConsumers": [],
       "verification": [
+        "member-inventory",
+        "registry-validation",
         "capability-strategy review"
       ]
     }

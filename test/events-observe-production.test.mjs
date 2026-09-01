@@ -197,15 +197,23 @@ test('a throwing or rejecting observe listener is contained and never starves pe
   assert.equal(seen.length, 2, 'a throwing listener never starves later deliveries')
 })
 
-test('an observer registration grants no dispatch rights and no define seam exists', () => {
+test('an observer registration grants no dispatch rights and define is a separate custom seam', () => {
   const ctx = createMockCordisCtx()
   const events = createEventsBus({ ctx, catalog: coreCatalog })
 
   const handle = events.observe('goal/changed')
   const members = Object.keys(handle).filter((key) => typeof handle[key] === 'function')
   assert.deepEqual(members.sort(), ['current', 'dispose', 'subscribe'], 'the handle has no dispatch member')
-  assert.equal(events.define, undefined, 'no custom publisher entry exists on the bus')
+  // The custom publisher entry lives in the separate custom-definition
+  // registry; the canonical catalog never exposes it.
   assert.equal(events.catalog().define, undefined)
+  const publisher = events.define({ name: 'plugin-a.custom' })
+  assert.deepEqual(
+    Object.keys(publisher).sort(),
+    ['dispose', 'emit', 'generation', 'id', 'name', 'ownerId'],
+    'define returns the capability-limited publisher handle, not an unrestricted emitter',
+  )
+  assert.equal(publisher.dispose(), true)
 })
 
 test('dispatch returns a frozen discriminated outcome and reports unsupported names', () => {

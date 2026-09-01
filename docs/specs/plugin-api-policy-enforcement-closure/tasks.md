@@ -114,12 +114,12 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 
 ### [ ] 5. Wave 5 — `events.define` 自定义事件生产入口（§9、§14）
 
-- [ ] **5.1 定义注册与 publisher**：在 `lib/events-bus.js` 增加独立的 custom 定义注册表与派发路径（canonical 事件目录、priority 词表、freeze 与 fault containment 语义不动、不搬进 replacement）。`events.define(spec)` 接受 `{ name, validate(payload), freeze, scope }`，返回冻结 publisher handle `{ id, ownerId, generation, name, emit(payload), dispose() }`。
-- [ ] **5.2 分域与冲突**：`name` 必须是非空自定义事件身份，不得与 canonical 事件或同一冲突键下的另一活动自定义定义碰撞；冲突按文档化确定性 owner/key 规则处理，绝不静默替换 owner；publisher 只能派发自己声明的事件身份，通过受支持 API 派发未声明事件或 canonical 官方事件在派发前被拒绝。
-- [ ] **5.3 派发外形与生命周期**：`emit` 返回冻结判别式 M8 operation-dispatch outcome（单次派发无独立 operation 身份、不重试，operation 身份/重试字段显式不适用）；payload 按声明校验与冻结；observer 失败按声明契约 contain，不破坏无关 custom 或 canonical 注册；`dispose()` 幂等，stale publisher 在 dispose/reload/generation 替换后既不能派发也不能移除较新的正常定义。
-- [ ] **5.4 owner 归因边界**：caller-bound owner 身份可用时从真实插件上下文派生，用于归因与生命周期；恶意伪造身份或绕过门面按合作型插件模型记为 out of scope，不作为 `events.define` 的可用性条件；`events.define` 的可用性在合作型自定义事件契约可用时即报 active。
-- [ ] **5.5 registry 与能力闭环**：在 canonical registry 登记 `events.define`（contribution/resourceRegistry 之一 + 完整 prescribed-verb exception 六字段）、`events.define.handle`、以及 `events.observe` 对自定义事件的适用性说明；`capabilityMatrix` 的 `events.define` 簇从 `status: "gap"` 闭合为已交付（`gapReason: null`），并登记 U-series 上游提案与退役条件（官方提供 owner-scoped custom publisher seam 后退役为官方直绑）。
-- [ ] **5.6 测试**：两个合成正常插件覆盖逆序注册、自定义身份冲突、声明 payload 校验/冻结、发布 outcome、自定义观察、canonical 事件拒绝、重复 dispose、stale publisher、reload 隔离、observer 失败 contain、无关 canonical/custom 事件保持；显式不测试对抗性 owner 伪造或裸 Cordis 绕过。
+- [x] **5.1 定义注册与 publisher**：在 `lib/events-bus.js` 增加独立的 custom 定义注册表与派发路径（canonical 事件目录、priority 词表、freeze 与 fault containment 语义不动、不搬进 replacement）。`events.define(spec)` 接受 `{ name, validate(payload), freeze, scope }`，返回冻结 publisher handle `{ id, ownerId, generation, name, emit(payload), dispose() }`。
+- [x] **5.2 分域与冲突**：`name` 必须是非空自定义事件身份，不得与 canonical 事件或同一冲突键下的另一活动自定义定义碰撞；冲突按文档化确定性 owner/key 规则处理，绝不静默替换 owner；publisher 只能派发自己声明的事件身份，通过受支持 API 派发未声明事件或 canonical 官方事件在派发前被拒绝。
+- [x] **5.3 派发外形与生命周期**：`emit` 返回冻结判别式 M8 operation-dispatch outcome（单次派发无独立 operation 身份、不重试，operation 身份/重试字段显式不适用）；payload 按声明校验与冻结；observer 失败按声明契约 contain，不破坏无关 custom 或 canonical 注册；`dispose()` 幂等，stale publisher 在 dispose/reload/generation 替换后既不能派发也不能移除较新的正常定义。
+- [x] **5.4 owner 归因边界**：caller-bound owner 身份可用时从真实插件上下文派生，用于归因与生命周期；恶意伪造身份或绕过门面按合作型插件模型记为 out of scope，不作为 `events.define` 的可用性条件；`events.define` 的可用性在合作型自定义事件契约可用时即报 active。
+- [x] **5.5 registry 与能力闭环**：在 canonical registry 登记 `events.define`（contribution/resourceRegistry 之一 + 完整 prescribed-verb exception 六字段）、`events.define.handle`、以及 `events.observe` 对自定义事件的适用性说明；`capabilityMatrix` 的 `events.define` 簇从 `status: "gap"` 闭合为已交付（`gapReason: null`），并登记 U-series 上游提案与退役条件（官方提供 owner-scoped custom publisher seam 后退役为官方直绑）。
+- [x] **5.6 测试**：两个合成正常插件覆盖逆序注册、自定义身份冲突、声明 payload 校验/冻结、发布 outcome、自定义观察、canonical 事件拒绝、重复 dispose、stale publisher、reload 隔离、observer 失败 contain、无关 canonical/custom 事件保持；显式不测试对抗性 owner 伪造或裸 Cordis 绕过。
 
 ### [ ] 6. Wave 6 — 仓库清扫与 storage 记账修正（§12、§13）
 

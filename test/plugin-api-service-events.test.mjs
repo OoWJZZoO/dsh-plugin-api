@@ -24,7 +24,7 @@ test('active service exposes disabled events stub', () => {
 
   assert.deepEqual(service.events.catalog(), {})
   assert.ok(Object.isFrozen(service.events.catalog()), 'the unavailable vocabulary snapshot must stay frozen')
-  for (const method of ['emit', 'serial', 'parallel', 'bail', 'waterfall']) {
+  for (const method of ['emit', 'serial', 'parallel', 'bail', 'waterfall', 'define']) {
     assert.throws(
       () => service.events[method]('x', () => {}),
       (error) => {
@@ -47,7 +47,7 @@ test('inert service throws inactive errors from events stub', () => {
   const ctx = mockCtx()
   const service = new ServiceClass(ctx)
 
-  for (const method of ['emit', 'serial', 'parallel', 'bail', 'waterfall']) {
+  for (const method of ['emit', 'serial', 'parallel', 'bail', 'waterfall', 'define']) {
     assert.throws(() => service.events[method]('x', () => {}), PluginApiInactiveError)
   }
 
@@ -59,12 +59,13 @@ test('mountFeature injects the events API', () => {
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
   const service = new ServiceClass(mockCtx())
 
-  const eventsApi = { observe() {}, catalog() { return Object.freeze({}) } }
+  const eventsApi = { observe() {}, catalog() { return Object.freeze({}) }, define() { return { id: 'custom-event:1' } } }
 
   service.mountFeature('events', eventsApi)
 
   assert.equal(service.events.observe, eventsApi.observe)
   assert.equal(service.events.catalog, eventsApi.catalog)
+  assert.equal(service.events.define, eventsApi.define)
   assert.ok(Object.isFrozen(service.events))
 })
 

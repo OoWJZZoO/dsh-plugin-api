@@ -138,10 +138,9 @@ test('subtraction: deleted members are gone and their capability clusters carry 
     assert.ok(row.replacement || row.gapReason, `${row.capabilityCluster}: deleted clusters carry a replacement or gap reason`)
   }
   const gaps = registry.capabilityMatrix.filter((row) => row.status === 'gap')
-  assert.ok(gaps.length >= 1, 'at least one capability gap remains recorded')
-  for (const row of gaps) {
-    assert.ok(row.gapReason, `${row.capabilityCluster}: gaps explain the missing capability and its needed nature`)
-  }
+  assert.equal(gaps.length, 0, 'the policy enforcement closure leaves no capability gap recorded')
+  const defineCluster = registry.capabilityMatrix.find((row) => row.capabilityCluster === 'events.define')
+  assert.equal(defineCluster?.gapReason, null, 'the custom publisher gap is closed with evidence, not a silent status change')
 })
 
 // -- 7.7b: no residual legacy shapes anywhere on the public surface --

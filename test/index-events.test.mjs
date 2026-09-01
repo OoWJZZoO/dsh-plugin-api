@@ -141,6 +141,30 @@ test('apply mounts events with the frozen catalog and usable bus', () => {
   assert.ok(state.listeners.some((l) => l.name === 'goal/changed'))
 })
 
+test('apply mounts events.define as the cooperative custom publisher entry', () => {
+  const { ctx, state } = createMockCtx()
+  assert.doesNotThrow(() => apply(ctx))
+  const events = state.pluginApi.events
+  assert.equal(typeof events.define, 'function')
+  assert.equal(events.availability().status, 'active')
+  const publisher = events.define({ name: 'plugin-a.custom-event' })
+  assert.equal(publisher.name, 'plugin-a.custom-event')
+  assert.equal(publisher.ownerId, 'root', 'untraceable harness callers fall back to the root owner token')
+  assert.ok(Object.isFrozen(publisher))
+  assert.deepEqual(publisher.emit({ seq: 1 }), { ok: true, code: 'dispatched', outcome: null })
+  assert.throws(
+    () => events.define({ name: 'tools/change' }),
+    (error) => error.code === 'PLUGIN_API_EVENT_DEFINITION_INVALID',
+    'canonical official events cannot be redefined through the custom entry',
+  )
+  assert.throws(
+    () => events.define({ name: 'plugin-a.custom-event' }),
+    (error) => error.code === 'PLUGIN_API_EVENT_DEFINITION_CONFLICT',
+  )
+  assert.equal(publisher.dispose(), true)
+  assert.equal(publisher.dispose(), false, 'repeated disposal is idempotent')
+})
+
 test('services.web passes providers through to the official web service unchanged', () => {
   const { ctx, state, web } = createMockCtx()
   apply(ctx)
