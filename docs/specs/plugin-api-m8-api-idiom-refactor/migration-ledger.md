@@ -187,7 +187,7 @@ registry 目标行已登记。
   观测到 `llm/adapters-updated` / `session/created` / `session/event` /
   `system-prompt/assemble` 订阅注册与 admission 策略注册。真实 dev boot 仍受环境阻塞：
   消费者仓库的 `@deepseek-ai` 解析指向官方共享安装树（root 属主、不可写），本地无法
-  把门面接入解析路径；按 requirements §18 末条以阻塞记录处理（与 M7 交付一致）。
+  把门面接入解析路径；按 requirements §18 验收第 6 条的冒烟义务以阻塞记录处理（与 M7 交付一致）。
 
 - 旧 path 访问：在公共面不存在（7.7a 断言，registry 驱动）；不存在兼容别名、
   dormant fallback 或隐藏兼容分支（7.7b）。
