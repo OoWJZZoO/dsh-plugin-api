@@ -287,25 +287,32 @@ test('llm/stream allow/ask/no-policy delegate through next()', async () => {
   assert.equal(view.records.length, 1, 'allow decisions are audited too')
 })
 
-test('egress lease grants are audited with the lease generation', () => {
+test('egress lease grants are audited with the lease generation and cooperative channel', async () => {
   const { owner } = ownerWith()
   owner.api.egress.register('gw', { id: 'allow-http', match: (ctx) => ctx.target.kind === 'http', decide: () => ({ outcome: 'allow' }) })
-  const { generation, expiresAt, revoke } = owner.api.egress.lease.acquire({ kind: 'http', destination: 'ok.example' }, 60000)
-  assert.equal(typeof generation, 'string')
-  assert.equal(typeof expiresAt, 'number')
+  const outcome = await owner.api.egress.lease.acquire({ target: { kind: 'http', destination: 'ok.example' }, ttlMs: 60000 })
+  assert.equal(outcome.ok, true)
+  const handle = outcome.handle
+  assert.equal(typeof handle.id, 'string')
+  assert.equal(typeof handle.resource, 'string')
+  assert.equal(typeof handle.generation, 'string')
+  assert.equal(typeof handle.expiresAt, 'string')
   const grant = owner.api.audit.list({ kind: 'egress-grant' })
   assert.equal(grant.records.length, 1)
-  assert.equal(grant.records[0].summary.destination, 'ok.example')
-  assert.equal(grant.records[0].generation, generation, 'the grant record carries the lease generation')
-  assert.equal(revoke(), true)
+  assert.equal(grant.records[0].channel, 'cooperative', 'the grant record carries cooperative channel attribution')
+  assert.equal(grant.records[0].summary.resource, 'egress:http:ok.example')
+  assert.equal(grant.records[0].generation, handle.generation, 'the grant record carries the lease generation')
+  const released = await owner.api.egress.lease.release(handle)
+  assert.equal(released.ok, true)
+  assert.equal(released.code, 'released')
 })
 
-test('egress default deny fails closed through the lease acquire', () => {
+test('egress default deny fails closed through the lease acquire', async () => {
   const { owner } = ownerWith()
-  assert.throws(
-    () => owner.api.egress.lease.acquire({ kind: 'subprocess', destination: 'evil.example' }, 60000),
-    (error) => error?.name === 'SecurityEgressDeniedError',
-  )
+  const outcome = await owner.api.egress.lease.acquire({ target: { kind: 'subprocess', destination: 'evil.example' }, ttlMs: 60000 })
+  assert.equal(outcome.ok, false)
+  assert.equal(outcome.code, 'denied')
+  assert.equal(outcome.operation, 'acquire')
   assert.equal(owner.api.audit.list({ kind: 'egress-grant' }).records.length, 0, 'no grant is recorded for a denied acquire')
 })
 

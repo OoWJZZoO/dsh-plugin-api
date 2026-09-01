@@ -45,10 +45,13 @@ function input(overrides = {}) {
 
 test('capability registration validates declarations and old disposer cannot remove a newer generation', () => {
   const owner = createOwner()
-  const oldDispose = capability(owner)
-  const newDispose = capability(owner, { generation: '2' })
-  assert.equal(oldDispose(), false)
-  assert.equal(newDispose(), true)
+  const oldHandle = capability(owner)
+  const newHandle = capability(owner, { generation: '2' })
+  assert.equal(oldHandle.id, 'operation-1')
+  assert.equal(oldHandle.ownerId, 'owner-1')
+  assert.equal(typeof oldHandle.generation, 'string')
+  assert.equal(oldHandle.dispose(), false)
+  assert.equal(newHandle.dispose(), true)
   assert.throws(
     () => owner.api.capability.register({ operationId: 'x', ownerId: 'o', generation: '1', scope: 'bad' }),
     RecoveryPolicyRegistrationError,
@@ -186,11 +189,12 @@ test('cancellation and stale policy results cannot publish a decision', async ()
   const owner = createOwner()
   capability(owner)
   let dispose
-  dispose = owner.api.policy.register({ id: 'late', ownerId: 'p', generation: '1', async decide() {
+  const handle = owner.api.policy.register({ id: 'late', ownerId: 'p', generation: '1', async decide() {
     dispose()
     await Promise.resolve()
     return { action: 'stop', reason: { code: 'late' } }
   } })
+  dispose = handle.dispose
   const stale = await owner.api.evaluate(input({ decisionWindowId: 'stale' }))
   assert.equal(stale.action, 'stop')
   assert.equal(stale.reason.code, 'safe-default')

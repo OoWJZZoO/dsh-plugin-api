@@ -80,15 +80,15 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
   - 已自动执行的 policy（transform/admission、route/circuit、visibility、channel auth、tool guard/restrict、skill activation、prompt provenance）保留行为、补 coverage 证据行，并核实其合作型接口存在。
 - [x] **1.6 测试**：inventory 完备性（每条 policy 恰一个 disposition）、行字段完备性、gap 字段完备性与 AC4 拒绝规则、§6 重判结论与生成物一致、校验器对上述六种缺陷均能失败。
 
-### [ ] 2. Wave 2 — 内部 policy authority、公共 egress/recovery 重塑与 coverage（§2、§3、§7、§8）
+### [x] 2. Wave 2 — 内部 policy authority、公共 egress/recovery 重塑与 coverage（§2、§3、§7、§8）
 
-- [ ] **2.1 内部契约**：主门面在 policy owner 初始化后、组件 owner 绑定前，于根 ctx 发布 symbol-keyed 私有内部契约 `egress.admit(target, context)` / `egress.release(handle)` / `recovery.decide(input)` / `recovery.commit(decision, operation)` / `policy.status(domainOrPath)`。契约类型化、能力受限、组件中立；承载的是领域方法而不是通用 `evaluate(domain, input)`。
-- [ ] **2.2 发布与拆除顺序**：按 design §1 五步（构造 owner → 校验契约形状 → 发布 → 各组件自报 coverage → 拆除前先失效契约）落地；任一组件在 guard/availability 检查前不得调用内部方法；契约缺失为 typed unavailable/degraded。
-- [ ] **2.3 egress 公共面重塑**：`security.egress.lease.acquire(request)` 改为异步 coordination 入口，返回 typed `Outcome<Lease>`；lease 凭证冻结携带 `id` / `resource` / `generation` / `fencingToken` / `expiresAt`，不含 `dispose()`、不含 `revoke()`；新增 `security.egress.lease.release(handle)` 为幂等归还动词，stale handle 返回 typed `code: 'conflict'` 并在 `reason` 说明陈旧条件。该重塑在 registry `oldToTargetMapping` 登记一行，不静默改形状。
-- [ ] **2.4 coverage 投影**：新增 `security.egress.coverage()` 与 `executions.recovery.coverage()`（selfDescription），同形返回 `{ status, registration, cooperative, automatic: {...}, observedAt }`；`automatic` 的键只能是 inventory 已登记的公共语义路径；未登记的新路径报 `unavailable`，不得继承邻近路径状态；投影不含包/行/mounter/可写 registry 身份。
-- [ ] **2.5 决定证据与审计**：自动与合作型共用领域 bounded 审计；证据记录 `channel: 'automatic' | 'cooperative'`、`point`、`outcome`、`policyIds`、`ownerIds`、`executionId`/`operationId`/`attemptId`、`observedAt`、`reason`、`redactedContext`；不含凭据、授权头、命令密钥、私有 payload；审计追加失败时决定仍然生效并暴露 bounded audit-gap marker，绝不伪造记录（§7 第 3–6 条）。
-- [ ] **2.6 身份与组合**：policy 注册 handle 携带 owner-bound `id`/`ownerId`/`generation` 与身份绑定幂等 `dispose()`；同一决策点多 owner 时使用领域声明的组合模式、reducer、优先词表与确定性同优先顺序；callback 抛错/reject/超时/畸形决定被 contain，套用该点文档化 fail-safe 默认并记录 bounded owner 归因证据；调用方对受管异步操作提供 `AbortSignal` 时保持并组合该 signal，迟到决定/完成在产生受保护副作用前通过 owner、generation、operation、resource 与终态 eligibility 校验（§7 第 7 条），egress 与 recovery 两侧实现均适用。
-- [ ] **2.7 测试**：内部契约形状与发布/拆除顺序、组件 owner 缺失时 typed degraded、egress lease 异步/字段/`release` 幂等/stale conflict、coverage 三分区与未登记路径不继承、审计 channel 归因与 gap marker、多 owner 组合确定性、callback 失败 contain、自动与合作型同输入同 generation 同决定。
+- [x] **2.1 内部契约**：主门面在 policy owner 初始化后、组件 owner 绑定前，于根 ctx 发布 symbol-keyed 私有内部契约 `egress.admit(target, context)` / `egress.release(handle)` / `recovery.decide(input)` / `recovery.commit(decision, operation)` / `policy.status(domainOrPath)`。契约类型化、能力受限、组件中立；承载的是领域方法而不是通用 `evaluate(domain, input)`。
+- [x] **2.2 发布与拆除顺序**：按 design §1 五步（构造 owner → 校验契约形状 → 发布 → 各组件自报 coverage → 拆除前先失效契约）落地；任一组件在 guard/availability 检查前不得调用内部方法；契约缺失为 typed unavailable/degraded。
+- [x] **2.3 egress 公共面重塑**：`security.egress.lease.acquire(request)` 改为异步 coordination 入口，返回 typed `Outcome<Lease>`；lease 凭证冻结携带 `id` / `resource` / `generation` / `fencingToken` / `expiresAt`，不含 `dispose()`、不含 `revoke()`；新增 `security.egress.lease.release(handle)` 为幂等归还动词，stale handle 返回 typed `code: 'conflict'` 并在 `reason` 说明陈旧条件。该重塑在 registry `oldToTargetMapping` 登记一行，不静默改形状。
+- [x] **2.4 coverage 投影**：新增 `security.egress.coverage()` 与 `executions.recovery.coverage()`（selfDescription），同形返回 `{ status, registration, cooperative, automatic: {...}, observedAt }`；`automatic` 的键只能是 inventory 已登记的公共语义路径；未登记的新路径报 `unavailable`，不得继承邻近路径状态；投影不含包/行/mounter/可写 registry 身份。
+- [x] **2.5 决定证据与审计**：自动与合作型共用领域 bounded 审计；证据记录 `channel: 'automatic' | 'cooperative'`、`point`、`outcome`、`policyIds`、`ownerIds`、`executionId`/`operationId`/`attemptId`、`observedAt`、`reason`、`redactedContext`；不含凭据、授权头、命令密钥、私有 payload；审计追加失败时决定仍然生效并暴露 bounded audit-gap marker，绝不伪造记录（§7 第 3–6 条）。
+- [x] **2.6 身份与组合**：policy 注册 handle 携带 owner-bound `id`/`ownerId`/`generation` 与身份绑定幂等 `dispose()`；同一决策点多 owner 时使用领域声明的组合模式、reducer、优先词表与确定性同优先顺序；callback 抛错/reject/超时/畸形决定被 contain，套用该点文档化 fail-safe 默认并记录 bounded owner 归因证据；调用方对受管异步操作提供 `AbortSignal` 时保持并组合该 signal，迟到决定/完成在产生受保护副作用前通过 owner、generation、operation、resource 与终态 eligibility 校验（§7 第 7 条），egress 与 recovery 两侧实现均适用。
+- [x] **2.7 测试**：内部契约形状与发布/拆除顺序、组件 owner 缺失时 typed degraded、egress lease 异步/字段/`release` 幂等/stale conflict、coverage 三分区与未登记路径不继承、审计 channel 归因与 gap marker、多 owner 组合确定性、callback 失败 contain、自动与合作型同输入同 generation 同决定。
 
 ### [ ] 3. Wave 3 — Egress 官方路径自动执行闭包（§4、§11）
 

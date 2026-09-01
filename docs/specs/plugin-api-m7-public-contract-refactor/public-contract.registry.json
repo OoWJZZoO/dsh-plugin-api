@@ -9418,7 +9418,7 @@
       "availabilityShape": "availability(scope)",
       "concurrency": "exclusive",
       "reducer": "none",
-      "currentShape": "egress lease acquisition",
+      "currentShape": "egress lease acquisition (async coordination Outcome<Lease>; release(handle) give-back)",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -17677,7 +17677,7 @@
       "oldPath": "security.egress.lease.acquire",
       "targetPath": "security.egress.lease.acquire",
       "action": "retain",
-      "relation": "lease handle { id, resource, generation, fencingToken, expiresAt }; release(handle) give-back"
+      "relation": "reshape: synchronous { lease, decision, revoke } -> async Outcome<Lease>; lease credential { id, resource, generation, fencingToken, expiresAt }; release(handle) give-back; legacy revoke removed"
     },
     {
       "oldPath": "security.egress.lease.acquire.handle",

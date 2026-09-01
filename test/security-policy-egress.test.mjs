@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createSecurityEgress } from '../lib/security-egress.js'
-import { SecurityEgressDeniedError, SecurityEgressRegistrationError } from '../lib/security-errors.js'
+import { SecurityEgressRegistrationError } from '../lib/security-errors.js'
 
 let clock = 1000
 const now = () => clock
@@ -51,25 +51,35 @@ test('a matching allow policy flips the default', () => {
   assert.equal(core.check({ kind: 'http', destination: 'denied.example' }).outcome, 'deny')
 })
 
-test('lease acquire requires an allowed check and fails closed on denial', () => {
+test('lease acquire fails closed with a typed denied outcome when no policy allows', async () => {
   const core = freshEgress()
-  assert.throws(
-    () => core.acquire(target, 60000),
-    (error) => error instanceof SecurityEgressDeniedError && error.code === 'SECURITY_EGRESS_DENIED',
-  )
+  const outcome = await core.acquire({ target, ttlMs: 60000 })
+  assert.equal(outcome.ok, false)
+  assert.equal(outcome.code, 'denied')
+  assert.equal(outcome.operation, 'acquire')
+  assert.equal(outcome.resource, 'egress:subprocess:example.org')
+  assert.match(outcome.reason, /no egress policy allows/)
+  assert.equal(typeof outcome.observedAt, 'string')
+  assert.ok(Object.isFrozen(outcome))
 })
 
-test('invalid ttl and malformed targets reject with typed errors', () => {
+test('invalid ttl and malformed targets reject with typed invalid-input outcomes', async () => {
   const core = freshEgress({ autoAllow: true })
-  assert.throws(() => core.acquire(target, 0), SecurityEgressDeniedError)
-  assert.throws(() => core.acquire(target, -5), SecurityEgressDeniedError)
-  assert.throws(() => core.acquire(target, '1s'), SecurityEgressDeniedError)
+  for (const ttl of [0, -5, '1s', NaN]) {
+    const outcome = await core.acquire({ target, ttlMs: ttl })
+    assert.equal(outcome.ok, false, `ttl ${ttl} is rejected`)
+    assert.equal(outcome.code, 'invalid-input')
+    assert.equal(outcome.operation, 'acquire')
+  }
+  const malformed = await core.acquire({ target: { kind: 'carrier-pigeon', destination: 'x' }, ttlMs: 60000 })
+  assert.equal(malformed.ok, false)
+  assert.equal(malformed.code, 'invalid-input')
   assert.throws(() => core.check({ kind: 'carrier-pigeon', destination: 'x' }), SecurityEgressRegistrationError)
   assert.throws(() => core.check(null), SecurityEgressRegistrationError)
   assert.throws(() => core.registry.register('o', { match: () => true }), SecurityEgressRegistrationError)
 })
 
-test('lease authorizes its exact target only, until expiry', () => {
+test('acquire returns a frozen coordination lease bound to the exact target', async () => {
   const core = freshEgress()
   // one narrow policy: only the granted http destination is allowed by rule
   core.registry.register('owner', {
@@ -77,10 +87,21 @@ test('lease authorizes its exact target only, until expiry', () => {
     match: (ctx) => ctx.target.kind === 'http' && ctx.target.destination === 'granted.example',
     decide: () => ({ outcome: 'allow' }),
   })
-  const { lease, revoke } = core.acquire({ kind: 'http', destination: 'granted.example' }, 5000)
-  assert.equal(lease.expiresAt, 6000, 'expiresAt = acquire time + ttl')
-  assert.equal(typeof lease.generation, 'string')
-  assert.ok(lease.generation.startsWith('lease:'))
+  const outcome = await core.acquire({ target: { kind: 'http', destination: 'granted.example' }, ttlMs: 5000 })
+  assert.equal(outcome.ok, true)
+  assert.equal(outcome.code, 'acquired')
+  assert.equal(outcome.resource, 'egress:http:granted.example')
+  const handle = outcome.handle
+  assert.equal(handle.resource, 'egress:http:granted.example')
+  assert.equal(handle.expiresAt, '1970-01-01T00:00:06.000Z', 'expiresAt = acquire time + ttl (ISO)')
+  assert.equal(typeof handle.id, 'string')
+  assert.ok(handle.id.startsWith('lease:'))
+  assert.equal(typeof handle.generation, 'string')
+  assert.ok(handle.generation.startsWith('lease:'))
+  assert.equal(typeof handle.fencingToken, 'string')
+  assert.ok(Object.isFrozen(handle), 'the lease credential is frozen')
+  assert.equal(handle.dispose, undefined, 'no dispose() on a lease credential')
+  assert.equal(handle.revoke, undefined, 'no legacy revoke() on a lease credential')
 
   assert.equal(core.check({ kind: 'http', destination: 'granted.example' }).outcome, 'allow', 'within grant')
   assert.equal(core.check({ kind: 'http', destination: 'granted.example' }).reason, 'active-lease')
@@ -92,21 +113,29 @@ test('lease authorizes its exact target only, until expiry', () => {
 
   clock = 6001
   assert.equal(core.check({ kind: 'http', destination: 'granted.example' }).outcome, 'deny', 'expired lease fails closed')
-  assert.equal(revoke(), true, 'an unrevoked lease still revokes once')
-  assert.equal(revoke(), false, 'revocation stays idempotent')
 })
 
-test('revocation makes subsequent checks fail closed and is idempotent', () => {
+test('release is the idempotent give-back verb; stale handles are typed conflicts', async () => {
   const core = freshEgress({ autoAllow: true })
-  const { revoke } = core.acquire(target, 60000)
-  assert.equal(revoke(), true)
-  assert.equal(revoke(), false, 'revocation is idempotent')
-  assert.equal(core.check(target).outcome, 'deny', 'revoked lease never authorizes again')
+  const outcome = await core.acquire({ target, ttlMs: 60000 })
+  assert.equal(outcome.ok, true)
+  const released = await core.release(outcome.handle)
+  assert.equal(released.ok, true)
+  assert.equal(released.code, 'released')
+  assert.equal(released.resource, outcome.resource)
+  assert.equal(core.check(target).outcome, 'deny', 'released lease never authorizes again')
+  const again = await core.release(outcome.handle)
+  assert.equal(again.ok, false)
+  assert.equal(again.code, 'conflict', 'a repeated release is a stale conflict with the condition in reason')
+  assert.match(again.reason, /already released/)
+  const unknown = await core.release({ id: 'lease:nonexistent' })
+  assert.equal(unknown.ok, false)
+  assert.equal(unknown.code, 'conflict')
 })
 
-test('leases never extend retroactively after expiry', () => {
+test('leases never extend retroactively after expiry', async () => {
   const core = freshEgress({ autoAllow: true, at: 1000 })
-  core.acquire(target, 100)
+  await core.acquire({ target, ttlMs: 100 })
   clock = 1200 // lease expired at 1100
   const decision = core.check(target)
   assert.equal(decision.outcome, 'deny', 'expired lease is not revived by the pending operation')
@@ -126,9 +155,9 @@ test('proxy environment detection never becomes an egress allowance', () => {
   }
 })
 
-test('dispose retracts every lease and clears the registry', () => {
+test('dispose retracts every lease and clears the registry', async () => {
   const core = freshEgress({ autoAllow: true })
-  core.acquire(target, 60000)
+  await core.acquire({ target, ttlMs: 60000 })
   assert.equal(core.dispose(), 1)
   assert.equal(core.check(target).outcome, 'deny')
   assert.deepEqual(core.registry.snapshot(), [])

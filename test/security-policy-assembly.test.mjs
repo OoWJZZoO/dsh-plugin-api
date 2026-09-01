@@ -136,13 +136,16 @@ test('redaction rules apply at the mounted post-execute seam', async () => {
   assert.equal(state.pluginApi.security.audit.list({ kind: 'redaction' }).records.length, 1)
 })
 
-test('egress lease acquire fails closed with a typed denial when no policy allows', () => {
+test('egress lease acquire fails closed with a typed denial when no policy allows', async () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
-  assert.throws(
-    () => state.pluginApi.security.egress.lease.acquire({ kind: 'subprocess', destination: 'evil.example' }, 60000),
-    (error) => error?.name === 'SecurityEgressDeniedError',
-  )
+  const outcome = await state.pluginApi.security.egress.lease.acquire({
+    target: { kind: 'subprocess', destination: 'evil.example' },
+    ttlMs: 60000,
+  })
+  assert.equal(outcome.ok, false)
+  assert.equal(outcome.code, 'denied')
+  assert.equal(outcome.operation, 'acquire')
 })
 
 test('without a working ctx.on substrate the feature degrades to inert (no enforcement, truthful availability)', () => {
