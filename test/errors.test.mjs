@@ -27,11 +27,11 @@ test('PluginApiInactiveError has code PLUGIN_API_INACTIVE', () => {
 })
 
 test('PluginApiFeatureDisabledError carries feature and code', () => {
-  const error = new PluginApiFeatureDisabledError('llm/admission', 'feature is disabled')
+  const error = new PluginApiFeatureDisabledError('llm.admissionPolicies', 'feature is disabled')
   assert.ok(error instanceof PluginApiError)
   assert.equal(error.code, 'PLUGIN_API_FEATURE_DISABLED')
-  assert.equal(error.feature, 'llm/admission')
-  assert.match(error.message, /llm\/admission/)
+  assert.equal(error.feature, 'llm.admissionPolicies')
+  assert.match(error.message, /llm\.admissionPolicies/)
   assert.match(error.message, /disabled/)
 })
 

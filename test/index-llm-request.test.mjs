@@ -145,7 +145,7 @@ test('staged publication: effect failure rolls back the disabled facade, dispose
 
   assert.throws(
     () => state.pluginApi.llm.requestTransforms.register({}),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm.requestTransforms',
   )
   // The gateway was never installed: the official resolver is untouched.
   assert.equal(services.llm.resolveModelInfo, originalResolve)
@@ -184,7 +184,7 @@ test('request guard failure disables both llm/request and llm/admission without 
   assert.equal(features.find((f) => f.name === 'llm/admission').isActive, false)
   assert.throws(
     () => state.pluginApi.llm.requestTransforms.register({}),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm.requestTransforms',
   )
   assert.equal(services.llm.resolveModelInfo, originalResolve)
   assert.equal(services.apiProxy.sessions.prompt, originalPrompt)

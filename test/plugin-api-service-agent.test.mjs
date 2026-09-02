@@ -17,7 +17,7 @@ function mockCtx() {
 }
 
 function assertDisabledView(agents) {
-  assert.equal(agents.isActive, false)
+assert.equal(agents.availability().status, 'unavailable')
   for (const method of ['get', 'list', 'roots']) {
     assert.throws(() => agents[method]('x'), (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
@@ -40,16 +40,10 @@ function assertDisabledView(agents) {
     assert.match(error.message, /providers\.register/)
     return true
   })
-  assert.equal(agents.providers.isActive, false)
-  assert.deepEqual(Object.keys(agents.providers), ['isActive', 'register'])
+  assert.equal('isActive' in agents.providers, false)
+  assert.deepEqual(Object.keys(agents.providers), ['register'])
   const availability = agents.availability()
-  assert.deepEqual(availability, {
-    status: 'unavailable',
-    create: false,
-    resume: false,
-    register: false,
-    providers: { register: false },
-  })
+  assert.deepEqual(availability, { status: 'unavailable', reason: 'official agents service is unavailable' })
   assert.ok(Object.isFrozen(availability))
   assert.ok(Object.isFrozen(agents.providers))
 }
@@ -71,21 +65,15 @@ test('inert service throws inactive errors from every declared agents member', (
   const service = new ServiceClass(ctx)
   const agents = service.agents
 
-  assert.equal(agents.isActive, false)
+assert.equal(agents.availability().status, 'unavailable')
   for (const method of ['get', 'list', 'roots', 'create', 'resume', 'register']) {
     assert.throws(() => agents[method]('x'), PluginApiInactiveError)
   }
   assert.throws(() => agents.providers.register({ factory: {} }), PluginApiInactiveError)
-  assert.equal(agents.providers.isActive, false)
-  assert.deepEqual(Object.keys(agents.providers), ['isActive', 'register'])
+  assert.equal('isActive' in agents.providers, false)
+  assert.deepEqual(Object.keys(agents.providers), ['register'])
   const inertAvailability = agents.availability()
-  assert.deepEqual(inertAvailability, {
-    status: 'unavailable',
-    create: false,
-    resume: false,
-    register: false,
-    providers: { register: false },
-  })
+  assert.deepEqual(inertAvailability, { status: 'unavailable', reason: 'official agents service is unavailable' })
   assert.ok(Object.isFrozen(inertAvailability))
   assert.ok(Object.isFrozen(agents.providers))
   assert.equal(ctx.getCalls.length, 0)

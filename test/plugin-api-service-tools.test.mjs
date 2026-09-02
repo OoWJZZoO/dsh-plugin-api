@@ -64,7 +64,7 @@ test('inert service exposes disabled tools api that throws inactive error withou
   const ctx = mockCtx()
   const service = instantiate(ServiceClass, ctx)
 
-  assert.equal(service.tools.isActive, false)
+assert.equal(service.tools.availability().status, 'unavailable')
   assert.throws(
     () => service.tools.register({}),
     (error) => error instanceof PluginApiInactiveError,
@@ -78,7 +78,7 @@ test('active service with unmounted tools throws feature-disabled error', () => 
   const ctx = mockCtx()
   const service = instantiate(ServiceClass, ctx)
 
-  assert.equal(service.tools.isActive, false)
+assert.equal(service.tools.availability().status, 'unavailable')
   assert.throws(
     () => service.tools.guard.register(() => {}),
     (error) => {
@@ -98,7 +98,7 @@ test('mountFeature("tools") activates the tools accessor and delegates to the of
   const service = instantiate(ServiceClass, ctx)
 
   service.mountFeature('tools', { isActive: true })
-  assert.equal(service.tools.isActive, true)
+assert.equal(service.tools.availability().status, 'active')
 
   const definition = { name: 'tool', output: {} }
   const filter = { allow: ['tool'] }

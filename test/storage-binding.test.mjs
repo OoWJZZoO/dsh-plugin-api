@@ -46,7 +46,7 @@ const VALID = { scope: 'workspace', owner: 'pluginx', schema: 'com.example.todo'
 test('binding publishes only the owner/scope envelope contract and namespaces the official unit', async () => {
   const { facility, domainStub, table } = fakeFacility()
   const binding = createStorageBinding({ ctx: facilityCtx(facility), active: true })
-  assert.equal(binding.isActive, true)
+  assert.equal(binding.availability().status, 'active')
 
   const result = await binding.open(VALID)
   assert.equal(result.ok, true)
@@ -141,7 +141,7 @@ test('the storage face is disabled without the official facility and typed befor
   const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
   const active = new ServiceClass({ reflect: { provide() {} }, get() { return undefined } })
   assert.equal(typeof active.storage, 'object')
-  assert.equal(active.storage.isActive, false)
+  assert.equal(active.storage.availability().status, 'unavailable')
   assert.throws(
     () => active.storage.open({}),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'storage',
@@ -155,9 +155,9 @@ test('the storage face is disabled without the official facility and typed befor
   // the owner with guard checks; behavior is delegated to the binding).
   const { facility } = fakeFacility()
   const binding = createStorageBinding({ ctx: facilityCtx(facility), active: true })
-  assert.equal(binding.isActive, true)
+  assert.equal(binding.availability().status, 'active')
   active.mountFeature('storage', binding)
-  assert.equal(active.storage.isActive, true)
+  assert.equal(active.storage.availability().status, 'active')
   assert.equal(typeof active.storage.open, 'function')
   assert.equal(typeof active.storage.availability, 'function')
   assert.equal((await active.storage.open(VALID)).code, 'opened')
@@ -166,11 +166,11 @@ test('the storage face is disabled without the official facility and typed befor
 test('a missing or malformed facility yields the disabled face without throwing', () => {
   for (const ctx of [{ get() { return undefined } }, { storage: {} }, { get() { return {} } }]) {
     const binding = createStorageBinding({ ctx, active: true })
-    assert.equal(binding.isActive, false, JSON.stringify(ctx))
+    assert.equal(binding.availability().status, 'unavailable', JSON.stringify(ctx))
     assert.throws(() => binding.open(VALID), PluginApiFeatureDisabledError)
   }
   const disabled = createDisabledStorageApi(() => true)
-  assert.equal(disabled.isActive, false)
+  assert.equal(disabled.availability().status, 'unavailable')
   assert.throws(() => disabled.open({}), PluginApiFeatureDisabledError)
 })
 

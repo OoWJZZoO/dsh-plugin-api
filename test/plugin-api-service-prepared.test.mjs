@@ -36,7 +36,7 @@ test('prepareFeature captures the candidate without publishing anything', () => 
   assert.notEqual(service.llm.requestTransforms, api)
   assert.throws(
     () => service.llm.requestTransforms.register({}),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm.requestTransforms',
   )
   assert.ok(prepared)
 })
@@ -60,7 +60,7 @@ test('rollback discards an uncommitted candidate and leaves the disabled surface
   assert.equal(prepared.rollback(), true)
   assert.throws(
     () => service.llm.requestTransforms.register({}),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm.requestTransforms',
   )
   assert.equal(prepared.commit(), false, 'commit after rollback is refused')
   assert.equal(prepared.rollback(), false, 'rollback is idempotent')
@@ -76,7 +76,7 @@ test('rollback after commit restores the disabled facade surface', () => {
   assert.equal(prepared.rollback(), true)
   assert.throws(
     () => service.llm.requestTransforms.register({}),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm.requestTransforms',
   )
   assert.equal(prepared.rollback(), false)
 })
@@ -125,7 +125,7 @@ test('admission and request prepared surfaces roll back to their disabled shapes
   admissionPrepared.rollback()
   assert.throws(
     () => service.llm.admissionPolicies.register({}),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/admission',
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm.admissionPolicies',
   )
 
   const requestApi = { transform() {} }
@@ -135,7 +135,7 @@ test('admission and request prepared surfaces roll back to their disabled shapes
   requestPrepared.rollback()
   assert.throws(
     () => service.llm.requestTransforms.register({}),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm.requestTransforms',
   )
 })
 
@@ -149,7 +149,7 @@ test('immediate mountFeature behavior is unchanged for baseline mounters', () =>
 
   const llmApi = { isActive: true, stream() {}, modelInfo() {} }
   service.mountFeature('llm', llmApi)
-  assert.equal(service.llm.isActive, true)
+assert.equal(service.llm.availability().status, 'active')
   assert.equal(service.llm.stream, llmApi.stream)
 })
 

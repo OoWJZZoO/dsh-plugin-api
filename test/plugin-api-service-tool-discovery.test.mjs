@@ -57,7 +57,7 @@ test('discovery disabled surface throws inactive and feature-disabled errors bef
   const fail = (fn) => {
     assert.throws(fn, (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'toolDiscovery')
+      assert.equal(error.feature, 'tools.discovery')
       return true
     })
   }
@@ -83,14 +83,14 @@ test('mount exposes the discovery surface and delegates to the owner', async () 
   assert.equal(activated.generation, 'g:1')
   assert.deepEqual(discovery.deactivate('alpha'), { ok: true })
   assert.deepEqual(discovery.audit.list({}), { items: [], truncated: false })
-  assert.deepEqual(discovery.availability(), { status: 'active', active: true, catalog: { registered: 1 } })
+  assert.equal(discovery.availability().status, 'active')
 })
 
 test('mount does not change the tools surface contract', () => {
   const service = makeService({ coreActive: true })
   service.mountFeature('tools', { isActive: true })
   service.mountFeature('toolDiscovery', makeDiscoveryOwner())
-  assert.equal(service.tools.isActive, true)
+assert.equal(service.tools.availability().status, 'active')
   assert.equal(typeof service.tools.register, 'function')
   assert.equal(typeof service.tools.discovery.list, 'function')
 })

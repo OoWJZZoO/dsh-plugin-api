@@ -117,15 +117,9 @@ test('agents publishes the plural providers leaf with typed disabled behavior', 
   const { service, registry } = createService()
   mountReady(service, registry)
   const agents = service.agents
-  assert.equal(agents.providers.isActive, false)
+  assert.equal('isActive' in agents.providers, false)
   assert.equal('provider' in agents, false, 'singular provider leaf must not exist')
-  assert.deepEqual(agents.availability(), {
-    status: 'unavailable',
-    create: false,
-    resume: false,
-    register: false,
-    providers: { register: false },
-  })
+  assert.equal(agents.availability().status, 'unavailable')
   assert.throws(() => agents.providers.register({ agent: {} }, undefined), (error) => {
     return error instanceof PluginApiFeatureDisabledError && error.feature === 'agents'
   })

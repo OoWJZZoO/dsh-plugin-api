@@ -97,21 +97,18 @@ test('official errors and rejections pass through unchanged without diagnostics'
   assert.deepEqual(logs, [])
 })
 
-test('availability has frozen exact shape and provider is active only for three available members', () => {
+test('availability converges on the unified { status, reason } vocabulary', () => {
   const { registry } = createRegistry({ announce: undefined })
   const extension = createExtension(registry)
   const availability = extension.availability
   const view = extension.createView({ registry })
 
   assert.deepEqual(availability, {
-    create: true,
-    resume: true,
-    register: true,
-    providers: { register: false },
+    status: 'degraded',
+    reason: 'some agents members are unavailable',
   })
   assert.ok(Object.isFrozen(availability))
-  assert.ok(Object.isFrozen(availability.providers))
-  assert.equal(view.providers.isActive, false)
+  assert.equal('isActive' in view.providers, false)
   assert.throws(() => view.providers.register({ announce: {} }), (error) => {
     assert.equal(error.code, 'PLUGIN_API_FEATURE_DISABLED')
     assert.equal(error.feature, 'agents')
@@ -126,9 +123,8 @@ test('a throwing probe marks only that member unavailable and preserves siblings
   const extension = createExtension(registry)
   const view = extension.createView({ registry })
 
-  assert.equal(extension.availability.providers.register, false)
-  assert.equal(extension.availability.create, true)
-  assert.equal(view.providers.isActive, false)
+  assert.equal(extension.availability.status, 'degraded')
+  assert.equal('isActive' in view.providers, false)
   assert.equal(typeof view.create, 'function')
 })
 
@@ -149,7 +145,7 @@ test('late resolution failure degrades only the affected member once and never i
   failCreate = true
   assert.throws(() => view.create({}), /agents extension member "create" is unavailable/)
   assert.throws(() => view.create({}), /agents extension member "create" is unavailable/)
-  assert.equal(extension.availability.create, false)
+  assert.equal(extension.availability.status, 'degraded')
   assert.equal(calls.length, 0)
   assert.deepEqual(logs, ['dsh-plugin-api agent create is unavailable (call-resolution)'])
 })
@@ -197,8 +193,7 @@ test('missing factory and occupied provider slot remain official call-time outco
   const view = extension.createView({ registry })
 
   assert.throws(() => view.providers.register({ factory: {} }), (error) => error === occupied)
-  assert.equal(extension.availability.providers.register, true)
-  assert.equal(extension.availability.create, true)
+  assert.equal(extension.availability.status, 'active')
   return assert.rejects(() => view.create({}), (error) => error === noFactory)
 })
 
@@ -244,13 +239,8 @@ test('every agent extension leaf independently degrades for missing, non-functio
       }
       const extension = createExtension(registry)
       const availability = extension.availability
-      assert.equal(
-        member === 'enter' || member === 'announce' || member === 'setFactory'
-          ? availability.providers.register
-          : availability[member],
-        false,
-        `${member} ${mode}`,
-      )
+      assert.equal(availability.status, 'degraded', `${member} ${mode}`)
+      assert.ok(Object.isFrozen(availability), `${member} ${mode} frozen`)
     }
   }
 })

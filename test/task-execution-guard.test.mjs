@@ -74,7 +74,7 @@ test('healthy apply mounts the tasks facade after diagnostics and exposes the fr
   assert.equal(registered.task.state, 'registered')
   const got = await tasks.get('mounted-task')
   assert.equal(got.task.state, 'registered')
-  assert.equal(state.pluginApi.tasks.availability().durability, 'memory')
+  assert.equal(state.pluginApi.tasks.availability().status, 'active')
 })
 
 test('tasks typed results keep other facade surfaces intact and claim works through the facade', async () => {

@@ -29,11 +29,11 @@ test('execRoute core-inactive and feature-disabled delegates throw before inspec
   }
   assert.throws(
     () => disabled.service.llm.routing.forExecution(hostile),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'execRoute',
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm.routing',
   )
   assert.throws(
     () => disabled.service.llm.routing.current(hostile),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'sessionRoute',
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm.routing',
   )
   assert.deepEqual(inert.getCalls, [])
   assert.deepEqual(disabled.getCalls, [])
@@ -64,7 +64,7 @@ test('execRoute unmount is token-bound, idempotent, and restores feature-disable
   assert.equal(service.unmountFeature('execRoute', second), false)
   assert.throws(
     () => service.llm.routing.forExecution({}),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'execRoute',
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm.routing',
   )
 })
 

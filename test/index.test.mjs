@@ -144,7 +144,7 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     // sessionChannel mounts through the real _assignFeature path now.
     { name: 'sessionChannel', isActive: true },
   ])
-  assert.equal(state.pluginApi.llm.isActive, true)
+  assert.equal(state.pluginApi.llm.availability().status, 'active')
   assert.equal(typeof state.pluginApi.llm.requestTransforms.register, 'function')
   // admission.isActive is retired: the feature registry is the sole signal.
   assert.equal('isActive' in state.pluginApi.llm.admissionPolicies, false)
@@ -156,7 +156,7 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
   assert.equal(state.pluginApi.services.typert.isActive, true)
 
   assert.equal(typeof state.pluginApi.prompts.contribute, 'function')
-  assert.equal(state.pluginApi.settings.isActive, true)
+  assert.equal(state.pluginApi.settings.availability().status, 'active')
   assert.equal(typeof state.pluginApi.remotes.register, 'function')
   assert.equal(state.pluginApi.remotes.availability().status, 'active')
   assert.ok(state.listeners.some((l) => l.name === 'llm/stream'))
@@ -244,7 +244,7 @@ assert.deepEqual(features[24], { name: 'tasks', isActive: true })
     () => state.pluginApi.llm.admissionPolicies.register({}),
     (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'llm/admission')
+      assert.equal(error.feature, 'llm.admissionPolicies')
       return true
     },
   )

@@ -96,7 +96,7 @@ test('sessionRoute registration failure disables only sessionRoute while execRou
   assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'sessionRoute')?.isActive, false)
   assert.equal(state.listeners.filter((entry) => entry.name === 'tools/pre-execute').length, 4)
   assert.throws(() => state.pluginApi.llm.routing.current({}), (error) => {
-    return error instanceof PluginApiFeatureDisabledError && error.feature === 'sessionRoute'
+    return error instanceof PluginApiFeatureDisabledError && error.feature === 'llm.routing'
   })
   const exec = execWithRoute()
   dispatchPreExecute(state, exec)
@@ -156,7 +156,7 @@ test('missing declared dependency disables only execRoute with its feature-disab
   assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'agent')?.isActive, true)
   assert.throws(
     () => state.pluginApi.llm.routing.forExecution(new Proxy({}, { get() { throw new Error('inspected') } })),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'execRoute',
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm.routing',
   )
 })
 

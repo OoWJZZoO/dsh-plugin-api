@@ -94,7 +94,7 @@ test('apply mounts settings feature when settings service is complete', () => {
 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
-  assert.equal(state.pluginApi.settings.isActive, true)
+  assert.equal(state.pluginApi.settings.availability().status, 'degraded')
   assert.equal(typeof state.pluginApi.settings.register, 'function')
   assert.equal(typeof state.pluginApi.settings.scope, 'function')
   assert.equal(typeof state.pluginApi.settings.inspect, 'function')
@@ -110,7 +110,7 @@ test('apply keeps settings feature active in optional-settings mode and methods 
   const { ctx, state } = createMockCtx({ settings: null })
   assert.doesNotThrow(() => apply(ctx))
 
-  assert.equal(state.pluginApi.settings.isActive, true)
+  assert.equal(state.pluginApi.settings.availability().status, 'degraded')
   assert.throws(() => state.pluginApi.settings.register('a', {}), PluginApiServiceUnavailableError)
   assert.throws(() => state.pluginApi.settings.scope('a'), PluginApiServiceUnavailableError)
   assert.throws(() => state.pluginApi.settings.inspect(), PluginApiServiceUnavailableError)

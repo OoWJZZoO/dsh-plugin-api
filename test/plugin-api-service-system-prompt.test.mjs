@@ -22,7 +22,7 @@ test('active service exposes a disabled systemPrompt stub', () => {
   const ctx = mockCtx()
   const service = new ServiceClass(ctx)
 
-  assert.equal(service.prompts.isActive, false)
+assert.equal(service.prompts.availability().status, 'unavailable')
   for (const method of ['render', 'renderContextSections']) {
     assert.throws(
       () => service.prompts[method](),

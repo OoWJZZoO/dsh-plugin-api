@@ -41,7 +41,7 @@ function activeService() {
 test('unmounted llm namespace exposes isActive false and feature-disabled errors', () => {
   const service = activeService()
 
-  assert.equal(service.llm.isActive, false)
+assert.equal(service.llm.availability().status, 'unavailable')
   for (const method of LLM_METHODS) {
     const member = service.llm[method]
     assert.ok(member, `llm.${method} exists`)
@@ -86,7 +86,7 @@ test('mountFeature("llm", api) installs all methods and isActive true', () => {
 
   service.mountFeature('llm', llmApi)
 
-  assert.equal(service.llm.isActive, true)
+assert.equal(service.llm.availability().status, 'active')
   for (const method of ['modelInfo', 'prepareCall', 'stream']) {
     service.llm[method]()
   }
@@ -108,7 +108,7 @@ test('unmounted llm request surface throws core-inactive/feature-disabled before
   assert.throws(() => inert.llm.requestTransforms.register({}), PluginApiInactiveError)
   assert.throws(
     () => active.llm.requestTransforms.register({}),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm/request',
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm.requestTransforms',
   )
 })
 
@@ -120,7 +120,7 @@ test('mountFeature("llm/request", api) installs only the request surface', () =>
 
   assert.equal(service.llm.requestTransforms.register(), undefined)
   assert.ok(Object.isFrozen(service.llm.requestTransforms))
-  assert.equal(service.llm.isActive, false)
+assert.equal(service.llm.availability().status, 'unavailable')
   // admission.isActive is retired; the disabled surface exposes only register.
   assert.equal('isActive' in service.llm.admissionPolicies, false)
 })
@@ -141,7 +141,7 @@ test('mountFeature("llm") does not overwrite an already-mounted admission surfac
   })
 
   assert.equal(service.llm.admissionPolicies.register(), undefined)
-  assert.equal(service.llm.isActive, true)
+assert.equal(service.llm.availability().status, 'active')
 })
 
 test('llm/admission can still be mounted after llm is mounted', () => {
@@ -160,5 +160,5 @@ test('llm/admission can still be mounted after llm is mounted', () => {
   service.mountFeature('llm/admission', admissionApi)
 
   assert.equal(service.llm.admissionPolicies.register(), undefined)
-  assert.equal(service.llm.isActive, true)
+assert.equal(service.llm.availability().status, 'active')
 })

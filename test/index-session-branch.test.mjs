@@ -88,7 +88,7 @@ test('replacement active: pluginApi.sessions.branches forwards operations and av
   assert.equal(typeof branches.create, 'function')
   assert.equal(branches.create('p1', 0, { kind: 'sidechain' }).ok, true)
   assert.equal(calls[0][0], 'create')
-  assert.deepEqual(branches.availability(), Object.freeze({ status: 'active', active: true, contract: true, versionMatch: true, recoveryPending: [] }))
+  assert.equal(branches.availability().status, 'active')
 })
 
 test('no replacement marker: mount succeeds but operations reject with the typed disabled error', () => {
@@ -106,7 +106,7 @@ test('no replacement marker: mount succeeds but operations reject with the typed
   assert.throws(() => branches.create('p1', 0, { kind: 'retry' }), (error) => error instanceof PluginApiFeatureDisabledError)
   assert.throws(() => branches.graph('p1'), PluginApiFeatureDisabledError)
   assert.throws(() => branches.plan('p1'), PluginApiFeatureDisabledError)
-  assert.deepEqual(branches.availability(), { status: 'unavailable', active: false, contract: false, versionMatch: true })
+  assert.equal(branches.availability().status, 'unavailable')
 })
 
 test('version mismatch or absent auxiliary: the facade feature is disabled and never forwards', () => {
@@ -125,7 +125,7 @@ test('version mismatch or absent auxiliary: the facade feature is disabled and n
     assert.equal(mounted, null, 'mount must fail closed so the apply disables the feature')
     assert.equal(calls.length, 0, 'never forwards under version mismatch')
     // the constructor-provided disabled add-on stays truthful
-    assert.deepEqual(service.sessions.branches.availability(), Object.freeze({ status: 'unavailable', active: false, contract: false }))
+    assert.equal(service.sessions.branches.availability().status, 'unavailable')
     assert.throws(() => service.sessions.branches.create('p1', 0, { kind: 'retry' }), PluginApiFeatureDisabledError)
   }
 })
@@ -133,7 +133,7 @@ test('version mismatch or absent auxiliary: the facade feature is disabled and n
 test('facade inactive: branch add-on rejects with inactive/feature-disabled typing and availability is honest', () => {
   const { service } = createMountHarness({ manifest: { version: '0.1.0-rc.6-0.1.0', api: '0.1' } })
   // never mounted: sessionBranch slot stays on the disabled surface
-  assert.deepEqual(service.sessions.branches.availability(), Object.freeze({ status: 'unavailable', active: false, contract: false }))
+  assert.equal(service.sessions.branches.availability().status, 'unavailable')
   assert.throws(() => service.sessions.branches.create('p1', 0, { kind: 'retry' }), (error) => {
     assert.ok(error instanceof Error)
     return true
@@ -174,7 +174,7 @@ test('full apply() publishes the branch add-on as a typed disabled surface when 
   apply(ctx)
   const pluginApi = state.pluginApi
   assert.equal(typeof pluginApi.sessions.branches, 'object')
-  assert.deepEqual(pluginApi.sessions.branches.availability(), { status: 'unavailable', active: false, contract: false })
+  assert.equal(pluginApi.sessions.branches.availability().status, 'unavailable')
   assert.throws(() => pluginApi.sessions.branches.create('p1', 0, { kind: 'retry' }), PluginApiFeatureDisabledError)
   const feature = pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'sessionBranch')
   assert.ok(feature, 'sessionBranch is listed in the pluginApi feature registry snapshot')

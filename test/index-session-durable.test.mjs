@@ -175,7 +175,7 @@ test('durable cleanup restores feature-disabled, and a stale cleanup cannot revo
   assert.equal(feature(state, 'sessionDurable').isActive, false)
   assert.throws(() => firstSessionApi.durable.observe(), (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
-    assert.equal(error.feature, 'sessionDurable')
+    assert.equal(error.feature, 'sessions.durable')
     return true
   })
   assert.equal(firstCleanup(), false)
@@ -194,7 +194,7 @@ test('durable cleanup restores feature-disabled, and a stale cleanup cannot revo
   assert.equal(secondCleanup(), true)
   assert.throws(() => secondSessionApi.durable.appendMessage(), (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
-    assert.equal(error.feature, 'sessionDurable')
+    assert.equal(error.feature, 'sessions.durable')
     return true
   })
 })
@@ -207,7 +207,7 @@ test('an effect registration failure resets the published durable epoch before d
   assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 2, 'failed durable transaction leaves the sessionRoute and sessionChannel feeds intact')
   assert.throws(() => state.pluginApi.sessions.durable.list(), (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
-    assert.equal(error.feature, 'sessionDurable')
+    assert.equal(error.feature, 'sessions.durable')
     return true
   })
 })
@@ -224,7 +224,7 @@ test('registry mount failures before and after activation reset the published du
     assert.equal(state.listeners.filter((entry) => entry.name === 'session/event').length, 2)
     assert.throws(() => state.pluginApi.sessions.durable.observe(), (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'sessionDurable')
+      assert.equal(error.feature, 'sessions.durable')
       return true
     })
   }
@@ -251,7 +251,7 @@ test('a sessionDurable mounter exception leaves the composed session facade at f
   assert.equal(typeof state.pluginApi.sessions.get, 'function')
   assert.throws(() => state.pluginApi.sessions.durable.appendMessage(), (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
-    assert.equal(error.feature, 'sessionDurable')
+    assert.equal(error.feature, 'sessions.durable')
     return true
   })
 })

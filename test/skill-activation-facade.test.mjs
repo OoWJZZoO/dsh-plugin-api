@@ -87,15 +87,7 @@ test('replacement active: pluginApi.skills.activation forwards operations and av
   featureRegistry.mount('skillsActivation')
 
   const activation = activationSurface(service)
-  assert.deepEqual(activation.availability(), {
-    status: 'active',
-    active: true,
-    versionMatch: true,
-    contract: true,
-    officialRowDisabled: true,
-    replacementActive: true,
-    seams: { skillTool: true },
-  })
+  assert.equal(activation.availability().status, 'active')
   activation.activate('demo-skill', { scope: { kind: 'session', key: 's-1' } })
   assert.deepEqual(calls.at(-1), ['activate', ['demo-skill', { scope: { kind: 'session', key: 's-1' } }]])
   const exposure = activation.exposure.list('demo-skill', 'g-9')
@@ -117,9 +109,9 @@ test('no replacement marker: mount succeeds but operations reject with the typed
   featureRegistry.mount('skillsActivation')
 
   const activation = activationSurface(service)
-  assert.throws(() => activation.register({}), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'skillsActivation')
+  assert.throws(() => activation.register({}), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'skills.activation')
   assert.throws(() => activation.policy.register({ kind: 'session', key: 's-1' }), PluginApiFeatureDisabledError)
-  assert.deepEqual(activation.availability(), { status: 'unavailable', active: false, contract: false, versionMatch: true })
+  assert.equal(activation.availability().status, 'unavailable')
 })
 
 test('version mismatch or absent auxiliary: the facade feature is disabled and never forwards', () => {
@@ -137,7 +129,7 @@ test('version mismatch or absent auxiliary: the facade feature is disabled and n
     })
     assert.equal(mounted, null, 'mount must fail closed so the apply disables the feature')
     assert.equal(calls.length, 0, 'never forwards under version mismatch')
-    assert.deepEqual(activationSurface(service).availability(), Object.freeze({ status: 'unavailable', active: false, contract: false }))
+    assert.equal(activationSurface(service).availability().status, 'unavailable')
     assert.throws(() => activationSurface(service).activate('demo-skill', {}), PluginApiFeatureDisabledError)
   }
 })
@@ -168,10 +160,10 @@ test('full apply: absent auxiliary keeps the typed disabled surface and leaves o
   assert.doesNotThrow(() => apply(ctx))
   assert.ok(state.pluginApi)
   const activation = state.pluginApi.skills.activation
-  assert.deepEqual(activation.availability(), { status: 'unavailable', active: false, contract: false })
+  assert.equal(activation.availability().status, 'unavailable')
   assert.throws(() => activation.activate('demo', {}), (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
-    assert.equal(error.feature, 'skillsActivation')
+    assert.equal(error.feature, 'skills.activation')
     return true
   })
   // The rest of the facade stays fully usable (typed disabled projection only

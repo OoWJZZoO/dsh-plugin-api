@@ -78,7 +78,7 @@ test('aborted error: typed identity through the integrated facade', () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
   const tools = state.pluginApi.tools
-  assert.equal(tools.isActive, true)
+assert.equal(tools.availability().status, 'active')
   const err = state.pluginApi.services.tools.toolAbortedError()
   assert.ok(err instanceof Error)
   assert.equal(err.name, 'AbortError')
@@ -98,7 +98,7 @@ test('aborted error: degraded factory when the official source is unavailable', 
 test('aborted error: disabled tools degrade locally without touching other features', () => {
   const { ctx, state } = createMockCtx({ services: { tools: undefined } })
   assert.doesNotThrow(() => apply(ctx))
-  assert.equal(state.pluginApi.tools.isActive, false)
+  assert.equal(state.pluginApi.tools.availability().status, 'unavailable')
   assert.equal(typeof state.pluginApi.services.tools.toolAbortedError, 'function')
   assert.throws(
     () => state.pluginApi.services.tools.toolAbortedError(),
@@ -166,7 +166,7 @@ test('remote: missing typert prerequisite degrades to the disabled surface (feat
     () => state.pluginApi.remotes.register('k', { get() {} }),
     (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'remotes',
   )
-  assert.equal(state.pluginApi.tools.isActive, true, 'unrelated features stay healthy')
+  assert.equal(state.pluginApi.tools.availability().status, 'active', 'unrelated features stay healthy')
 })
 
 // -- jobs / shellEnv service seams --

@@ -29,7 +29,7 @@ function instantiate(coreActive = true) {
 function assertFeatureDisabled(callback) {
   assert.throws(callback, (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
-    assert.equal(error.feature, 'sessionDurable')
+    assert.equal(error.feature, 'sessions.durable')
     return true
   })
 }
@@ -105,7 +105,7 @@ test('sessionDurable remains unsupported until its epoch mount path exists', () 
   const { service } = instantiate(true)
   assert.throws(
     () => service.mountFeature('sessionDurable', {}),
-    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'sessionDurable',
+    (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'sessions.durable',
   )
 })
 

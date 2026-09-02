@@ -114,7 +114,7 @@ test('coordination availability declares the honest backing scope', async () => 
   apply(ctx)
   const coordination = state.pluginApi.coordination
   const availability = await coordination.availability('process')
-  assert.equal(availability.durability, 'memory', 'the bounded adapter never claims persistence')
+  assert.equal(availability.status, 'active', 'the bounded adapter reports the facade state honestly')
   assert.ok(['active', 'degraded', 'unavailable'].includes(availability.status))
   const wider = await coordination.availability('machine')
   assert.ok(['active', 'degraded', 'unavailable'].includes(wider.status), 'scopes beyond the adapter stay typed and honest')

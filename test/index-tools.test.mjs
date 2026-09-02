@@ -136,7 +136,7 @@ test('tools active: apply mounts pluginApi.tools and extends the events catalog 
 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
-  assert.equal(state.pluginApi.tools.isActive, true)
+  assert.equal(state.pluginApi.tools.availability().status, 'active')
 
   const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
 assert.equal(features.length, 31)
@@ -234,5 +234,5 @@ test('repeated apply does not re-mount the tools feature', () => {
 
   assert.doesNotThrow(() => apply(ctx))
   assert.equal(toolsMountCalls, 0)
-  assert.equal(service.tools.isActive, true)
+assert.equal(service.tools.availability().status, 'active')
 })

@@ -177,13 +177,13 @@ test('read-only state accessors: read-only accessors return frozen snapshots wit
   })
   const session = mocks.session
 
-  assert.equal(api.header(session), session.header)
-  assert.equal(api.events(session), session.events)
-  assert.equal(api.seq(session), 1)
-  assert.equal(api.requestHeader(session), session.requestHeader())
-  assert.equal(api.requestContext(session), session.requestContext())
+  assert.equal(api.views.header(session), session.header)
+  assert.equal(api.views.events(session), session.events)
+  assert.equal(api.views.seq(session), 1)
+  assert.equal(api.views.requestHeader(session), session.requestHeader())
+  assert.equal(api.views.requestContext(session), session.requestContext())
 
-  const surface = api.surface(session)
+  const surface = api.views.surface(session)
   assert.deepEqual(surface.nodes, [1, 2, 3])
   assert.equal(surface.replaceGeneration, 2)
   assert.ok(Object.isFrozen(surface), 'surface snapshot must be frozen')
@@ -191,7 +191,7 @@ test('read-only state accessors: read-only accessors return frozen snapshots wit
   assert.throws(() => surface.nodes.push(999), TypeError)
   assert.deepEqual(session.surface.nodes, [1, 2, 3], 'internal surface nodes must not be mutated')
 
-  const messages = api.deriveMessages(session)
+  const messages = api.views.deriveMessages(session)
   assert.deepEqual(messages, [{ role: 'user', content: 'hello' }])
   assert.ok(Object.isFrozen(messages), 'deriveMessages array must be frozen')
   assert.ok(Object.isFrozen(messages[0]), 'deriveMessages entries must be frozen')
@@ -211,12 +211,12 @@ test('session type catalogs: catalogs and type guards come from createSessionTyp
     logger,
   })
 
-  assert.deepEqual(api.sessionEventTypes, ['session/end-seed', 'session/title', 'user/message'])
-  assert.deepEqual(api.surfaceEventTypes, ['user/message'])
-  assert.equal(api.isSessionEventType('session/title'), true)
-  assert.equal(api.isSessionEventType('turn/start'), false)
-  assert.equal(api.isSurfaceEventType('user/message'), true)
-  assert.equal(api.isSurfaceEventType('session/title'), false)
+  assert.deepEqual(api.views.sessionEventTypes, ['session/end-seed', 'session/title', 'user/message'])
+  assert.deepEqual(api.views.surfaceEventTypes, ['user/message'])
+  assert.equal(api.views.isSessionEventType('session/title'), true)
+  assert.equal(api.views.isSessionEventType('turn/start'), false)
+  assert.equal(api.views.isSurfaceEventType('user/message'), true)
+  assert.equal(api.views.isSurfaceEventType('session/title'), false)
 
   const degraded = createSessionApi({
     ctx: mocks.ctx,
@@ -225,10 +225,10 @@ test('session type catalogs: catalogs and type guards come from createSessionTyp
     dshSession: null,
     logger,
   })
-  assert.deepEqual(degraded.sessionEventTypes, [])
-  assert.deepEqual(degraded.surfaceEventTypes, [])
-  assert.equal(degraded.isSessionEventType('session/title'), false)
-  assert.equal(degraded.isSurfaceEventType('user/message'), false)
+  assert.deepEqual(degraded.views.sessionEventTypes, [])
+  assert.deepEqual(degraded.views.surfaceEventTypes, [])
+  assert.equal(degraded.views.isSessionEventType('session/title'), false)
+  assert.equal(degraded.views.isSurfaceEventType('user/message'), false)
   assert.ok(logger.warns.length >= 1)
 })
 
@@ -271,5 +271,5 @@ test('mountSessionFeature returns null when dependencies are missing and mounts 
   assert.equal(typeof disposer, 'function')
   assert.equal(mounted.length, 1)
   assert.equal(mounted[0].name, 'session')
-  assert.equal(mounted[0].api.isActive, true)
+  assert.equal(typeof mounted[0].api.observe, 'function')
 })

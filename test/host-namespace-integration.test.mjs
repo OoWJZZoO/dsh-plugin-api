@@ -196,7 +196,7 @@ test('integrated llm facade exposes the six official directory methods and three
   const { ctx, state } = createMockCtx()
   apply(ctx)
   const llm = state.pluginApi.llm
-  assert.equal(llm.isActive, true)
+assert.equal(llm.availability().status, 'active')
   assert.deepEqual(llm.providers.register('./a'), undefined ?? undefined)
   assert.equal(typeof llm.providers.register, 'function')
   assert.equal(typeof llm.models.register, 'function')
@@ -322,7 +322,7 @@ test('settings document members report unavailable when the settings service is 
   delete services.settings
   apply(ctx)
   const settings = state.pluginApi.settings
-  assert.equal(settings.isActive, true)
+assert.equal(settings.availability().status, 'degraded')
   const servicesSettings = state.pluginApi.services.settings
   assert.throws(() => servicesSettings.writable, (error) => error instanceof PluginApiServiceUnavailableError && error.service === 'settings')
   assert.throws(() => servicesSettings.get('ns'), (error) => error instanceof PluginApiServiceUnavailableError && error.service === 'settings')
@@ -335,7 +335,7 @@ test('repeated apply does not duplicate the leaf members and keeps identity stab
   apply(ctx)
   const second = state.pluginApi.llm
   assert.deepEqual(state.pluginApi.services.llm.listProviders(), ['provider-a'])
-  assert.equal(second.isActive, true)
+  assert.equal(second.availability().status, 'active')
   // Re-apply keeps one active registration and no extra feature entries.
   const llmFeatures = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').filter((feature) => feature.name === 'llm')
   assert.equal(llmFeatures.length, 1)

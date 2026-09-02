@@ -109,7 +109,7 @@ test('pluginApi.llm.adapters exists but throws typed errors while the registry i
     () => service.llm.adapters.register({}),
     (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
-      assert.equal(error.feature, 'llmAdapters')
+      assert.equal(error.feature, 'llm.adapters')
       return true
     },
   )

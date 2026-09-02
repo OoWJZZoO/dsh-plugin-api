@@ -84,7 +84,7 @@ test('apply mounts the systemPrompt API and core-inactive calls forward to the o
 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
-  assert.equal(state.pluginApi.prompts.isActive, true)
+  assert.equal(state.pluginApi.prompts.availability().status, 'active')
 
   const section = { name: 's1', order: 1, text: 'hello' }
   assert.equal(state.pluginApi.prompts.contribute({ kind: 'section', section }).ok, true)
@@ -141,7 +141,7 @@ test('apply is idempotent for the systemPrompt feature mount', () => {
   assert.doesNotThrow(() => apply(ctx))
   assert.doesNotThrow(() => apply(ctx))
 
-  assert.equal(state.pluginApi.prompts.isActive, true)
+  assert.equal(state.pluginApi.prompts.availability().status, 'active')
   const section = { name: 's1', order: 1, text: 'hello' }
   assert.equal(state.pluginApi.prompts.contribute({ kind: 'section', section }).ok, true)
 })

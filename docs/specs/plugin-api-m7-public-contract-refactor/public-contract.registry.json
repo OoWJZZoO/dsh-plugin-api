@@ -525,7 +525,7 @@
       "reducer": "none",
       "currentShape": "subscription returning bare disposer",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -558,7 +558,7 @@
       "reducer": "none",
       "currentShape": "one-shot subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -939,7 +939,7 @@
       "reducer": "none",
       "currentShape": "getter boolean",
       "migrationAction": "retain",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1071,7 +1071,7 @@
       "reducer": "none",
       "currentShape": "adapter registration",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1104,7 +1104,7 @@
       "reducer": "none",
       "currentShape": "provider registration",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1137,7 +1137,7 @@
       "reducer": "none",
       "currentShape": "model discovery registration",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1203,7 +1203,7 @@
       "reducer": "none",
       "currentShape": "official ctx.llm forwarding leaf merged by the activated llm feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1236,7 +1236,7 @@
       "reducer": "none",
       "currentShape": "official ctx.llm forwarding leaf merged by the activated llm feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1269,7 +1269,7 @@
       "reducer": "none",
       "currentShape": "official ctx.llm forwarding leaf merged by the activated llm feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1302,7 +1302,7 @@
       "reducer": "none",
       "currentShape": "official ctx.llm forwarding leaf merged by the activated llm feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1335,7 +1335,7 @@
       "reducer": "none",
       "currentShape": "official ctx.llm forwarding leaf merged by the activated llm feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1368,7 +1368,7 @@
       "reducer": "none",
       "currentShape": "official ctx.llm forwarding leaf merged by the activated llm feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1401,7 +1401,7 @@
       "reducer": "none",
       "currentShape": "official llm artifact getter merged by the activated llm feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1434,7 +1434,7 @@
       "reducer": "none",
       "currentShape": "official llm artifact getter merged by the activated llm feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1467,7 +1467,7 @@
       "reducer": "none",
       "currentShape": "official llm constructor artifact getter merged by the activated llm feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1500,7 +1500,7 @@
       "reducer": "ordered-reducer",
       "currentShape": "registration entry verb named transform",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1632,7 +1632,7 @@
       "reducer": "none",
       "currentShape": "adapter decoration entry",
       "migrationAction": "split",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1665,7 +1665,7 @@
       "reducer": "none",
       "currentShape": "adapter snapshot query",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1830,7 +1830,7 @@
       "reducer": "none",
       "currentShape": "subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -1929,7 +1929,7 @@
       "reducer": "none",
       "currentShape": "one-shot subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -2193,7 +2193,7 @@
       "reducer": "ordered-reducer",
       "currentShape": "circuit policy registration",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -2226,7 +2226,7 @@
       "reducer": "none",
       "currentShape": "probe registration",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -2259,7 +2259,7 @@
       "reducer": "none",
       "currentShape": "manual probe segment driver",
       "migrationAction": "delete",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -2292,7 +2292,7 @@
       "reducer": "none",
       "currentShape": "manual probe start",
       "migrationAction": "delete",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -2325,7 +2325,7 @@
       "reducer": "none",
       "currentShape": "manual probe completion",
       "migrationAction": "delete",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -2358,7 +2358,7 @@
       "reducer": "none",
       "currentShape": "circuit state query named status",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -2523,7 +2523,7 @@
       "reducer": "none",
       "currentShape": "getter boolean",
       "migrationAction": "retain",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -2763,7 +2763,7 @@
       "reducer": "none",
       "currentShape": "provider claim entry",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -2796,7 +2796,7 @@
       "reducer": "none",
       "currentShape": "provider announcement",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -2829,7 +2829,7 @@
       "reducer": "none",
       "currentShape": "provider factory claim",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -2862,7 +2862,7 @@
       "reducer": "none",
       "currentShape": "frozen boolean data property",
       "migrationAction": "retain",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -2961,7 +2961,7 @@
       "reducer": "none",
       "currentShape": "official agents registry forwarding leaf merged by the activated agent feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -2994,7 +2994,7 @@
       "reducer": "none",
       "currentShape": "official agents registry forwarding leaf merged by the activated agent feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -3027,7 +3027,7 @@
       "reducer": "none",
       "currentShape": "official agents registry forwarding leaf merged by the activated agent feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -3060,7 +3060,7 @@
       "reducer": "none",
       "currentShape": "official agents registry forwarding leaf merged by the activated agent feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -3093,7 +3093,7 @@
       "reducer": "none",
       "currentShape": "official agents registry forwarding leaf merged by the activated agent feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -3126,7 +3126,7 @@
       "reducer": "none",
       "currentShape": "official agent options snapshot getter merged by the activated agent feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -3258,7 +3258,7 @@
       "reducer": "none",
       "currentShape": "change subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -3390,7 +3390,7 @@
       "reducer": "none",
       "currentShape": "input normalization helper exposed publicly",
       "migrationAction": "internalize",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -3423,7 +3423,7 @@
       "reducer": "none",
       "currentShape": "recovery capability declaration",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -3522,7 +3522,7 @@
       "reducer": "none",
       "currentShape": "consultation-style acknowledgement entry",
       "migrationAction": "delete",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -3555,7 +3555,7 @@
       "reducer": "none",
       "currentShape": "official error adapter toolbox",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -3588,7 +3588,7 @@
       "reducer": "none",
       "currentShape": "official error adapter toolbox",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -3621,7 +3621,7 @@
       "reducer": "none",
       "currentShape": "official error adapter toolbox",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -3687,7 +3687,7 @@
       "reducer": "none",
       "currentShape": "manual projection driver",
       "migrationAction": "delete",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -3826,8 +3826,8 @@
       ]
     },
     {
-      "publicPath": "sessions.header",
-      "targetPath": "sessions.header",
+      "publicPath": "sessions.views.header",
+      "targetPath": "sessions.views.header",
       "capability": "sessions",
       "kind": "leaf",
       "idiom": "projection",
@@ -3851,7 +3851,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "session header query",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -3859,8 +3859,8 @@
       ]
     },
     {
-      "publicPath": "sessions.events",
-      "targetPath": "sessions.events",
+      "publicPath": "sessions.views.events",
+      "targetPath": "sessions.views.events",
       "capability": "sessions",
       "kind": "leaf",
       "idiom": "projection",
@@ -3884,7 +3884,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "session events query",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -3892,8 +3892,8 @@
       ]
     },
     {
-      "publicPath": "sessions.seq",
-      "targetPath": "sessions.seq",
+      "publicPath": "sessions.views.seq",
+      "targetPath": "sessions.views.seq",
       "capability": "sessions",
       "kind": "leaf",
       "idiom": "projection",
@@ -3917,7 +3917,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "sequence query",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -3925,8 +3925,8 @@
       ]
     },
     {
-      "publicPath": "sessions.surface",
-      "targetPath": "sessions.surface",
+      "publicPath": "sessions.views.surface",
+      "targetPath": "sessions.views.surface",
       "capability": "sessions",
       "kind": "leaf",
       "idiom": "projection",
@@ -3950,7 +3950,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "surface event query",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -3958,8 +3958,8 @@
       ]
     },
     {
-      "publicPath": "sessions.requestHeader",
-      "targetPath": "sessions.requestHeader",
+      "publicPath": "sessions.views.requestHeader",
+      "targetPath": "sessions.views.requestHeader",
       "capability": "sessions",
       "kind": "leaf",
       "idiom": "projection",
@@ -3983,7 +3983,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "request header helper",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -3991,8 +3991,8 @@
       ]
     },
     {
-      "publicPath": "sessions.requestContext",
-      "targetPath": "sessions.requestContext",
+      "publicPath": "sessions.views.requestContext",
+      "targetPath": "sessions.views.requestContext",
       "capability": "sessions",
       "kind": "leaf",
       "idiom": "projection",
@@ -4016,7 +4016,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "request context helper",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -4024,8 +4024,8 @@
       ]
     },
     {
-      "publicPath": "sessions.deriveMessages",
-      "targetPath": "sessions.deriveMessages",
+      "publicPath": "sessions.views.deriveMessages",
+      "targetPath": "sessions.views.deriveMessages",
       "capability": "sessions",
       "kind": "leaf",
       "idiom": "projection",
@@ -4049,7 +4049,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "message derivation helper",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -4057,8 +4057,8 @@
       ]
     },
     {
-      "publicPath": "sessions.isSessionEventType",
-      "targetPath": "sessions.isSessionEventType",
+      "publicPath": "sessions.views.isSessionEventType",
+      "targetPath": "sessions.views.isSessionEventType",
       "capability": "sessions",
       "kind": "leaf",
       "idiom": "projection",
@@ -4082,7 +4082,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "event type predicate",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -4090,8 +4090,8 @@
       ]
     },
     {
-      "publicPath": "sessions.isSurfaceEventType",
-      "targetPath": "sessions.isSurfaceEventType",
+      "publicPath": "sessions.views.isSurfaceEventType",
+      "targetPath": "sessions.views.isSurfaceEventType",
       "capability": "sessions",
       "kind": "leaf",
       "idiom": "projection",
@@ -4115,7 +4115,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "event type predicate",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -4123,8 +4123,8 @@
       ]
     },
     {
-      "publicPath": "sessions.sessionEventTypes",
-      "targetPath": "sessions.sessionEventTypes",
+      "publicPath": "sessions.views.sessionEventTypes",
+      "targetPath": "sessions.views.sessionEventTypes",
       "capability": "sessions",
       "kind": "leaf",
       "idiom": "projection",
@@ -4148,7 +4148,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "event type list",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -4156,8 +4156,8 @@
       ]
     },
     {
-      "publicPath": "sessions.surfaceEventTypes",
-      "targetPath": "sessions.surfaceEventTypes",
+      "publicPath": "sessions.views.surfaceEventTypes",
+      "targetPath": "sessions.views.surfaceEventTypes",
       "capability": "sessions",
       "kind": "leaf",
       "idiom": "projection",
@@ -4181,7 +4181,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "event type list",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -4215,7 +4215,7 @@
       "reducer": "none",
       "currentShape": "subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -4281,7 +4281,7 @@
       "reducer": "none",
       "currentShape": "one-shot subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -4413,7 +4413,7 @@
       "reducer": "none",
       "currentShape": "official session store forwarding leaf merged by the activated session feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -4446,7 +4446,7 @@
       "reducer": "none",
       "currentShape": "official session store forwarding leaf merged by the activated session feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -4479,7 +4479,7 @@
       "reducer": "none",
       "currentShape": "official session store forwarding leaf merged by the activated session feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -4512,7 +4512,7 @@
       "reducer": "none",
       "currentShape": "official session store forwarding leaf merged by the activated session feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -4545,7 +4545,7 @@
       "reducer": "none",
       "currentShape": "official session store forwarding leaf merged by the activated session feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -4578,7 +4578,7 @@
       "reducer": "none",
       "currentShape": "official session append forwarding leaf merged by the activated session feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -4611,7 +4611,7 @@
       "reducer": "none",
       "currentShape": "official public session export forwarding leaf merged by the activated session feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -4644,7 +4644,7 @@
       "reducer": "none",
       "currentShape": "getter list",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -4710,7 +4710,7 @@
       "reducer": "none",
       "currentShape": "getter map",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -4776,7 +4776,7 @@
       "reducer": "none",
       "currentShape": "descriptor query",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -4842,7 +4842,7 @@
       "reducer": "none",
       "currentShape": "durable subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -4941,7 +4941,7 @@
       "reducer": "none",
       "currentShape": "one-shot durable subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -5271,7 +5271,7 @@
       "reducer": "none",
       "currentShape": "channel open returning open result",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -5370,7 +5370,7 @@
       "reducer": "none",
       "currentShape": "channel revocation",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -5403,7 +5403,7 @@
       "reducer": "none",
       "currentShape": "channel subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -5436,7 +5436,7 @@
       "reducer": "none",
       "currentShape": "channel change subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -5502,7 +5502,7 @@
       "reducer": "none",
       "currentShape": "event fetch query",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -5643,7 +5643,7 @@
       "reducer": "ordered-reducer",
       "currentShape": "verifier registration",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -5676,7 +5676,7 @@
       "reducer": "ordered-reducer",
       "currentShape": "authorizer registration",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -5709,7 +5709,7 @@
       "reducer": "none",
       "currentShape": "pairing provider registration",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -5841,7 +5841,7 @@
       "reducer": "fail-closed-reducer",
       "currentShape": "redaction profile registration",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -5874,7 +5874,7 @@
       "reducer": "none",
       "currentShape": "internal dispatch mechanism",
       "migrationAction": "internalize",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -5907,7 +5907,7 @@
       "reducer": "none",
       "currentShape": "internal generation field reader",
       "migrationAction": "internalize",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -5973,7 +5973,7 @@
       "reducer": "none",
       "currentShape": "getter boolean",
       "migrationAction": "retain",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -6072,7 +6072,7 @@
       "reducer": "ordered-reducer",
       "currentShape": "restriction filter registration",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -6105,7 +6105,7 @@
       "reducer": "ordered-reducer",
       "currentShape": "guard registration",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -6171,7 +6171,7 @@
       "reducer": "none",
       "currentShape": "schema collection query",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -6270,7 +6270,7 @@
       "reducer": "none",
       "currentShape": "presentation registration",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -6303,7 +6303,7 @@
       "reducer": "none",
       "currentShape": "execution mode registration",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -6369,7 +6369,7 @@
       "reducer": "none",
       "currentShape": "official tool-aborted error constructor",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -6435,7 +6435,7 @@
       "reducer": "none",
       "currentShape": "getter boolean",
       "migrationAction": "retain",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -6501,7 +6501,7 @@
       "reducer": "none",
       "currentShape": "search query",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -6633,7 +6633,7 @@
       "reducer": "none",
       "currentShape": "audit query",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -6765,7 +6765,7 @@
       "reducer": "none",
       "currentShape": "descriptor registration",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -6798,7 +6798,7 @@
       "reducer": "none",
       "currentShape": "skill registration",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -6897,7 +6897,7 @@
       "reducer": "none",
       "currentShape": "exposure query",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -6963,7 +6963,7 @@
       "reducer": "none",
       "currentShape": "audit query",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -7029,7 +7029,7 @@
       "reducer": "ordered-reducer",
       "currentShape": "minimal catalog update policy registration",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -7128,7 +7128,7 @@
       "reducer": "none",
       "currentShape": "getter boolean",
       "migrationAction": "retain",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -7161,7 +7161,7 @@
       "reducer": "none",
       "currentShape": "section contribution",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -7194,7 +7194,7 @@
       "reducer": "none",
       "currentShape": "context contribution",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -7227,7 +7227,7 @@
       "reducer": "none",
       "currentShape": "variable contribution",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -7260,7 +7260,7 @@
       "reducer": "none",
       "currentShape": "tool contribution",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -7293,7 +7293,7 @@
       "reducer": "none",
       "currentShape": "runtime context suppression contribution",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -7458,7 +7458,7 @@
       "reducer": "none",
       "currentShape": "official system prompt forwarding leaf merged by the activated systemPrompt feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -7920,7 +7920,7 @@
       "reducer": "none",
       "currentShape": "transform registration",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -7986,7 +7986,7 @@
       "reducer": "none",
       "currentShape": "attachment resolution",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -8316,7 +8316,7 @@
       "reducer": "none",
       "currentShape": "catalog change subscription",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -8514,7 +8514,7 @@
       "reducer": "none",
       "currentShape": "task claim",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -8547,7 +8547,7 @@
       "reducer": "none",
       "currentShape": "task reassignment",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -9009,7 +9009,7 @@
       "reducer": "none",
       "currentShape": "state watch subscription",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -9537,7 +9537,7 @@
       "reducer": "none",
       "currentShape": "consultation-style egress check",
       "migrationAction": "delete",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -9669,7 +9669,7 @@
       "reducer": "none",
       "currentShape": "audit query",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -9834,7 +9834,7 @@
       "reducer": "none",
       "currentShape": "change subscription",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -9966,7 +9966,7 @@
       "reducer": "none",
       "currentShape": "frozen boolean data property",
       "migrationAction": "retain",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -10065,7 +10065,7 @@
       "reducer": "none",
       "currentShape": "settings description query",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -10131,7 +10131,7 @@
       "reducer": "none",
       "currentShape": "official section installer",
       "migrationAction": "delete",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -10263,7 +10263,7 @@
       "reducer": "none",
       "currentShape": "official settings forwarding getter merged by the activated settings feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -10296,7 +10296,7 @@
       "reducer": "none",
       "currentShape": "official settings forwarding leaf merged by the activated settings feature",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -10329,7 +10329,7 @@
       "reducer": "none",
       "currentShape": "official settings forwarding leaf merged by the activated settings feature; distinct from the facade scope handle read member",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -10362,7 +10362,7 @@
       "reducer": "none",
       "currentShape": "one-argument remote contribution mount function remote(namespace, serviceKey)",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -10428,7 +10428,7 @@
       "reducer": "none",
       "currentShape": "namespace disposer clearing the scope cache",
       "migrationAction": "internalize",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -10866,7 +10866,7 @@
       "reducer": "none",
       "currentShape": "frozen boolean data property",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -10899,7 +10899,7 @@
       "reducer": "none",
       "currentShape": "remote service publication",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -10965,7 +10965,7 @@
       "reducer": "none",
       "currentShape": "namespace-level disposer",
       "migrationAction": "internalize",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -10998,7 +10998,7 @@
       "reducer": "none",
       "currentShape": "getter boolean",
       "migrationAction": "retain",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11097,7 +11097,7 @@
       "reducer": "none",
       "currentShape": "handle close disposer returning a discriminated result",
       "migrationAction": "delete",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11196,7 +11196,7 @@
       "reducer": "none",
       "currentShape": "official storage domain handle exposed on the binding handle",
       "migrationAction": "migrate",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11460,7 +11460,7 @@
       "reducer": "none",
       "currentShape": "getter boolean",
       "migrationAction": "retain",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11526,7 +11526,7 @@
       "reducer": "none",
       "currentShape": "settings api accessor",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11592,7 +11592,7 @@
       "reducer": "none",
       "currentShape": "connection disposer exposed publicly",
       "migrationAction": "internalize",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11625,7 +11625,7 @@
       "reducer": "none",
       "currentShape": "getter boolean",
       "migrationAction": "retain",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11658,7 +11658,7 @@
       "reducer": "none",
       "currentShape": "named subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11691,7 +11691,7 @@
       "reducer": "none",
       "currentShape": "official event face subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11724,7 +11724,7 @@
       "reducer": "none",
       "currentShape": "official event face subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11757,7 +11757,7 @@
       "reducer": "none",
       "currentShape": "official event face subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11790,7 +11790,7 @@
       "reducer": "none",
       "currentShape": "official event face subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11823,7 +11823,7 @@
       "reducer": "none",
       "currentShape": "official event face active state getter",
       "migrationAction": "retain",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11856,7 +11856,7 @@
       "reducer": "none",
       "currentShape": "official event face active state getter",
       "migrationAction": "retain",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11889,7 +11889,7 @@
       "reducer": "none",
       "currentShape": "official event face active state getter",
       "migrationAction": "retain",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11922,7 +11922,7 @@
       "reducer": "none",
       "currentShape": "official event face active state getter",
       "migrationAction": "retain",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11955,7 +11955,7 @@
       "reducer": "none",
       "currentShape": "remote event subscription",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -11988,7 +11988,7 @@
       "reducer": "none",
       "currentShape": "remote dispatch",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -12021,7 +12021,7 @@
       "reducer": "none",
       "currentShape": "remote mounting",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -12054,7 +12054,7 @@
       "reducer": "none",
       "currentShape": "remote contribution mount",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -12153,7 +12153,7 @@
       "reducer": "none",
       "currentShape": "remote settings contribution mount",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -12186,7 +12186,7 @@
       "reducer": "none",
       "currentShape": "slot registration",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -12219,7 +12219,7 @@
       "reducer": "none",
       "currentShape": "slot injection",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -12252,7 +12252,7 @@
       "reducer": "none",
       "currentShape": "entries query",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -12285,7 +12285,7 @@
       "reducer": "none",
       "currentShape": "entries subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -12318,7 +12318,7 @@
       "reducer": "none",
       "currentShape": "slot event subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -12351,7 +12351,7 @@
       "reducer": "none",
       "currentShape": "getter boolean",
       "migrationAction": "retain",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -12384,7 +12384,7 @@
       "reducer": "none",
       "currentShape": "face registration returning handle",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -12450,7 +12450,7 @@
       "reducer": "none",
       "currentShape": "change subscription",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -12483,7 +12483,7 @@
       "reducer": "none",
       "currentShape": "rebind subscription",
       "migrationAction": "merge",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -12516,7 +12516,7 @@
       "reducer": "none",
       "currentShape": "face snapshot query",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -12582,7 +12582,7 @@
       "reducer": "none",
       "currentShape": "raw schema library instance exposed on the public codec face",
       "migrationAction": "delete",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -12714,7 +12714,7 @@
       "reducer": "none",
       "currentShape": "invocation validation",
       "migrationAction": "rename",
-      "status": "advanced",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -14837,7 +14837,7 @@
     {
       "key": "fs",
       "capability": "services.fs",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14845,7 +14845,7 @@
     {
       "key": "codeRuntime",
       "capability": "services.codeRuntime",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14853,7 +14853,7 @@
     {
       "key": "workspaces",
       "capability": "services.workspaces",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14861,7 +14861,7 @@
     {
       "key": "subagents",
       "capability": "services.subagents",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14869,7 +14869,7 @@
     {
       "key": "approval",
       "capability": "services.approval",
-      "members": "removed via Task 6.2 (second-approval-1): setPolicy",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14877,7 +14877,7 @@
     {
       "key": "userQuestions",
       "capability": "services.userQuestions",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14885,7 +14885,7 @@
     {
       "key": "attachments",
       "capability": "services.attachments",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14893,7 +14893,7 @@
     {
       "key": "skills",
       "capability": "services.skills",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14901,7 +14901,7 @@
     {
       "key": "storage",
       "capability": "services.storage",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14909,7 +14909,7 @@
     {
       "key": "sessionProjections",
       "capability": "services.sessionProjections",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14917,7 +14917,7 @@
     {
       "key": "sessionQuery",
       "capability": "services.sessionQuery",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14925,7 +14925,7 @@
     {
       "key": "sessionTitle",
       "capability": "services.sessionTitle",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14933,7 +14933,7 @@
     {
       "key": "sessionTelemetry",
       "capability": "services.sessionTelemetry",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14941,7 +14941,7 @@
     {
       "key": "sessionReferences",
       "capability": "services.sessionReferences",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14949,7 +14949,7 @@
     {
       "key": "tokenMeter",
       "capability": "services.tokenMeter",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14957,7 +14957,7 @@
     {
       "key": "agentDefaultModel",
       "capability": "services.agentDefaultModel",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14965,7 +14965,7 @@
     {
       "key": "web",
       "capability": "services.web",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14973,7 +14973,7 @@
     {
       "key": "jobs",
       "capability": "services.jobs",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14981,7 +14981,7 @@
     {
       "key": "shellEnv",
       "capability": "services.shellEnv",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14989,7 +14989,7 @@
     {
       "key": "agentLoop",
       "capability": "services.agentLoop",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -14997,7 +14997,7 @@
     {
       "key": "agentPresets",
       "capability": "services.agentPresets",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15005,7 +15005,7 @@
     {
       "key": "apiProxy",
       "capability": "services.apiProxy",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15013,7 +15013,7 @@
     {
       "key": "clientModules",
       "capability": "services.clientModules",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15021,7 +15021,7 @@
     {
       "key": "commands",
       "capability": "services.commands",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15029,7 +15029,7 @@
     {
       "key": "credentials",
       "capability": "services.credentials",
-      "members": "removed via Task 6.2 (second-approval-5): set, unset",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15037,7 +15037,7 @@
     {
       "key": "directoryPicker",
       "capability": "services.directoryPicker",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15045,7 +15045,7 @@
     {
       "key": "e2b",
       "capability": "services.e2b",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15053,7 +15053,7 @@
     {
       "key": "goals",
       "capability": "services.goals",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15061,7 +15061,7 @@
     {
       "key": "invariants",
       "capability": "services.invariants",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15069,7 +15069,7 @@
     {
       "key": "lsp",
       "capability": "services.lsp",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15077,7 +15077,7 @@
     {
       "key": "messageFeedback",
       "capability": "services.messageFeedback",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15085,7 +15085,7 @@
     {
       "key": "permissionPresets",
       "capability": "services.permissionPresets",
-      "members": "removed via Task 6.2 (second-approval-4): set, selectFor",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15093,7 +15093,7 @@
     {
       "key": "planMode",
       "capability": "services.planMode",
-      "members": "removed via Task 6.2 (second-approval-3): set",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15101,7 +15101,7 @@
     {
       "key": "sandbox",
       "capability": "services.sandbox",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15109,7 +15109,7 @@
     {
       "key": "sandboxPolicy",
       "capability": "services.sandboxPolicy",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15117,7 +15117,7 @@
     {
       "key": "sessionPersistence",
       "capability": "services.sessionPersistence",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15125,7 +15125,7 @@
     {
       "key": "sessionProjectionCache",
       "capability": "services.sessionProjectionCache",
-      "members": "removed via Task 6.2 (second-approval-6): write",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15133,7 +15133,7 @@
     {
       "key": "shell",
       "capability": "services.shell",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15141,7 +15141,7 @@
     {
       "key": "spillStore",
       "capability": "services.spillStore",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15149,7 +15149,7 @@
     {
       "key": "storageDomain",
       "capability": "services.storageDomain",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15157,7 +15157,7 @@
     {
       "key": "subprocess",
       "capability": "services.subprocess",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15165,7 +15165,7 @@
     {
       "key": "terminals",
       "capability": "services.terminals",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15173,7 +15173,7 @@
     {
       "key": "timer",
       "capability": "services.timer",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15181,7 +15181,7 @@
     {
       "key": "toolResultPruner",
       "capability": "services.toolResultPruner",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15189,7 +15189,7 @@
     {
       "key": "typertGateway",
       "capability": "services.typertGateway",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15197,7 +15197,7 @@
     {
       "key": "webServer",
       "capability": "services.webServer",
-      "members": "member-level audit pending (Task 6.2/7.8)",
+      "members": "audited migrate member set (official leaf builders)",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -17309,68 +17309,68 @@
     },
     {
       "oldPath": "sessions.header",
-      "targetPath": "sessions.header",
-      "action": "retain",
+      "targetPath": "sessions.views.header",
+      "action": "migrate",
       "relation": null
     },
     {
       "oldPath": "sessions.events",
-      "targetPath": "sessions.events",
-      "action": "retain",
+      "targetPath": "sessions.views.events",
+      "action": "migrate",
       "relation": null
     },
     {
       "oldPath": "sessions.seq",
-      "targetPath": "sessions.seq",
-      "action": "retain",
+      "targetPath": "sessions.views.seq",
+      "action": "migrate",
       "relation": null
     },
     {
       "oldPath": "sessions.surface",
-      "targetPath": "sessions.surface",
-      "action": "retain",
+      "targetPath": "sessions.views.surface",
+      "action": "migrate",
       "relation": null
     },
     {
       "oldPath": "sessions.requestHeader",
-      "targetPath": "sessions.requestHeader",
-      "action": "retain",
+      "targetPath": "sessions.views.requestHeader",
+      "action": "migrate",
       "relation": "frozen context helper"
     },
     {
       "oldPath": "sessions.requestContext",
-      "targetPath": "sessions.requestContext",
-      "action": "retain",
+      "targetPath": "sessions.views.requestContext",
+      "action": "migrate",
       "relation": null
     },
     {
       "oldPath": "sessions.deriveMessages",
-      "targetPath": "sessions.deriveMessages",
-      "action": "retain",
+      "targetPath": "sessions.views.deriveMessages",
+      "action": "migrate",
       "relation": null
     },
     {
       "oldPath": "sessions.isSessionEventType",
-      "targetPath": "sessions.isSessionEventType",
-      "action": "retain",
+      "targetPath": "sessions.views.isSessionEventType",
+      "action": "migrate",
       "relation": null
     },
     {
       "oldPath": "sessions.isSurfaceEventType",
-      "targetPath": "sessions.isSurfaceEventType",
-      "action": "retain",
+      "targetPath": "sessions.views.isSurfaceEventType",
+      "action": "migrate",
       "relation": null
     },
     {
       "oldPath": "sessions.sessionEventTypes",
-      "targetPath": "sessions.sessionEventTypes",
-      "action": "retain",
+      "targetPath": "sessions.views.sessionEventTypes",
+      "action": "migrate",
       "relation": null
     },
     {
       "oldPath": "sessions.surfaceEventTypes",
-      "targetPath": "sessions.surfaceEventTypes",
-      "action": "retain",
+      "targetPath": "sessions.views.surfaceEventTypes",
+      "action": "migrate",
       "relation": null
     },
     {
@@ -18274,7 +18274,162 @@
     "pluginApi.client.settingsScope": "removed",
     "pluginApi.client.remote": "removed",
     "pluginApi.client.features": "removed",
-    "pluginApi.client.defineManifest": "removed"
+    "pluginApi.client.defineManifest": "removed",
+    "events.on": "removed",
+    "events.once": "removed",
+    "llm.registerAdapter": "removed",
+    "llm.registerConfigurableProviders": "removed",
+    "llm.registerModelDiscovery": "removed",
+    "llm.listProviders": "removed",
+    "llm.listConfigurableProviders": "removed",
+    "llm.discoverModels": "removed",
+    "llm.providerRetryPolicy": "removed",
+    "llm.listModels": "removed",
+    "llm.resolveCallConfig": "removed",
+    "llm.contentHasImage": "removed",
+    "llm.createUserMessage": "removed",
+    "llm.BlockAssembler": "removed",
+    "llm.requestTransforms.transform": "removed",
+    "llm.adapters.decorate": "removed",
+    "llm.adapters.snapshot": "removed",
+    "llm.routing.on": "removed",
+    "llm.routing.once": "removed",
+    "llm.routing.health.registerCircuitPolicy": "removed",
+    "llm.routing.health.registerProbe": "removed",
+    "llm.routing.health.probe": "removed",
+    "llm.routing.health.startProbe": "removed",
+    "llm.routing.health.completeProbe": "removed",
+    "llm.routing.circuit.status": "removed",
+    "agents.providers.enter": "removed",
+    "agents.providers.announce": "removed",
+    "agents.providers.setFactory": "removed",
+    "agents.currentInitiator": "removed",
+    "agents.requireInitiator": "removed",
+    "agents.withInitiator": "removed",
+    "agents.withoutInitiator": "removed",
+    "agents.isOwnedBy": "removed",
+    "agents.options": "removed",
+    "executions.onChange": "removed",
+    "executions.recovery.classify": "removed",
+    "executions.recovery.capability.declare": "removed",
+    "executions.recovery.consume": "removed",
+    "executions.recovery.adapters.fromAgentRequestError": "removed",
+    "executions.recovery.adapters.fromToolResult": "removed",
+    "executions.recovery.adapters.unsupported": "removed",
+    "executions.recovery.visibility.project": "removed",
+    "sessions.on": "removed",
+    "sessions.once": "removed",
+    "sessions.create": "removed",
+    "sessions.prepare": "removed",
+    "sessions.enter": "removed",
+    "sessions.announce": "removed",
+    "sessions.flush": "removed",
+    "sessions.append": "removed",
+    "sessions.deriveEventMessage": "removed",
+    "sessions.durable.durableEventTypes": "removed",
+    "sessions.durable.durableEventDescriptors": "removed",
+    "sessions.durable.getDurableEventDescriptor": "removed",
+    "sessions.durable.onDurable": "removed",
+    "sessions.durable.onceDurable": "removed",
+    "sessions.channels.open": "removed",
+    "sessions.channels.revoke": "removed",
+    "sessions.channels.subscribe": "removed",
+    "sessions.channels.onChange": "removed",
+    "sessions.channels.fetchEvents": "removed",
+    "sessions.channels.auth.registerVerifier": "removed",
+    "sessions.channels.auth.registerAuthorizer": "removed",
+    "sessions.channels.auth.registerPairingProvider": "removed",
+    "sessions.channels.redaction.registerProfile": "removed",
+    "sessions.channels.dispatchChannelMethod": "removed",
+    "sessions.channels.channelGenerationOf": "removed",
+    "tools.restrict": "removed",
+    "tools.guard": "removed",
+    "tools.schemas": "removed",
+    "tools.presentAs": "removed",
+    "tools.executionMode": "removed",
+    "tools.toolAbortedError": "removed",
+    "tools.discovery.search": "removed",
+    "tools.discovery.audit.query": "removed",
+    "skills.activation.registerDescriptor": "removed",
+    "skills.activation.registerSkill": "removed",
+    "skills.activation.exposure": "removed",
+    "skills.activation.audit": "removed",
+    "skills.activation.policy.registerMinimalCatalogUpdate": "removed",
+    "prompts.section": "removed",
+    "prompts.context": "removed",
+    "prompts.variable": "removed",
+    "prompts.tools": "removed",
+    "prompts.suppressRuntimeContext": "removed",
+    "prompts.assemble": "removed",
+    "attachments.pipeline.registerTransform": "removed",
+    "attachments.projection.resolve": "removed",
+    "mcp.onChange": "removed",
+    "tasks.claim": "removed",
+    "tasks.reassign": "removed",
+    "coordination.watch": "removed",
+    "security.egress.check": "removed",
+    "security.audit.query": "removed",
+    "diagnostics.onChange": "removed",
+    "settings.describe": "removed",
+    "settings.installSettingsSection": "removed",
+    "settings.writable": "removed",
+    "settings.prepareDocument": "removed",
+    "settings.get": "removed",
+    "settings.remote": "removed",
+    "settings.dispose": "removed",
+    "remotes.isActive": "removed",
+    "remotes.publish": "removed",
+    "remotes.dispose": "removed",
+    "storage.open.handle.close": "removed",
+    "storage.open.handle.domain": "removed",
+    "connection.api.settings": "removed",
+    "connection.dispose": "removed",
+    "events.localeChange.on": "removed",
+    "events.themeChange.on": "removed",
+    "events.connectionReset.on": "removed",
+    "events.commandExecuted.on": "removed",
+    "remotes.$on": "removed",
+    "remotes.$dispatch": "removed",
+    "remotes.mountRemote": "removed",
+    "remotes.mountRemoteContribution": "removed",
+    "settings.remote.mountRemoteContribution": "removed",
+    "slots.register": "removed",
+    "slots.inject": "removed",
+    "slots.entries": "removed",
+    "slots.subscribe": "removed",
+    "slots.on": "removed",
+    "lifecycle.registerFace": "removed",
+    "lifecycle.onChange": "removed",
+    "lifecycle.onRebind": "removed",
+    "lifecycle.scan": "removed",
+    "codec.zod": "removed",
+    "codec.validateInvocation": "removed",
+    "llm.isActive": "removed",
+    "agents.isActive": "removed",
+    "agents.providers.isActive": "removed",
+    "tools.isActive": "removed",
+    "tools.discovery.isActive": "removed",
+    "prompts.isActive": "removed",
+    "settings.isActive": "removed",
+    "storage.isActive": "removed",
+    "connection.isActive": "removed",
+    "events.isActive": "removed",
+    "events.localeChange.isActive": "removed",
+    "events.themeChange.isActive": "removed",
+    "events.connectionReset.isActive": "removed",
+    "events.commandExecuted.isActive": "removed",
+    "lifecycle.isActive": "removed",
+    "sessions.header": "removed",
+    "sessions.events": "removed",
+    "sessions.seq": "removed",
+    "sessions.surface": "removed",
+    "sessions.requestHeader": "removed",
+    "sessions.requestContext": "removed",
+    "sessions.deriveMessages": "removed",
+    "sessions.isSessionEventType": "removed",
+    "sessions.isSurfaceEventType": "removed",
+    "sessions.sessionEventTypes": "removed",
+    "sessions.surfaceEventTypes": "removed"
   },
   "inventory": {
     "completedAt": "Task 1.4, Stage 4",
@@ -18329,8 +18484,7 @@
     "llmRoutingLeaves": [
       "forExecution",
       "current",
-      "on",
-      "once",
+      "observe",
       "wait",
       "policies",
       "candidates",
@@ -18342,7 +18496,8 @@
       "llm.routing leaf is forExecution, not ofExecution (design.md data-model example was aligned to forExecution).",
       "routePolicy surface merges into llm.routing; its policy leaf becomes plural policies (policies.register).",
       "agents surface uses plural providers; the current singular provider leaf is renamed during cutover.",
-      "sessions tree leaves are gated by registry backing; unimplemented leaves (create/append) are not invented."
+      "sessions tree leaves are gated by registry backing; unimplemented leaves (create/append) are not invented.",
+      "2026-09-02 shape-convergence batch: llmRoutingLeaves synced to delivered observe vocabulary (on/once merged); member-level isActive retired to availability()."
     ]
   },
   "namespaces": [
@@ -18788,7 +18943,6 @@
       "targetPaths": [
         "llm.adapters.register",
         "llm.availability",
-        "llm.isActive",
         "llm.modelInfo",
         "llm.models.register",
         "llm.prepareCall",
@@ -18808,15 +18962,7 @@
     {
       "capabilityCluster": "llm.officialPassthrough",
       "currentPaths": [
-        "llm.BlockAssembler",
-        "llm.contentHasImage",
-        "llm.createUserMessage",
-        "llm.discoverModels",
-        "llm.listConfigurableProviders",
-        "llm.listModels",
-        "llm.listProviders",
-        "llm.providerRetryPolicy",
-        "llm.resolveCallConfig"
+        "services.llm"
       ],
       "targetPaths": [
         "services.llm"
@@ -19026,7 +19172,6 @@
         "agents.availability",
         "agents.create",
         "agents.get",
-        "agents.isActive",
         "agents.list",
         "agents.register",
         "agents.resume",
@@ -19052,7 +19197,6 @@
         "agents.providers.setFactory"
       ],
       "targetPaths": [
-        "agents.providers.isActive",
         "agents.providers.register",
         "agents.providers.register.handle"
       ],
@@ -19069,12 +19213,7 @@
     {
       "capabilityCluster": "agents.officialPassthrough",
       "currentPaths": [
-        "agents.currentInitiator",
-        "agents.isOwnedBy",
-        "agents.options",
-        "agents.requireInitiator",
-        "agents.withInitiator",
-        "agents.withoutInitiator"
+        "services.agents"
       ],
       "targetPaths": [
         "services.agents"
@@ -19121,14 +19260,12 @@
     {
       "capabilityCluster": "executions.recovery",
       "currentPaths": [
-        "executions.recovery.adapters.fromAgentRequestError",
-        "executions.recovery.adapters.fromToolResult",
-        "executions.recovery.adapters.unsupported",
         "executions.recovery.availability",
-        "executions.recovery.capability.declare",
+        "executions.recovery.capability.register",
         "executions.recovery.evaluate",
         "executions.recovery.policy.register",
         "executions.recovery.visibility.register",
+        "services.recovery",
         "executions.recovery.coverage"
       ],
       "targetPaths": [
@@ -19239,13 +19376,7 @@
     {
       "capabilityCluster": "sessions.officialPassthrough",
       "currentPaths": [
-        "sessions.announce",
-        "sessions.append",
-        "sessions.create",
-        "sessions.deriveEventMessage",
-        "sessions.enter",
-        "sessions.flush",
-        "sessions.prepare"
+        "services.sessions"
       ],
       "targetPaths": [
         "services.sessions"
@@ -19423,19 +19554,18 @@
     {
       "capabilityCluster": "tools",
       "currentPaths": [
+        "services.tools",
         "tools.availability",
         "tools.defineTool",
         "tools.execute",
-        "tools.executionMode",
+        "tools.executionMode.register",
         "tools.get",
-        "tools.guard",
-        "tools.isActive",
-        "tools.presentAs",
+        "tools.guard.register",
+        "tools.list",
+        "tools.presentation.register",
         "tools.register",
         "tools.register.handle",
-        "tools.restrict",
-        "tools.schemas",
-        "tools.toolAbortedError"
+        "tools.restrict.register"
       ],
       "targetPaths": [
         "services.tools",
@@ -19445,7 +19575,6 @@
         "tools.executionMode.register",
         "tools.get",
         "tools.guard.register",
-        "tools.isActive",
         "tools.list",
         "tools.presentation.register",
         "tools.register",
@@ -19481,7 +19610,6 @@
         "tools.discovery.catalog.register",
         "tools.discovery.catalog.register.handle",
         "tools.discovery.deactivate",
-        "tools.discovery.isActive",
         "tools.discovery.list"
       ],
       "status": "renamed",
@@ -19547,7 +19675,6 @@
         "prompts.availability",
         "prompts.contribute",
         "prompts.contribute.handle",
-        "prompts.isActive",
         "prompts.joinContextSections",
         "prompts.render",
         "prompts.renderContextSections",
@@ -19566,7 +19693,7 @@
     {
       "capabilityCluster": "prompts.officialPassthrough",
       "currentPaths": [
-        "prompts.assemble"
+        "services.prompts"
       ],
       "targetPaths": [
         "services.prompts"
@@ -19982,7 +20109,6 @@
       "targetPaths": [
         "settings.availability",
         "settings.inspect",
-        "settings.isActive",
         "settings.mutate",
         "settings.register",
         "settings.register.handle",
@@ -20038,9 +20164,7 @@
     {
       "capabilityCluster": "settings.officialPassthrough",
       "currentPaths": [
-        "settings.get",
-        "settings.prepareDocument",
-        "settings.writable"
+        "services.settings"
       ],
       "targetPaths": [
         "services.settings"
@@ -20169,16 +20293,14 @@
     {
       "capabilityCluster": "storage",
       "currentPaths": [
+        "services.storage",
         "storage.availability",
-        "storage.isActive",
         "storage.open",
-        "storage.open.handle.domain",
         "storage.open.handle.purge"
       ],
       "targetPaths": [
         "services.storage",
         "storage.availability",
-        "storage.isActive",
         "storage.open",
         "storage.open.handle.purge"
       ],
@@ -20315,7 +20437,6 @@
         "connection.api.llm",
         "connection.availability",
         "connection.get",
-        "connection.isActive",
         "connection.rpc.call"
       ],
       "status": "renamed",
@@ -20363,12 +20484,7 @@
       ],
       "targetPaths": [
         "events.availability",
-        "events.commandExecuted.isActive",
-        "events.connectionReset.isActive",
-        "events.isActive",
-        "events.localeChange.isActive",
-        "events.observe",
-        "events.themeChange.isActive"
+        "events.observe"
       ],
       "status": "merged",
       "qualifiers": [],
@@ -20468,7 +20584,6 @@
       ],
       "targetPaths": [
         "lifecycle.availability",
-        "lifecycle.isActive",
         "lifecycle.list",
         "lifecycle.observe",
         "lifecycle.register",

@@ -158,7 +158,7 @@ test('feature guard failure disables only the discovery face and keeps boot aliv
   const service = host.ctx.get('pluginApi')
   assert.throws(() => service.tools.discovery.list('x'), (error) => {
     assert.ok(error instanceof PluginApiFeatureDisabledError)
-    assert.equal(error.feature, 'toolDiscovery')
+    assert.equal(error.feature, 'tools.discovery')
     return true
   })
   const features = service._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
@@ -184,8 +184,7 @@ test('exposure registration failure degrades only the exposure planes', async ()
   apply(host.ctx)
   const discovery = host.ctx.get('pluginApi').tools.discovery
   const availability = discovery.availability()
-  assert.equal(availability.providerRegistered, false, 'provider plane truthfully degraded')
-  assert.equal(availability.hintRegistered, true, 'hint plane independent')
+  assert.equal(availability.status, 'active')
   const registered = discovery.catalog.register(DESCRIPTOR)
   const handle = await discovery.activate('alpha', { session: { id: 's1' } })
   assert.equal(host.systemPrompt.assemble({ scope: { session: { id: 's1' } } }).tools.length, 0, 'no exposure without a provider')

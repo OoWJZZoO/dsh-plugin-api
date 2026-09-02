@@ -50,7 +50,7 @@ function createMockCtx({ tools = true } = {}) {
 test('active tools: toolAbortedError returns the AbortError identity without touching the tools service', async () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
-  assert.equal(state.pluginApi.tools.isActive, true)
+  assert.equal(state.pluginApi.tools.availability().status, 'active')
   assert.equal(typeof state.pluginApi.services.tools.toolAbortedError, 'function')
 
   const toolsGetsBefore = state.getCalls.filter((n) => n === 'tools').length
@@ -83,7 +83,7 @@ test('active tools: toolAbortedError returns the AbortError identity without tou
 test('disabled tools: toolAbortedError exists and throws PluginApiFeatureDisabledError, never crashing apply', () => {
   const { ctx, state } = createMockCtx({ tools: false })
   assert.doesNotThrow(() => apply(ctx))
-  assert.equal(state.pluginApi.tools.isActive, false)
+  assert.equal(state.pluginApi.tools.availability().status, 'unavailable')
   assert.equal(typeof state.pluginApi.services.tools.toolAbortedError, 'function')
   assert.throws(
     () => state.pluginApi.services.tools.toolAbortedError(),

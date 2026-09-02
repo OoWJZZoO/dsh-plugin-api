@@ -114,7 +114,7 @@ test('apply mounts session after events with a composed events catalog', () => {
     assert.ok(catalog[name], `${name} must be in the composed catalog`)
   }
 
-  assert.equal(state.pluginApi.sessions.isActive, true)
+  assert.equal(state.pluginApi.sessions.availability().status, 'active')
   assert.deepEqual(
     state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').map((feature) => feature.name),
     ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel'],
@@ -128,15 +128,15 @@ test('apply mounts session after events with a composed events catalog', () => {
   state.pluginApi.sessions.observe('session/event').subscribe(listener)
   assert.ok(state.listeners.some((l) => l.name === 'session/event'), 'session/event must register a native hook')
 
-  assert.ok(Array.isArray(state.pluginApi.sessions.sessionEventTypes))
-  assert.ok(Object.isFrozen(state.pluginApi.sessions.sessionEventTypes))
-  assert.ok(Array.isArray(state.pluginApi.sessions.surfaceEventTypes))
-  assert.ok(Object.isFrozen(state.pluginApi.sessions.surfaceEventTypes))
+  assert.ok(Array.isArray(state.pluginApi.sessions.views.sessionEventTypes))
+  assert.ok(Object.isFrozen(state.pluginApi.sessions.views.sessionEventTypes))
+  assert.ok(Array.isArray(state.pluginApi.sessions.views.surfaceEventTypes))
+  assert.ok(Object.isFrozen(state.pluginApi.sessions.views.surfaceEventTypes))
   assert.equal(typeof state.pluginApi.sessions.get, 'function')
   assert.equal(typeof state.pluginApi.sessions.fork, 'function')
-  assert.equal(typeof state.pluginApi.sessions.header, 'function')
-  assert.equal(typeof state.pluginApi.sessions.deriveMessages, 'function')
-  assert.equal(typeof state.pluginApi.sessions.isSessionEventType, 'function')
+  assert.equal(typeof state.pluginApi.sessions.views.header, 'function')
+  assert.equal(typeof state.pluginApi.sessions.views.deriveMessages, 'function')
+  assert.equal(typeof state.pluginApi.sessions.views.isSessionEventType, 'function')
 })
 
 test('apply completes every guard pass before pass-2 publication and an early feature-disabled does not stop later mounters', () => {

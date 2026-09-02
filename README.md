@@ -81,7 +81,7 @@ export function apply(ctx) {
 
 - Consumer：`agents.create(options)`、`agents.resume(options)`、`agents.register(agent)`。
 - Advanced provider：`agents.providers.enter(agent, owner)`、`agents.providers.announce(agent)`、`agents.providers.setFactory(factory)`。这些是受支持的有序 provider 生命周期原语，不是普通插件的推荐创建入口；singleton provider 需要显式 claim。
-- `agents.availability`：只读、冻结的 `{ create, resume, register, providers: { enter, announce, setFactory } }` 六叶能力矩阵；`agents.providers.isActive` 仅在三个 provider 成员都可用时为 `true`。
+- `agents.availability`：只读、冻结的统一形状 `{ status: 'active' | 'degraded' | 'unavailable', reason?: string }`；成员级探测由调用时的类型化错误承接。
 
 Agent extension 成员是官方 AgentRegistry 的同参直通。调用从消费者的 Cordis context 解析 `agents`，保留精确参数、官方 receiver、同步返回值、registry Promise、`AgentHandle`、Agent、disposer、官方错误、生命周期发布和 teardown 行为；门面不包装或拦截返回的 handle/disposer。成员级探测或调用前解析失败只将对应成员降级为 `PluginApiFeatureDisabledError('agent', ...)`，并保留其他已验证成员；core inactive 仍优先抛 inactive 错误，whole-agent guard 失败时为 feature-disabled 错误；factory 缺失或 provider slot 被占用属于官方调用时结果，不改变 availability。
 
@@ -97,10 +97,10 @@ pluginApi.llm.routing.once(session, listener)
 pluginApi.llm.routing.wait(session, options?)
 pluginApi.llm.routing.policies   // 原 routePolicy 面（复数 policies）
 pluginApi.llm.routing.candidates / health / circuit / decisions
-pluginApi.llm.routing.availability // { execution: boolean, session: boolean }
+pluginApi.llm.routing.availability // { status: 'active' | 'degraded' | 'unavailable', reason?: string }
 ```
 
-`forExecution()` 只返回已在 `tools/pre-execute` 捕获的 execution-time snapshot；`current/on/once/wait` 只表示已提交的 session route。两者都不是 session-created 或 prompt-assembly 时的 final route。旧的 `agent.routeOf(exec)` / `tools.routeOf(exec)` 兼容委托**已删除**，route 查询唯一入口为 `llm.routing.forExecution()`。pre-assembly prepared-route 与 route-conditioned contribution 仍是 upstream proposal，不提供 runtime contribution API。
+`forExecution()` 只返回已在 `tools/pre-execute` 捕获的 execution-time snapshot；`current/observe/wait` 只表示已提交的 session route（`on/once` 已合并为 `observe`）。两者都不是 session-created 或 prompt-assembly 时的 final route。旧的 `agent.routeOf(exec)` / `tools.routeOf(exec)` 兼容委托**已删除**，route 查询唯一入口为 `llm.routing.forExecution()`。pre-assembly prepared-route 与 route-conditioned contribution 仍是 upstream proposal，不提供 runtime contribution API。
 
 有限 surface message 写入必须使用 `pluginApi.sessions.appendMessage(targetSession, kind, payload, { sourceEventSeqs? })`，仅支持 `user/message`、`assistant/message`、`tool/result`；facade 负责 `surfaceOp` 与 provenance 校验/派生，并执行一次官方 append。任意 durable event、title、replacement 或 atomic-turn 语义不属于该 helper。
 

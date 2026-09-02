@@ -316,7 +316,8 @@ const BRANCH_ADDED_FEATURES = ['security', 'execution', 'recovery', 'coordinatio
         !REMOVED_FEATURES.includes(boundary.face.featureNames[index])
         && !MOUNT_ALIGNMENT_DELTA_FEATURES.includes(boundary.face.featureNames[index])),
       promptsMembers: boundary.face.promptsMembers.filter((name) =>
-        name !== 'assemble' && !['section', 'context', 'variable', 'tools', 'suppressRuntimeContext'].includes(name)),
+        name !== 'assemble' && name !== 'isActive'
+        && !['section', 'context', 'variable', 'tools', 'suppressRuntimeContext'].includes(name)),
       toolsMembers: boundary.face.toolsMembers.filter((name) =>
         !REMOVED_TOOLS_MEMBERS.includes(name) && !CUTOVER_REMOVED_TOOLS_MEMBERS.includes(name) && name !== 'schemas'),
     }

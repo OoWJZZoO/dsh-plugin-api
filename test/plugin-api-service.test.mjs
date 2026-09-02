@@ -95,7 +95,7 @@ test('active service with unmounted feature throws feature-disabled error', () =
     (error) => {
       assert.ok(error instanceof PluginApiFeatureDisabledError)
       assert.equal(error.code, 'PLUGIN_API_FEATURE_DISABLED')
-      assert.equal(error.feature, 'llm/admission')
+      assert.equal(error.feature, 'llm.admissionPolicies')
       return true
     },
   )
@@ -119,7 +119,7 @@ test('inert service exposes settings stub that throws inactive error without ser
       return true
     })
   }
-  assert.equal(service.settings.isActive, false)
+assert.equal(service.settings.availability().status, 'unavailable')
   assert.equal(ctx.getCalls.length, 0)
 })
 
@@ -141,7 +141,7 @@ test('active service with unmounted settings feature throws feature-disabled err
       return true
     })
   }
-  assert.equal(service.settings.isActive, false)
+assert.equal(service.settings.availability().status, 'unavailable')
 })
 
 test('mountFeature injects the settings API', () => {
@@ -241,7 +241,7 @@ test('disabled compat request and image admission registration reject before ins
     const disabledValue = createInspectionTrap()
     assert.throws(
       () => active.llm[surface][method](disabledValue.value),
-      (error) => error instanceof PluginApiFeatureDisabledError && (error.feature === 'llm/request' || error.feature === 'llm/admission'),
+      (error) => error instanceof PluginApiFeatureDisabledError && (error.feature === 'llm.requestTransforms' || error.feature === 'llm.admissionPolicies'),
     )
     assert.equal(disabledValue.inspections, 0, `${surface}.${method} must not inspect feature-disabled input`)
   }

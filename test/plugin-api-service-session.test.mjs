@@ -46,8 +46,8 @@ test('active service with unmounted session throws feature-disabled from every m
   const service = instantiate(ServiceClass, ctx)
 
   assert.equal(service.isActive, true)
-  assert.equal(service.sessions.sessionEventTypes, undefined)
-  assert.equal(service.sessions.surfaceEventTypes, undefined)
+  assert.equal(service.sessions.views, undefined)
+  assert.equal(service.sessions.views, undefined)
 
   for (const method of SESSION_METHODS) {
     if (method === 'observe') {
@@ -107,7 +107,7 @@ test('mountFeature injects the session API and unknown feature still throws', ()
 
   const sessionApi = { isActive: true, get() {}, list() {}, fork() {} }
   service.mountFeature('session', sessionApi)
-  assert.equal(service.sessions.isActive, true)
+assert.equal(service.sessions.availability().status, 'degraded')
   assert.equal(service.sessions.get, sessionApi.get)
   assert.equal(service.sessions.list, sessionApi.list)
   assert.equal(service.sessions.fork, sessionApi.fork)

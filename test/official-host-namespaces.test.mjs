@@ -317,7 +317,7 @@ test('malformed agent options remain locally disabled', () => {
   })
   const registry = { currentInitiator() { return agent } }
   const leaf = createOfficialAgentLeaf({ registry }).api
-  assertFeatureDisabled(() => leaf.options, 'agent')
+  assertFeatureDisabled(() => leaf.options, 'agents')
 
   const throwingInput = {}
   Object.defineProperty(throwingInput, 'agentOptions', {
@@ -326,7 +326,7 @@ test('malformed agent options remain locally disabled', () => {
     },
   })
   const malformedInput = createOfficialAgentLeaf(throwingInput).api
-  assertFeatureDisabled(() => malformedInput.options, 'agent')
+  assertFeatureDisabled(() => malformedInput.options, 'agents')
 })
 
 test('missing members remain local failures while available members stay usable', () => {

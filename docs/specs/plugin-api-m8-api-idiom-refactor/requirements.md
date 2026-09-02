@@ -1,5 +1,7 @@
 # Stage 1 — Requirements
 
+> 公共契约现状注（2026-09-02 追加，形状收敛批次）：本批（ANY 维护，人类逐条裁决）在已交付形状之上收敛以下面形状——(1) 所有命名空间 `availability()` 统一为 `{ status, reason? }`（域细节不再透出；成员级探测由调用时类型化错误承接）；(2) 成员级 `isActive` 全部退役（根 `pluginApi.isActive` 保留为 facade 元数据），capabilityMatrix 三簇 targetPaths 同步修订；(3) M8 已登记迁移全部落地（registry 145 条 current 条目翻转为 removed，含 `on/once` 合并 `observe`、直通成员迁 `services.*`、`storage.open.handle.close` 删除），registry 至此只保留现行成员；(4) `sessions` 会话访问器重组至 `sessions.views.*` 子面；(5) 错误 `feature` 参数统一为 capability path；(6) `skills.activation.register` 以显式 `spec.kind` 判别取代鸭子类型。`namingDecisions.llmRoutingLeaves` 与 `servicesWhitelist` 泄漏文本已同步。client 侧 `connection.isActive`/`events.*.isActive` 因检入 bundle 重建工具缺失保留实现，列为接续项。
+
 > 公共契约现状注（2026-09-02）：本文关于自定义事件 publisher 在 runtime 不可用时的要求属于 M8 历史验收边界；后续 policy-enforcement-closure 已在不提供对抗性同进程隔离的前提下交付合作型入口。本文已批准的验收边界不变，现行状态以 canonical registry 及后续交付报告为准。
 
 ## Introduction

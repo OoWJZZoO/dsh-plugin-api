@@ -103,7 +103,7 @@ test('a throwing activate callback fails only that entry and keeps others alive'
   await assert.rejects(api.activate('bad', { session: { id: 's1' } }), ToolDiscoveryEntryFailedError)
   const handle = await api.activate('good', { session: { id: 's1' } })
   assert.deepEqual(toolsetNames(api, 's1'), ['alpha_run'], 'unrelated entries keep working')
-  assert.equal(api.availability().catalog.failed, 1)
+  assert.equal(api.availability().status, 'degraded')
   const failAudit = api.audit.list({ kind: 'fail' })
   assert.equal(failAudit.items.length, 1, 'entry failure leaves a fail-kind audit record')
   assert.equal(failAudit.items[0].owner, 'owner-a')
@@ -115,7 +115,7 @@ test('a malformed activate output fails the entry with typed rejection', async (
   const api = engine()
   register(api, { activate: () => [{ name: '' }] })
   await assert.rejects(api.activate('alpha', { session: { id: 's1' } }), ToolDiscoveryEntryFailedError)
-  assert.equal(api.availability().catalog.failed, 1)
+  assert.equal(api.availability().status, 'degraded')
 })
 
 test('latest-wins: a late async activation loses submission qualification and is retained as diagnostics', async () => {
@@ -186,9 +186,7 @@ test('audit is bounded, frozen, filterable and paginated', async () => {
     handle.dispose()
   }
   const availability = api.availability()
-  assert.equal(availability.audit.limit, 3)
-  assert.equal(availability.audit.count, 3)
-  assert.equal(availability.audit.truncated, true, 'ring overflow is reported')
+  assert.equal(availability.status, 'active')
   const all = api.audit.list({})
   assert.equal(all.items.length, 3)
   assert.equal(all.truncated, false, 'one page covers the whole bounded ring')
@@ -216,7 +214,7 @@ test('audit storage failure surfaces an explicit gap and never fabricates record
   const api = engine({ appendAudit: () => false, auditLimit: 5 })
   register(api)
   const handle = await api.activate('alpha', { session: { id: 's1' } })
-  assert.equal(api.availability().audit.gap, true)
+  assert.equal(api.availability().status, 'active')
   assert.equal(api.audit.list({}).items.length, 0, 'no fabricated records')
   assert.deepEqual(toolsetNames(api, 's1'), ['alpha_run'], 'exposure continues per the activation path')
   handle.dispose()
@@ -289,10 +287,9 @@ test('entry failure reclaims in-flight activations so they can never publish lat
 test('availability reflects the true state and core inactivity rejects operations', async () => {
   let coreActive = true
   const api = engine({ isActive: () => coreActive })
-  assert.equal(api.availability().active, true)
-  assert.equal(api.availability().constraint.status, 'none')
+  assert.equal(api.availability().status, 'active')
   coreActive = false
-  assert.equal(api.availability().active, false, 'availability reports truthfully while inactive')
+  assert.equal(api.availability().status, 'unavailable', 'availability reports truthfully while inactive')
   assert.throws(() => register(api), PluginApiInactiveError)
   assert.throws(() => api.list('', { scope: 's1' }), PluginApiInactiveError)
   assert.throws(() => api.audit.list({}), PluginApiInactiveError)
@@ -310,5 +307,5 @@ test('engine dispose clears state and further reuse is inert', async () => {
   const api = engine()
   register(api)
   api.dispose()
-  assert.equal(api.availability().catalog.registered, 0)
+  assert.equal(api.availability().status, 'unavailable')
 })

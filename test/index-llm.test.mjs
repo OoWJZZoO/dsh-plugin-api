@@ -72,7 +72,7 @@ test('llm feature guard passes: apply mounts all six llm methods and keeps admis
 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
-  assert.equal(state.pluginApi.llm.isActive, true)
+  assert.equal(state.pluginApi.llm.availability().status, 'active')
 
   for (const method of ['modelInfo', 'prepareCall', 'stream']) {
     assert.equal(typeof state.pluginApi.llm[method], 'function', `missing llm.${method}`)
@@ -101,7 +101,7 @@ test('llm guard failure disables only llm, keeps facade active, and excludes LLM
 
   assert.ok(state.pluginApi)
   assert.equal(state.pluginApi.isActive, true)
-  assert.equal(state.pluginApi.llm.isActive, false)
+  assert.equal(state.pluginApi.llm.availability().status, 'unavailable')
 
   const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   const llmFeature = features.find((f) => f.name === 'llm')
@@ -141,7 +141,7 @@ test('llm feature mount is idempotent on re-apply', () => {
   assert.deepEqual(Object.keys(state.pluginApi.llm), Object.keys(firstLlm))
   assert.ok(Object.isFrozen(state.pluginApi.llm))
   assert.equal(state.provideCount, provideCount)
-  assert.equal(state.pluginApi.llm.isActive, true)
+  assert.equal(state.pluginApi.llm.availability().status, 'active')
 })
 
 test('apply never throws when ctx.get is hostile', () => {

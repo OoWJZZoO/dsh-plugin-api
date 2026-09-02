@@ -133,9 +133,7 @@ test('context feature mounts through apply and serves the full lifecycle', () =>
   assert.equal(graph.nodes.length, 1)
   assert.equal(graph.nodes[0].state, 'served')
   const availability = context.availability()
-  assert.equal(availability.active, true)
-  assert.equal(availability.sentReachable, false, 'no evidence slice in this composition')
-  assert.equal(availability.skillExposure, 'unavailable', 'the sibling skill feature is not integrated')
+  assert.equal(availability.status, 'active')
   // feature appears active in the registry snapshot
   const features = host.ctx.get('pluginApi')._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   const contextState = features.find((feature) => feature.name === 'context')
@@ -207,7 +205,7 @@ test('evidence intake end-to-end via direct mount: emitted payloads transition n
   assert.ok(owner)
   owner.prepared.commit()
   const context = platform.service.prompts.provenance
-  assert.equal(context.availability().sentReachable, true)
+  assert.equal(context.availability().status, 'active')
   context.contribute(spec())
   context.compose({ sessionId: 'session-1' })
   const listener = host.state.listeners.find((entry) => entry.name === 'agent-loop/assembled-context')
@@ -255,10 +253,8 @@ test('soft sources degrade per-source without disabling the feature', () => {
   const host = createHost()
   apply(host.ctx)
   const availability = host.ctx.get('pluginApi').prompts.provenance.availability()
-  assert.equal(availability.systemPrompt, 'available', 'official systemPrompt service and helpers present')
-  assert.equal(availability.skillExposure, 'unavailable', 'the sibling skills feature is not integrated')
-  assert.equal(availability.toolExposure, 'available', 'toolDiscovery is mounted in this composition')
-  assert.equal(availability.compaction, 'unavailable', 'no compaction replacement marker in this composition')
+  assert.equal(availability.status, 'active')
+  assert.equal(typeof host.ctx.get('pluginApi').prompts.provenance.inspect, 'function')
 })
 
 test('context guard failure disables only the context face and keeps boot alive', () => {

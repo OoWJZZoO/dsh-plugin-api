@@ -79,7 +79,7 @@ test('apply exposes both public system-prompt helpers with the installed officia
 test('a missing base system-prompt service does not disable valid helper exports', () => {
   const { ctx, state } = createMockCtx({ systemPrompt: false })
   assert.doesNotThrow(() => apply(ctx))
-  assert.equal(state.pluginApi.prompts.isActive, false)
+  assert.equal(state.pluginApi.prompts.availability().status, 'degraded')
 
   const assembly = { sections: [], contexts: [], tools: [], variables: {} }
   assert.equal(state.pluginApi.prompts.renderContextSnapshot(assembly), '')

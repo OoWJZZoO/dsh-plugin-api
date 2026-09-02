@@ -101,7 +101,7 @@ test('a sibling feature failing keeps the diagnostics feature and the rest of th
   const tools = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'tools')
   const diagnostics = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((entry) => entry.name === 'diagnostics')
   assert.ok(tools)
-  assert.equal(tools.isActive, false)
+assert.equal(tools.isActive, false)
   assert.ok(diagnostics)
   assert.equal(diagnostics.isActive, true)
   assert.equal(typeof state.pluginApi.diagnostics.get, 'function')

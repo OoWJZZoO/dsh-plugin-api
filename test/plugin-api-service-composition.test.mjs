@@ -98,6 +98,6 @@ test('routing checks core and leaf guards before inspecting hostile inputs', () 
 
   const Active = createPluginApiService({ apiVersion: '0.4', registry, coreActive: true })
   const active = new Active({ reflect: { provide() {} } })
-  assert.throws(() => active.llm.routing.forExecution(hostile), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'execRoute')
-  assert.throws(() => active.llm.routing.current(hostile), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'sessionRoute')
+  assert.throws(() => active.llm.routing.forExecution(hostile), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm.routing')
+  assert.throws(() => active.llm.routing.current(hostile), (error) => error instanceof PluginApiFeatureDisabledError && error.feature === 'llm.routing')
 })
