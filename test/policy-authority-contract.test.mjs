@@ -54,28 +54,35 @@ test('apply publishes the symbol-keyed internal policy authority contract', () =
   assert.equal(readPolicyAuthority(ctx), null, 'teardown removes the contract')
 })
 
-test('a missing contract reads as null so components degrade instead of assuming allow', () => {
+test('a missing contract reads as null so components keep the official outbound behavior', () => {
   assert.equal(readPolicyAuthority({}), null)
   assert.equal(readPolicyAuthority(null), null)
   assert.equal(readPolicyAuthority(undefined), null)
   assert.equal(readPolicyAuthority({ [POLICY_AUTHORITY]: { version: 999 } }), null, 'a version mismatch degrades the contract')
 })
 
-test('egress admit fails closed on deny and binds the exact target', () => {
+test('egress admit allows by default and binds a deny to the exact target', () => {
   const core = createSecurityEgress({ now: Date.now, rng: () => 'r' })
-  const denied = core.admit({ kind: 'http', destination: 'denied.example' }, { component: 'llm/provider' })
+  const baseline = core.admit({ kind: 'http', destination: 'denied.example' }, { component: 'llm/provider' })
+  assert.equal(baseline.ok, true, 'an empty registry keeps the official outbound behavior')
+  assert.equal(baseline.outcome, 'allow')
+  assert.equal(baseline.resource, 'egress:http:denied.example')
+  assert.equal(baseline.component, 'llm/provider')
+  assert.equal(typeof baseline.decisionId, 'string')
+  core.registry.register('o', {
+    match: (ctx) => ctx.target.destination === 'blocked.example',
+    decide: () => ({ outcome: 'deny', reason: 'blocklisted' }),
+  })
+  const denied = core.admit({ kind: 'http', destination: 'blocked.example' }, { component: 'llm/provider' })
   assert.equal(denied.ok, false)
   assert.equal(denied.outcome, 'deny')
-  assert.equal(denied.resource, 'egress:http:denied.example')
-  assert.match(denied.reason, /no egress policy allows/)
-  core.registry.register('o', { match: (ctx) => ctx.target.destination === 'ok.example', decide: () => ({ outcome: 'allow' }) })
-  const allowed = core.admit({ kind: 'http', destination: 'ok.example' }, { component: 'llm/provider' })
-  assert.equal(allowed.ok, true)
-  assert.equal(allowed.outcome, 'allow')
-  assert.equal(allowed.resource, 'egress:http:ok.example')
-  assert.equal(allowed.component, 'llm/provider')
-  const other = core.admit({ kind: 'http', destination: 'other.example' }, { component: 'llm/provider' })
-  assert.equal(other.ok, false, 'a redirect or different destination must re-admit')
+  assert.equal(denied.resource, 'egress:http:blocked.example')
+  assert.match(denied.reason, /blocklisted/)
+  const other = core.admit({ kind: 'http', destination: 'ok.example' }, { component: 'llm/provider' })
+  assert.equal(other.ok, true, 'a target no policy denies is not collateral of a deny elsewhere')
+  assert.equal(other.outcome, 'allow')
+  assert.equal(other.resource, 'egress:http:ok.example')
+  assert.equal(other.component, 'llm/provider')
 })
 
 test('egress coverage reports three parts and never inherits an unregistered path', async () => {

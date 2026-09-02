@@ -25,9 +25,11 @@ import { syncTools } from './sync.js'
 const POLICY_AUTHORITY = Symbol.for('dsh-plugin-api.policyAuthority')
 
 /**
- * Read the internal egress gate from the root context. A missing or malformed
- * contract yields null; callers then fail closed (never establish the
- * transport). A throwing policy evaluation is contained to a deny.
+ * Read the internal egress gate from the root context. The egress face is a
+ * denylist, so a missing or malformed contract means no deny policy can be
+ * consulted: no gate is installed and the official outbound behavior is kept.
+ * A throwing policy evaluation is contained to an allow for the same reason;
+ * only an explicit deny blocks.
  */
 function readEgressGate(ctx) {
   try {
@@ -37,14 +39,14 @@ function readEgressGate(ctx) {
         try {
           return contract.egress.admit(target, { component })
         } catch {
-          return { ok: false, outcome: 'deny', reason: 'egress policy evaluation failed' }
+          return { ok: true, outcome: 'allow', reason: 'egress policy evaluation failed' }
         }
       }
     }
   } catch {
-    // fall through to a fail-closed deny gate
+    // fall through: no gate, the official outbound behavior is kept
   }
-  return () => ({ ok: false, outcome: 'deny', reason: 'egress policy authority unavailable' })
+  return null
 }
 
 function boundedReason(decision) {
@@ -324,19 +326,19 @@ export function startConnection(ctx, config, policy, hooks = {}) {
       provenance: { source: startup ? 'config' : 'reconnect', certainty: 'inferred' },
       tools: [],
     })
-    // Egress gate: fail-closed before any transport creation or connection
-    // establishment. A missing contract or a deny blocks the outbound side
-    // effect entirely; reconnect re-evaluates each attempt.
+    // Egress gate: the denylist is evaluated before any transport creation or
+    // connection establishment. Only an explicit deny blocks the outbound side
+    // effect; reconnect re-evaluates each attempt.
     if (gate) {
       const target = transportTarget(config)
       let decision
       try {
         decision = gate(target, 'mcp')
       } catch {
-        // a throwing gate is contained to a fail-closed deny; never allow
-        decision = { ok: false, outcome: 'deny', reason: 'egress policy evaluation failed' }
+        // a throwing gate cannot deny: the official outbound behavior is kept
+        decision = { ok: true, outcome: 'allow', reason: 'egress policy evaluation failed' }
       }
-      if (!decision || decision.ok !== true || decision.outcome !== 'allow') {
+      if (decision?.outcome === 'deny') {
         if (isCurrent(generation)) {
           ctx.logger.warn(`${label}: egress policy denied ${transportKind(config)} target: ${boundedReason(decision)}`)
         }

@@ -34,7 +34,7 @@
 | `tasks` | task/attempt/resource identity、claim/fencing 和终态唯一；多个 task 插件消费同一 authority 投影 |
 | `coordination` | resource key、owner、generation、fencing token 与 backend 能力显式；不把进程内状态伪装为 durable |
 | `workspaces.transactions` | 所有受保证的 workspace mutation 纳入 transaction authority；旁路写路径显式登记 |
-| `security` | policy/redaction/egress 使用固定 fail-closed reducer；受支持的 egress 路径形成 authority closure |
+| `security` | policy/redaction/egress 使用固定领域 reducer；policy/redaction 的 deny 与故障方向 fail-closed；egress 是 denylist（默认 allow，未命中 deny 即保持官方出站行为，初始零策略），只有显式 deny 拦截；受支持的 egress 路径形成 authority closure |
 | `diagnostics` | health 与 availability 分离；source 注册 owner 化；诊断不得改变被诊断 feature 的状态 |
 | `settings` | namespace owner/key 冲突显式；document mutation 有 scope/revision；remote publication 不静默占键 |
 | `profiles` | read projection 与 mutation owner 分离；写操作 CAS/validation/claim 化；同 profile 写入不得 silent last-wins |

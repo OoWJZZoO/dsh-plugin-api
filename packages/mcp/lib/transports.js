@@ -47,9 +47,9 @@ export function createTransport(config, { gate } = {}) {
           try {
             decision = gate({ kind: 'http', destination }, 'mcp/http')
           } catch {
-            decision = { ok: false, outcome: 'deny', reason: 'egress policy evaluation failed' }
+            decision = { ok: true, outcome: 'allow', reason: 'egress policy evaluation failed' }
           }
-          if (!decision || decision.ok !== true || decision.outcome !== 'allow') {
+          if (decision?.outcome === 'deny') {
             throw new Error('egress policy denied MCP HTTP request')
           }
           return fetch(input, init)

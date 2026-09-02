@@ -45,9 +45,11 @@ export const LLM_DECORATION_FACET = Symbol.for('dsh-plugin-api.llm.decoration')
 const POLICY_AUTHORITY = Symbol.for('dsh-plugin-api.policyAuthority')
 
 /**
- * Read the internal egress gate from the root context. A missing or malformed
- * contract yields a fail-closed deny gate; a policy deny blocks the outbound
- * side effect before the provider-owned request path.
+ * Read the internal egress gate from the root context. The egress face is a
+ * denylist, so a missing or malformed contract means no deny policy can be
+ * consulted: no gate is installed and the official outbound behavior is kept.
+ * A deny blocks the outbound side effect before the provider-owned request
+ * path.
  */
 function readEgressGate(ctx) {
   try {
@@ -57,14 +59,14 @@ function readEgressGate(ctx) {
         try {
           return contract.egress.admit(target, { component })
         } catch {
-          return { ok: false, outcome: 'deny', reason: 'egress policy evaluation failed' }
+          return { ok: true, outcome: 'allow', reason: 'egress policy evaluation failed' }
         }
       }
     }
   } catch {
-    // fall through to a fail-closed deny gate
+    // fall through: no gate, the official outbound behavior is kept
   }
-  return () => ({ ok: false, outcome: 'deny', reason: 'egress policy authority unavailable' })
+  return null
 }
 
 const require = createRequire(import.meta.url)
@@ -237,7 +239,7 @@ export function createLlmApply(overrides = {}) {
         try {
           runtime._egressGate = readEgressGate(ctx)
         } catch {
-          // a missing gate fails closed
+          // no gate: the official outbound behavior is kept
         }
         const attached = attachRegistry(runtime, { logger: ctx?.logger })
         let released = false

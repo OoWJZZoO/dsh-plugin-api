@@ -8,14 +8,14 @@ SPEC1 Stage 0 Goal 已确认；Stage 1 Requirements 已确认（2026-08-25，M6 
 
 `security-policy-egress-guard` 为第三方插件提供统一的 security policy 门面：approval 前置决策（policy）、结果与内容可见性控制（redaction）、出站目标策略（egress）三个策略注册面。它收敛 `dsh-secret-redactor`（post-execute 递归脱敏）、`dsh-approve-for-me`（approval 前置 allow/deny/ask）、`dsh-system-proxy`（子进程出站）各自为政的重复 workaround。
 
-本 feature 是 **B 类 host facade**，组合既有官方 seam（`approval/request`、`tools/pre-execute|post-execute` 等）。Host 是权威面；所有 deny fail-closed；横切安全语义不转 R。凡必须依赖官方不存在的强制拦截点的部分，显式标注 C 类 `upstream-required`，不在门面内伪造强制力。
+本 feature 是 **B 类 host facade**，组合既有官方 seam（`approval/request`、`tools/pre-execute|post-execute` 等）。Host 是权威面；approval/tool/脱敏类 deny 一律 fail-closed；**egress 面是 denylist**——初始不注册任何策略，未命中 deny 策略的出站目标一律放行，与官方原版出站行为完全一致，只有显式 deny 策略才拦截。横切安全语义不转 R。凡必须依赖官方不存在的强制拦截点的部分，显式标注 C 类 `upstream-required`，不在门面内伪造强制力。
 
 ## Definitions and Boundaries
 
 - **Decision point（决策点）**：系统内明确定义的三类调用时机——模型请求前、工具执行前、工具结果后；决策评估可携带 tool/session/workspace/route/user-approval 上下文（goal 层上下文清单），上下文无法解析时按 SEC-2.5 标记 unknown。
 - **Policy**：纯函数式注册项；输入由门面显式传入，返回 `allow | deny | ask` 决定与理由；不做 mutation。
 - **Redaction rule**：对内容片段的可见性改写声明，按受众（模型可见 / UI 可见 / 日志可见 / debug 可见）分别定义。debug-visible 是 log-visible 的实现级子集，不构成第四种独立可见性语义（goal 层"三种 visibility"即 model/UI/log 三层）。
-- **Egress target**：一次出站意图的 destination 描述（subprocess 命令、HTTP 目标、MCP server、remote channel）；**egress 允许策略不是系统 proxy 配置**，"检测到 proxy"不得当作"允许出站"。
+- **Egress target**：一次出站意图的 destination 描述（subprocess 命令、HTTP 目标、MCP server、remote channel）；egress 面按 **denylist** 工作：初始零策略，未被任何 deny 策略命中的目标按官方原版行为放行；**egress 策略不是系统 proxy 配置**，"检测到 proxy"既不得当作"允许出站"，也不得当作"拒绝出站"。
 - **Secret material**：凭据、认证材料、私钥、安全 token 及同等敏感值（见 `docs/standards/visibility-and-redaction.md` §2）。
 - **Host/client boundary**：host 拥有全部三个策略面与审计记录；client 只能消费既有 host 投影的只读、脱敏视图，不新增 client transport 或 client 端策略权威。
 
@@ -53,8 +53,8 @@ SPEC1 Stage 0 Goal 已确认；Stage 1 Requirements 已确认（2026-08-25，M6 
 
 1. **WHERE** the system reaches a declared decision point (before model request, before tool execute, after tool result) **THEN** the facade SHALL evaluate all active policies registered for that point and SHALL produce a single converged decision carrying the winning `policyId`, `reason`, `expiresAt`, and the associated `auditId`.
 2. **WHEN** multiple policies return conflicting decisions **THEN** the facade SHALL resolve them according to a documented deterministic precedence (deny > ask > allow) and SHALL record every consulted policy id in the decision record.
-3. **WHEN** a policy throws or returns a malformed result **THEN** the facade SHALL degrade only that policy to the point's default decision and SHALL keep the remaining policies and the hosting operation alive.
-4. **WHERE** the default decision for a security decision point is unspecified by configuration **THEN** the facade SHALL default to fail-closed (`deny` for egress, `ask` for approval-context policy) and SHALL NOT default to allow.
+3. **WHEN** a policy throws or returns a malformed result **THEN** the facade SHALL degrade only that policy to the point's default decision and SHALL keep the remaining policies and the hosting operation alive. (On the egress face the point default is `allow`, so a broken egress policy never tightens the official outbound behavior; a deny returned by another policy still wins the convergence.)
+4. **WHERE** the default decision for a security decision point is unspecified by configuration **THEN** the facade SHALL default to `ask` for approval-context, tool-before and model-request-before policy and to `noop` for redaction, and SHALL default to `allow` on the egress face, because egress is a denylist whose initial state registers no policy and whose empty registry SHALL reproduce the official outbound behavior. No decision point other than egress SHALL default to allow.
 5. **WHEN** a policy evaluation is requested outside a resolvable execution/session context **THEN** the facade SHALL still evaluate with provenance marked unknown and SHALL NOT refuse the decision merely because provenance is missing.
 
 **Classification:** B over officially dispatched seams (`approval/request`, `tools/*`) plus the facade-owned synchronous `llm/request` re-entry translation point; any additional mandatory interception point that official dispatches do not expose is C (`upstream-required`) and SHALL be surfaced as such instead of emulated. (The C-claim of this requirement resides in this Classification paragraph; AC 5 itself is a provenance-tolerance behavior.)
@@ -107,9 +107,10 @@ SPEC1 Stage 0 Goal 已确认；Stage 1 Requirements 已确认（2026-08-25，M6 
 
 1. **WHEN** a caller checks an egress target **THEN** the facade SHALL evaluate matching egress policies and SHALL return a converged decision with `policyId`, `reason`, `expiresAt`, and the associated `auditId`.
 2. **WHEN** a caller holds an egress lease **THEN** the lease SHALL be scoped to the granted target description, SHALL expire at its `expiresAt`, and SHALL NOT authorize targets outside its grant.
-3. **WHEN** an egress lease has expired or been revoked **THEN** subsequent checks SHALL fail closed and pending operations SHALL NOT extend the lease retroactively.
-4. **WHEN** proxy environment configuration is detected **THEN** the facade SHALL NOT interpret that detection as an egress allowance.
-5. **WHERE** an outbound operation originates from official runtime paths that do not consult this facade **THEN** enforcement of egress policy over those paths is C (`upstream-required`) and the facade SHALL document the enforcement boundary truthfully instead of claiming mandatory interception.
+3. **WHEN** an egress lease has expired or been released **THEN** that lease SHALL NOT authorize the target any more, subsequent checks SHALL fall back to the egress policy evaluation (the `allow` baseline when no policy denies the target), and pending operations SHALL NOT extend the lease retroactively.
+4. **WHEN** proxy environment configuration is detected **THEN** the facade SHALL NOT interpret that detection as an egress allowance or as an egress denial.
+5. **WHEN** no egress policy is registered (the initial state of the facade) **THEN** the facade SHALL allow every outbound target, SHALL NOT require any registered policy for an outbound action to proceed, and SHALL leave the official outbound behavior completely unchanged.
+6. **WHERE** an outbound operation originates from official runtime paths that do not consult this facade **THEN** enforcement of egress policy over those paths is C (`upstream-required`) and the facade SHALL document the enforcement boundary truthfully instead of claiming mandatory interception.
 
 **Classification:** B as an opt-in consultation/lease API at plugin call sites; C for mandatory interception of paths lacking official hooks.
 

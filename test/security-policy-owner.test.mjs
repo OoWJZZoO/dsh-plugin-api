@@ -307,13 +307,21 @@ test('egress lease grants are audited with the lease generation and cooperative 
   assert.equal(released.code, 'released')
 })
 
-test('egress default deny fails closed through the lease acquire', async () => {
+test('egress denylist grants a lease when no policy denies and denies when a policy does', async () => {
   const { owner } = ownerWith()
+  const granted = await owner.api.egress.lease.acquire({ target: { kind: 'subprocess', destination: 'evil.example' }, ttlMs: 60000 })
+  assert.equal(granted.ok, true, 'an empty registry keeps the official outbound behavior')
+  assert.equal(granted.code, 'acquired')
+  owner.api.egress.register('gw', {
+    id: 'deny-subprocess',
+    match: (ctx) => ctx.target.kind === 'subprocess',
+    decide: () => ({ outcome: 'deny', reason: 'blocklisted' }),
+  })
   const outcome = await owner.api.egress.lease.acquire({ target: { kind: 'subprocess', destination: 'evil.example' }, ttlMs: 60000 })
   assert.equal(outcome.ok, false)
   assert.equal(outcome.code, 'denied')
   assert.equal(outcome.operation, 'acquire')
-  assert.equal(owner.api.audit.list({ kind: 'egress-grant' }).records.length, 0, 'no grant is recorded for a denied acquire')
+  assert.equal(owner.api.audit.list({ kind: 'egress-grant' }).records.length, 1, 'only the granted acquire is recorded')
 })
 
 test('a policy throwing repeatedly degrades and reports through the diagnostics facility', async () => {

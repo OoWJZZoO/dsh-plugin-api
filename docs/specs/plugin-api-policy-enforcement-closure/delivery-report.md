@@ -36,7 +36,7 @@
 | `recovery-visibility` | automatic | 自动消费证据同 wave4 测试；投影由 recovery owner 驱动 |
 | `llm/request-transform`、`llm/admission`、`route`、`circuit`、`visibility`、`channel-auth`、`tool-restrict`、`tool-guard`、`skill-activation`、`prompt-provenance`、`security-policy`、`security-redaction` | automatic | 既有已交付测试（见 §1 对应行） |
 
-被测路径的共同断言（wave3/wave4 测试）：注册后自动求值（调用方无第二次咨询）、拒绝发生在 transport 建立/副作用前、allow 绑定精确目标/owner/generation/expiry、目标或动作变化重新求值、callback 失败与 authority 不可用 fail-closed、各 owner coverage 独立、第三方裸调用不被伪称为已拦截。
+被测路径的共同断言（wave3/wave4 测试）：注册后自动求值（调用方无第二次咨询）、显式 deny 发生在 transport 建立/副作用前、allow 绑定精确目标/owner/generation/expiry、目标或动作变化重新求值、egress 的 callback 失败与 authority 不可用保持官方出站行为并报 unavailable（denylist 基线）、各 owner coverage 独立、第三方裸调用不被伪称为已拦截。
 
 ## 3. 具名 edge gap 与退役条件（gaps）
 
@@ -58,7 +58,7 @@
 - egress：`security.egress.register`（policy）+ `security.egress.lease.acquire/release`（coordination；异步 `Outcome<Lease>`、release 幂等、stale handle typed conflict）。第三方调用公共接口时受支持；直接绕过（裸 fetch/socket/spawn）不在保证内（Requirement 10 AC5）。
 - recovery：`executions.recovery.capability.register` / `policy.register`（policy）+ `executions.recovery.evaluate`（operation，返回冻结 M8 operation outcome；不声称改变调用方私有 operation）。自动消费与合作型求值共用同一 registry、同一 reducer、同一默认决定、同一审计 authority。
 - 自定义事件：`events.define(spec)` → 冻结 publisher handle `{ id, ownerId, generation, name, emit(payload), dispose() }`（Wave 5）。合作型归属：owner 可用时从真实插件上下文派生，否则 root token；canonical/custom 分域；同身份冲突确定性拒绝，绝不静默替换 owner；stale publisher 既不能派发也不能移除较新定义；`events.observe` 可用标准投影句柄观察已定义 custom 事件。`scope` 字段作为已接受的定义元数据保留，对 custom 事件派发/观察不引入额外门控（canonical `scopeFiltered` 语义不适用于 custom 目录）。不声称对抗性同进程隔离（恶意绕过记 out of scope）。
-- 内部契约（非公共面）：root ctx 上 symbol-keyed `egress.admit/release`、`recovery.decide/commit`、`policy.status`；组件 owner 缺失 = typed unavailable/degraded，绝不等于隐式 allow。
+- 内部契约（非公共面）：root ctx 上 symbol-keyed `egress.admit/release`、`recovery.decide/commit`、`policy.status`；组件 owner 缺失 = typed unavailable/degraded；对 egress（denylist，默认 allow）表现为保持官方出站行为而非隐式放行新的能力，recovery 与其他领域仍绝不隐式放行。
 
 ## 5. 安装模式验证
 
@@ -69,7 +69,7 @@
 
 ## 6. 边界声明
 
-- **egress**：已登记受支持官方路径（llm model discovery、mcp stdio/http transport）自动受内部 egress authority 管治；合作型第三方路径在调用公共接口（注册 policy、获取/归还 lease）时受支持；直接绕过（裸网络/进程原语）不在保证内。`security.egress.check` 不恢复为公共成员，守恒由自动执行证据闭合。
+- **egress**：已登记受支持官方路径（llm model discovery、mcp stdio/http transport）自动受内部 egress authority 管治；egress 是 **denylist**，初始不注册任何策略，未命中 deny 策略的出站目标按官方原版行为放行，只有显式 deny 策略拦截；合作型第三方路径在调用公共接口（注册 policy、获取/归还 lease）时受支持；直接绕过（裸网络/进程原语）不在保证内。`security.egress.check` 不恢复为公共成员，守恒由自动执行证据闭合。
 - **recovery**：`executions.recovery.consume` 不恢复；自动消费（单窗口至多一次）与合作型 `evaluate` 求值区分记录；官方 retry provider 默认路径行为在无自定义 policy 时不变。
 - **events.define**：合作型归属 + canonical/custom 分域；不提供对抗性同进程 owner 隔离；`events.define` availability 在合作型自定义事件契约可用时即报 active。
 - **能力守恒**：四个原 gap/removal 簇（`events.define`、`storage removals`、`security.egress removals`、`executions.recovery removals`）均以 replacement 或闭合证据收口，registry 无残余 gap；`lib/capability-matrix.js` 镜像与 registry 机械一致（`test/policy-inventory.test.mjs` 全量 parity 断言）。

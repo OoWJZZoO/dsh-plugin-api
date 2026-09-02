@@ -6,7 +6,7 @@ SPEC1 Stage 0 Goal 已确认；Stage 1 Requirements 已确认（2026-08-25）；
 
 ## Overview
 
-`security-policy-egress-guard` 以三个 policy registry 面（policy / redaction / egress）+ 一个审计投影实现，全部挂在主包 host 门面的新命名空间 `pluginApi.security` 下。设计核心是：**只在官方已 dispatch 的 seam 与门面自有转译点上调用策略，绝不伪造官方路径上的强制力**；所有 deny 路径 fail-closed；secret 提升默认拒绝。
+`security-policy-egress-guard` 以三个 policy registry 面（policy / redaction / egress）+ 一个审计投影实现，全部挂在主包 host 门面的新命名空间 `pluginApi.security` 下。设计核心是：**只在官方已 dispatch 的 seam 与门面自有转译点上调用策略，绝不伪造官方路径上的强制力**；approval / tool / 脱敏面的 deny 路径 fail-closed、secret 提升默认拒绝；**egress 面是 denylist**——初始不注册任何策略，未命中 deny 策略的出站目标按官方原版行为放行。
 
 ## Standards 对照结论
 
@@ -47,13 +47,13 @@ sequenceDiagram
 1. **Registry（内部共享模块 `lib/security-policy.js`，三实例复用）**
    - `register(ownerId, spec) → { generation, dispose }`：typed 校验（缺字段/非法 matcher 先拒）；dispose 幂等且按 identity 只删本 owner 条目。
    - `evaluate(point, ctxInput) → SecurityDecision`：冻结输入快照 → 按 `(point, insertion order)` 排序逐个调用（同一决策点按注册顺序评估，无额外声明机制）→ 冲突按 `deny > ask > allow` 收敛 → 单个策略抛错仅降级该策略为该点默认值。
-   - 各点默认值（fail-closed 底线，任何点不得默认 allow，SEC-2.4）：egress=deny；approval-context=ask（透传官方流）；工具执行前=ask（透传官方 pre-execute 流，不自动 allow）；模型请求前=ask（透传/不拦截，绝不允许）；redaction=noop。
+   - 各点默认值：egress=**allow**（denylist 基线，SEC-2.4/SEC-6.5：初始零策略时官方出站行为零变化，只有显式 deny 策略拦截；策略抛错同样降级到该基线，绝不因坏策略收紧官方行为）；approval-context=ask（透传官方流）；工具执行前=ask（透传官方 pre-execute 流，不自动 allow）；模型请求前=ask（透传/不拦截，绝不允许）；redaction=noop。除 egress 外任何点都不得默认 allow。
 2. **Redaction engine（纯函数模块，零 harness 依赖）**
    - 输入内容树 + audience 集 + 规则集；输出 `{ content, applied: [{ruleId, count}] }`。
    - 覆盖边界（Design 定稿，SEC-4.5）：嵌套对象递归；字符串按规则替换为带 `redacted:<ruleId>` 标记；二进制/buffer 仅在元数据层打标记不深读；异常 cause 展开一层；MCP resource 内容视为不可信文本同样过规则；日志面只输出摘要计数不落全文。
    - 任一节点处理失败 → **该失败内容节点**整体替换为 redacted marker（同树其他已成功处理节点不受影响；唯整个输入无法结构化时整树替换）（fail-closed，SEC-4.4）。
 3. **Secret gate**：规则注册时声明 `mayTouchSecret`；凡命中 secret 形状或声明 true 的暴露决定，必须经 user/profile secret policy 放行（默认 deny）。插件注册单独不足以放行。
-4. **Egress checker/lease**：目标描述符 `{kind, destination}` 匹配规则 → converged decision（携带 auditId，SEC-2.1/6.1）；`lease.acquire(target, ttl)` 返回 `{generation, expiresAt}`，grant 审计复用该 check 决策的 auditId（SEC-7.1 覆盖 egress grant 建账）；过期/撤销后 check 一律 deny；proxy 环境检测不产生任何 allowance。
+4. **Egress checker/lease**：目标描述符 `{kind, destination}` 匹配规则 → converged decision（携带 auditId，SEC-2.1/6.1）；`lease.acquire(target, ttl)` 返回 `{generation, expiresAt}`，grant 审计复用该 check 决策的 auditId（SEC-7.1 覆盖 egress grant 建账）；**denylist 基线**：无策略命中（含初始零策略状态）→ allow 且 reason 为基线说明，只有显式 deny 策略拦截；租约过期或 `release` 后该租约不再授权，目标回落到策略评估（无 deny 即 allow），不回溯延长；proxy 环境检测既不产生 allowance 也不产生 denial。
 5. **Audit ledger**：内存环形缓冲（容量常量，溢出丢弃最旧并置 `truncated` 旗标）；`audit.query(filter)` 返回冻结视图（secret/private 字段一律脱敏）；append 失败置 `gapSince` 显式暴露。
 
 ## Data Models
@@ -73,7 +73,7 @@ AuditRecord { auditId(=decisionId 关联键), seq, at, kind, ownerIds[], policyI
 
 | 故障 | 行为 |
 |---|---|
-| 单策略抛错/返回畸形 | 该策略降级为该点默认决定；diagnostics 记 owner 归属；其余策略与宿主操作不受影响 |
+| 单策略抛错/返回畸形 | 该策略降级为该点默认决定（egress 点为 denylist 基线 allow，坏策略不收紧官方出站行为）；diagnostics 记 owner 归属；其余策略与宿主操作不受影响；同点另一策略的 deny 仍然胜出 |
 | registry 注册参数非法 | typed rejection，未生效即拒 |
 | 脱敏中途失败 | 内容整体替换 redacted marker（不返回部分保护对象） |
 | audit 存储失败 | 决策本身照常生效；查询侧暴露 `gapSince`，不伪造记录 |
@@ -82,9 +82,9 @@ AuditRecord { auditId(=decisionId 关联键), seq, at, kind, ownerIds[], policyI
 
 ## Testing Strategy
 
-1. **纯函数单元**（零 harness）：precedence 收敛矩阵、generation 替换、脱敏引擎各受众×内容类型矩阵、secret gate 默认拒绝、lease 过期/撤销时钟注入（SEC-6.3）、失败节点粒度断言（SEC-4.4）、注册参数 typed rejection（SEC-1.2）、provenance 缺失容错（SEC-2.5）。
+1. **纯函数单元**（零 harness）：precedence 收敛矩阵、generation 替换、脱敏引擎各受众×内容类型矩阵、secret gate 默认拒绝、egress denylist 基线（零策略放行、deny 只拦命中目标、坏策略不收紧）、lease 过期/释放后回落基线时钟注入（SEC-6.3）、失败节点粒度断言（SEC-4.4）、注册参数 typed rejection（SEC-1.2）、provenance 缺失容错（SEC-2.5）。
 2. **集成（harness fixture）**：approval 短路与 ask 透传；pre-execute deny 生效且 ask 不阻断；post-execute 脱敏 provenance 标记随结果下发；llm/request 重入点 deny 抛 typed error；decision↔audit 关联（auditId 一一对应，SEC-7.1/2.1/6.1）。
 3. **audit 投影**：查询返回冻结只读视图、secret/private 脱敏、append 失败置 `gapSince`、溢出置 `truncated`（SEC-7.2/7.3）。
 4. **fail-safe**：策略持续抛错→降级+diagnostics；setup 注错→inert 且 boot 存活；降级态 availability 如实上报（SEC-8.3）。
 5. **client 半面**：只读脱敏摘要消费、无注册/决策/授权/审计突变面、无投影时 inert 且不阻断无关 client 面（SEC-9）。
-6. **回归**：无任何策略注册时,官方 approval/tools 行为零变化（对照快照）。
+6. **回归**：无任何策略注册时，官方 approval/tools **与出站**行为零变化（对照快照）；egress 基线断言：空 registry 下 `check`/`admit`/`lease.acquire` 全部放行，与官方原版出站一致（SEC-6.5）。

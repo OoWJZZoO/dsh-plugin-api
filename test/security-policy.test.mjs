@@ -124,13 +124,14 @@ test('a malformed result degrades the policy instead of poisoning the point', ()
   assert.match(decision.reason, /^degraded:/)
 })
 
-test('point defaults are fail-closed: no decision point defaults to allow', () => {
-  assert.equal(POINT_DEFAULTS[SECURITY_POINTS.egress], 'deny')
+test('point defaults keep the official flow: only the egress denylist defaults to allow', () => {
+  assert.equal(POINT_DEFAULTS[SECURITY_POINTS.egress], 'allow')
   assert.equal(POINT_DEFAULTS[SECURITY_POINTS.approvalBefore], 'ask')
   assert.equal(POINT_DEFAULTS[SECURITY_POINTS.toolBefore], 'ask')
   assert.equal(POINT_DEFAULTS[SECURITY_POINTS.modelRequestBefore], 'ask')
   assert.equal(POINT_DEFAULTS[SECURITY_POINTS.toolAfter], 'noop')
-  assert.ok(!Object.values(POINT_DEFAULTS).includes('allow'))
+  const nonEgress = Object.entries(POINT_DEFAULTS).filter(([point]) => point !== SECURITY_POINTS.egress)
+  assert.ok(!nonEgress.some(([, value]) => value === 'allow'), 'no point other than the egress denylist defaults to allow')
 })
 
 test('all-degraded evaluation converges to the point default and stays alive', () => {

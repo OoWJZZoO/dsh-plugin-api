@@ -19875,7 +19875,7 @@
       "targetPaths": [],
       "status": "deleted",
       "qualifiers": [],
-      "replacement": "security.egress.check -> automatic admission: registered egress policies are evaluated by the internal egress authority before any outbound side effect on the supported official paths (llm model discovery, mcp stdio/http transport); cooperative callers register policies and acquire/release typed leases",
+      "replacement": "security.egress.check -> automatic evaluation (denylist): registered egress policies are evaluated by the internal egress authority before any outbound side effect on the supported official paths (llm model discovery, mcp stdio/http transport); an empty registry keeps the official outbound behavior and only an explicit deny blocks; cooperative callers register policies and acquire/release typed leases",
       "gapReason": null,
       "affectedConsumers": [],
       "verification": [

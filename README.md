@@ -8,7 +8,7 @@ DeepSeek Harness 社区插件 API 门面（主包 `@deepseek-ai/dsh-plugin-api-m
 >
 > 现行公共 path、成员状态与版本基线的唯一事实源是 `docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json`（旧 path → 目标 path 映射见其 `oldToTargetMapping`）。主包与全部辅助包统一 full version `0.1.0-rc.6-0.1.0`、`dsh.api: 0.1`；consumer 仍须按 capability availability 做 fail-safe 降级。
 >
-> 政策强制闭合约定（2026-09-01）：`security.egress` 对已登记受支持官方路径（llm model discovery、mcp stdio/http transport）自动管治，合作型第三方在调用公共接口（`security.egress.register` / `lease.acquire|release`）时受支持，直接绕过（裸网络/进程原语）不在保证内；`executions.recovery` 自动消费单窗口至多一次，合作型求值走 `executions.recovery.evaluate`；`events.define` 提供合作型自定义事件生产（canonical/custom 分域、owner-conflict 确定性拒绝、stale publisher 失效），不提供对抗性同进程隔离；其余官方路径与具名 edge gap（web/subprocess/terminal/shell/connection/telemetry/llm-provider/remote）的边界见 `docs/specs/plugin-api-policy-enforcement-closure/delivery-report.md`。
+> 政策强制闭合约定（2026-09-01）：`security.egress` 对已登记受支持官方路径（llm model discovery、mcp stdio/http transport）自动管治——出站策略是 **denylist**：初始不注册任何策略，未命中 deny 策略的出站目标保持官方原版行为，只有显式 deny 策略拦截；合作型第三方在调用公共接口（`security.egress.register` / `lease.acquire|release`）时受支持，直接绕过（裸网络/进程原语）不在保证内；`executions.recovery` 自动消费单窗口至多一次，合作型求值走 `executions.recovery.evaluate`；`events.define` 提供合作型自定义事件生产（canonical/custom 分域、owner-conflict 确定性拒绝、stale publisher 失效），不提供对抗性同进程隔离；其余官方路径与具名 edge gap（web/subprocess/terminal/shell/connection/telemetry/llm-provider/remote）的边界见 `docs/specs/plugin-api-policy-enforcement-closure/delivery-report.md`。
 
 ## 安装
 

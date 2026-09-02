@@ -1145,10 +1145,10 @@ var LlmRuntime = class extends Service {
 		if (discover === void 0) throw new LlmError(`no model discovery is registered for "${settingsNs}"`, "NO_DISCOVERY");
 		if ((request.provider ?? "").length === 0 && (request.baseURL ?? "").length === 0) throw new LlmError("model discovery needs a provider route or a baseURL", "INVALID_DISCOVERY");
 		// Egress gate on the resolved endpoint before the discovery request is
-		// sent (fail-closed: a deny blocks the outbound side effect entirely).
+		// sent (denylist: an explicit deny blocks the outbound side effect).
 		if (this._egressGate && (request.baseURL ?? "").length > 0) {
 			const decision = this._egressGate({ kind: "http", destination: String(request.baseURL) }, "llm/modelDiscovery");
-			if (!decision || decision.ok !== true || decision.outcome !== "allow") {
+			if (decision?.outcome === "deny") {
 				throw new LlmError("egress policy denied model discovery request", "EGRESS_DENIED");
 			}
 		}

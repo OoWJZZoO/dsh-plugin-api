@@ -10,7 +10,7 @@ SPEC1 Stage 0：Goal 已确认（M6 第四批次批量确认门）。
 
 ## Goal
 
-为第三方插件提供统一的 security policy 门面，把目前分散在各插件私自实现的 approval 决策、结果脱敏与出站（egress）控制收敛为三个可注册、可审计、fail-closed 的策略面。该 feature 回答三个问题：
+为第三方插件提供统一的 security policy 门面，把目前分散在各插件私自实现的 approval 决策、结果脱敏与出站（egress）控制收敛为三个可注册、可审计、故障方向 fail-closed 的策略面；其中 egress 面按 **denylist** 工作——初始不注册任何策略，未命中 deny 策略的出站目标保持官方原版行为，只有显式 deny 拦截。该 feature 回答三个问题：
 
 1. **决策**：一次模型请求或工具执行是否被允许、由哪条策略以何理由决定；
 2. **可见性**：工具结果与请求内容中哪些字段对模型、UI、日志分别可见（redaction）;
@@ -46,4 +46,4 @@ B 类门面 + 多个官方 seam 组合（`approval/request`、`tools/pre|post-ex
 
 ## Expected Result
 
-第三方插件可以注册一条"拒绝危险命令的 approval 策略"、"对日志隐藏 API key 的脱敏策略"或"禁止子进程访问某网段的 egress 策略"，每条决策可查询、可审计、fail-closed；策略之间有确定组合顺序而不是互相覆盖；策略自身故障只降级自身并通过 diagnostics 可见，不影响宿主 boot 与其他插件。
+第三方插件可以注册一条"拒绝危险命令的 approval 策略"、"对日志隐藏 API key 的脱敏策略"或"禁止子进程访问某网段的 egress 策略"，每条决策可查询、可审计；策略之间有确定组合顺序而不是互相覆盖；策略自身故障只降级自身并通过 diagnostics 可见，不影响宿主 boot 与其他插件——approval/脱敏面故障时 fail-closed，egress 面故障时回落到 denylist 基线（放行），绝不因坏策略收紧官方出站行为。

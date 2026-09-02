@@ -37,8 +37,8 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 
 1. **版本冻结**：runtime identity `A = 0.1.0-rc.6` 不变；主包、全部辅助包与 full 聚合包完整版本保持 `0.1.0-rc.6-0.1.0`（`B.C = 0.1`，`D = 0`），`dsh.api` 保持 `0.1`。任何实现、生成物或文档同步都不得步进任一版本字段（design §Frozen version baseline）。
 2. **registry 原地扩展**：唯一事实源仍为 `docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json`。不新建平行 policy registry、不新建公共 root、不新建第二个 `security.policy` 聚合。
-3. **内部契约是私有 typed 面**：门面在根 ctx 上发布 symbol-keyed 私有内部契约，方法为 `egress.admit` / `egress.release` / `recovery.decide` / `recovery.commit` / `policy.status`；它不是公共 namespace、不是运行时 registry 服务、不是权限系统、不暴露包/行/mounter/替代身份。组件 owner 缺失契约 = typed unavailable/degraded，绝不等于隐式 allow。
-4. **领域 reducer 不合并**：egress 保留 default-deny 与精确目标绑定；recovery 保留 action 校验与 retry bounds；route / tool / auth / visibility / provenance 各自保留其 reducer、优先词表与默认决定。自动执行与合作型调用同一 registry、同一 reducer、同一默认决定、同一审计 authority。
+3. **内部契约是私有 typed 面**：门面在根 ctx 上发布 symbol-keyed 私有内部契约，方法为 `egress.admit` / `egress.release` / `recovery.decide` / `recovery.commit` / `policy.status`；它不是公共 namespace、不是运行时 registry 服务、不是权限系统、不暴露包/行/mounter/替代身份。组件 owner 缺失契约 = typed unavailable/degraded；对 egress（denylist，默认 allow）这意味着保持官方出站行为而非阻断，对 recovery 与其他领域仍绝不隐式放行。
+4. **领域 reducer 不合并**：egress 保留 denylist 基线（默认 allow，只有显式 deny 拦截）与精确目标绑定；recovery 保留 action 校验与 retry bounds；route / tool / auth / visibility / provenance 各自保留其 reducer、优先词表与默认决定。自动执行与合作型调用同一 registry、同一 reducer、同一默认决定、同一审计 authority。
 5. **公共 idiom 分配（design §Registry extension and idiom assignment）**：
    - `security.egress.register` — policy（保留）
    - `security.egress.lease.acquire` — coordination（异步 `Outcome<Lease>` 重塑）
@@ -99,8 +99,8 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 - [x] **3.5 subprocess / shell / terminal**：**可达性评估后记具名 edge path（本窗口未实现 gate）**。`dsh-subprocess` 是完整官方 Service（spawn/spawnTerminal/进程树/terminal 原语），无 harness 验证下复刻其服务/事件契约不可安全交付，替换 `ctx.subprocess` 会改变每个消费者的官方服务；`subprocess`/`terminal`/`shell` 在 matrix 报 `unavailable`（design §2.2 第 4 条执行注）。
 - [x] **3.6 browser connection**：**可达性评估后记具名 edge path（本窗口未实现 gate）**。connection replacement 是 host/client 拆分，浏览器 transport 无法在无 harness 环境验证；`connection` 在 matrix 报 `unavailable`，不声称客户端 gate（design §2.2 第 5 条执行注）。
 - [x] **3.7 可选 exporter**：盘点 `dsh-session-telemetry-otel` 行后记**具名 edge-path gap**（无已批准 replacement、无门面可触达的 pre-export seam）；`telemetry` 在 matrix 报 `unavailable`，inventory gap 记录携带证据与退役条件（design §2.2 第 6 条执行注）。
-- [x] **3.8 fail-closed 与旁路边界**：fail-closed 路径在契约缺失或求值失败时无任何出站副作用、返回 typed denied/unavailable；第三方直接使用底层网络/socket/WebSocket/进程/原生/外部进程能力不入账为被拦截。
-- [x] **3.9 测试**：每个官方 owner 用契约忠实的副作用 spy 证明「注册后自动求值（调用方无第二次咨询）」「deny 发生在 fetch/WebSocket/transport 创建/spawn/exporter send 之前」「allow 绑定精确目标/owner/generation/expiry」「目标或动作变化重新求值」「callback 失败与 authority 不可用 fail-closed」「各 owner coverage 独立」「第三方裸调用不被伪称为已拦截」。
+- [x] **3.8 denylist 基线与旁路边界**：egress 是 denylist——契约缺失、gate 抛错或求值畸形时保持官方出站行为并返回 typed unavailable，只有显式 deny 才阻断副作用；第三方直接使用底层网络/socket/WebSocket/进程/原生/外部进程能力不入账为被拦截。
+- [x] **3.9 测试**：每个官方 owner 用契约忠实的副作用 spy 证明「注册后自动求值（调用方无第二次咨询）」「deny 发生在 fetch/WebSocket/transport 创建/spawn/exporter send 之前」「allow 绑定精确目标/owner/generation/expiry」「目标或动作变化重新求值」「显式 deny 之外的 callback 失败与 authority 不可用保持官方出站行为并报 unavailable」「各 owner coverage 独立」「第三方裸调用不被伪称为已拦截」。
 
 ### [x] 4. Wave 4 — Recovery 自动单一消费（§5、§7）
 

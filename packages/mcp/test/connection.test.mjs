@@ -311,7 +311,7 @@ test('egress gate allow lets the connection proceed normally', async () => {
   await handle.dispose()
 })
 
-test('a throwing egress gate is contained to a fail-closed deny', async () => {
+test('a throwing egress gate cannot deny and the connection proceeds', async () => {
   const { published, hooks } = makeHarness()
   let connectCalls = 0
   hooks.gate = () => { throw new Error('gate exploded') }
@@ -334,10 +334,10 @@ test('a throwing egress gate is contained to a fail-closed deny', async () => {
   }
   const handle = startConnection(ctx, baseConfig, policy, hooks)
   const ready = await handle.ready
-  assert.ok(ready.error)
-  assert.equal(connectCalls, 0, 'a throwing gate never reaches the transport')
+  assert.deepEqual(ready, {}, 'a throwing gate does not block the official outbound behavior')
+  assert.equal(connectCalls, 1, 'the connection proceeds under a broken gate')
   const denied = published.filter((p) => p.reason?.code === 'egress-denied')
-  assert.ok(denied.length >= 1)
+  assert.equal(denied.length, 0, 'only an explicit deny publishes egress-denied')
   await handle.dispose()
 })
 

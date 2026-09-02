@@ -41,7 +41,7 @@ SPEC3：Stage 0 Goal、Stage 1 Requirements、Stage 2 Design 已确认（2026-08
   - 冻结输入快照后按 `(point, insertion order)` 逐个调用匹配策略——SEC-2.1；
   - 冲突按 `deny > ask > allow` 收敛；决策含 `policyId`（winner）、`reason`、`expiresAt?`、`auditId`、`consulted`（全部被咨询 policyId 列表）——SEC-2.1/2.2；
   - 单策略抛错或返回畸形结果 → 只降级该策略为该点的默认决定，其余策略与宿主操作存活——SEC-2.3；
-  - 点默认值 fail-closed 底线（任何点不得默认 allow）：egress=deny；approval-context=ask；tool-before=ask；model-request-before=ask；redaction=noop——SEC-2.4；
+  - 点默认值：egress=allow（denylist 基线，初始零策略即官方原版出站行为，只有显式 deny 拦截）；approval-context=ask；tool-before=ask；model-request-before=ask；redaction=noop；除 egress 外任何点不得默认 allow——SEC-2.4；
   - provenance 缺失（无法解析 session/execution 上下文）→ 仍评估，决策携带 `provenance: 'unknown'` 标记，不因缺失而拒绝评估——SEC-2.5。
 - [x] 2.3 决策/审计关联：决策以 `auditId`（=决策 id）为键与审计记录一一对应（design Data Models：「auditId(=decisionId 关联键)」）——SEC-7.1/2.1/6.1。
 - [x] 2.4 单元测试（纯函数，零 harness）：precedence 收敛矩阵（deny>ask>allow × 组合）、generation 替换与 dispose 幂等、点默认值矩阵、单策略降级、provenance unknown 容错、注册参数 typed rejection 矩阵（SEC-1.2/2.2/2.3/2.4/2.5）。产出：`test/security-policy.test.mjs`。
@@ -60,14 +60,14 @@ SPEC3：Stage 0 Goal、Stage 1 Requirements、Stage 2 Design 已确认（2026-08
 ### 4. Egress 检查与租约：`lib/security-egress.js`
 - 状态：implemented
 
-- [x] 4.1 实现 egress 检查（复用任务 2 registry，point default=deny）：`check(target)` → 收敛决策（含 `policyId`、`reason`、`expiresAt?`、`auditId`）——SEC-6.1；`EgressTarget { kind: 'subprocess'|'http'|'mcp'|'remote', destination }`；非法 target（kind 枚举外、destination 缺失/非字符串）→ typed rejection。
+- [x] 4.1 实现 egress 检查（复用任务 2 registry，point default=allow 的 denylist 基线）：`check(target)` → 收敛决策（含 `policyId`、`reason`、`expiresAt?`、`auditId`）；无策略命中（含初始零策略）→ allow 且 reason 为基线说明——SEC-6.1/6.5；`EgressTarget { kind: 'subprocess'|'http'|'mcp'|'remote', destination }`；非法 target（kind 枚举外、destination 缺失/非字符串）→ typed rejection。
 - [x] 4.2 实现租约：`lease.acquire(target, ttl)` → `{ generation, expiresAt, revoke }`：
   - 租约作用域 = 授予时的目标描述；不授权目标之外任何 target——SEC-6.2；
-  - 租约在 `expiresAt` 到期；`revoke` 幂等；过期或撤销后，后续 `check` 一律 fail-closed，禁止回溯延长——SEC-6.3；
+  - 租约在 `expiresAt` 到期；`release` 幂等；过期或释放后该租约不再授权，目标回落到策略评估（无 deny 即 denylist 基线 allow），禁止回溯延长——SEC-6.3；
   - grant 建账复用该 check 决策的 auditId（design「grant 审计复用该 check 决策的 auditId」）——SEC-7.1；
   - 时钟注入（`now`），测试可控。
 - [x] 4.3 proxy 环境检测 ≠ egress allowance：检测到 proxy 配置既不产生 allow 也不产生 deny 之外的任何语义（v1 策略面不消费 proxy 环境变量——SEC-6.4）；无官方拦截点时强制拦截路径为 C `upstream-required`，如实披露于 availability/enforcement 边界注释，不伪造强制力——SEC-6.5。
-- [x] 4.4 单元测试（纯函数 + 时钟注入）：check 收敛与默认 deny、lease 作用域（同 target 授权 / 异 target 拒绝）、到期与撤销后 fail-closed、不回溯延长、proxy 无关性、非法 target typed rejection。产出：`test/security-policy-egress.test.mjs`。
+- [x] 4.4 单元测试（纯函数 + 时钟注入）：check 收敛与 denylist 基线（零策略放行 / deny 只拦命中目标 / 坏策略不收紧 / 坏策略不掩盖另一策略的 deny）、lease 作用域（同 target 授权 / 异 target 回落基线）、到期与释放后回落基线、不回溯延长、proxy 无关性、非法 target typed rejection。产出：`test/security-policy-egress.test.mjs`。
 
 ### 5. 审计账本：`lib/security-audit.js`
 - 状态：implemented
