@@ -137,6 +137,12 @@ test('apply mounts session after events with a composed events catalog', () => {
   assert.equal(typeof state.pluginApi.sessions.views.header, 'function')
   assert.equal(typeof state.pluginApi.sessions.views.deriveMessages, 'function')
   assert.equal(typeof state.pluginApi.sessions.views.isSessionEventType, 'function')
+  // the views subtree is a registered namespace: it carries the standard
+  // availability() member returning the frozen uniform vocabulary
+  const viewsAvailability = state.pluginApi.sessions.views.availability()
+  assert.deepEqual(viewsAvailability, { status: 'active' })
+  assert.ok(Object.isFrozen(viewsAvailability))
+  assert.ok(Object.isFrozen(state.pluginApi.sessions.views))
 })
 
 test('apply completes every guard pass before pass-2 publication and an early feature-disabled does not stop later mounters', () => {

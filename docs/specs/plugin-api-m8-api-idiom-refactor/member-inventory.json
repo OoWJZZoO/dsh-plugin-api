@@ -13,7 +13,7 @@
     "handleLeaves": 51,
     "servicesWhitelistHost": 46,
     "note": "counts derived from the leaves array; re-derived mechanically when the registry changes",
-    "leaves": 336,
+    "leaves": 390,
     "handles": 53
   },
   "leaves": [
@@ -1062,110 +1062,110 @@
       "runtime": "host",
       "kind": "leaf",
       "currentShape": "session header query",
-      "targetPath": "sessions.header",
+      "targetPath": "sessions.views.header",
       "idiom": "projection",
-      "migrationAction": "retain",
-      "shapeNote": null
+      "migrationAction": "migrate",
+      "shapeNote": "session-object read accessor regrouped under the views projection subtree; store operations stay on the sessions root"
     },
     {
       "publicPath": "sessions.events",
       "runtime": "host",
       "kind": "leaf",
       "currentShape": "session events query",
-      "targetPath": "sessions.events",
+      "targetPath": "sessions.views.events",
       "idiom": "projection",
-      "migrationAction": "retain",
-      "shapeNote": null
+      "migrationAction": "migrate",
+      "shapeNote": "session-object read accessor regrouped under the views projection subtree; store operations stay on the sessions root"
     },
     {
       "publicPath": "sessions.seq",
       "runtime": "host",
       "kind": "leaf",
       "currentShape": "sequence query",
-      "targetPath": "sessions.seq",
+      "targetPath": "sessions.views.seq",
       "idiom": "projection",
-      "migrationAction": "retain",
-      "shapeNote": null
+      "migrationAction": "migrate",
+      "shapeNote": "session-object read accessor regrouped under the views projection subtree; store operations stay on the sessions root"
     },
     {
       "publicPath": "sessions.surface",
       "runtime": "host",
       "kind": "leaf",
       "currentShape": "surface event query",
-      "targetPath": "sessions.surface",
+      "targetPath": "sessions.views.surface",
       "idiom": "projection",
-      "migrationAction": "retain",
-      "shapeNote": null
+      "migrationAction": "migrate",
+      "shapeNote": "session-object read accessor regrouped under the views projection subtree; store operations stay on the sessions root"
     },
     {
       "publicPath": "sessions.requestHeader",
       "runtime": "host",
       "kind": "leaf",
       "currentShape": "request header helper",
-      "targetPath": "sessions.requestHeader",
+      "targetPath": "sessions.views.requestHeader",
       "idiom": "projection",
-      "migrationAction": "retain",
-      "shapeNote": "frozen context helper"
+      "migrationAction": "migrate",
+      "shapeNote": "session-object read accessor regrouped under the views projection subtree; store operations stay on the sessions root"
     },
     {
       "publicPath": "sessions.requestContext",
       "runtime": "host",
       "kind": "leaf",
       "currentShape": "request context helper",
-      "targetPath": "sessions.requestContext",
+      "targetPath": "sessions.views.requestContext",
       "idiom": "projection",
-      "migrationAction": "retain",
-      "shapeNote": null
+      "migrationAction": "migrate",
+      "shapeNote": "session-object read accessor regrouped under the views projection subtree; store operations stay on the sessions root"
     },
     {
       "publicPath": "sessions.deriveMessages",
       "runtime": "host",
       "kind": "leaf",
       "currentShape": "message derivation helper",
-      "targetPath": "sessions.deriveMessages",
+      "targetPath": "sessions.views.deriveMessages",
       "idiom": "projection",
-      "migrationAction": "retain",
-      "shapeNote": null
+      "migrationAction": "migrate",
+      "shapeNote": "session-object read accessor regrouped under the views projection subtree; store operations stay on the sessions root"
     },
     {
       "publicPath": "sessions.isSessionEventType",
       "runtime": "host",
       "kind": "leaf",
       "currentShape": "event type predicate",
-      "targetPath": "sessions.isSessionEventType",
+      "targetPath": "sessions.views.isSessionEventType",
       "idiom": "projection",
-      "migrationAction": "retain",
-      "shapeNote": null
+      "migrationAction": "migrate",
+      "shapeNote": "session-object read accessor regrouped under the views projection subtree; store operations stay on the sessions root"
     },
     {
       "publicPath": "sessions.isSurfaceEventType",
       "runtime": "host",
       "kind": "leaf",
       "currentShape": "event type predicate",
-      "targetPath": "sessions.isSurfaceEventType",
+      "targetPath": "sessions.views.isSurfaceEventType",
       "idiom": "projection",
-      "migrationAction": "retain",
-      "shapeNote": null
+      "migrationAction": "migrate",
+      "shapeNote": "session-object read accessor regrouped under the views projection subtree; store operations stay on the sessions root"
     },
     {
       "publicPath": "sessions.sessionEventTypes",
       "runtime": "host",
       "kind": "leaf",
       "currentShape": "event type list",
-      "targetPath": "sessions.sessionEventTypes",
+      "targetPath": "sessions.views.sessionEventTypes",
       "idiom": "projection",
-      "migrationAction": "retain",
-      "shapeNote": null
+      "migrationAction": "migrate",
+      "shapeNote": "session-object read accessor regrouped under the views projection subtree; store operations stay on the sessions root"
     },
     {
       "publicPath": "sessions.surfaceEventTypes",
       "runtime": "host",
       "kind": "leaf",
       "currentShape": "event type list",
-      "targetPath": "sessions.surfaceEventTypes",
+      "targetPath": "sessions.views.surfaceEventTypes",
       "idiom": "projection",
-      "migrationAction": "retain",
-      "shapeNote": null
+      "migrationAction": "migrate",
+      "shapeNote": "session-object read accessor regrouped under the views projection subtree; store operations stay on the sessions root"
     },
     {
       "publicPath": "sessions.on",
@@ -3906,6 +3906,16 @@
       "idiom": "contribution",
       "migrationAction": "add",
       "shapeNote": "handle { id, ownerId, seq, dispose() }; active until dispose or eviction"
+    },
+    {
+      "publicPath": "sessions.views.availability",
+      "runtime": "host",
+      "kind": "leaf",
+      "currentShape": null,
+      "targetPath": "sessions.views.availability",
+      "idiom": "selfDescription",
+      "migrationAction": "add",
+      "shapeNote": "namespace availability(); the views subtree carries no backing feature of its own, so the status derives from the sessions capability inputs"
     }
   ],
   "servicesWhitelistReview": {

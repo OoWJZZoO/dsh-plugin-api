@@ -88,6 +88,8 @@ test('official client artifact registers, composes all client leaves, and suppor
     'the published root carries the client brand symbol')
   assert.equal(api.codecValidateUnavailable, api.codecValidateUnavailable, 'one zod value is shared by the public bundle')
   assert.equal(api.connection.isActive, true)
+  assert.equal(typeof api.connection.get.describe, 'function',
+    'the bundled connection read accessor rides the registered connection.get path')
   assert.equal(typeof api.slots.observe, 'function')
   assert.equal(artifact.apply(ctx), dispose, 'reapply reuses the active client facade')
   assert.equal(await dispose(), true)

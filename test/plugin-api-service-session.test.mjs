@@ -28,6 +28,11 @@ const SESSION_METHODS = [
   'get',
   'list',
   'fork',
+]
+
+// Session-object read accessors ride the views subtree in the active and the
+// unavailable shape alike, so the namespace stays shape-compatible.
+const SESSION_VIEWS_METHODS = [
   'header',
   'events',
   'seq',
@@ -46,8 +51,9 @@ test('active service with unmounted session throws feature-disabled from every m
   const service = instantiate(ServiceClass, ctx)
 
   assert.equal(service.isActive, true)
-  assert.equal(service.sessions.views, undefined)
-  assert.equal(service.sessions.views, undefined)
+  assert.equal(typeof service.sessions.views, 'object')
+  assert.equal(typeof service.sessions.views.availability, 'function',
+    'the views subtree stays shape-compatible and reports its availability')
 
   for (const method of SESSION_METHODS) {
     if (method === 'observe') {
@@ -67,6 +73,18 @@ test('active service with unmounted session throws feature-disabled from every m
         return true
       },
       `${method} should throw feature-disabled`,
+    )
+  }
+  for (const method of SESSION_VIEWS_METHODS) {
+    assert.throws(
+      () => service.sessions.views[method](),
+      (error) => {
+        assert.ok(error instanceof PluginApiFeatureDisabledError)
+        assert.equal(error.code, 'PLUGIN_API_FEATURE_DISABLED')
+        assert.equal(error.feature, 'sessions')
+        return true
+      },
+      `views.${method} should throw feature-disabled`,
     )
   }
   assert.equal(ctx.getCalls.length, 0)
@@ -95,6 +113,17 @@ test('inert service session methods throw inactive before touching any official 
         return true
       },
       `${method} should throw inactive`,
+    )
+  }
+  for (const method of SESSION_VIEWS_METHODS) {
+    assert.throws(
+      () => service.sessions.views[method](),
+      (error) => {
+        assert.ok(error instanceof PluginApiInactiveError)
+        assert.equal(error.code, 'PLUGIN_API_INACTIVE')
+        return true
+      },
+      `views.${method} should throw inactive`,
     )
   }
   assert.equal(ctx.getCalls.length, 0)

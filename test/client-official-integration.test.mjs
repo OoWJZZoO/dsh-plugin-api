@@ -173,7 +173,7 @@ test('joined client surface exposes exact services, event, and llm faces with id
   }
 
   assert.equal(api.connection.isActive, true)
-  assert.equal(typeof api.connection.api.get.describe, 'function')
+  assert.equal(typeof api.connection.get.describe, 'function')
   const llm = api.connection.api.llm
   assert.deepEqual(Object.keys(llm), ['providers', 'models', 'discoverModels'])
   assert.equal(llm.isActive, undefined, 'the llm face carries only the approved members')
@@ -293,7 +293,7 @@ test('the joined facade keeps connection.isActive when the connection service is
   const api = ctx.get('pluginApi')
 
   assert.equal(api.connection.isActive, false, 'the existing connection face degrades through its own path')
-  assert.throws(() => api.connection.api.get.describe(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'clientConnection')
+  assert.throws(() => api.connection.get.describe(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'clientConnection')
   assert.throws(() => api.connection.api.llm.providers(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.connection')
   dispose()
 })

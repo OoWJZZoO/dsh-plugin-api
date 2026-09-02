@@ -194,5 +194,5 @@ test('pluginApi.sessions identity is preserved with the branches add-on (no leak
   const session = service.sessions
   assert.equal(typeof session.branches.graph, 'function')
   assert.equal(typeof session.list, 'function')
-  assert.equal(typeof session.deriveMessages, 'function', 'the session base members stay intact')
+  assert.equal(typeof session.views.deriveMessages, 'function', 'the session base members stay intact')
 })
