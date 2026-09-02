@@ -1,5 +1,7 @@
 # Stage 2 — Design
 
+> 公共契约现状注（2026-09-02）：本文在 `events.define` 尚未交付的历史设计边界内获批；现行公共契约已由后续 `plugin-api-policy-enforcement-closure` 交付补齐该合作型入口，当前形状与边界以 canonical registry 及该 feature 的 delivery report 为准。本文其余已批准验收边界不变。
+
 ## Status
 
 本设计承接已批准的 `goal.md` 与 `requirements.md`。它定义 M8 的目标架构、迁移边界、实现通道、失败路径和验证策略。
@@ -281,7 +283,7 @@ Dispatch members are the operation-idiom dispatch variant: one dispatch has no i
 
 A decision-carried event belongs to the event-form policy variant and must additionally declare decision precedence, the convergence rule on conflict, and the containment plus default decision applied when a listener throws; it otherwise shares the policy failure and conflict contract.
 
-Custom publisher support is exposed as an owner-scoped `events.define(spec)` handle or remains an explicit unavailable/proposal capability; no global entry able to dispatch arbitrary canonical event names is introduced. Because the current runtime has no owner-scoped publisher, the design records it as an unavailable capability until that entry exists and does not describe it as already available.
+Custom publisher support is exposed as an owner-scoped `events.define(spec)` handle or remains an explicit unavailable/proposal capability; no global entry able to dispatch arbitrary canonical event names is introduced. At the time of this approved design the current runtime had no owner-scoped publisher; the later policy-enforcement-closure feature delivered the cooperative handle, so the canonical registry and that feature's delivery report are authoritative for current availability.
 
 ### 5. Idiom-Specific Domain Adapters
 
@@ -623,7 +625,7 @@ Stage 4 Tasks will follow this dependency order. Each Wave is one top-level task
 - Reclassify event catalog/observe/dispatch according to the target idioms: `events.catalog()` as a self-description query, `observe` as a projection subscription, and dispatch as the operation dispatch variant returning a discriminated outcome.
 - Register the operation identity and retry contract entries as not applicable for dispatch, and record the three additions required by decision events: decision precedence, conflict convergence, and containment with a default decision.
 - Stabilize producer authority, event semantics and priority vocabulary.
-- Keep the owner-scoped `events.define(spec)` publisher as active only if the runtime can enforce owner scope; otherwise record unavailable/proposal.
+- At M8 design time, keep the owner-scoped `events.define(spec)` publisher active only if the runtime can enforce owner scope; the later policy-enforcement-closure delivery records its cooperative ownership and non-adversarial boundary.
 
 ### Wave 4: Projection And Self-Description Surfaces
 

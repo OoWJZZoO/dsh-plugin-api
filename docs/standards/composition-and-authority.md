@@ -128,7 +128,7 @@ pluginApi: {
 
 - 通用 `waterfall` 只能提供调用机制，不能替代领域组合规则。
 - 订阅权与生产权分离：`on/once` 可以是 additive consumer 面；canonical system event 的 `emit/serial/parallel/bail/waterfall` 只授予其 producer authority。
-- 第三方自定义事件只能通过 owner-scoped `events.define` 取得能力受限的 publisher handle，不能依赖一个可派发任意系统事件名的全局入口。**当前 `events` 面未提供 `define` 与 publisher handle**（面成员为 `catalog / on / once / emit / serial / parallel / bail / waterfall`），因此第三方自定义事件当前没有受支持的派发入口。
+- 第三方自定义事件只能通过合作型 `events.define` 取得能力受限的 publisher handle，不能依赖一个可派发任意系统事件名的全局入口。`events.define` 的 owner 归因在可追踪调用上下文存在时绑定真实 owner；不可追踪时使用根 token。该模型不提供对抗性同进程身份隔离，主动绕过门面仍在保证范围外。
 - 每个多插件决策点必须写明 decision vocabulary、支配元素、多个 transform 的合并规则、priority 相同的注册顺序、callback 失败策略、reducer 的幂等/结合性或顺序依赖，以及输出是否冻结并携带 owner/provenance。
 - 关键决策点优先使用领域 typed decision 和 reducer，不向第三方只暴露可返回任意对象的裸 waterfall。
 

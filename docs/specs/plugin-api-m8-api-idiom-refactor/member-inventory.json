@@ -8,15 +8,25 @@
     "conclusion": "M7 frozen baseline verified unchanged; M8 creates no new version boundary."
   },
   "counts": {
-    "hostLeaves": 330,
+    "hostLeaves": 333,
     "clientLeaves": 53,
     "handleLeaves": 51,
     "servicesWhitelistHost": 46,
     "note": "counts derived from the leaves array; re-derived mechanically when the registry changes",
-    "leaves": 333,
+    "leaves": 336,
     "handles": 53
   },
   "leaves": [
+    {
+      "publicPath": "executions.recovery.coverage",
+      "runtime": "host",
+      "kind": "leaf",
+      "currentShape": "coverage projection { status, registration, cooperative, automatic, observedAt }",
+      "targetPath": "executions.recovery.coverage",
+      "idiom": "selfDescription",
+      "migrationAction": null,
+      "shapeNote": "three-partition coverage { status, registration, cooperative, automatic, observedAt }; automatic keys are inventory-registered recovery paths"
+    },
     {
       "publicPath": "isActive",
       "runtime": "host",
@@ -1006,6 +1016,26 @@
       "idiom": "selfDescription",
       "migrationAction": "retain",
       "shapeNote": "shape-aligned to frozen { status }"
+    },
+    {
+      "publicPath": "security.egress.coverage",
+      "runtime": "host",
+      "kind": "leaf",
+      "currentShape": "coverage projection { status, registration, cooperative, automatic, observedAt }",
+      "targetPath": "security.egress.coverage",
+      "idiom": "selfDescription",
+      "migrationAction": null,
+      "shapeNote": "three-partition coverage { status, registration, cooperative, automatic, observedAt }; automatic keys are inventory-registered egress paths"
+    },
+    {
+      "publicPath": "security.egress.lease.release",
+      "runtime": "host",
+      "kind": "leaf",
+      "currentShape": "egress lease give-back verb (release(handle); idempotent; stale handle yields typed code conflict)",
+      "targetPath": "security.egress.lease.release",
+      "idiom": "coordination",
+      "migrationAction": null,
+      "shapeNote": "give-back verb for the coordination lease; idempotent; stale handle typed conflict"
     },
     {
       "publicPath": "sessions.get",
@@ -3971,7 +4001,7 @@
   },
   "unresolvedGaps": [],
   "gapResolution": {
-    "note": "All leaves above were resolved from implementation facts (disabled/conditional surface mirrors, composition code, and per-domain slice modules). Three capability gaps are carried into the capability matrix rather than resolved as active members: (1) the owner-scoped custom event publisher (events.define) is unavailable because the current runtime cannot enforce owner scope — it is neither a current nor a target leaf and is recorded as an unavailable/proposal capability only; (2) consultation-style entries (executions.recovery.consume, security.egress.check) are deleted and their capability conservation depends on automatic application evidence, otherwise they are recorded as gaps. The non-enumerable session-channel contract marker symbol on the channels surface is an internal facade/replacement contract marker, not a publicPath leaf; Wave 7 reconciliation treats it as internal. The tool-skill contract marker lives on the ctx.skillActivation service object, outside the pluginApi public face. Wave 2 validator note: passthrough-exception on migrate rows is judged by targetPath (services.*) rather than currentPath, matching the standard inventory table.",
+    "note": "All leaves above were resolved from implementation facts (disabled/conditional surface mirrors, composition code, and per-domain slice modules). The policy-enforcement-closure follow-up adds the cooperative events.define publisher and closes the egress/recovery conservation records with automatic enforcement evidence; the canonical registry is the current source for those states. The non-enumerable session-channel contract marker symbol on the channels surface is an internal facade/replacement contract marker, not a publicPath leaf; the tool-skill contract marker lives on the ctx.skillActivation service object, outside the pluginApi public face. The validator note: passthrough-exception on migrate rows is judged by targetPath (services.*) rather than currentPath, matching the standard inventory table.",
     "blockedConsumerVerification": "Consumer headless smoke and dev boot depend on the consumer repositories' node_modules/@deepseek-ai resolution path; if the official shared install tree remains unwritable, they are recorded as blocked per the M7 precedent."
   }
 }

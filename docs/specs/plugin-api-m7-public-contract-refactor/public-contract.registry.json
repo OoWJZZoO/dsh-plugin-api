@@ -3727,6 +3727,39 @@
       ]
     },
     {
+      "publicPath": "executions.recovery.coverage",
+      "targetPath": "executions.recovery.coverage",
+      "capability": "executions.recovery",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "execution authority",
+      "scope": "facade",
+      "resourceKey": "recovery policy path",
+      "identitySource": "caller plugin context",
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "none",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "recovery coverage projection { status, registration, cooperative, automatic, observedAt }",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
       "publicPath": "sessions.get",
       "targetPath": "sessions.get",
       "capability": "sessions",
@@ -9445,6 +9478,39 @@
       ]
     },
     {
+      "publicPath": "security.egress.coverage",
+      "targetPath": "security.egress.coverage",
+      "capability": "security.egress",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "security authority",
+      "scope": "facade",
+      "resourceKey": "egress policy path",
+      "identitySource": "caller plugin context",
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "none",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "egress coverage projection { status, registration, cooperative, automatic, observedAt }",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
       "publicPath": "security.egress.check",
       "targetPath": null,
       "capability": "security.egress removals",
@@ -9537,6 +9603,39 @@
       "reducer": "none",
       "currentShape": "lease handle returned by acquire",
       "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "security.egress.lease.release",
+      "targetPath": "security.egress.lease.release",
+      "capability": "security.egress.lease",
+      "kind": "leaf",
+      "idiom": "coordination",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "coordinated",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "security authority",
+      "scope": "facade",
+      "resourceKey": "resource id",
+      "identitySource": "lease handle possession checked against the lease authority",
+      "conflictRule": "fencing",
+      "lifecycle": "release is idempotent; a stale handle (superseded generation or expired lease) returns typed conflict and leaves the newer lease untouched",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "release-idempotent",
+      "retryLayer": null,
+      "availabilityShape": "availability(scope)",
+      "concurrency": "exclusive",
+      "reducer": "none",
+      "currentShape": "egress lease give-back verb (release(handle); idempotent; stale handle yields typed code conflict)",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -19029,7 +19128,8 @@
         "executions.recovery.capability.declare",
         "executions.recovery.evaluate",
         "executions.recovery.policy.register",
-        "executions.recovery.visibility.register"
+        "executions.recovery.visibility.register",
+        "executions.recovery.coverage"
       ],
       "targetPaths": [
         "executions.recovery.availability",
@@ -19037,7 +19137,8 @@
         "executions.recovery.evaluate",
         "executions.recovery.policy.register",
         "executions.recovery.visibility.register",
-        "services.recovery"
+        "services.recovery",
+        "executions.recovery.coverage"
       ],
       "status": "migrated",
       "qualifiers": [],
@@ -19749,10 +19850,12 @@
     {
       "capabilityCluster": "security.egress",
       "currentPaths": [
-        "security.egress.register"
+        "security.egress.register",
+        "security.egress.coverage"
       ],
       "targetPaths": [
-        "security.egress.register"
+        "security.egress.register",
+        "security.egress.coverage"
       ],
       "status": "retained",
       "qualifiers": [],
@@ -19784,11 +19887,13 @@
       "capabilityCluster": "security.egress.lease",
       "currentPaths": [
         "security.egress.lease.acquire",
-        "security.egress.lease.acquire.handle"
+        "security.egress.lease.acquire.handle",
+        "security.egress.lease.release"
       ],
       "targetPaths": [
         "security.egress.lease.acquire",
-        "security.egress.lease.acquire.handle"
+        "security.egress.lease.acquire.handle",
+        "security.egress.lease.release"
       ],
       "status": "retained",
       "qualifiers": [],

@@ -11,18 +11,18 @@
 | policyPath | 归类 | 合作型接口 | 验证引用 |
 |---|---|---|---|
 | `llm.requestTransforms` | automatic | `llm.prepareCall` / llm request path | `test/llm-input-policy.test.mjs`、既有 llm request 测试 |
-| `llm.admissionPolicies` | automatic | llm request path | `test/llm-input-policy.test.mjs`、`test/policy-authority-wave2.test.mjs` |
+| `llm.admissionPolicies` | automatic | llm request path | `test/llm-input-policy.test.mjs`、`test/policy-authority-contract.test.mjs` |
 | `llm.routing.policies` | automatic | `llm.routing` operations（`forExecution`/`current`/`observe`） | `test/model-route-policy.test.mjs`、既有 llm routing 测试 |
 | `llm.routing.health.circuitPolicy` | automatic | `llm.routing.health.get/history/observe` projections；`probe.register` | 既有 llm routing health 测试 |
 | `executions.visibility` | automatic | `executions.get/history/observe` with audience options | `test/execution-visibility` 系列 |
-| `executions.recovery.policy` | automatic（单次消费） | `executions.recovery.evaluate`（operation；调用方按返回 action 行事） | `test/policy-recovery-wave4.test.mjs`、`test/index-recovery-policy.test.mjs` |
+| `executions.recovery.policy` | automatic（单次消费） | `executions.recovery.evaluate`（operation；调用方按返回 action 行事） | `test/recovery-single-consumption.test.mjs`、`test/index-recovery-policy.test.mjs` |
 | `executions.recovery.visibility` | automatic（投影） | recovery decision/history projection reads | 同上（wave4 recovery-consumption tests） |
 | `sessions.channels.auth` | automatic | `sessions.channels` operations | `test/session-channel-auth` 系列 |
 | `tools.restrict` / `tools.guard` | automatic | `tools.execute` 及相关 domain operations | 既有 tools-guard 测试 |
 | `skills.activation.policy` | automatic | `skills.activation.activate` 及相关 operations | `test/skill-activation-facade.test.mjs` |
 | `prompts.provenance.policy` | automatic | `prompts.provenance.compose` 与 projection reads | `test/context-provenance` 系列 |
 | `security.policy` / `security.redaction` | automatic | 对应 domain operations 与 projections | `test/security-policy*.test.mjs` |
-| `security.egress` | automatic（受支持官方路径） | `security.egress.lease.acquire` / `release`（coordination） | `test/security-policy-egress.test.mjs`、`test/policy-authority-wave2.test.mjs`、`packages/llm/test/apply.test.mjs`、`packages/mcp/test/connection.test.mjs` |
+| `security.egress` | automatic（受支持官方路径） | `security.egress.lease.acquire` / `release`（coordination） | `test/security-policy-egress.test.mjs`、`test/policy-authority-contract.test.mjs`、`packages/llm/test/apply.test.mjs`、`packages/mcp/test/connection.test.mjs` |
 
 ## 2. 自动官方路径与 coverage 证据（enforcementMatrix）
 
@@ -30,7 +30,7 @@
 |---|---|---|
 | `llm/modelDiscovery` | automatic | `packages/llm/test/apply.test.mjs`：egress gate 挂接，`discoverModels` 在请求前求值 `request.baseURL` |
 | `mcp/stdio`、`mcp/http` | automatic | `packages/mcp/test/connection.test.mjs`：egress gate deny 阻断 connect，allow 放行；首次连接、每次重连、潜在新出站目标 transport 请求前求值 |
-| `recovery/model` | automatic | `test/policy-recovery-wave4.test.mjs`：agent/model 请求失败在 `agent/request-error` 边界归一化、求值并应用 retry/fallback/abort/surface，单窗口至多消费一次，官方默认路径结果归一化进同一决定窗口不二次重试 |
+| `recovery/model` | automatic | `test/recovery-single-consumption.test.mjs`：agent/model 请求失败在 `agent/request-error` 边界归一化、求值并应用 retry/fallback/abort/surface，单窗口至多消费一次，官方默认路径结果归一化进同一决定窗口不二次重试 |
 | `recovery/tool` | automatic | 同上：agent-loop 调度器把 dispatch/preparation 失败路由到同一 recovery authority，终态 step 结果提交前应用决定 |
 | `recovery/task`、`recovery/transaction` | automatic | 同上：task settlement 与 workspace transaction recovery 在终态提交、retry 或 rollback 前调用同一私有 authority |
 | `recovery-visibility` | automatic | 自动消费证据同 wave4 测试；投影由 recovery owner 驱动 |

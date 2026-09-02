@@ -1,9 +1,8 @@
 /**
- * Pure validator for the policy inventory / enforcement matrix of the
- * plugin-api-policy-enforcement-closure feature.
+ * Pure validator for the policy inventory / enforcement matrix artifact.
  *
  * Zero harness dependencies. Cross-checks the build/test-time inventory
- * artifact (`docs/specs/plugin-api-policy-enforcement-closure/policy-inventory.json`)
+ * artifact (the `policy-inventory.json` file in its spec directory)
  * against the canonical public contract registry. It fails on:
  *   - an unregistered policy member (registry policy leaf absent from the inventory);
  *   - an undeclared official protected path (inventory automatic point not in the matrix);
@@ -36,8 +35,8 @@ const COVERAGE_STATUSES = ['automatic', 'planned-automatic', 'cooperative-only',
 /**
  * Paths that are common, materially security/correctness-relevant, or already
  * owned by an approved replacement component must never be recorded as an
- * edge-path gap (the feature requirement 10 edge-gap rejection rule). Kept in
- * sync with the approved replacement inventory of this feature.
+ * edge-path gap (the edge-gap rejection rule). Kept in
+ * sync with the approved replacement inventory.
  */
 const DENY_GAP_PREFIXES = [
   'security.egress', 'executions.recovery', 'events.define',
@@ -260,7 +259,7 @@ export function validatePolicyInventory(registry, inventory) {
   // -------------------------------------------------------------------------
   // Registry/inventory contradictions (no silent single-source selection)
   // -------------------------------------------------------------------------
-  // A registry gap cluster that this feature plans to close must not already be
+  // A registry gap cluster that this work plans to close must not already be
   // claimed automatic in the inventory.
   for (const row of capabilityMatrix) {
     if (row?.status === 'gap') {

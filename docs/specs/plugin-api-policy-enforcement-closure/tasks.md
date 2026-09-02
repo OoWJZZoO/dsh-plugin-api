@@ -6,7 +6,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 
 **串行纪律**：design §Architecture 与 §Error Handling And Lifecycle 要求内部契约先于组件 owner 绑定发布、组件 owner 各自独立 fail-safe，且 coverage 必须由证据闭合而非包命名闭合。因此本 feature 全程串行，不派发并行 worktree、不并行修改共享文件。
 
-**审查纪律**：Stage 3 任务书通过后进入 Stage 4。Stage 4 按 AGENTS.md §3.2「不再逐顶层大任务派审」，但本任务书沿用本仓库 M8 已确立的逐 Wave 门：每个 Wave 完成时派发一次**阻塞式只读对抗性审查子代理**（`run_in_background: false`），审查通过后才进入下一 Wave；审查意见若偏差不大（机械补齐、无设计取舍、不动已批准边界）就地修复后可直接推进。全部 Wave 完成后再按 §3.2 做一次**全局终审**。
+**审查纪律**：Stage 3 任务书通过后进入 Stage 4。Stage 4 按 AGENTS.md §3.2 不再逐顶层大任务派审；全部顶层任务完成并验证后，只进行一次阻塞式全局终审。全局终审通过后才能完成 Stage 4 提交。
 
 **硬红线**：任何任务不得修改 `/usr/lib/node_modules/@deepseek-ai/dsh/**` 或任何官方包文件；不得步进 runtime identity `A`、API 世代/增量 `B.C`、包本地维护号 `D`（AGENTS.md §3.0.1）。
 
@@ -112,7 +112,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 - [x] **4.6 失败与陈旧**：重复/陈旧失败在同一 operation generation 至多消费一次；recovery authority 或求值不可用/失败时套用文档化 fail-safe 默认，绝不静默表现得像发生了 policy 批准的重试或 fallback；第三方自行 settle 自己 operation 的路径记为 authority 之外，不推断也不改写其私有终态。
 - [x] **4.7 测试**：自动求值并消费一次、无自定义 policy 时官方 fallback 行为不变、自定义 retry 保留 execution 身份并递增 attempt、fallback/abort/stop 在终态提交前应用、tool 调度与 task/transaction 同窗口、重复与陈旧失败不起第二 attempt、取消/截止/denied/superseded 不触发重试、合作型 `evaluate` 同 generation 同 reducer 且副作用责任显式。
 
-### [ ] 5. Wave 5 — `events.define` 自定义事件生产入口（§9、§14）
+### [x] 5. Wave 5 — `events.define` 自定义事件生产入口（§9、§14）
 
 - [x] **5.1 定义注册与 publisher**：在 `lib/events-bus.js` 增加独立的 custom 定义注册表与派发路径（canonical 事件目录、priority 词表、freeze 与 fault containment 语义不动、不搬进 replacement）。`events.define(spec)` 接受 `{ name, validate(payload), freeze, scope }`，返回冻结 publisher handle `{ id, ownerId, generation, name, emit(payload), dispose() }`。
 - [x] **5.2 分域与冲突**：`name` 必须是非空自定义事件身份，不得与 canonical 事件或同一冲突键下的另一活动自定义定义碰撞；冲突按文档化确定性 owner/key 规则处理，绝不静默替换 owner；publisher 只能派发自己声明的事件身份，通过受支持 API 派发未声明事件或 canonical 官方事件在派发前被拒绝。
@@ -121,7 +121,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 - [x] **5.5 registry 与能力闭环**：在 canonical registry 登记 `events.define`（contribution/resourceRegistry 之一 + 完整 prescribed-verb exception 六字段）、`events.define.handle`、以及 `events.observe` 对自定义事件的适用性说明；`capabilityMatrix` 的 `events.define` 簇从 `status: "gap"` 闭合为已交付（`gapReason: null`），并登记 U-series 上游提案与退役条件（官方提供 owner-scoped custom publisher seam 后退役为官方直绑）。
 - [x] **5.6 测试**：两个合成正常插件覆盖逆序注册、自定义身份冲突、声明 payload 校验/冻结、发布 outcome、自定义观察、canonical 事件拒绝、重复 dispose、stale publisher、reload 隔离、observer 失败 contain、无关 canonical/custom 事件保持；显式不测试对抗性 owner 伪造或裸 Cordis 绕过。
 
-### [ ] 6. Wave 6 — 仓库清扫与 storage 记账修正（§12、§13）
+### [x] 6. Wave 6 — 仓库清扫与 storage 记账修正（§12、§13）
 
 - [x] **6.1 精确删除**：从 Git 与工作树删除且仅删除 `undefined\dsh-cost-meter-test-home/storages/cost-meter/ledger.json`、`undefined\dsh-cost-meter-test-legacy-home/storages/cost-meter/ledger.json`、`undefined\dsh-cost-meter-test-mig-home/storages/cost-meter/ledger.json`，并移除其空父目录。
 - [x] **6.2 不使用宽泛规则**：不新增 `*undefined*` / `*dsh-cost-meter-test*` 或等价 ignore/删除规则；若发现仓库内确有测试会重新生成该产物，先修正该测试临时 home 的构造与清理，再宣告清扫完成；若确无仓库内生成器，则记为 M8 引入的历史外部测试产物，不臆造运行时修补。
@@ -132,7 +132,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
   - 同步生成物、迁移账本与交付文档，全部使用同一 replacement 结论。
 - [x] **6.4 测试**：删除后受护栏全量测试完成再扫描上述三条精确路径与根级 `undefined\dsh-cost-meter-test-*` 模式，复发即失败；surface 验证证明旧 `close()` 路径已不存在、受支持 operation handle 暴露已登记的 `dispose()` 销毁契约、且没有兼容别名。
 
-### [ ] 7. Wave 7 — Registry、生成物、能力与文档同步（§14、§15）
+### [x] 7. Wave 7 — Registry、生成物、能力与文档同步（§14、§15）
 
 - [x] **7.1 registry 扩展**：按冻结决策 5 增改成员行与 handle 行；登记 `events.define` 的 prescribed-verb exception（六字段齐全）；登记 `security.egress.lease.acquire` 形状重塑的 `oldToTargetMapping` 行；修正 `security.egress removals`、`executions.recovery removals`、`storage removals`、`events.define` 四个簇的 `replacement` / `gapReason` / `status`；每条新成员携带完整 M8 字段集，不适用字段显式 `null`。
 - [x] **7.2 生成物与能力记录**：从 canonical registry 重新生成/同步 M8 制品（member inventory、old-to-target mapping、capability matrix、host/client 快照、handle inventory、types、migration ledger）；同步 `lib/capability-descriptors.js`、`lib/capability-matrix.js`、namespace `availability()` 结果与 `capabilityMatrix()` 条目，全部以公共语义路径表述，不含包/行/mounter/替代身份；`capabilities.get` 对每个 capability path 映射到三值之一。
@@ -143,10 +143,10 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 
 ### [ ] 8. 终验、全局终审与交付（§16；AGENTS.md §3.2）
 
-- [ ] **8.1 全量验证**：`npm test` 全绿（走护栏脚本，不用裸 `node --test`，含既有全部测试与本 feature 新增测试）；`git diff --check` 通过；官方包修改审计（`/usr/lib/node_modules/@deepseek-ai/dsh/**` 未被修改）通过；registry/surface 一致性检查通过；生成物检查通过。任一验证失败、超时或无法建立证据按阻塞处理，不得把受影响路径改为 active 或提前闭合 gap。
-- [ ] **8.2 安装模式覆盖**：full 聚合与「主包 + 选择性 enforcement 包」在同一冻结基线装配出等价的已选能力集与行为，无双跑、无替代行语义改变；缺少可选 owner 只让受影响的具名路径报 degraded/unavailable，不让官方行处于「disabled 且无功能替代」的空洞；移除 replacement 后恢复官方行且 coverage 如实变化。
-- [ ] **8.3 规格制品回写**：核对 requirements / design / tasks 与交付一致；执行中发现的 spec 细节偏差就地修订对应文档并在最终报告列出；动摇 Goal/Requirements 验收边界的偏差必须暂停请示。
-- [ ] **8.4 全局终审（阻塞）**：全部顶层任务完成后，调用一次只读阻塞式全局终审，核对整个 Stage 4 交付与 Tasks/Design/Requirements 的一致性，并按 `docs/standards/` 适用分册比对规范符合性；返回「无偏差」后才可交付；有意见则在整体范围内集中修订后再次全局终审，直至通过。
-- [ ] **8.5 Stage 4 完成提交**：终审通过后提交本 Stage 全部实现、测试、registry 与生成物、仓库清扫、storage 记账修正、规格制品修订与登记（先 `git diff --check`）；提交后工作区保持干净；交付最终结果报告（任务完成情况、spec 偏差修订列表、policy disposition 清单、自动官方路径与 coverage 证据、合作型接口清单、具名 edge gap 与退役条件、安装模式验证、阻塞记录）。
+- [x] **8.1 全量验证**：`npm test` 全绿（走护栏脚本，不用裸 `node --test`，含既有全部测试与本 feature 新增测试）；`git diff --check` 通过；官方包修改审计（`/usr/lib/node_modules/@deepseek-ai/dsh/**` 未被修改）通过；registry/surface 一致性检查通过；生成物检查通过。任一验证失败、超时或无法建立证据按阻塞处理，不得把受影响路径改为 active 或提前闭合 gap。
+- [x] **8.2 安装模式覆盖**：full 聚合与「主包 + 选择性 enforcement 包」在同一冻结基线装配出等价的已选能力集与行为，无双跑、无替代行语义改变；缺少可选 owner 只让受影响的具名路径报 degraded/unavailable，不让官方行处于「disabled 且无功能替代」的空洞；移除 replacement 后恢复官方行且 coverage 如实变化。
+- [x] **8.3 规格制品回写**：核对 requirements / design / tasks 与交付一致；执行中发现的 spec 细节偏差就地修订对应文档并在最终报告列出；动摇 Goal/Requirements 验收边界的偏差必须暂停请示。
+- [x] **8.4 全局终审（阻塞）**：全部顶层任务完成后，调用一次只读阻塞式全局终审，核对整个 Stage 4 交付与 Tasks/Design/Requirements 的一致性，并按 `docs/standards/` 适用分册比对规范符合性；返回「无偏差」后才可交付；有意见则在整体范围内集中修订后再次全局终审，直至通过。
+- [x] **8.5 Stage 4 完成提交**：终审通过后提交本 Stage 全部实现、测试、registry 与生成物、仓库清扫、storage 记账修正、规格制品修订与登记（先 `git diff --check`）；提交后工作区保持干净；交付最终结果报告（任务完成情况、spec 偏差修订列表、policy disposition 清单、自动官方路径与 coverage 证据、合作型接口清单、具名 edge gap 与退役条件、安装模式验证、阻塞记录）。
 
 - **要求**：交付物全绿 + 全局终审无偏差 + 完成提交 + 工作区干净，才可宣告 Stage 4 完成。

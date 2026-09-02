@@ -46,8 +46,8 @@ const POLICY_AUTHORITY = Symbol.for('dsh-plugin-api.policyAuthority')
 
 /**
  * Read the internal egress gate from the root context. A missing or malformed
- * contract yields null (the replacement reports degraded coverage and does not
- * block the official path); a deny blocks the outbound side effect (fail-closed).
+ * contract yields a fail-closed deny gate; a policy deny blocks the outbound
+ * side effect before the provider-owned request path.
  */
 function readEgressGate(ctx) {
   try {
@@ -62,9 +62,9 @@ function readEgressGate(ctx) {
       }
     }
   } catch {
-    // fall through to a fail-closed null gate
+    // fall through to a fail-closed deny gate
   }
-  return null
+  return () => ({ ok: false, outcome: 'deny', reason: 'egress policy authority unavailable' })
 }
 
 const require = createRequire(import.meta.url)
@@ -237,7 +237,7 @@ export function createLlmApply(overrides = {}) {
         try {
           runtime._egressGate = readEgressGate(ctx)
         } catch {
-          // a missing gate degrades to no interception (selective-install semantics)
+          // a missing gate fails closed
         }
         const attached = attachRegistry(runtime, { logger: ctx?.logger })
         let released = false

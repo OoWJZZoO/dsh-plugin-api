@@ -1,5 +1,7 @@
 # Stage 3 — Tasks
 
+> 公共契约现状注（2026-09-02）：本文第 3.7 条记录的是 M8 当时尚未交付 `events.define` 的边界；后续 policy-enforcement-closure 已交付合作型 publisher handle。本文已批准的 M8 验收边界不变，现行状态以 canonical registry 及后续交付报告为准。
+
 ## Status
 
 SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `design.md`（Stage 0–2 已获用户确认：goal / requirements / design 分别于 2026-08-31 批准，design 在 SPEC2 契约细化后于同日获批准）。本文按 AGENTS.md §3.2 以对抗性审查为门；审查返回「无偏差」后直接进入 Stage 4，不设用户确认门。

@@ -58,6 +58,7 @@ function makeHarness({ connectError = null } = {}) {
     },
   }
   const hooks = {
+    gate: () => ({ ok: true, outcome: 'allow' }),
     onPublish: (payload) => published.push(payload),
     createClient: () => {
       const { client } = makeFakeClient({ connectError })
@@ -253,10 +254,15 @@ test('GENERATION_CLOSE_TIMEOUT_MS is a bounded positive constant', () => {
   assert.ok(Number.isFinite(GENERATION_CLOSE_TIMEOUT_MS) && GENERATION_CLOSE_TIMEOUT_MS > 0)
 })
 
-test('egress gate deny fails closed before any transport connection', async () => {
+test('egress gate deny fails closed before transport creation or connection', async () => {
   const { published, hooks } = makeHarness()
+  let createTransportCalls = 0
   let connectCalls = 0
   hooks.gate = () => ({ ok: false, outcome: 'deny', reason: 'blocked by egress policy' })
+  hooks.createTransport = () => {
+    createTransportCalls += 1
+    throw new Error('transport creation must not run after deny')
+  }
   hooks.createClient = () => {
     const { client } = makeFakeClient()
     const originalConnect = client.connect
@@ -277,6 +283,7 @@ test('egress gate deny fails closed before any transport connection', async () =
   const handle = startConnection(ctx, baseConfig, policy, hooks)
   const ready = await handle.ready
   assert.ok(ready.error, 'a denied connection surfaces an initial error')
+  assert.equal(createTransportCalls, 0, 'transport creation is never invoked on deny')
   assert.equal(connectCalls, 0, 'the transport connect is never invoked on deny')
   const denied = published.filter((p) => p.reason?.code === 'egress-denied')
   assert.ok(denied.length >= 1, 'egress-denied is published')

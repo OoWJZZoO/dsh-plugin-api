@@ -15,13 +15,13 @@
 
 | 领域 | 组合要求 |
 |---|---|
-| `events` | 区分 observe-only consumer 与 producer authority；canonical system event 只能由其 owner 派发；关键决策不用裸 waterfall 代替领域 reducer。第三方自定义事件的 owner-scoped `define` / publisher handle 当前未提供（面成员为 `catalog / on / once / emit / serial / parallel / bail / waterfall`） |
+| `events` | 区分 observe-only consumer 与 producer authority；canonical system event 只能由其 owner 派发；关键决策不用裸 waterfall 代替领域 reducer。第三方自定义事件通过合作型 `define` / publisher handle 发布；不提供对抗性同进程身份隔离，主动绕过门面在保证范围外 |
 | `llm.requestTransforms` | owner-scoped、确定的 priority/注册顺序、声明改写范围、at-most-once/convergence；同字段冲突有明确规则 |
 | `llm.admissionPolicies` | 使用固定 decision algebra；deny/ask/allow 等优先级不得由监听顺序隐式决定 |
 | `llm.adapters` | owner/id/generation 隔离；稳定链序；卸载和 topology reconcile 不影响其他 owner |
 | `llm.routing` | 查询、policy、candidate、health、decision 各自 owner 清晰；attempt 内 decision immutable；policy 冲突由领域 reducer 处理 |
 | `agents.providers` | provider key 多 owner 隔离；真正 singleton factory 必须 claim 或由门面 multiplex |
-| `executions` | projection 只读；execution identity 独立；recovery 只提供建议，消费动作有单一 authority |
+| `executions` | projection 只读；execution identity 独立；recovery policy 由单一 authority 自动消费，合作型调用使用独立的 recovery operation |
 | `sessions.branches` | branch/plan/commit identity、generation 和 CAS 明确；直接 session mutation 不得静默破坏 branch 保证 |
 | `sessions.channels` | channel/device/session scope、generation possession 和认证 owner 清晰；注册链遵守声明的固定顺序 |
 | `tools` | tool 名称/key 冲突显式；注册 owner 化；restrict/guard 使用固定组合代数；执行使用 scope 和 execution identity |

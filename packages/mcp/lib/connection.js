@@ -42,9 +42,9 @@ function readEgressGate(ctx) {
       }
     }
   } catch {
-    // fall through to a fail-closed null gate
+    // fall through to a fail-closed deny gate
   }
-  return null
+  return () => ({ ok: false, outcome: 'deny', reason: 'egress policy authority unavailable' })
 }
 
 function boundedReason(decision) {
@@ -123,7 +123,7 @@ export function resolveReconnectPolicy(config, path) {
  * @returns {PromiseLike<{ ready: Promise<object>, dispose: () => Promise<void> }>}
  */
 export function startConnection(ctx, config, policy, hooks = {}) {
-  const { onPublish, createClient = defaultCreateClient, gate = readEgressGate(ctx) } = hooks
+  const { onPublish, createClient = defaultCreateClient, createTransport: makeTransport = createTransport, gate = readEgressGate(ctx) } = hooks
   const label = `mcp-client(${config.serverName})`
   const transport = transportKind(config)
   const opts = {
@@ -327,7 +327,6 @@ export function startConnection(ctx, config, policy, hooks = {}) {
     // Egress gate: fail-closed before any transport creation or connection
     // establishment. A missing contract or a deny blocks the outbound side
     // effect entirely; reconnect re-evaluates each attempt.
-    const runtimeTransport = createTransport(config)
     if (gate) {
       const target = transportTarget(config)
       let decision
@@ -354,6 +353,21 @@ export function startConnection(ctx, config, policy, hooks = {}) {
         if (!disposed) scheduleReconnect()
         return
       }
+    }
+    let runtimeTransport
+    try {
+      runtimeTransport = makeTransport(config, { gate })
+    } catch (error) {
+      if (isCurrent(generation)) ctx.logger.warn(`${label}: transport creation failed: ${String(error)}`)
+      try {
+        await generation.close()
+      } catch {
+        // best-effort close
+      }
+      attemptSettled = true
+      if (!isCurrent(generation)) return
+      generationDown(generation)
+      return
     }
     try {
       await generation.connect(runtimeTransport)

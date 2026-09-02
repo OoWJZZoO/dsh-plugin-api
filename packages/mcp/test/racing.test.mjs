@@ -14,7 +14,13 @@ function baseCtx() {
 }
 
 function wire(shared, rootCtx) {
-  return { onPublish: (p) => applyPayload(shared, rootCtx, p) }
+  return {
+    // These tests exercise the connection supervisor machinery (serialization,
+    // generation staleness, re-sync), not egress admission; an explicit allow
+    // gate keeps the fail-closed missing-contract default out of the way.
+    gate: () => ({ ok: true, outcome: 'allow' }),
+    onPublish: (p) => applyPayload(shared, rootCtx, p),
+  }
 }
 
 const baseConfig = {

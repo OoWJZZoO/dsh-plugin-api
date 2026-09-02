@@ -50,6 +50,7 @@ function integrate({ connectError = null, listError = null } = {}) {
     },
   }
   const hooks = {
+    gate: () => ({ ok: true, outcome: 'allow' }),
     onPublish: (payload) => applyPayload(shared, rootCtx, payload),
     createClient: () => {
       const { client } = makeFakeClient({ connectError, listError })
@@ -134,6 +135,7 @@ test('lifecycle: one broken server does not affect an independent available serv
       tools: { register: () => () => {} },
     }
     const hooks = {
+      gate: () => ({ ok: true, outcome: 'allow' }),
       onPublish: (p) => applyPayload(shared, rootCtx, p),
       createClient: () => {
         const { client } = makeFakeClient({ connectError })

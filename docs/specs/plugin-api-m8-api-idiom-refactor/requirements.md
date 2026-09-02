@@ -1,5 +1,7 @@
 # Stage 1 — Requirements
 
+> 公共契约现状注（2026-09-02）：本文关于自定义事件 publisher 在 runtime 不可用时的要求属于 M8 历史验收边界；后续 policy-enforcement-closure 已在不提供对抗性同进程隔离的前提下交付合作型入口。本文已批准的验收边界不变，现行状态以 canonical registry 及后续交付报告为准。
+
 ## Introduction
 
 `plugin-api-m8-api-idiom-refactor` 将 M7 冻结的 `dsh-plugin-api` host/client 公共 API 迁移到 `docs/standards/refactor/` 规定的八个 API idiom：`projection`、`policy`、`mutation`、`operation`、`contribution`、`resourceRegistry`、`coordination` 和 `selfDescription`。

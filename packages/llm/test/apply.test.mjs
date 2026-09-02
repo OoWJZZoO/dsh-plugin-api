@@ -157,7 +157,7 @@ test('apply attaches the egress gate when the policy authority contract is prese
   assert.equal(admitted[0].context.component, 'llm/modelDiscovery')
 })
 
-test('apply leaves the egress gate null when the contract is absent (selective-install semantics)', () => {
+test('apply installs a fail-closed egress gate when the contract is absent', () => {
   const apply = createLlmApply({
     ...makeVersionReaders(),
     forkedRuntime: FakeForkedRuntime,
@@ -168,7 +168,11 @@ test('apply leaves the egress gate null when the contract is absent (selective-i
   })
   apply(ctx)
   const runtime = services.get('llm')
-  assert.equal(runtime._egressGate, null, 'no contract means no interception and degraded coverage')
+  assert.equal(typeof runtime._egressGate, 'function', 'missing authority installs a gate')
+  assert.deepEqual(
+    runtime._egressGate({ kind: 'http', destination: 'https://models.example' }, 'llm/modelDiscovery'),
+    { ok: false, outcome: 'deny', reason: 'egress policy authority unavailable' },
+  )
 })
 
 test('parseFullVersion and fullVersionContractsMatch follow the main facade rule', () => {

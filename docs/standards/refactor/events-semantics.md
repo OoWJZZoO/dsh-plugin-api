@@ -42,7 +42,7 @@
 
 - **订阅权与生产权分离**：`observe` 是 additive consumer 面；canonical system event 的 `emit / serial / parallel / bail / waterfall` 只授予该事件的 producer authority（`../composition-and-authority.md` §8）。
 - 第三方自定义事件应当通过 owner-scoped `events.define` 取得能力受限的 publisher handle，而不是依赖一个可派发任意系统事件名的全局入口。
-- **当前事实**：`events` 面当前没有 owner-scoped `define` / publisher handle，因此第三方自定义事件目前没有受支持的派发入口。本目录要求补齐该入口；在补齐前不得把它描述为已有能力。
+- **当前事实**：`events.define(spec)` 已提供合作型、能力受限的自定义 publisher handle；owner 归因在可追踪调用上下文存在时绑定真实 owner，不提供对抗性同进程身份隔离，主动绕过门面仍在保证范围外。该入口不得派发任意 canonical 事件。
 
 ## 4. decision 语义的事件归入 policy
 

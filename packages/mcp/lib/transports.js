@@ -26,7 +26,7 @@ export function buildChildEnv(extra) {
  * @param {object} config - Resolved plugin config discriminated on `transport`.
  * @returns {import('@modelcontextprotocol/sdk/types.js').Transport} stdio or Streamable HTTP
  */
-export function createTransport(config) {
+export function createTransport(config, { gate } = {}) {
   switch (config.transport) {
     case 'stdio':
       return new StdioClientTransport({
@@ -35,10 +35,31 @@ export function createTransport(config) {
         env: buildChildEnv(config.env),
         cwd: config.cwd,
       })
-    case 'streamable-http':
+    case 'streamable-http': {
+      const fetchWithGate = typeof gate === 'function'
+        ? async (input, init) => {
+          const destination = input instanceof URL
+            ? input.toString()
+            : typeof input === 'string'
+              ? input
+              : input?.url
+          let decision
+          try {
+            decision = gate({ kind: 'http', destination }, 'mcp/http')
+          } catch {
+            decision = { ok: false, outcome: 'deny', reason: 'egress policy evaluation failed' }
+          }
+          if (!decision || decision.ok !== true || decision.outcome !== 'allow') {
+            throw new Error('egress policy denied MCP HTTP request')
+          }
+          return fetch(input, init)
+        }
+        : undefined
       return new StreamableHTTPClientTransport(new URL(config.url), {
         requestInit: { headers: config.headers },
+        ...(fetchWithGate ? { fetch: fetchWithGate } : {}),
       })
+    }
   }
 }
 
