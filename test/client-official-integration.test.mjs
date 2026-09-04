@@ -154,7 +154,7 @@ test('joined client surface exposes exact services, event, and llm faces with id
   const passthroughNames = CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => d.serviceName)
   assert.deepEqual(Object.keys(api.services), ['isActive', ...SERVICE_NAMES, ...passthroughNames])
   assert.equal(api.services.isActive, true)
-  assert.deepEqual(Object.keys(api.events), ['isActive', 'observe'])
+  assert.deepEqual(Object.keys(api.events), ['observe'])
 
   for (const name of SERVICE_NAMES) {
     const face = api.services[name]
@@ -172,7 +172,6 @@ test('joined client surface exposes exact services, event, and llm faces with id
     }
   }
 
-  assert.equal(api.connection.isActive, true)
   assert.equal(typeof api.connection.get.describe, 'function')
   const llm = api.connection.api.llm
   assert.deepEqual(Object.keys(llm), ['providers', 'models', 'discoverModels'])
@@ -281,18 +280,20 @@ test('absent optional providers fail open: faces publish in disabled shape and t
   const llm = api.connection.api.llm
   assert.deepEqual(Object.keys(llm), ['providers', 'models', 'discoverModels'])
   assert.throws(() => llm.providers(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.connection')
-  assert.equal(api.connection.isActive, true, 'the existing connection face is independent of the llm face')
+  assert.equal(typeof api.connection.rpc.call, 'function', 'the existing connection face is independent of the llm face')
   dispose()
 })
 
-test('the joined facade keeps connection.isActive when the connection service is absent', () => {
+test('the joined facade degrades the connection face through its own path when the connection service is absent', () => {
   const { providers } = makeAllProviders()
   const artifact = loadClientBundle()
   const ctx = createCtx({ providers }) // no connection service
   const dispose = artifact.apply(ctx)
   const api = ctx.get('pluginApi')
 
-  assert.equal(api.connection.isActive, false, 'the existing connection face degrades through its own path')
+  assert.throws(() => api.connection.rpc.call('/api', 'probe', { args: [] }),
+    (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED',
+    'the existing connection face degrades through its own path')
   assert.throws(() => api.connection.get.describe(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'clientConnection')
   assert.throws(() => api.connection.api.llm.providers(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.connection')
   dispose()

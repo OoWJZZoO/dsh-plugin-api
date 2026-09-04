@@ -508,7 +508,7 @@ test('stale bind settlement is cleaned without publishing as current or touching
   handle.dispose()
   assert.equal(secondCleanup, 1)
   await tick()
-  assert.equal(lifecycle.api.isActive, true)
+  assert.equal(lifecycle.isActive, true)
 })
 
 test('slot and settings adapters retain official bind/inject ownership and clean their subscriptions', async () => {
@@ -628,7 +628,7 @@ test('listener, subscriber, disposer and diagnostic failures remain contained', 
   await tick()
   fixture.ctx.emit('connection/reset')
   await tick()
-  assert.equal(lifecycle.api.isActive, true)
+  assert.equal(lifecycle.isActive, true)
   assert.equal(first.availability().state, 'available')
   assert.equal(second.availability().state, 'available')
   assert.equal(typeof lifecycle.api.register(remoteRegistration('third', 'owner', () => () => {})).dispose, 'function')

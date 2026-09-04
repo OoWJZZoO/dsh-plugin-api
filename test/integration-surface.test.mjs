@@ -299,8 +299,7 @@ test('bundled client events: the four approved events with slim isActive/on face
     'connection/reset': 'connectionReset',
     'command/executed': 'commandExecuted',
   }
-  assert.deepEqual(Object.keys(events), ['isActive', 'observe'])
-  assert.equal(events.isActive, true)
+  assert.deepEqual(Object.keys(events), ['observe'])
   for (const { name, args } of CLIENT_EVENT_CONTRACTS) {
     assert.equal(typeof args, 'string', `event ${name} documents call args`)
     const off = events.observe(name, () => {})
@@ -318,7 +317,6 @@ test('bundled client connection: the nested llm face exposes its three approved 
   const dispose = artifact.apply(ctx)
   const connection = ctx.get('pluginApi').connection
 
-  assert.equal(connection.isActive, true)
   assert.equal(typeof connection.rpc.call, 'function')
   const llm = connection.api.llm
   assert.ok(llm, 'nested llm face stays mounted from the official connection leaf')

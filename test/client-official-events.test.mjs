@@ -49,7 +49,7 @@ test('client event facade exposes exact leaves and preserves argument identity a
     },
   })
   assert.deepEqual(Object.keys(result.api).sort(), [
-    'commandExecuted', 'connectionReset', 'dispose', 'isActive', 'localeChange', 'observe', 'on', 'themeChange',
+    'commandExecuted', 'connectionReset', 'dispose', 'localeChange', 'observe', 'on', 'themeChange',
   ])
 
   const first = {}

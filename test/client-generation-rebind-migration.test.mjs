@@ -111,7 +111,7 @@ test('migration-shaped settings, slot, and remote consumers use official lifecyc
   const disposeClient = artifact.apply(ctx)
   await settleAll()
   const api = ctx.get('pluginApi')
-  assert.equal(api.lifecycle.isActive, true, 'the lifecycle face is active under the direct client root')
+  assert.equal(api.capabilities.get('lifecycle').status, 'active', 'the lifecycle face is active under the direct client root')
   assert.equal(api.modules, undefined, 'migration consumer does not invent a client.modules face')
   assert.equal('dispose' in api.lifecycle, false, 'caller-facing lifecycle has no cross-owner global dispose')
 

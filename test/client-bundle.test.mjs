@@ -87,7 +87,7 @@ test('official client artifact registers, composes all client leaves, and suppor
   assert.equal(api[Symbol.for('@deepseek-ai/dsh-plugin-api/client-pluginApi')], true,
     'the published root carries the client brand symbol')
   assert.equal(api.codecValidateUnavailable, api.codecValidateUnavailable, 'one zod value is shared by the public bundle')
-  assert.equal(api.connection.isActive, true)
+  assert.equal(typeof api.connection.rpc.call, 'function')
   assert.equal(typeof api.connection.get.describe, 'function',
     'the bundled connection read accessor rides the registered connection.get path')
   assert.equal(typeof api.slots.observe, 'function')
@@ -172,7 +172,7 @@ function leafState(api) {
   for (const leaf of ['inputTriggers', 'commandUi', 'modelDirectories', 'conversation', 'conversationEvents', 'conversationViews', 'timer']) {
     state[leaf] = leafProbe(api, `client.${leaf}`)
   }
-  state.connection = api.connection.isActive
+  state.connection = probe(() => api.connection.rpc.call('/api', 'probe', { args: [] }))
   state.remoteContribution = probe(() => api.remotes.contribute({ package: 'probe', descriptors: [] }))
   state.settingsScope = api.settings.scope.isActive
   state.slots = probe(() => api.slots.contribute({ name: 'details' }))
@@ -234,6 +234,6 @@ test('malformed or throwing optional services also disable only the owning leaf'
   assert.ok(api)
   assert.equal(probe(() => api.slots.contribute({ name: 'details' })), false,
     'the slots face stays registered in its disabled shape when ctx.get throws')
-  assert.equal(api.connection.isActive, true)
+  assert.equal(typeof api.connection.rpc.call, 'function')
   dispose()
 })

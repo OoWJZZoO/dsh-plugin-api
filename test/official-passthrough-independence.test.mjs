@@ -84,7 +84,7 @@ async function observeClientFaces(bundle, degrade) {
   const entriesAfterDispose = listSlots('details')
   const live = {
     mounterNames: bundle.CLIENT_MOUNTERS === undefined ? undefined : [...bundle.CLIENT_MOUNTERS],
-    connectionIsActive: face.connection.isActive,
+    connectionCall: typeof face.connection.rpc?.call,
     slotsMembers: [['register', 'contribute'], ['inject', 'contribute'], ['entries', 'list'], ['subscribe', 'observe']].map((pair) => pair.map((name) => typeof slots[name]).sort().join('/')),
     slotsEntriesIdentity: listSlots('details') === listSlots('details'),
     slotsRegistration: [entriesBeforeRegister, entriesAfterRegister, entriesAfterDispose, typeof removed],
@@ -140,7 +140,7 @@ test('client independence: the current artifact activates and forwards through t
   // The current era publishes members directly on pluginApi without the
   // features array; the pre-existing face observations (connection, slots,
   // codec) are preserved.
-  assert.equal(live.connectionIsActive, true)
+  assert.equal(live.connectionCall, 'function')
   assert.equal(live.slotsMembers.every((t) => t.split('/').some((v) => v === 'function')), true)
 
   const { ctx, loader, namespaces } = bootFixture()
@@ -279,6 +279,9 @@ const BRANCH_ADDED_FEATURES = ['security', 'execution', 'recovery', 'coordinatio
     const REMOVED_TOOLS_MEMBERS = ['routeOf']
     // Members removed by the public-surface subtraction wave (old paths gone).
     const CUTOVER_REMOVED_TOOLS_MEMBERS = ['presentAs', 'executionMode', 'toolAbortedError']
+    // The member-level isActive family was retired in favour of the namespace
+    // availability() member; the boundary-era host still exposes it.
+    const RETIRED_ISACTIVE_MEMBERS = ['isActive']
     // The migrate rows moved official members under services.<key>; the
     // boundary-era services namespace predates those keys.
     const MIGRATE_SERVICES_KEYS = ['llm', 'agents', 'sessions', 'settings', 'prompts', 'tools', 'recovery']
@@ -319,7 +322,8 @@ const BRANCH_ADDED_FEATURES = ['security', 'execution', 'recovery', 'coordinatio
         name !== 'assemble' && name !== 'isActive'
         && !['section', 'context', 'variable', 'tools', 'suppressRuntimeContext'].includes(name)),
       toolsMembers: boundary.face.toolsMembers.filter((name) =>
-        !REMOVED_TOOLS_MEMBERS.includes(name) && !CUTOVER_REMOVED_TOOLS_MEMBERS.includes(name) && name !== 'schemas'),
+        !REMOVED_TOOLS_MEMBERS.includes(name) && !CUTOVER_REMOVED_TOOLS_MEMBERS.includes(name)
+        && !RETIRED_ISACTIVE_MEMBERS.includes(name) && name !== 'schemas'),
     }
     assert.deepEqual(currentFace, boundaryFace, 'the current host must not alter any pre-existing host face')
     assert.deepEqual(current.lifecycle, boundary.lifecycle, 'host reapply/dispose/cleanup observations must be unchanged')

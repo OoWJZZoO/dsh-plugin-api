@@ -22,7 +22,7 @@ test('the root and all seven pending shells are observable synchronously while t
   assert.equal(typeof dispose, 'function')
   const api = ctx.get('pluginApi')
   assert.ok(api)
-  assert.equal(api.connection.isActive, true)
+  assert.equal(typeof api.connection.rpc.call, 'function')
   assert.equal(typeof api.slots.contribute, 'function')
   assert.equal(typeof api.slots.list, 'function')
   assert.equal(typeof api.slots.observe, 'function')

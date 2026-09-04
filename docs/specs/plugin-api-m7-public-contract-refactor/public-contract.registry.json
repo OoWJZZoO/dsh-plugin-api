@@ -914,7 +914,7 @@
     },
     {
       "publicPath": "llm.isActive",
-      "targetPath": "llm.isActive",
+      "targetPath": null,
       "capability": "llm",
       "kind": "leaf",
       "idiom": "selfDescription",
@@ -938,7 +938,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "getter boolean",
-      "migrationAction": "retain",
+      "migrationAction": "delete",
       "status": "removed",
       "verification": [
         "member-inventory",
@@ -2498,7 +2498,7 @@
     },
     {
       "publicPath": "agents.isActive",
-      "targetPath": "agents.isActive",
+      "targetPath": null,
       "capability": "agents",
       "kind": "leaf",
       "idiom": "selfDescription",
@@ -2522,7 +2522,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "getter boolean",
-      "migrationAction": "retain",
+      "migrationAction": "delete",
       "status": "removed",
       "verification": [
         "member-inventory",
@@ -2837,7 +2837,7 @@
     },
     {
       "publicPath": "agents.providers.isActive",
-      "targetPath": "agents.providers.isActive",
+      "targetPath": null,
       "capability": "agents.providers",
       "kind": "leaf",
       "idiom": "selfDescription",
@@ -2861,7 +2861,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "frozen boolean data property",
-      "migrationAction": "retain",
+      "migrationAction": "delete",
       "status": "removed",
       "verification": [
         "member-inventory",
@@ -6311,7 +6311,7 @@
     },
     {
       "publicPath": "tools.isActive",
-      "targetPath": "tools.isActive",
+      "targetPath": null,
       "capability": "tools",
       "kind": "leaf",
       "idiom": "selfDescription",
@@ -6335,7 +6335,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "getter boolean",
-      "migrationAction": "retain",
+      "migrationAction": "delete",
       "status": "removed",
       "verification": [
         "member-inventory",
@@ -6773,7 +6773,7 @@
     },
     {
       "publicPath": "tools.discovery.isActive",
-      "targetPath": "tools.discovery.isActive",
+      "targetPath": null,
       "capability": "tools.discovery",
       "kind": "leaf",
       "idiom": "selfDescription",
@@ -6797,7 +6797,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "getter boolean",
-      "migrationAction": "retain",
+      "migrationAction": "delete",
       "status": "removed",
       "verification": [
         "member-inventory",
@@ -7466,7 +7466,7 @@
     },
     {
       "publicPath": "prompts.isActive",
-      "targetPath": "prompts.isActive",
+      "targetPath": null,
       "capability": "prompts",
       "kind": "leaf",
       "idiom": "selfDescription",
@@ -7490,7 +7490,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "getter boolean",
-      "migrationAction": "retain",
+      "migrationAction": "delete",
       "status": "removed",
       "verification": [
         "member-inventory",
@@ -10304,7 +10304,7 @@
     },
     {
       "publicPath": "settings.isActive",
-      "targetPath": "settings.isActive",
+      "targetPath": null,
       "capability": "settings",
       "kind": "leaf",
       "idiom": "selfDescription",
@@ -10328,7 +10328,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "frozen boolean data property",
-      "migrationAction": "retain",
+      "migrationAction": "delete",
       "status": "removed",
       "verification": [
         "member-inventory",
@@ -11336,7 +11336,7 @@
     },
     {
       "publicPath": "storage.isActive",
-      "targetPath": "storage.isActive",
+      "targetPath": null,
       "capability": "storage",
       "kind": "leaf",
       "idiom": "selfDescription",
@@ -11360,7 +11360,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "getter boolean",
-      "migrationAction": "retain",
+      "migrationAction": "delete",
       "status": "removed",
       "verification": [
         "member-inventory",
@@ -11798,7 +11798,7 @@
     },
     {
       "publicPath": "connection.isActive",
-      "targetPath": "connection.isActive",
+      "targetPath": null,
       "capability": "client.connection",
       "kind": "leaf",
       "idiom": "selfDescription",
@@ -11822,7 +11822,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "getter boolean",
-      "migrationAction": "retain",
+      "migrationAction": "delete",
       "status": "removed",
       "verification": [
         "member-inventory",
@@ -11963,7 +11963,7 @@
     },
     {
       "publicPath": "events.isActive",
-      "targetPath": "events.isActive",
+      "targetPath": null,
       "capability": "client.events",
       "kind": "leaf",
       "idiom": "selfDescription",
@@ -11987,7 +11987,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "getter boolean",
-      "migrationAction": "retain",
+      "migrationAction": "delete",
       "status": "removed",
       "verification": [
         "member-inventory",
@@ -12161,7 +12161,7 @@
     },
     {
       "publicPath": "events.localeChange.isActive",
-      "targetPath": "events.localeChange.isActive",
+      "targetPath": null,
       "capability": "client.events",
       "kind": "leaf",
       "idiom": "selfDescription",
@@ -12185,7 +12185,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "official event face active state getter",
-      "migrationAction": "retain",
+      "migrationAction": "delete",
       "status": "removed",
       "verification": [
         "member-inventory",
@@ -12194,7 +12194,7 @@
     },
     {
       "publicPath": "events.themeChange.isActive",
-      "targetPath": "events.themeChange.isActive",
+      "targetPath": null,
       "capability": "client.events",
       "kind": "leaf",
       "idiom": "selfDescription",
@@ -12218,7 +12218,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "official event face active state getter",
-      "migrationAction": "retain",
+      "migrationAction": "delete",
       "status": "removed",
       "verification": [
         "member-inventory",
@@ -12227,7 +12227,7 @@
     },
     {
       "publicPath": "events.connectionReset.isActive",
-      "targetPath": "events.connectionReset.isActive",
+      "targetPath": null,
       "capability": "client.events",
       "kind": "leaf",
       "idiom": "selfDescription",
@@ -12251,7 +12251,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "official event face active state getter",
-      "migrationAction": "retain",
+      "migrationAction": "delete",
       "status": "removed",
       "verification": [
         "member-inventory",
@@ -12260,7 +12260,7 @@
     },
     {
       "publicPath": "events.commandExecuted.isActive",
-      "targetPath": "events.commandExecuted.isActive",
+      "targetPath": null,
       "capability": "client.events",
       "kind": "leaf",
       "idiom": "selfDescription",
@@ -12284,7 +12284,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "official event face active state getter",
-      "migrationAction": "retain",
+      "migrationAction": "delete",
       "status": "removed",
       "verification": [
         "member-inventory",
@@ -12689,7 +12689,7 @@
     },
     {
       "publicPath": "lifecycle.isActive",
-      "targetPath": "lifecycle.isActive",
+      "targetPath": null,
       "capability": "client.lifecycle",
       "kind": "leaf",
       "idiom": "selfDescription",
@@ -12713,7 +12713,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "getter boolean",
-      "migrationAction": "retain",
+      "migrationAction": "delete",
       "status": "removed",
       "verification": [
         "member-inventory",
@@ -17453,9 +17453,9 @@
     },
     {
       "oldPath": "llm.isActive",
-      "targetPath": "llm.isActive",
-      "action": "retain",
-      "relation": null
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired with the member-level isActive family; status is reported by the namespace availability() member or the root capabilities query"
     },
     {
       "oldPath": "llm.modelInfo",
@@ -17573,9 +17573,9 @@
     },
     {
       "oldPath": "agents.isActive",
-      "targetPath": "agents.isActive",
-      "action": "retain",
-      "relation": null
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired with the member-level isActive family; status is reported by the namespace availability() member or the root capabilities query"
     },
     {
       "oldPath": "agents.get",
@@ -17615,9 +17615,9 @@
     },
     {
       "oldPath": "agents.providers.isActive",
-      "targetPath": "agents.providers.isActive",
-      "action": "retain",
-      "relation": null
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired with the member-level isActive family; status is reported by the namespace availability() member or the root capabilities query"
     },
     {
       "oldPath": "agents.availability",
@@ -17885,9 +17885,9 @@
     },
     {
       "oldPath": "tools.isActive",
-      "targetPath": "tools.isActive",
-      "action": "retain",
-      "relation": null
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired with the member-level isActive family; status is reported by the namespace availability() member or the root capabilities query"
     },
     {
       "oldPath": "tools.register",
@@ -17921,9 +17921,9 @@
     },
     {
       "oldPath": "tools.discovery.isActive",
-      "targetPath": "tools.discovery.isActive",
-      "action": "retain",
-      "relation": null
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired with the member-level isActive family; status is reported by the namespace availability() member or the root capabilities query"
     },
     {
       "oldPath": "tools.discovery.catalog.register",
@@ -17981,9 +17981,9 @@
     },
     {
       "oldPath": "prompts.isActive",
-      "targetPath": "prompts.isActive",
-      "action": "retain",
-      "relation": null
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired with the member-level isActive family; status is reported by the namespace availability() member or the root capabilities query"
     },
     {
       "oldPath": "prompts.render",
@@ -18317,9 +18317,9 @@
     },
     {
       "oldPath": "settings.isActive",
-      "targetPath": "settings.isActive",
-      "action": "retain",
-      "relation": null
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired with the member-level isActive family; status is reported by the namespace availability() member or the root capabilities query"
     },
     {
       "oldPath": "settings.register",
@@ -18425,9 +18425,9 @@
     },
     {
       "oldPath": "storage.isActive",
-      "targetPath": "storage.isActive",
-      "action": "retain",
-      "relation": null
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired with the member-level isActive family; status is reported by the namespace availability() member or the root capabilities query"
     },
     {
       "oldPath": "storage.open",
@@ -18455,9 +18455,9 @@
     },
     {
       "oldPath": "connection.isActive",
-      "targetPath": "connection.isActive",
-      "action": "retain",
-      "relation": null
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired with the member-level isActive family; status is reported by the namespace availability() member or the root capabilities query"
     },
     {
       "oldPath": "connection.rpc.call",
@@ -18473,33 +18473,33 @@
     },
     {
       "oldPath": "events.isActive",
-      "targetPath": "events.isActive",
-      "action": "retain",
-      "relation": null
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired with the member-level isActive family; status is reported by the namespace availability() member or the root capabilities query"
     },
     {
       "oldPath": "events.localeChange.isActive",
-      "targetPath": "events.localeChange.isActive",
-      "action": "retain",
-      "relation": "enumerated face leaf; face state stays selfDescription while subscription merges into observe"
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired with the member-level isActive family; status is reported by the namespace availability() member or the root capabilities query"
     },
     {
       "oldPath": "events.themeChange.isActive",
-      "targetPath": "events.themeChange.isActive",
-      "action": "retain",
-      "relation": null
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired with the member-level isActive family; status is reported by the namespace availability() member or the root capabilities query"
     },
     {
       "oldPath": "events.connectionReset.isActive",
-      "targetPath": "events.connectionReset.isActive",
-      "action": "retain",
-      "relation": null
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired with the member-level isActive family; status is reported by the namespace availability() member or the root capabilities query"
     },
     {
       "oldPath": "events.commandExecuted.isActive",
-      "targetPath": "events.commandExecuted.isActive",
-      "action": "retain",
-      "relation": null
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired with the member-level isActive family; status is reported by the namespace availability() member or the root capabilities query"
     },
     {
       "oldPath": "remotes.contribute.handle",
@@ -18509,9 +18509,9 @@
     },
     {
       "oldPath": "lifecycle.isActive",
-      "targetPath": "lifecycle.isActive",
-      "action": "retain",
-      "relation": "enumerated leaf; caller-bound"
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired with the member-level isActive family; status is reported by the namespace availability() member or the root capabilities query"
     },
     {
       "oldPath": "lifecycle.availability",
