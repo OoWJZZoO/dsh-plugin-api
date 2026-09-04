@@ -29,7 +29,9 @@
   },
   "scripts": {
     "test": "DBUS_SESSION_BUS_ADDRESS=${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/1000/bus} systemd-run --user --scope -p MemoryMax=4G npm run test:raw",
-    "test:raw": "node --test \"test/**/*.mjs\" \"packages/*/test/*.mjs\""
+    "test:raw": "node --test \"test/**/*.mjs\" \"packages/*/test/*.mjs\"",
+    "build:client": "node scripts/build-client-bundle.mjs",
+    "build:client:check": "node scripts/build-client-bundle.mjs --check"
   },
   "keywords": [
     "deepseek-harness",
@@ -41,6 +43,9 @@
   "license": "MIT",
   "dependencies": {
     "js-yaml": "^4.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
