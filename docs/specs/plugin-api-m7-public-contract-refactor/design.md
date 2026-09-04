@@ -646,7 +646,7 @@ The same matrix applies to client slot/remote/settings/lifecycle primitives wher
 | `refactor/public-api-shape.md` | Applicable | Domain-first host/client tree, plural resources, no aliases, capability path/event name separation, static services boundary, contract registry. |
 | `refactor/composition-and-authority.md` | Applicable | Five composition modes, owner-derived identity, claims/preflight, authority closure, producer gating, callback containment, typed failure vocabulary. |
 | `refactor/domain-composition.md` | Applicable | Domain-specific owner, reducer, scope, resource, conflict and lifecycle rules are defined above; pure passthroughs stay in services. |
-| `refactor/capability-and-services.md` | Applicable | Admission/retirement, post-namespace subtraction, member-level services classification, runtime-specific unavailable behavior, no automatic absorption. |
+| `capability-strategy.md` | Applicable | Admission/retirement, post-namespace subtraction, member-level services classification, runtime-specific unavailable behavior, no automatic absorption. |
 | `refactor/versioning-and-protocols.md` | Applicable | Full package version parsing, frozen M7 baseline, API-only plugin negotiation, independent wire/durable revisions, full/selective equivalence. |
 | `refactor/plugin-state-and-lifecycle.md` | Applicable | Thin owner-scoped storage only, profile/workspace/session scopes, schema envelope, handle close without implicit purge. |
 | `refactor/ordering.md` | Applicable | Fixed priority plus registration order for ordinary events; domain reducers for policy; no global dependency graph. |

@@ -6,7 +6,7 @@
 > 上游：已确认的 Stage 0 Goal（串行 M7 公共契约重构；版本基线冻结；实质性公共 API 删除前须向人类报备并获批）
 > 版本基线：`0.1.0-rc.6-0.1.0`；`dsh.api: 0.1`
 >
-> **规范路径迁移注**：本文所引 `docs/standards/refactor/*.md` 分册已并入 `docs/standards/`：同名收录的有 `public-api-shape.md`、`composition-and-authority.md`、`domain-composition.md`、`versioning-and-protocols.md`、`ordering.md`；`capability-and-services.md` 并入 `capability-strategy.md`；`plugin-state-and-lifecycle.md` 并入 `durable-state-and-scope.md`；`sdk-and-conformance.md` 已删除。现 `docs/standards/refactor/` 是后续 API 语义重构的未来目标规范，与本 feature 无关。下表与正文中的路径已按新位置更新。
+> **规范路径迁移注**：本文所引的独立 standards 子目录分册已并入 `docs/standards/`：同名收录的有 `public-api-shape.md`、`composition-and-authority.md`、`domain-composition.md`、`versioning-and-protocols.md`、`ordering.md`；其余长期约束分别并入 `capability-strategy.md` 与 `durable-state-and-scope.md`，已删除的 SDK 过程性规范不再保留。后续公共成员 idiom 与成员级契约见 `api-idioms.md`。下表与正文中的路径已按现行位置更新。
 
 ## Introduction
 
@@ -298,7 +298,7 @@
 | `docs/standards/public-api-shape.md` | 适用 | 目标 host/client namespace、领域优先命名、旧 alias 删除、capability registry、`services.*` 分层已在第 1–4、9 节覆盖。 |
 | `docs/standards/composition-and-authority.md` | 适用 | composition mode、Composable Profile、owner/key/generation、authority closure、claim/preflight、失败隔离已在第 5–7 节覆盖。 |
 | `docs/standards/domain-composition.md` | 适用 | 各目标领域的 owner、冲突、顺序、scope、resource 和 authority 最低要求已在第 8 节覆盖。 |
-| `docs/standards/capability-strategy.md` | 适用 | feature admission/retirement、公共面减法、`services.*` 静态白名单、成员级 availability 和 passthrough 分级已在第 4、5、9、12 节覆盖（原 `refactor/capability-and-services.md`）。 |
+| `docs/standards/capability-strategy.md` | 适用 | feature admission/retirement、公共面减法、`services.*` 静态白名单、成员级 availability 和 passthrough 分级已在第 4、5、9、12 节覆盖（原独立 capability/services 分册）。 |
 | `docs/standards/versioning-and-protocols.md` | 适用 | 冻结的 `<A>-<B>.<C>.<D>` 基线、插件协商、wire revision、durable schema、装配等价性已在第 10、13 节覆盖。 |
 | `docs/standards/durable-state-and-scope.md` | 适用 | owner-scoped private storage、三档 durable scope、schema envelope、disable/reload/uninstall/purge 生命周期已在第 11 节覆盖（原 `refactor/plugin-state-and-lifecycle.md`）。 |
 | `docs/standards/ordering.md` | 适用 | 固定 priority、注册顺序、领域 reducer、producer/consumer 分离和禁止全局依赖图已在第 7、8、13 节覆盖。 |

@@ -606,7 +606,7 @@ Two synthetic normal plugins cover reverse registration order, custom identity c
 | `docs/standards/concurrency-and-cancellation.md` | Applicable | Async transport, retry, lease, publisher, browser reconnect and replacement lifecycle use signal propagation, commit eligibility, stale guards and owner-only cleanup. |
 | `docs/standards/versioning-and-protocols.md` | Applicable | The current package/API/version fields remain frozen; no `A`, `B`, `C`, or `D` step is permitted in this feature. Selective/full coverage is explicit, runtime/package mismatch is path-local, and wire/durable versions remain independent. |
 | M8 current contract artifacts (`docs/specs/plugin-api-m8-api-idiom-refactor/` and canonical registry) | Applicable as feature baseline | New/changed members must preserve the eight idioms, uniform names, handle contracts, availability/capability separation and registry-driven conservation; M8's current delivered contract is not bypassed for convenience. |
-| `docs/standards/refactor/` future-target documents | Not independently normative | The feature uses the M8-delivered contract already recorded in the canonical registry; unrelated future refactor targets are not treated as current runtime facts. |
+| `docs/standards/api-idioms.md` | Applicable | The feature uses the M8-delivered current idiom contract recorded in the canonical registry and this standards document; it does not add unrelated public shapes. |
 
 ## Key Decisions And Tradeoffs
 

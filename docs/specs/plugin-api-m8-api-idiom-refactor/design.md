@@ -8,7 +8,7 @@
 
 **Stage 2 确认门：已通过（用户明确批准，2026-08-31）。**
 
-批准范围为本文件当前版本，包含按 `docs/standards/refactor/` 完成的 SPEC2 契约细化：
+批准范围为本文件当前版本，包含按当时 API idiom 目标规范完成的契约细化；该规范已在 M8 交付后合并为 `docs/standards/api-idioms.md`：
 
 - coordination 入口全部异步、`acquire` 返回租约句柄、归还是入口动词 `release(handle)`、stale 条件以 `code: 'conflict'` + `reason` 表达、同步有界借用例外不豁免异步；
 - 能力矩阵 `status` 为六值封闭词表并作为守恒校验唯一字段，复合信息记入 `qualifiers`；
@@ -40,7 +40,7 @@ M8 的核心设计决定如下：
 - `lib/client-runtime.js` 是 client facade 的根装配和 caller-bound 解析面，`lib/client.js` 是检入的浏览器 bundle；当前 client 已有 connection、remote、settings、slots、lifecycle、codec 和 official services 适配器，M8 需要按 idiom 重新归类和对齐，而不是重写官方 browser runtime。
 - `lib/services.js` 与 `lib/official-service-definitions.js` 提供静态官方服务白名单和 member-level passthrough；M8 继续采用静态白名单，不依赖 runtime introspection。
 - `scripts/registry-validate.mjs` 和 `scripts/registry-snapshot.mjs` 已提供纯 Node 的 registry 验证和快照基础设施，但当前字段、校验规则和输出还不足以覆盖 M8 的 idiom、handle、事件和叶子级 parity 要求。
-- `docs/standards/refactor/` 是未来目标规范，不代表当前 runtime 已具备目标形状。Design 描述的是迁移后的目标和实现边界，不能把目标路径写成已经存在的能力。
+- 本 Design 记录的是 M8 迁移期间的目标和实现边界；交付后的现行公共 idiom 规范见 `docs/standards/api-idioms.md`，具体成员事实见 canonical registry。
 
 ## Architecture
 
@@ -756,15 +756,7 @@ The repository test command remains the guarded `npm test` defined by AGENTS.md.
 
 | Standard | Applicability | Design alignment |
 |---|---|---|
-| `docs/standards/refactor/README.md` | Applicable as M8 target policy | M8 treats it as future acceptance target, not current runtime fact; all inventories, matrices and registries are aligned to its completeness gates. |
-| `docs/standards/refactor/api-idiom.md` | Applicable | Eight idioms, one primary idiom, uniform outer contracts, passthrough boundary, shape disposition order and gap rules are implemented through registry and adapters. |
-| `docs/standards/refactor/idiom-catalogue.md` | Applicable | Projection, policy, mutation, operation, contribution, resourceRegistry, coordination and selfDescription shapes drive target member contracts. |
-| `docs/standards/refactor/api-migration.md` | Applicable | Current-to-target rename, split, merge, migration, deletion, shape alignment and gap actions are registry-backed. |
-| `docs/standards/refactor/member-contract-registry.md` | Applicable | Leaf and handle-level entries, mechanical checks, host/client parity and generated fixtures are central architecture components. |
-| `docs/standards/refactor/member-inventory.md` | Applicable | Wave 1 must cover every current and target leaf, including client lifecycle/codec leaves that require enumeration. |
-| `docs/standards/refactor/capability-matrix.md` | Applicable | Wave 1/2 establish conservation records and Wave 8 verifies every retained, renamed, merged, migrated, deleted and gap cluster. |
-| `docs/standards/refactor/anti-intuitive-inventory.md` | Applicable | Each concrete path issue is tied to a target shape and test/evidence fixture. |
-| `docs/standards/refactor/events-semantics.md` | Applicable | Events are split across selfDescription (`catalog()`), projection (`observe`) and operation (dispatch variant with two contract entries registered as not applicable); decision events adopt the event-form policy variant; event semantics and producer authority are separate registry axes, and the owner-scoped custom publisher remains an unavailable capability until it exists. |
+| `docs/standards/api-idioms.md` | Applicable | Eight idioms, one primary idiom, uniform outer contracts, event classification, leaf/handle registry checks and capability conservation are recorded in the merged current standard. Historical M8 inventories and migration tables remain in this feature directory. |
 | `docs/standards/capability-strategy.md` | Applicable | A/B/C/R implementation channels, facade default, approved replacement boundary, fail-safe and no official package modification are preserved. |
 | `docs/standards/api-shape.md` | Applicable | Projection/policy/mutation separation, one-way data flow, one primary face and private shared primitives constrain adapters. |
 | `docs/standards/public-api-shape.md` | Applicable as current namespace baseline | M7 registry remains current fact source; M8 changes member idiom/shape without reviving feature-shaped public roots. |
@@ -777,7 +769,7 @@ The repository test command remains the guarded `npm test` defined by AGENTS.md.
 | `docs/standards/concurrency-and-cancellation.md` | Applicable | Signal propagation, commit eligibility, stale-result guard, disposer ownership and retry boundaries govern async adapters. |
 | `docs/standards/versioning-and-protocols.md` | Applicable | Existing package baseline remains independent from wire/durable revisions; installation equivalence and runtime/package checks are retained. |
 
-The `docs/standards/refactor/` documents define the target and the current `docs/standards/` documents define existing repository constraints. Where they differ, M8 uses the target documents for the migration destination and current standards/AGENTS.md for implementation-channel, fail-safe, version, package and repository rules.
+During M8, the idiom target documents and the then-current standards had different roles. After delivery, their durable public-contract rules are merged into `docs/standards/api-idioms.md`; this feature directory retains the historical migration evidence and does not redefine current runtime facts.
 
 ## Key Decisions And Tradeoffs
 

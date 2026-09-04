@@ -6,7 +6,7 @@
 
 ## Introduction
 
-`plugin-api-m8-api-idiom-refactor` 将 M7 冻结的 `dsh-plugin-api` host/client 公共 API 迁移到 `docs/standards/refactor/` 规定的八个 API idiom：`projection`、`policy`、`mutation`、`operation`、`contribution`、`resourceRegistry`、`coordination` 和 `selfDescription`。
+`plugin-api-m8-api-idiom-refactor` 将 M7 冻结的 `dsh-plugin-api` host/client 公共 API 迁移到八个 API idiom：`projection`、`policy`、`mutation`、`operation`、`contribution`、`resourceRegistry`、`coordination` 和 `selfDescription`。这些 idiom 的现行规范已合并到 `docs/standards/api-idioms.md`。
 
 本 feature 的交付对象是一个统一的公共契约迁移。成员级 registry、能力守恒矩阵、host/client surface、类型、事件语义、错误和生命周期行为必须共同收敛；内部实现可以按有依赖的批次执行，但不能把同一 idiom 的跨 namespace 契约拆成互不协调的公共 feature。
 
@@ -303,13 +303,5 @@
 
 ## Standards Applicability And Alignment
 
-- `docs/standards/refactor/README.md`：适用。M8 的目标形状、成员级完整性、能力守恒和 idiom 同构直接由该目录定义。
-- `docs/standards/refactor/api-idiom.md`：适用。需求 2–11、14–17 对应其分类判据、分类决定形状、跨领域统一命名词表、例外六项格式、失败/冲突外层契约、passthrough 边界、处置顺序和能力缺口规则。
-- `docs/standards/refactor/idiom-catalogue.md`：适用。需求 3–10 对应八个 idiom 的入口、handle、生命周期、失败码词表、concurrency 词表和 availability 形状。
-- `docs/standards/refactor/api-migration.md`：适用。需求 12 和 16 覆盖迁移、删除、形状对齐和能力缺口记录。
-- `docs/standards/refactor/member-contract-registry.md`：适用。需求 1、2、10、14、16、18 覆盖叶子 registry、机械校验、handle 登记和 surface 一致性。
-- `docs/standards/refactor/member-inventory.md`：适用。需求 1、12、16、18 要求 current/target/handle 叶子完整覆盖。
-- `docs/standards/refactor/capability-matrix.md`：适用。需求 12、16、18 要求能力状态、删除替代和 gap reason 守恒。
-- `docs/standards/refactor/anti-intuitive-inventory.md`：适用。需求 2–15、18 要求每项绑定具体目标形状和验证证据。
-- `docs/standards/refactor/events-semantics.md`：适用。需求 4 第 8 条与需求 11 覆盖事件面三 idiom 归属、事件语义分类轴、派发型 operation 的两条不适用、decision 事件归入 policy 事件式变体的三项补齐、生产权分离和 owner-scoped 自定义 publisher 边界。
-- `docs/standards/README.md` 及其现行分册：适用。Stage 2 Design 必须进一步对照 capability strategy、API shape、public API shape、composition/authority、domain composition、ordering、identity/lifecycle、durable state/scope、visibility/redaction、concurrency/cancellation、versioning/protocols；M8 不得把未来目标规范描述为当前已具备能力。
+- `docs/standards/api-idioms.md`：适用。需求 1–18 覆盖八类 idiom 的分类判据、标准形状、事件归属、成员级 registry、机械校验和能力守恒；M8 期间的迁移盘点与反直觉问题清单则作为本 feature 的历史验收输入保留。
+- `docs/standards/README.md` 及其现行分册：适用。Stage 2 Design 必须进一步对照 capability strategy、API shape、API idioms、public API shape、composition/authority、domain composition、ordering、identity/lifecycle、durable state/scope、visibility/redaction、concurrency/cancellation、versioning/protocols；M8 的历史目标规范不得被误写成当时 runtime 已具备能力。

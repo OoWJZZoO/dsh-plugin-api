@@ -1,7 +1,7 @@
 # 公共 API 形状标准（namespace 与成员形状）
 
-> 适用范围：门面 host/client 公共 namespace、capability path、命名与形状、公共面减法、public contract registry。
-> 关联：语义三面（projection / policy / durable mutation）见 `api-shape.md`；组合与 authority 见 `composition-and-authority.md`；各领域最低组合要求见 `domain-composition.md`；`services.*` 定位与分级见 `capability-strategy.md` §6；版本模型见 `versioning-and-protocols.md`。
+> 适用范围：门面 host/client 公共 namespace、capability path、公共面减法与 public contract registry。
+> 关联：成员 idiom、统一命名与 handle/失败契约见 `api-idioms.md`；语义三面（projection / policy / durable mutation）见 `api-shape.md`；组合与 authority 见 `composition-and-authority.md`；各领域最低组合要求见 `domain-composition.md`；`services.*` 定位与分级见 `capability-strategy.md` §6；版本模型见 `versioning-and-protocols.md`。
 
 ## 1. Namespace 原则
 
@@ -88,13 +88,13 @@ pluginApi
 - 第三方插件私有持久状态位于 `storage`；它是 owner-scoped 薄绑定，不是共享数据库平台。
 - 只增加事件词汇的能力进入 `events.catalog`，不因此新增对象 namespace。
 
-## 3. 命名和形状
+## 3. Namespace 命名与路径
 
 1. 资源集合使用复数，如 `agents`、`sessions`、`executions`、`profiles`、`remotes`。
 2. 概念系统保留惯用名，如 `llm`、`mcp`、`security`、`settings`、`coordination`。
 3. namespace 使用名词，方法使用动词。
-4. 注册表使用复数资源或 `policies.register`，避免使用看起来像立即执行的 `request.transform()` 形状。
-5. 查询优先使用 `get/list/inspect/history`；订阅使用 `onChange/observe`；注册返回 identity-bound disposer 或 handle。
+4. 成员的入口动词、返回形状与 handle 由 `api-idioms.md` 的 idiom 分类决定；不得以 namespace 历史命名另造变体。
+5. 注册表使用复数资源或 `policies.register`，避免使用看起来像立即执行的 `request.transform()` 形状。
 6. 除 `services.*` 外，最多两层领域 namespace 后接方法；只有强领域关系才允许第三层。
 7. 本地重构期不保留兼容 alias；删除重复 authority，例如多个 namespace 上指向同一个 route 查询的委托。
 8. 事件协议名继续使用稳定的 slash path；capability path 使用 dot path，两者不得混用。

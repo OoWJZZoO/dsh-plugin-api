@@ -15,7 +15,8 @@
 |---|---|---|
 | `capability-strategy.md` | 能力分类、通道上限与 `services.*` | A/B/C/R 分类、方案一/二/三、安全不变量、R1–R9 硬性规则、已交付 replacement 装配表、组件 owner 与客户端半面判定（§10）、`services.*` 定位与成员分级、runtime-specific availability、公共面减法 |
 | `api-shape.md` | 语义三面 | projection / policy registry / durable mutation 边界、数据流单向、一面原则、底座与公开面分离、smell 判据 |
-| `public-api-shape.md` | 公共 namespace 与成员形状 | bounded context 组织、host/client 领域树、命名与形状、capability registry、公共面减法、public contract registry |
+| `api-idioms.md` | 公共成员 idiom | 八类 idiom、统一词汇、标准入口/handle/失败语义、事件归属、成员级 registry 与机械校验 |
+| `public-api-shape.md` | 公共 namespace 与成员形状 | bounded context 组织、host/client 领域树、namespace 放置、capability registry、公共面减法、public contract registry |
 | `composition-and-authority.md` | 组合与 authority | 兼容四层、composition mode、Composable Profile、owner/key/generation/disposer、authority closure、静态 claim 与 preflight、失败语义 |
 | `domain-composition.md` | 领域组合最低要求 | 各公共领域 owner、冲突、顺序、资源与 authority 的最低约束 |
 | `ordering.md` | 多插件排序 | 固定 priority vocabulary、注册顺序、领域 reducer 与插件责任边界 |
@@ -24,8 +25,7 @@
 | `visibility-and-redaction.md` | 可见性与脱敏 | 默认最小暴露、policy 显式提升、client 半身受众、脱敏覆盖边界 |
 | `concurrency-and-cancellation.md` | 并发与取消 | AbortSignal 传播、终态裁决、stale result 隔离、disposer 所有权、并发策略与 retry 边界 |
 | `versioning-and-protocols.md` | 版本与协议 | `<A>-<B>.<C>.<D>` 模型、包装配与 runtime 检查、第三方协商、wire/durable 合同、安装模式与装配等价性 |
-| `refactor/README.md` | 公共 API 语义重构（**未来目标**） | 该目录是下一轮公共 API 语义重构的目标规范（idiom 分类与成员级契约），**不是当前仓库事实**，不作为当前 feature 设计的遵守对象 |
 
 ## 公共契约的唯一事实源
 
-现行公共 API path、逐成员状态与版本基线以 `docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json` 为准。本目录各分册规定「应当如何设计」，不复制该 registry 的逐成员登记，避免双源漂移；分册条文与 registry 现有登记冲突时，以 registry 为现状事实、以分册为设计判据，并走变更流程修订其中一方。
+现行公共 API path、逐成员状态与版本基线以 `docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json` 为准。本目录各分册规定现行公共契约的设计约束，不复制该 registry 的逐成员登记，避免双源漂移；分册条文与 registry 现有登记冲突时，以 registry 为现状事实、以分册为设计判据，并走变更流程修订其中一方。

@@ -159,7 +159,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 - **requirements**：每条需求是否 EARS、可测试、无实现细节；是否覆盖 host/client 两面；是否把“外部可实现 vs 必须上游”标注清楚。
 - **design**：是否说明每个钩子的引出机制（官方事件直接绑定 / 底层钩子模拟 / 标记为 upstream proposal）；是否有失败路径与 guard 策略。
 - **tasks**：是否与 requirements 一一对应；是否包含测试任务；是否有迁移验收任务（见第 5 节）。
-- **standards（强制，docs/standards 对照，职责分工）**：requirements/design 必须按领域对照 `docs/standards/` 全局规范（`README.md` 为索引：capability-strategy / api-shape / public-api-shape / composition-and-authority / domain-composition / ordering / identity-and-lifecycle / durable-state-and-scope / visibility-and-redaction / concurrency-and-cancellation / versioning-and-protocols），并显式声明各分册的适用性与对齐结论（含“不适用”）。`docs/standards/refactor/` 是下一轮公共 API 语义重构的**未来目标规范**，不是当前事实：只有该轮重构及其相关工作才对照它，当前 feature 设计不得把它当作已具备的能力。**负责写文档/实现的代理在开工（Stage 0–3 文档编写或 Stage 4 实现）前阅读适用分册一次即可，不需要再做交付自查**；按 standards 分册比对交付物的审查职责由**对抗性审查代理**承担（§3.2：SPEC3 的 Stage 3 与 Stage 4 审查均已将 `docs/standards/` 适用分册纳入核对范围）。分工边界：实现代理负责“实现前读懂一次”，审查代理负责“按 standard 比对交付”；该分工不豁免实现方的基本质量义务（§3.0 工程质量优先）。教训来源：`coordination-lease` 交付后审计发现 generation 全局单调序号、bridge 重启重铸 generation、审计时间缺失、面放置与 scope 词汇等偏差，均因实现与审查两侧都未对照 standards 所致。
+- **standards（强制，docs/standards 对照，职责分工）**：requirements/design 必须按领域对照 `docs/standards/` 全局规范（`README.md` 为索引：capability-strategy / api-shape / api-idioms / public-api-shape / composition-and-authority / domain-composition / ordering / identity-and-lifecycle / durable-state-and-scope / visibility-and-redaction / concurrency-and-cancellation / versioning-and-protocols），并显式声明各分册的适用性与对齐结论（含“不适用”）。**负责写文档/实现的代理在开工（Stage 0–3 文档编写或 Stage 4 实现）前阅读适用分册一次即可，不需要再做交付自查**；按 standards 分册比对交付物的审查职责由**对抗性审查代理**承担（§3.2：SPEC3 的 Stage 3 与 Stage 4 审查均已将 `docs/standards/` 适用分册纳入核对范围）。分工边界：实现代理负责“实现前读懂一次”，审查代理负责“按 standard 比对交付”；该分工不豁免实现方的基本质量义务（§3.0 工程质量优先）。教训来源：`coordination-lease` 交付后审计发现 generation 全局单调序号、bridge 重启重铸 generation、审计时间缺失、面放置与 scope 词汇等偏差，均因实现与审查两侧都未对照 standards 所致。
 
 ### 3.5 并行开发工作流
 
@@ -224,7 +224,7 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
   ```
   运行时可见的名字必须使用中立、面向能力/语义的命名（例如包名 `@deepseek-ai/dsh-plugin-api-compaction-events`，行/feature 名只表达能力、不带 `r1` 之类治理后缀）；既有实现若违反本规则，必须在后续获批维护任务中清理，不得继续新增此类泄漏。
 - 临时验证脚本放 `temp/`，用完即删。
-- 治理文档 `docs/standards/capability-strategy.md` 是 A/B/C/R 分类与能力上限策略的权威来源；修订能力边界时，必须同步 AGENTS.md §2/§4 与 `docs/specs/plugin-api-features/feature-list.md`。全局 feature 设计规范统一收于 `docs/standards/`（见 §8），新增全局规范落盘该目录并在此登记；`docs/standards/refactor/` 只承载未来目标的 API 语义重构规范，不承载现状标准。
+- 治理文档 `docs/standards/capability-strategy.md` 是 A/B/C/R 分类与能力上限策略的权威来源；修订能力边界时，必须同步 AGENTS.md §2/§4 与 `docs/specs/plugin-api-features/feature-list.md`。全局 feature 设计规范统一收于 `docs/standards/`（见 §8），新增全局规范落盘该目录并在此登记。
 
 ## 7. 关键链接
 
@@ -254,4 +254,4 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
 > 已交付 feature 的逐项登记表（范围、状态、Spec 目录、关键约束/设计）自 2026-08-21 起迁至 `docs/specs/plugin-api-features/feature-list.md` §7，本文不再保留登记表，避免双源漂移。规则不变：每个 feature 在 Stage 4 交付后，必须在该节追加条目并同步对应状态；公开 API 形状或里程碑状态变化时同步更新，防止文档过期过时（§3.0.1 中"登记为 delivered"即指该登记表）。
 > 公共 API path 与版本基线发生变化时，除本文件 §4 第 2 条指向的 registry 外，同步面还包括 `docs/specs/plugin-api-features/feature-list.md`、`README.md` 与受影响的 `docs/specs/**` 历史制品；历史制品以文首「公共契约现状注」的形式追加旧 path → 现行 path 映射，不改写其已获批的验收边界。
 > 本文件自身**不记录任何 feature 的进度/里程碑状态**（进度以各 feature spec 目录的状态行与 feature-list §7 登记为准）；修改本文件时不得引入"当前完成了xxx"式的进度表述。
-> 全局 feature 设计规范统一收于 `docs/standards/`（`README.md` 为索引；现行分册：`capability-strategy.md` 能力策略与 services 分级、`api-shape.md` 语义三面、`public-api-shape.md` 公共 namespace 与成员形状、`composition-and-authority.md` 组合与 authority、`domain-composition.md` 领域组合最低要求、`ordering.md` 多插件排序、`identity-and-lifecycle.md` 身份与生命周期、`durable-state-and-scope.md` 持久状态与作用域、`visibility-and-redaction.md` 可见性、`concurrency-and-cancellation.md` 并发与取消、`versioning-and-protocols.md` 版本与协议）。这些分册只写**当前仓库事实**；`docs/standards/refactor/README.md` 是下一轮公共 API 语义重构的**未来目标**入口，不作为当前设计依据。新增全局规范落盘该目录并在 §6 登记。
+> 全局 feature 设计规范统一收于 `docs/standards/`（`README.md` 为索引；现行分册：`capability-strategy.md` 能力策略与 services 分级、`api-shape.md` 语义三面、`api-idioms.md` 公共成员 idiom 与契约、`public-api-shape.md` 公共 namespace 与成员形状、`composition-and-authority.md` 组合与 authority、`domain-composition.md` 领域组合最低要求、`ordering.md` 多插件排序、`identity-and-lifecycle.md` 身份与生命周期、`durable-state-and-scope.md` 持久状态与作用域、`visibility-and-redaction.md` 可见性、`concurrency-and-cancellation.md` 并发与取消、`versioning-and-protocols.md` 版本与协议）。这些分册只写**当前仓库事实**。新增全局规范落盘该目录并在 §6 登记。

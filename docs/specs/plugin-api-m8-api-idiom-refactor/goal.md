@@ -20,7 +20,7 @@
 - 覆盖 host/client 的连接、remote、slot、codec、lifecycle 和设置桥等公共面，使其遵循同一套可观察词汇和生命周期规则；client lifecycle 与 codec 叶子必须逐叶子枚举并确定 idiom 归属。
 - 覆盖 registry、类型、快照、能力矩阵、反直觉问题清单和测试证据之间的一致性与能力守恒验证。
 - 覆盖两个本地消费者 `dsh-read-image` 与 `dsh-pro-ex-ability-anchor` 的目标路径迁移、full/选择性安装装配对账，以及 headless smoke 和 dev boot 验收。
-- 遵守 `docs/standards/` 现行规范、`docs/standards/refactor/` 目标规范、AGENTS.md 的 spec coding 确认门、阶段提交、干净工作区、fail-safe 和不修改官方 DSH 包文件约束。
+- 遵守当时的现行 standards 与 API idiom 目标规范，以及 AGENTS.md 的 spec coding 确认门、阶段提交、干净工作区、fail-safe 和不修改官方 DSH 包文件约束。该目标规范已在 M8 交付后合并为现行的 `docs/standards/api-idioms.md`。
 
 ## Out Of Scope
 

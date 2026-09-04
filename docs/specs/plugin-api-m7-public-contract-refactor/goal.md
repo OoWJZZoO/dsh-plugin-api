@@ -20,7 +20,7 @@
 - 遵守 `docs/standards/` 全局规范、AGENTS.md 的 spec coding 确认门、fail-safe、阶段提交和干净工作区要求。
 - 本 feature 适用交付时 `docs/standards/` 下的现行分册规范。
 
-> **规范路径迁移注**：本 feature 交付时的分册位于 `docs/standards/refactor/`（`public-api-shape.md`、`composition-and-authority.md`、`domain-composition.md`、`versioning-and-protocols.md`、`ordering.md`、`capability-and-services.md`、`plugin-state-and-lifecycle.md`、`sdk-and-conformance.md`）。这些规范已并入 `docs/standards/` 现行分册：前五个同名收录，`capability-and-services.md` 并入 `capability-strategy.md`，`plugin-state-and-lifecycle.md` 并入 `durable-state-and-scope.md`，`sdk-and-conformance.md` 已删除。现 `docs/standards/refactor/` 是后续 API 语义重构的未来目标规范，与本 feature 无关。
+> **规范路径迁移注**：本 feature 交付时的分册曾位于独立的 standards 子目录。其长期约束现已并入 `docs/standards/`：`public-api-shape.md`、`composition-and-authority.md`、`domain-composition.md`、`versioning-and-protocols.md`、`ordering.md`、`capability-strategy.md` 与 `durable-state-and-scope.md`；不再保留旧目录。后续公共成员 idiom 与成员级契约见 `docs/standards/api-idioms.md`。
 
 ## Out Of Scope
 

@@ -3,8 +3,8 @@
 > 公共契约现状注（2026-09-02）：下述删除时的 gap 记录保留 M8 当时的验收边界；后续 policy-enforcement-closure 已以自动 egress/recovery 证据闭合对应守恒结论，并交付 `events.define` 合作型入口。现行状态以 canonical registry 与后续 feature delivery report 为准。
 
 本账本记录公共面减法（Wave 7）执行的每个迁移处置与能力守恒证据。核对基线：
-`docs/standards/refactor/api-migration.md` §1 删除表与 §2.2 退为内部机制表；
-`docs/standards/refactor/capability-matrix.md`。registry（
+M8 当时的迁移处置与能力守恒基线；其长期规则已合并至
+`docs/standards/api-idioms.md`，具体历史盘点由本账本承载。registry（
 `docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json`）
 是唯一事实源；本账本按 registry 成员行的 migrationAction 归类，逐条列出处置、
 替代/gap 理由、受影响面与守恒证据维度。
