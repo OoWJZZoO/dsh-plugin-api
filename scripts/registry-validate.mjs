@@ -488,6 +488,13 @@ export function validateRegistry(registry) {
         if (!['delete', 'internalize'].includes(entry.action) && !isNonEmptyString(entry.targetPath)) {
           errors.push(`${where}: a non-delete entry requires a target path`)
         }
+        // Members migrated under services.<key> must land on an audited face.
+        if (isNonEmptyString(entry.targetPath) && entry.targetPath.startsWith('services.')) {
+          const serviceKey = String(entry.targetPath).split('.')[1]
+          if (serviceKey && !seenServices.has(serviceKey)) {
+            errors.push(`${where}: services key ${JSON.stringify(serviceKey)} is not in the audited servicesWhitelist`)
+          }
+        }
       } else if (!isNonEmptyString(entry.targetPath)) {
         errors.push(`${where} requires a targetPath`)
       }

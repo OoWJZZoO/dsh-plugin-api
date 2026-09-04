@@ -118,7 +118,7 @@ test('snapshots derive every surface from the same registry', () => {
   assert.ok(snapshots.clientSurface.roots.includes('connection'))
   assert.equal(snapshots.clientSurface.clientRoot.publicRoot, 'ctx.pluginApi (direct root members)')
   assert.ok(snapshots.servicesFixture.keys.includes('fs'))
-  assert.equal(snapshots.servicesFixture.keys.length, 46, 'snapshot services fixture matches the reduced whitelist')
+  assert.equal(snapshots.servicesFixture.keys.length, 53, 'snapshot services fixture matches the whitelist plus the migrate leaves')
   assert.ok(!snapshots.servicesFixture.keys.includes('compaction'), 'removed compaction key is absent from the snapshot')
   assert.ok(!snapshots.servicesFixture.keys.includes('workflows'), 'removed workflows key is absent from the snapshot')
   assert.ok(snapshots.compositionMatrix.byComposition !== undefined)
@@ -197,11 +197,17 @@ test('the runtime capability descriptor table mirrors the registry capability pa
 
 test('the services whitelist mirrors the runtime service definitions', async () => {
   const { SERVICE_DEFINITIONS, SERVICES_NAMESPACE_KEYS } = await import('../lib/services.js')
+  const { createServicesMigrateLeaves } = await import('../lib/official-host-namespaces.js')
+  // The runtime services face composes the audited definitions with the
+  // registry migrate leaves (services.<key> passthrough homes), so the
+  // whitelist mirrors both halves in composition order.
+  const migrateKeys = Object.keys(createServicesMigrateLeaves({}))
+  const expectedKeys = [...SERVICES_NAMESPACE_KEYS, ...migrateKeys]
   const whitelist = registry.servicesWhitelist
-  assert.deepEqual(whitelist.map((entry) => entry.key), SERVICES_NAMESPACE_KEYS)
+  assert.deepEqual(whitelist.map((entry) => entry.key), expectedKeys)
   for (const entry of whitelist) {
     const def = SERVICE_DEFINITIONS.find((d) => d.key === entry.key)
-    assert.ok(def, `whitelist key ${entry.key} must resolve to a runtime definition`)
+    if (!def) continue // migrate leaves carry their lifecycle in official-host-namespaces
     assert.equal(entry.capability, def.capability, `whitelist ${entry.key} carries the public capability path`)
     assert.equal(entry.composition, def.composition ?? 'pending-audit', `whitelist ${entry.key} matches the runtime composition metadata`)
   }

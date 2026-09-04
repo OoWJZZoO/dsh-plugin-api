@@ -15297,7 +15297,7 @@
     {
       "key": "storage",
       "capability": "services.storage",
-      "members": "audited migrate member set (official leaf builders)",
+      "members": "isActive, backend, domain, mount, form",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
@@ -15594,6 +15594,62 @@
       "key": "webServer",
       "capability": "services.webServer",
       "members": "audited migrate member set (official leaf builders)",
+      "composition": "pure",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "llm",
+      "capability": "services.llm",
+      "members": "listProviders, listConfigurableProviders, discoverModels, providerRetryPolicy, listModels, resolveCallConfig, contentHasImage, createUserMessage, BlockAssembler",
+      "composition": "pure",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "agents",
+      "capability": "services.agents",
+      "members": "currentInitiator, requireInitiator, withInitiator, withoutInitiator, isOwnedBy, options",
+      "composition": "pure",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "sessions",
+      "capability": "services.sessions",
+      "members": "create, prepare, enter, announce, flush, append, deriveEventMessage",
+      "composition": "pure",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "settings",
+      "capability": "services.settings",
+      "members": "writable, prepareDocument, get",
+      "composition": "pure",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "prompts",
+      "capability": "services.prompts",
+      "members": "assemble",
+      "composition": "pure",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "tools",
+      "capability": "services.tools",
+      "members": "toolAbortedError",
+      "composition": "pure",
+      "channel": "passthrough",
+      "status": "advanced"
+    },
+    {
+      "key": "recovery",
+      "capability": "services.recovery",
+      "members": "fromAgentRequestError, fromToolResult, unsupported",
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
