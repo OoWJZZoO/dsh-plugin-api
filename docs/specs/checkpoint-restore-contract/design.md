@@ -2,11 +2,11 @@
 
 > feature_name: `checkpoint-restore-contract`
 > milestone: M9
-> status: SPEC1 Stage 2 草案 v2（2026-09-05 批次；v2 按人类指示以 R-first/能力优先修订），与 Requirements v2 同批提交待用户确认；同批文档均获明确批准后方进入 Stage 3（Tasks）。
+> status: SPEC1 Stage 2 已确认（v2，2026-09-06 人类批准；与 Requirements v2 同批）；Stage 3（Tasks）待进行——Tasks 经对抗性审查门通过后进入 Stage 4。
 
 ## Status
 
-SPEC1 Stage 2 草案 v2。本文承接 v2 Requirements（同批待确认）。v2 相对 v1 的实质修订：从"facade B 编排、运行中 session 一律 denied、workspace 仅事务窗口"改为**采纳两个 R 面**——(1) 共享 loop boundary slice（与 interaction/activity 联合）支撑 stop-then-restore 与自动捕获；(2) 新建 `dsh-workspace` owner 包 slice 交付事务窗口外 workspace 受管状态快照/恢复（Stage 3 probe 为能力门，probe 失败诚实降级）。
+SPEC1 Stage 2 v2（2026-09-06 同批人类确认）。本文承接 v2 Requirements（同批已确认）。v2 相对 v1 的实质修订：从"facade B 编排、运行中 session 一律 denied、workspace 仅事务窗口"改为**采纳两个 R 面**——(1) 共享 loop boundary slice（与 interaction/activity 联合）支撑 stop-then-restore 与自动捕获；(2) 新建 `dsh-workspace` owner 包 slice 交付事务窗口外 workspace 受管状态快照/恢复（Stage 3 probe 为能力门，probe 失败诚实降级）。
 
 ## Overview
 

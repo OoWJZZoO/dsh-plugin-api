@@ -2,11 +2,11 @@
 
 > feature_name: `session-interaction-operation`
 > milestone: M9
-> status: SPEC1 Stage 1 草案 v2（2026-09-05 批次；v2 对齐 M9 共享 loop boundary slice 联合契约），与 Design v2 同批提交待用户确认；同批文档均获明确批准后方进入 Stage 3（Tasks）。
+> status: SPEC1 Stage 1 已确认（v2，2026-09-06 人类批准；与 Design v2 同批）；Stage 3（Tasks）待进行——Tasks 经对抗性审查门通过后进入 Stage 4。
 
 ## Status
 
-SPEC1 Stage 1 草案 v2（M9 四条线批量交付）。v2 相对 v1 的实质修订：本线 R 切片确认为 M9 共享 loop boundary slice——admission/cancel 契约归本 feature，attempt 生命周期/队列事实同时供 `session-activity-projection` 与 `checkpoint-restore-contract` 消费，feature-list §3.1 三线联合登记、词汇只定义一次（见偏离注 3）。本版依据已提交的 Stage 0 Goal（`docs/specs/session-interaction-operation/goal.md`）、M9 共同契约（`temp/m9-parallel-development-contract.md`）与本仓库 `docs/standards/` 各分册编写。本文件与 Design v2 同批提交待批（M9 批量确认门）；获批前不写实现代码。
+SPEC1 Stage 1 v2（M9 四条线批量交付；2026-09-06 人类批准）。v2 相对 v1 的实质修订：本线 R 切片确认为 M9 共享 loop boundary slice——admission/cancel 契约归本 feature，attempt 生命周期/队列事实同时供 `session-activity-projection` 与 `checkpoint-restore-contract` 消费，feature-list §3.1 三线联合登记、词汇只定义一次（见偏离注 3）。本版依据已提交的 Stage 0 Goal（`docs/specs/session-interaction-operation/goal.md`）、M9 共同契约（`temp/m9-parallel-development-contract.md`）与本仓库 `docs/standards/` 各分册编写。本文件与 Design v2 同批并于 2026-09-06 获人类批准（M9 批量确认门）；批次 Stage 0–2 完成，进入 Stage 3（Tasks）后按 SPEC3 工作流推进（Tasks 以对抗性审查为门）。
 
 ## Introduction
 

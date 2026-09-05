@@ -2,7 +2,7 @@
 
 > feature_name: `session-interaction-operation`
 > milestone: M9
-> status: Stage 0 goal draft; Requirements/Design/Tasks not started
+> status: Goal approved (2026-09-06); Requirements/Design approved in the same batch; Stage 3 Tasks / Stage 4 not started
 
 ## Goal
 

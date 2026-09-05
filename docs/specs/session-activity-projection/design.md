@@ -2,11 +2,11 @@
 
 > feature_name: `session-activity-projection`
 > milestone: M9
-> status: SPEC1 Stage 2 草案 v2（2026-09-05 批次；v2 按人类指示以 R-first/能力优先修订），与 Requirements v2 同批提交待用户确认；同批文档均获明确批准后方进入 Stage 3（Tasks）。
+> status: SPEC1 Stage 2 已确认（v2，2026-09-06 人类批准；与 Requirements v2 同批）；Stage 3（Tasks）待进行——Tasks 经对抗性审查门通过后进入 Stage 4。
 
 ## Status
 
-SPEC1 Stage 2 草案 v2。本文承接 v2 Requirements（同批待确认）。v2 相对 v1 的实质修订：从"v1 零 R、superseded/aborted/settle 靠 reconstruction"改为**采纳 R**——与 `session-interaction-operation` 共用 `dsh-agent-loop` owner 包上的 loop boundary slice（attempt 生命周期/队列事实），把终态与排队判定升级为 observed；切片缺位时投影降级并如实报告。
+SPEC1 Stage 2 v2（2026-09-06 同批人类确认）。本文承接 v2 Requirements（同批已确认）。v2 相对 v1 的实质修订：从"v1 零 R、superseded/aborted/settle 靠 reconstruction"改为**采纳 R**——与 `session-interaction-operation` 共用 `dsh-agent-loop` owner 包上的 loop boundary slice（attempt 生命周期/队列事实），把终态与排队判定升级为 observed；切片缺位时投影降级并如实报告。
 
 ## Overview
 

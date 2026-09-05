@@ -2,11 +2,11 @@
 
 > feature_name: `session-activity-projection`
 > milestone: M9
-> status: SPEC1 Stage 1 草案 v2（2026-09-05 批次；v2 按人类指示以 R-first/能力优先修订），与 Design v2 同批提交待用户确认；同批文档均获明确批准后方进入 Stage 3（Tasks）。
+> status: SPEC1 Stage 1 已确认（v2，2026-09-06 人类批准；与 Design v2 同批）；Stage 3（Tasks）待进行——Tasks 经对抗性审查门通过后进入 Stage 4。
 
 ## Status
 
-SPEC1 Stage 1 草案 v2（M9 四条线批量交付）。v1 曾以"facade 零 R"定稿，经人类裁决方向为 R-first、能力优先后修订：凡真实能力缺口且组件 owner 明确者一律采纳 R；C 类只保留 R 结构上不可达且附证据的极小集合。本文依据 Stage 0 Goal、M9 共同契约（`temp/m9-parallel-development-contract.md`）与本仓库 `docs/standards/` 编写。本文件与 Design v2 同批提交待批（M9 批量确认门）；同批文档均获明确批准后方进入 Stage 3（Tasks），获批前不写实现代码。
+SPEC1 Stage 1 v2（M9 四条线批量交付；2026-09-06 人类批准）。v1 曾以"facade 零 R"定稿，经人类裁决方向为 R-first、能力优先后修订：凡真实能力缺口且组件 owner 明确者一律采纳 R；C 类只保留 R 结构上不可达且附证据的极小集合。本文依据 Stage 0 Goal、M9 共同契约（`temp/m9-parallel-development-contract.md`）与本仓库 `docs/standards/` 编写。本文件与 Design v2 同批并于 2026-09-06 获人类批准（M9 批量确认门）；批次 Stage 0–2 完成，进入 Stage 3（Tasks）后按 SPEC3 工作流推进（Tasks 以对抗性审查为门）。
 
 ## Introduction
 

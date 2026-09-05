@@ -2,11 +2,11 @@
 
 > feature_name: `session-interaction-operation`
 > milestone: M9
-> status: SPEC1 Stage 2 草案 v2（2026-09-05 批次），与 Requirements v2 同批提交待用户确认；同批文档均获明确批准后方进入 Stage 3（Tasks）。
+> status: SPEC1 Stage 2 已确认（v2，2026-09-06 人类批准；与 Requirements v2 同批）；Stage 3（Tasks）待进行——Tasks 经对抗性审查门通过后进入 Stage 4。
 
 ## Status
 
-SPEC1 Stage 2 草案 v2（2026-09-05 批次）。本文承接已获批方向（Goal）与随附的 Stage 1 Requirements（同批待确认）。v2 修订：本线 R 切片确认为 M9 共享 loop boundary slice（attempt 事实同时供 activity/checkpoint 消费，§3.1 联合登记；见偏离注 5）。本文确定官方 loader owner 证据、R 切片边界与内部契约、client 半面传输路径、装配顺序与失败/guard 策略。
+SPEC1 Stage 2 v2（2026-09-05 批次；2026-09-06 同批人类确认）。本文承接已获批方向（Goal）与已确认的 Stage 1 Requirements。v2 修订：本线 R 切片确认为 M9 共享 loop boundary slice（attempt 事实同时供 activity/checkpoint 消费，§3.1 联合登记；见偏离注 5）。本文确定官方 loader owner 证据、R 切片边界与内部契约、client 半面传输路径、装配顺序与失败/guard 策略。
 
 ## Overview
 
