@@ -2,7 +2,7 @@
 
 > feature_name: `session-interaction-operation`
 > milestone: M9
-> status: SPEC1 Stage 2 草案（2026-09-05 批次），待用户确认；Stage 3 Tasks 只可在本阶段获批后开始。
+> status: SPEC1 Stage 2 草案 v2（2026-09-05 批次），与 Requirements v2 同批提交待用户确认；同批文档均获明确批准后方进入 Stage 3（Tasks）。
 
 ## Status
 
@@ -77,13 +77,13 @@ client 领域树新增根 `sessions`（facade 语义面，与 `services.*` 下�
 - 输入规格：`RequestSpec { sessionId, message?: { kind: 'user-message', text, attachmentRefs? }, idempotencyKey?, parent?/cause?, signal? }`；`message.kind` 只接受 durable append 层 source-audited 的 kind（v1：`user-message`），其余 rejected。
 - 流程：validate（session 存在、owner 派生、kind 受审）→ dedupe 检查（同 owner 同 idempotencyKey 且未终态 ⇒ duplicate+既有 op 引用）→ 并发检查（同 session 已有活 operation ⇒ already-running）→ slice admission 契约单次受理 → 受理后经 audited durable append 写内容（source 标记）→ 关联 activity/execution（来自共享 projection 事实）→ 返回 operation handle。
 - Terminal 提交：authority 是 operation terminal 唯一提交者；提交点把仍有效的竞争信号（cancel 请求、attempt 事实、deadline、域 deny 结果）按共享裁决优先级（`aborted` > `superseded` > `error` > timeout-`error`）收敛为唯一 terminal，原子提交后不可改写；迟到信号只作诊断/审计。
-- Audit：owner、operationId、sessionId、时间、outcome 码、attempt 数、关联 id（无 payload 内容、无 secret）；audit 失败 ⇒ gap marker，不伪造记录。
+- Audit：owner、operationId、sessionId、时间、outcome 码、attempt 数、关联 id（无 payload 内容、无 secret）；v1 为 authority 内部有界内存诊断（不写 durable、不建 audit projection 子系统，Requirement 10 AC1）；记录写失败 ⇒ bounded gap marker，不伪造记录（Requirement 10 AC2）。
 
 ### 3. Agent-loop interaction slice（R 扩展，owner 包内）
 
-- 位置：`packages/agent-loop`（既有 replacement 包，`@deepseek-ai/dsh-plugin-api-agent-loop`）新增 interaction 边界模块与测试；官方行 `agent-loop` 的 disabled+insert 结构不变（R1：只走既有官方 patch 机制、零官方包修改）。
+- 位置：`packages/agent-loop`（既有 replacement 包，`@deepseek-ai/dsh-plugin-api-agent-loop`）新增 interaction 边界模块与测试；官方行 `agent-loop` 的 disabled+insert 结构不变（cap-strategy R1：只走既有官方 patch 机制、零官方包修改）。
 - **共享切片（v2 联合契约）**：本切片是 M9 的共享 loop boundary slice——admission/cancel 契约归本 feature；attempt 生命周期/队列事实（`agent/attempt/start|end` + followUp）同时被 `session-activity-projection`（observed 终态/排队证据）与 `checkpoint-restore-contract`（live-attempt 前置条件、stop-coordination、自动捕获触发）消费；三个 feature 在 feature-list §3.1 联合登记同一 owner 包切片，attempt 事实词汇只定义一次（activity 设计 §3 载有消费侧契约）。
-- 契约保真：fork 已完整复刻官方 `agentLoop` ctx 服务/事件面（R2/R4/R5/R6 由既有包自检延续）；切片只做加法：内部契约方法（非公共 path）：
+- 契约保真：fork 已完整复刻官方 `agentLoop` ctx 服务/事件面（cap-strategy R2/R4/R5/R6 由既有包自检延续）；切片只做加法：内部契约方法（非公共 path）：
   - `admit(operationSpec) → { accepted, attemptRef } | { rejected, code, reason }`（单次受理；幂等由 authority dedupe 保证）；
   - `cancelAttempt(attemptRef, { reason, signal })`（尽力传播到 attempt 及其 provider/tool 请求，返回 typed 结果）；
   - attempt 生命周期事实（见下事件）。
@@ -91,10 +91,10 @@ client 领域树新增根 `sessions`（facade 语义面，与 `services.*` 下�
 
 | 事件 | payload 要点 | 语义 |
 |---|---|---|
-| `agent/attempt/start` | attemptId、operationId、executionId（如有）、sessionId、seq、observedAt | fact：loop 提交了一个 attempt 开始 |
+| `agent/attempt/start` | attemptId、operationId（外部 request 发起时）、executionId（如有）、sessionId、seq、observedAt | fact：loop 提交了一个 attempt 开始 |
 | `agent/attempt/end` | 同左 + outcome（`success/error/aborted/denied/superseded` 的 loop 侧事实）、reason/classification（脱敏）、followUp（`none`\|`queued`，loop 提交点队列状态） | fact：loop 侧 attempt 终结事实（operation terminal 仍由 authority 裁决；followUp 供 activity 投影的排队/空闲 observed 判定） |
 
-- 自检（R4–R6）：apply 在既有检查之上增加切片契约 probe（官方行 disabled、替代行唯一 active、runtime/包 `A.B.C` 一致、主包内部契约可解析、无组件 owner 冲突）；任一失败 ⇒ log + 保持既有官方契约行为 + 切片不激活（interaction 面按 unavailable 报告）。
+- 自检（cap-strategy R4–R6）：apply 在既有检查之上增加切片契约 probe（官方行 disabled、替代行唯一 active、runtime/包 `A.B.C` 一致、主包内部契约可解析且版本一致（compatible）、无组件 owner 冲突）；任一失败 ⇒ log + 保持既有官方契约行为 + 切片不激活（interaction 面按 unavailable 报告）。
 - 客户端半面判定（capability-strategy §10 六问）：被替代官方行 `agent-loop` 无 client manifest、无 remote namespace、无 slot/settings bridge、无 host↔client 版本协商、无 browser state/reconnect、无 client-facing event/service ⇒ 六问全否 ⇒ **host-only slice**，无 client bundle 义务（记录于本表即证据）。
 - 退役条件/上游提案：官方提供等价的外部 request acceptance/cancel/attempt 公开 seam（或官方 execution identity 常态化）后，切片退化为官方直绑；以 feature-list §3.1 登记的 U-series 上游提案承载。
 
@@ -136,6 +136,8 @@ client 领域树新增根 `sessions`（facade 语义面，与 `services.*` 下�
 
 `waiting` 表达 approval/interaction 等待（与 activity 的 waiting 证据同源）；`settled` 等生命周期词不进入 status。
 
+**confidence 词汇**（契约 §2.5，Requirement 6 AC3）：`unknown` = 投影/证据源健康但尚未观察到证据；`unavailable` = 投影或证据源不可用/降级；`degraded` 不进入 confidence 值域，属面级 availability 状态。
+
 ### 3. Cancel call
 
 ```js
@@ -158,25 +160,26 @@ attemptFacts        → agent/attempt/start|end 事件（authority 订阅，作�
 | durable append（内容写入） | A | 既有 `sessions.durable.appendMessage`（source-audited kind） | kind 不受审 ⇒ rejected；append 失败 ⇒ operation error/unavailable，不启动处理 |
 | loop 受理/取消/attempt（切片） | R（既有 owner 包扩展） | 内部 symbol-keyed 契约 + `agent/attempt/start\|end` 事件 | 切片不激活/错配 ⇒ typed unavailable；自检失败仅 log+inert，无双跑 |
 | approval / tools / llm / recovery gates | A | 域 owner 自行消费；本线只收 typed 结果/等待证据 | 域结果缺失 ⇒ waiting unknown 或 unavailable，不代答 |
-| activity 关联 | A/B | `sessions.activity` 公共/内部只读投影 | projection 缺位 ⇒ confidence=unknown；不另造状态机 |
+| activity 关联 | A/B | `sessions.activity` 公共/内部只读投影 | projection 缺位/降级 ⇒ confidence=unavailable；证据未出现 ⇒ unknown（契约 §2.5 不互代，Requirement 6 AC3）；不另造状态机 |
 | client 传输 | B | 既有 channel 类类型化传输（集成波固定入口） | 通道缺位 ⇒ client unavailable；host 侧脱敏先行 |
 
 ## Error Handling And Lifecycle
 
 - 失败呈现（契约 §6）：P1/P2 统一错误；P3 `degraded/unavailable` view；业务冲突（duplicate/already-running/denied/stale/conflict）为 typed result，不伪装 boot 失败。
-- 可用性：`sessions.availability()`（host/client 各自）与根 `capabilities` 表达 request/cancel 能力；切片 inactive 时 execute 面 unavailable、面状态 degraded（reason 指明边界未激活），主门面与其他能力不受影响。
+- 可用性：`sessions.availability()`（host/client 各自）与根 `capabilities` 表达 request/cancel 能力；切片 inactive 时 execute 面 unavailable、面状态 degraded（reason 指明边界未激活），主门面与其他能力不受影响；TUI/cli host 上下文走 host 面（同一 authority），可达能力差异沿 `sessions.availability()` 的 per-context degraded/unavailable 口径如实报告，v1 不为 TUI 新增专门面（Requirement 8 AC4）。
 - 生命周期：authority 与切片都挂在各自 ctx 生命周期；卸载/重载时关闭 attempt 订阅与 observer，stale disposer/回调不得影响新代次；apply 全程 fail-safe。
 - Redaction：request/cancel payload、reason、audit、client 负载逐出口脱敏；host 脱敏先行，client 只校验形状。
 
 ## Testing Strategy
 
-1. Acceptance/dedupe/already-running（R1/R3/R5）：契约保真 loop fixture 上验证单次受理、duplicate 引用、already-running、rejected kind、denied 域码、unavailable 与 append provenance。
-2. Cancel/adjudication（R4）：信号传播、提交窗口裁决优先级、终态后 stale cancel、child/parent 传播、provider 不可停时的正确终态、无伪造 aborted。
-3. Attempt/retry（R5/R7）：attempt 同 execution、新外部触发新 operation、默认不自动 retry、recovery 不 double-consume。
-4. Slice 完整性（R11）：官方契约 parity、版本错配、boot 自检、owner 冲突、无双跑、移除恢复、切片 inactive 时 unavailable 报告；host-only 六问证据核对。
-5. Client face（R9）：同形结果、offline/rebind typed unavailable、stale guard、host 脱敏先行断言、两 synthetic 插件反序。
-6. Registry/catalog/shape（R12）：全部新行（含 client `sessions` 命名空间、`agent/attempt/*` catalog 条目）机械一致。
-7. 终验：受护 `npm test`、`git diff --check`、registry/surface 一致性、官方包零修改审计、全局对抗性终审；证据不足即保持 unavailable，不宣布完成。
+1. Acceptance/dedupe/already-running（Requirement 1/3/5 + Requirement 2）：契约保真 loop fixture 上验证单次受理、duplicate 引用、already-running、rejected kind、denied 域码、unavailable 与 append provenance；operation handle 生命周期：terminal 唯一冻结不可改写、stale handle 返回 typed stale/no-op（Requirement 2 AC2/AC4）。
+2. Cancel/adjudication（Requirement 4）：信号传播、提交窗口裁决优先级、终态后 stale cancel、child/parent 传播、provider 不可停时的正确终态、无伪造 aborted。
+3. Attempt/retry（Requirement 5/7 + Requirement 6）：attempt 同 execution、新外部触发新 operation、默认不自动 retry、recovery 不 double-consume；activity correlation confidence 三态（projection 缺位 ⇒ unavailable、证据未出现 ⇒ unknown，Requirement 6 AC3）。
+4. Slice 完整性（Requirement 11）：官方契约 parity、版本错配、boot 自检、owner 冲突、无双跑、移除恢复、切片 inactive 时 unavailable 报告；host-only 六问证据核对；共享 attempt 事实词汇机械一致性（Requirement 11 AC5）。
+5. Client face（Requirement 9）：同形结果、offline/rebind typed unavailable、stale guard、host 脱敏先行断言、两 synthetic 插件反序。
+6. Availability/audit/capability（Requirement 8/10）：`sessions.availability()` headless/web/TUI 同语义与 per-context degraded reason（Requirement 8 AC4）、capabilities 不带包/行身份（Requirement 8 AC5）、audit 记录无 payload 且写失败 ⇒ gap marker 不伪造（Requirement 10 AC1/AC2）。
+7. Registry/catalog/shape（Requirement 12）：全部新行（含 client `sessions` 命名空间、`agent/attempt/*` catalog 条目）机械一致。
+8. 终验：受护 `npm test`、`git diff --check`、registry/surface 一致性、官方包零修改审计、全局对抗性终审；证据不足即保持 unavailable，不宣布完成。
 
 ## Standards Applicability And Alignment
 
@@ -213,4 +216,4 @@ attemptFacts        → agent/attempt/start|end 事件（authority 订阅，作�
 
 ## Design Completion Condition
 
-本设计覆盖全部 Stage 1 requirements（R1–R12）：request/cancel/operation/attempt 语义与 vocabulary 冻结；R 切片边界、自检与退役条件明确；client 半面传输与 host-only 判定证据齐全；全部钩子有失败/guard 策略；registry/catalog 拟新增行与并发/retry 声明成文。用户确认前的修订就地更新本文与 requirements 对应条目。
+本设计覆盖全部 Stage 1 requirements（Requirement 1–12）：request/cancel/operation/attempt 语义与 vocabulary 冻结；R 切片边界、自检与退役条件明确；client 半面传输与 host-only 判定证据齐全；全部钩子有失败/guard 策略；registry/catalog 拟新增行与并发/retry 声明成文。用户确认前的修订就地更新本文与 requirements 对应条目。

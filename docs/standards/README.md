@@ -13,7 +13,7 @@
 
 | 分册 | 领域 | 内容 |
 |---|---|---|
-| `capability-strategy.md` | 能力分类、通道上限与 `services.*` | A/B/C/R 分类、方案一/二/三、安全不变量、R1–R9 硬性规则、已交付 replacement 装配表、组件 owner 与客户端半面判定（§10）、`services.*` 定位与成员分级、runtime-specific availability、公共面减法 |
+| `capability-strategy.md` | 能力分类、通道上限与 `services.*` | A/B/C/R 分类、方案一/二/三、安全不变量、R1–R8 硬性规则、已交付 replacement 装配表、组件 owner 与客户端半面判定（§10）、`services.*` 定位与成员分级、runtime-specific availability、公共面减法 |
 | `api-shape.md` | 语义三面 | projection / policy registry / durable mutation 边界、数据流单向、一面原则、底座与公开面分离、smell 判据 |
 | `api-idioms.md` | 公共成员 idiom | 八类 idiom、统一词汇、标准入口/handle/失败语义、事件归属、成员级 registry 与机械校验 |
 | `public-api-shape.md` | 公共 namespace 与成员形状 | bounded context 组织、host/client 领域树、namespace 放置、capability registry、公共面减法、public contract registry |

@@ -2,11 +2,11 @@
 
 > feature_name: `session-interaction-operation`
 > milestone: M9
-> status: SPEC1 Stage 1 草案（2026-09-05 批次），待用户确认；Stage 2 Design 只可在本阶段获批后开始。
+> status: SPEC1 Stage 1 草案 v2（2026-09-05 批次；v2 对齐 M9 共享 loop boundary slice 联合契约），与 Design v2 同批提交待用户确认；同批文档均获明确批准后方进入 Stage 3（Tasks）。
 
 ## Status
 
-SPEC1 Stage 1 草案（M9 四条线批量交付）。本版依据已提交的 Stage 0 Goal（`docs/specs/session-interaction-operation/goal.md`）、M9 共同契约（`temp/m9-parallel-development-contract.md`）与本仓库 `docs/standards/` 各分册编写。用户确认本文件后进入 Stage 2；本文档获批前不写实现代码。
+SPEC1 Stage 1 草案 v2（M9 四条线批量交付）。v2 相对 v1 的实质修订：本线 R 切片确认为 M9 共享 loop boundary slice——admission/cancel 契约归本 feature，attempt 生命周期/队列事实同时供 `session-activity-projection` 与 `checkpoint-restore-contract` 消费，feature-list §3.1 三线联合登记、词汇只定义一次（见偏离注 3）。本版依据已提交的 Stage 0 Goal（`docs/specs/session-interaction-operation/goal.md`）、M9 共同契约（`temp/m9-parallel-development-contract.md`）与本仓库 `docs/standards/` 各分册编写。本文件与 Design v2 同批提交待批（M9 批量确认门）；获批前不写实现代码。
 
 ## Introduction
 
@@ -26,7 +26,7 @@ SPEC1 Stage 1 草案（M9 四条线批量交付）。本版依据已提交的 St
 
 1. WHEN a caller invokes `pluginApi.sessions.request(spec)` with a valid session, a supported source/message payload, and caller-derived owner context THEN the system SHALL route the request through the single session request authority and SHALL return a typed outcome selecting one of `accepted`, `duplicate`, `already-running`, `rejected`, `denied` or `unavailable` as the primary code.
 2. WHEN the outcome is `accepted` THEN the system SHALL create one operation with a facade-generated `operationId`, an associated facade execution identity when the underlying execution exists, and SHALL return the operation handle; the caller SHALL NOT observe any activity change before the authority commits acceptance.
-3. WHEN the spec is malformed, targets a nonexistent session, carries an unsupported message kind, or violates the audited source rules of the durable mutation layer THEN the system SHALL return the typed `rejected`/invalid-input outcome with a bounded reason and SHALL NOT start processing or append anything.
+3. WHEN the spec is malformed, targets a nonexistent session, carries an unsupported message kind, or violates the audited source rules of the durable mutation layer THEN the system SHALL return the typed `rejected` outcome whose bounded reason/classification marks it invalid-input, and SHALL NOT start processing or append anything.
 4. WHEN the request cannot be served because the session request authority or its loop boundary is unavailable (for example the agent-loop capability is inactive or version-mismatched) THEN the system SHALL return a typed `unavailable` outcome and SHALL NOT silently report success, queue the work invisibly, or fall back to an append-and-guess path.
 5. WHEN the request is admissible THEN the underlying durable user/source content SHALL be appended through the existing audited durable mutation contract with its source provenance recorded; the request authority SHALL NOT bypass that contract and SHALL NOT invent content the caller did not provide.
 
@@ -97,7 +97,7 @@ SPEC1 Stage 1 草案（M9 四条线批量交付）。本版依据已提交的 St
 
 1. WHEN an accepted request maps to an activity THEN the operation SHALL expose its `activityId`/`executionId` correlation once the activity projection evidences it, and SHALL NOT invent an activity identity from event sequences.
 2. WHEN the operation status or terminal changes THEN the corresponding activity projection updates SHALL come from the shared projection owner; this feature SHALL NOT maintain a second activity state machine or publish conflicting status vocabulary.
-3. WHEN the activity projection is unavailable or degraded THEN the operation SHALL still return its own typed status/terminal and SHALL mark the activity correlation `unknown`/`unavailable` rather than guessing.
+3. WHEN the activity projection is unavailable or degraded THEN the operation SHALL still return its own typed status/terminal and SHALL mark the activity correlation `unavailable` (projection/source unreachable or degraded) — reserving `unknown` for evidence not yet observed from a healthy source — rather than guessing.
 4. WHEN a superseded or aborted operation's late result arrives THEN it SHALL be rejected by commit eligibility (owner, generation, operation terminal, resource possession) and kept only as bounded diagnostic/audit material, and SHALL NOT be published as the current operation's result.
 
 **Classification:** B facade correlation over the shared activity projection; stale containment follows `concurrency-and-cancellation.md` §4.
@@ -111,7 +111,7 @@ SPEC1 Stage 1 草案（M9 四条线批量交付）。本版依据已提交的 St
 1. WHEN a request would trigger a model/tool path governed by route, admission, exposure, approval or security policy THEN the loop boundary SHALL apply those domains' own authorities and SHALL return to the operation a typed `denied`/`rejected` outcome carrying the domain's decision code and bounded reason.
 2. WHEN an approval decision is pending THEN the operation SHALL report a waiting/interaction status consistent with the shared activity vocabulary (approval waiting evidence) and SHALL NOT resolve the approval itself or emit its own UI notification.
 3. WHEN a failure occurs in an operation THEN recovery policy SHALL be consumed by the owning recovery authority according to its declared automatic consumption contract; this feature SHALL NOT re-evaluate or double-consume recovery decisions and SHALL NOT auto-retry beyond the operation's declared capability.
-4. WHEN a request cannot start because an owned domain capability is missing THEN the operation SHALL surface the typed unavailable code of that capability SHALL NOT pretend the gate does not exist.
+4. WHEN a request cannot start because an owned domain capability is missing THEN the operation SHALL surface the typed unavailable code of that capability and SHALL NOT pretend the gate does not exist.
 
 **Classification:** A/B consumption of delivered domain authorities; no policy logic is duplicated or moved into this feature or its slice.
 
@@ -121,7 +121,7 @@ SPEC1 Stage 1 草案（M9 四条线批量交付）。本版依据已提交的 St
 
 ### Acceptance Criteria
 
-1. WHEN a caller queries availability THEN `pluginApi.sessions.request`/`cancel` faces SHALL expose a frozen `{ status: active | degraded | unavailable, reason?: string }` reflecting the operation authority, the loop admission boundary (R slice active and version-matched), and the client transport where applicable, and SHALL never throw.
+1. WHEN a caller queries availability THEN `sessions.availability()` (host and client each, the existing selfDescription member) SHALL return a frozen `{ status: active | degraded | unavailable, reason?: string }` reflecting the operation authority, the loop admission boundary (R slice active and version-matched), and the client transport where applicable; the request/cancel faces SHALL express unavailability as typed results and availability SHALL never throw.
 2. WHEN the agent-loop admission slice is inactive or mismatched THEN the public faces SHALL remain available with typed `unavailable` results for execute admission/cancel and SHALL report `degraded` with the reason, SHALL NOT silently double-run, and SHALL NOT disable the whole main facade or unrelated features.
 3. WHEN the facade core is inactive or the capability disabled THEN callers SHALL receive the uniform P1 `PluginApiInactiveError` / P2 `PluginApiFeatureDisabledError` and SHALL NOT observe partial operation state.
 4. WHEN headless, web-host and TUI-host contexts serve the same runtime identity THEN each SHALL report the same operation semantics for what it can reach, with per-context degraded/unavailable reporting where sources or the loop slice differ.
@@ -149,8 +149,8 @@ SPEC1 Stage 1 草案（M9 四条线批量交付）。本版依据已提交的 St
 
 ### Acceptance Criteria
 
-1. WHEN an operation is created or a cancel is accepted THEN the authority SHALL record bounded audit material (owner, operation id, session, timestamps, outcome codes, attempt counts, correlation ids) without payload content or secrets.
-2. WHEN audit appends fail THEN the operation SHALL retain its declared effect, the audit projection SHALL expose a bounded gap marker, and the system SHALL NOT fabricate a record.
+1. WHEN an operation is created or a cancel is accepted THEN the authority SHALL record bounded audit material (owner, operation id, session, timestamps, outcome codes, attempt counts, correlation ids) without payload content or secrets; v1 audit records SHALL be authority-internal bounded in-memory diagnostics (not durable, no new scope).
+2. WHEN audit record writes fail THEN the operation SHALL retain its declared effect, the authority's bounded in-memory diagnostics SHALL expose a gap marker (v1 does not build an audit projection subsystem), and the system SHALL NOT fabricate a record.
 3. WHEN a caller attempts to claim an owner that is not its own THEN the system SHALL derive owner identity from the actual caller context and SHALL NOT accept caller-reported ownership for authority decisions.
 4. WHEN a reason string or error detail is exposed THEN it SHALL be bounded, redacted and free of payload content, credentials and owner-private state.
 
@@ -166,11 +166,12 @@ SPEC1 Stage 1 草案（M9 四条线批量交付）。本版依据已提交的 St
 2. WHEN the slice is active THEN the replacement SHALL reproduce every ctx service, event, timing, payload, receiver, error and disposer contract of the replaced official row before adding the admission/cancel boundary; the added boundary SHALL be additive on that full contract.
 3. WHEN the slice applies THEN it SHALL verify the official row is disabled, exactly one replacement row is active, runtime and package identities match (`A.B.C` and the locked runtime), the facade's internal operation contract is compatible, and no component-owner conflict exists.
 4. WHEN a slice self-check fails THEN it SHALL log bounded diagnostics and stay inert (the official-contract behavior of the replacement remains, the extended admission/cancel boundary is not claimed), and SHALL NOT double-run, kill boot, or partially half-serve the boundary.
-5. WHEN the slice emits new attempt/end facts for the operation authority and optional activity evidence THEN those SHALL be registered canonical event vocabulary with a producer authority owned by the slice, with frozen payload shapes and owner-scoped semantics.
-6. WHEN the official component later provides an equivalent request-acceptance/cancel seam THEN the slice SHALL have a registered upstream proposal and retirement condition allowing migration back to official binding.
-7. WHEN third-party code directly imports the official `@deepseek-ai/dsh-agent-loop` package THEN the slice SHALL NOT claim to intercept or replace that import surface.
-8. WHEN the client-half determination is recorded for the slice THEN it SHALL document each of the six capability-strategy §10 questions with evidence and conclude host-only (the replaced official row declares no client manifest and exposes no client namespace/slot/settings/host-client negotiation/browser state/client event).
-9. WHEN the slice is inactive or removed THEN the public operation faces SHALL keep honest typed `unavailable` reporting and the official row SHALL remain functional (never an official row disabled without a working official-contract path).
+5. WHEN the slice emits attempt facts THEN they SHALL be registered canonical events with frozen payload shapes and owner-scoped semantics, with producer authority owned by the slice; the attempt-fact vocabulary SHALL be defined once by the agent-loop owner package and consumed by (a) this feature's operation authority, (b) `session-activity-projection` for observed terminal/queue adjudication, and (c) `checkpoint-restore-contract` for live-attempt preconditions, stop coordination and auto-capture; the shared slice SHALL be registered as one shared package capability in feature-list §3.1.
+6. WHEN the slice is delivered THEN it SHALL register its U-series upstream proposal and retirement condition in feature-list §3.1 at the integration wave (capability-strategy §4.1).
+7. WHEN the official component later provides an equivalent request-acceptance/cancel seam THEN the slice SHALL follow the registered retirement condition to allow migration back to official binding.
+8. WHEN third-party code directly imports the official `@deepseek-ai/dsh-agent-loop` package THEN the slice SHALL NOT claim to intercept or replace that import surface.
+9. WHEN the client-half determination is recorded for the slice THEN it SHALL document each of the six capability-strategy §10 questions with evidence and conclude host-only (the replaced official row declares no client manifest and exposes no client namespace/slot/settings/host-client negotiation/browser state/client event).
+10. WHEN the slice is inactive or removed THEN the public operation faces SHALL keep honest typed `unavailable` reporting and the official row SHALL remain functional (never an official row disabled without a working official-contract path).
 
 **Classification:** R（扩展既有 replacement owner 包的同组件第二 feature 切片）; all of `capability-strategy.md` R1–R8 that apply to an owner-package extension are satisfied and tested.
 
@@ -196,8 +197,9 @@ SPEC1 Stage 1 草案（M9 四条线批量交付）。本版依据已提交的 St
 - M9 共同契约 §2 词汇（identity、generation/epoch/cursor/revision/seq、terminal/lifecycle、cancellation/stale、scope/visibility）逐条采纳；operation/execution 统一 `terminal`、retry=attempt、外部重触发=新 operation、AbortSignal≠`aborted` 均按契约成文。
 - 契约 §5 动词规则采纳：`request`、`cancel` 保持 operation 动词，不改写为 `register`。
 - 偏离记录（契约 §8；含原因与补偿测试）：
-  1. **v1 采纳一个 R 切片且其为既有 owner 包的扩展**：Goal/feature-list 的"三至四包协同"经评估收敛为单一组件（`dsh-agent-loop` 既有 owner 包）的边界切片；`dsh-session`/`dsh-llm`/`dsh-tools`/approval 未新增切片（理由见 Design R-Slice Evaluation）。补偿测试：切片激活/未激活两态的官方契约 parity 与 unavailable 报告测试。
+  1. **R 收敛为单组件既有 owner 包扩展**（v2 共享 loop boundary slice 的实现底座）：Goal/feature-list 的"三至四包协同"经评估收敛为单一组件（`dsh-agent-loop` 既有 owner 包）的边界切片；`dsh-session`/`dsh-llm`/`dsh-tools`/approval 未新增切片（理由见 Design 偏离注 1）。补偿测试：切片激活/未激活两态的官方契约 parity 与 unavailable 报告测试。
   2. **client 半面 v1 交付**：Goal 未强制但 Expected result 隐含 Web 交互 UI；v1 提供 client face（B 传输封装），transport 细节与既有 channels 传输路径对齐（见 Design），若既有通道不足以承载则按 degraded 报告并登记修订。
+  3. **共享 loop boundary slice（v2）**：attempt 事实词汇由 agent-loop owner 包定义一次，同时供 interaction（admission/cancel）、activity（observed 终态/排队）、checkpoint（live-attempt 前置/stop-coordination/自动捕获）三线消费；feature-list §3.1 联合登记同一条共享切片 capability，不重复定义词汇。补偿测试：共享词汇机械一致性 + 切片激活/未激活双态 parity（Requirement 12 AC4 扩展）。
 - 与本线共享词汇/路径有关的其余 M9 决策见 Design 的 Contract Conformance 节。
 
 ## Standards Applicability And Alignment

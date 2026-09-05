@@ -2,7 +2,7 @@
 
 > feature_name: `client-attention-contribution`
 > milestone: M9
-> status: SPEC1 Stage 2 草案 v2（2026-09-05 批次；v2 按人类指示以 R-first/能力优先修订），待用户确认；Stage 3 Tasks 只可在本阶段获批后开始。
+> status: SPEC1 Stage 2 草案 v2（2026-09-05 批次；v2 按人类指示以 R-first/能力优先修订），与 Requirements v2 同批提交待用户确认；同批文档均获明确批准后方进入 Stage 3（Tasks）。
 
 ## Status
 
@@ -19,7 +19,7 @@ SPEC1 Stage 2 草案 v2。本文承接 v2 Requirements（同批待确认）。v2
 
 - 官方无 host attention/notification 服务；官方相关面全在浏览器：`dsh-client-runtime`（行 `client-runtime`，web，**无 owner**；browser 服务 `slots`、`conversationEvents`、`conversationViews`；事件 `slots/changed`、`connection/reset`；reflect 提供 `sessions`/`workspaces` outward face；client manifest inject `[dsh-client-connection, dsh-typert-registry, dsh-api-remotes]`）、`dsh-api-remotes`（行 `api-remotes`，web，**无 owner**；index 首部即 `API_REMOTE_FORWARDED_EVENTS` 白名单；`ctx.remote.$on` 合法键集 = 白名单）。
 - **api-remotes 转发白名单（11 个，须完整复刻）**：`agent-preset/selected`、`commands/change`、`credentials/updated`、`cordis/request-run`、`cordis/request-run-resolved`、`cordis/dynamic-package`、`cordis/dynamic-retract`、`cordis/inspect-query`、`cordis/inspect-query-resolved`、`llm/adapters-updated`、`settings/document-updated`；另有 Remote Agent/Session identity BFF（`ApiRemoteSessionNotFound`、subagent ownership 围栏）。
-- 两行都带 `dsh.client` manifest（capability-strategy §10 六问全中）⇒ 替换必须自建 client bundle、以官方模块 id 注册（R7；先例：session-channel 两包以官方模块 id `@deepseek-ai/dsh-client-connection`/`@deepseek-ai/dsh-api-gateway` 发布自有 bundle）。
+- 两行都带 `dsh.client` manifest（capability-strategy §10 六问判定：api-remotes 命中第 1/6 问、client-runtime 命中第 1/5/6 问；逐问证据见 requirements R11/R12 各表；任何一项命中即须完整 client 半面）⇒ 替换必须自建 client bundle、以官方模块 id 注册（capability-strategy R7；先例：session-channel 两包以官方模块 id `@deepseek-ai/dsh-client-connection`/`@deepseek-ai/dsh-api-gateway` 发布自有 bundle）。
 - 主包 client manifest 现 inject `[dsh-client-connection, dsh-client-runtime, dsh-api-remotes, dsh-client-ui-settings]`：主包 client 面运行在这些模块的浏览器 ctx 中——client-runtime slice 被替换后，主包 client 面在其 ctx 中消费新 runtime；装配集成波核对 inject 语义不变性。
 - headless profile 无 `connection`/`api-remotes`/`client-runtime` 行 ⇒ client 半面在 headless 必然 unavailable（如实报告）。
 - 原生动态发现（任意 client 插件免装配发现 remote 面）横跨官方 loader/module-table 语义，AGENTS.md §2.4 列为 C 类：两个 slice 激活后装配面收窄为"注入被替换模块或主包"的受支持路径，C 登记保留。
@@ -36,7 +36,7 @@ SPEC1 Stage 2 草案 v2。本文承接 v2 Requirements（同批待确认）。v2
  │ items · seq · epoch · dedupe · expiry · capacity │
  │ actions · dismiss/invoke · redaction(先行)      │
  └───────┬──────────────────────────────────────┘
-         │ attention/update（hub 产出；frozen+redacted；catalog fact/observation）
+         │ attention/update（hub 产出；frozen+redacted；catalog observation）
          ▼
  ┌──────────────────────────────────────────────┐
  │ dsh-api-remotes slice (R; 新 owner 包)        │
@@ -66,27 +66,27 @@ SPEC1 Stage 2 草案 v2。本文承接 v2 Requirements（同批待确认）。v2
 
 ### 1. 公共面与 idiom（registry/capability 登记在集成波完成）
 
-host：`attention.contribute`（contribution|register）、`attention.dismiss`、`attention.invoke`（operation 语义域动作）、`attention.current/list`（projection|read）、`attention.observe(.handle)`（projection|subscribe）、`attention.availability`（selfDescription）、capability `attention`。
+host：`attention.contribute`（contribution）、`attention.dismiss`/`attention.invoke`（贡献域内受控动作）、`attention.current/list`（projection|read）、`attention.observe(.handle)`（projection|subscribe）、`attention.availability`（selfDescription）、capability `attention`。
 
 client：`ctx.pluginApi.attention.{current,list,observe,observe.handle,contribute,dismiss,invoke,availability}` 同形登记（runtime=client；client 领域树新增 `attention` 根与 namespace 行；API 出口属主包 client 面，运行时属 client-runtime slice）。
 
 ### 2. Host hub（B；单一条目 authority）
 
-同 v1 设计 + 接收 client 侧转发请求：client `contribute`/`dismiss`/`invoke` 到达 hub 时按 owner 派生（client 调用方上下文）、条目 live/可见性、epoch/generation 做 stale-guard 后执行。条目内容与 action handler 只在 host hub 注册。
+hub 职责（条目录入/seq/epoch/dedupe/expiry/容量/withdraw/action/dismiss/invoke 裁决/host 投影）同 requirements R1–R4，另接收 client 侧转发请求：client `contribute`/`dismiss`/`invoke` 到达 hub 时按 owner 派生（client 调用方上下文）、条目 live/可见性、epoch/generation 做 stale-guard 后执行。条目内容与 action handler 只在 host hub 注册。
 
 ### 3. Api-remotes slice（R；新建 `dsh-api-remotes` owner 包）
 
-- 行：官方 `api-remotes`（web）disabled + insert 替代行（R1）；包/行名集成波定稿（中性命名）。
-- 复刻清单（R2，parity fixture 逐项）：`ctx.remote.$on` 合法键集 = 11 个白名单事件及其逐字转发语义；Remote Agent/Session identity BFF（含 not-found 与 subagent ownership 围栏）；错误/disposer 形状；client manifest 全半面（R7：自建 bundle、官方模块 id `@deepseek-ai/dsh-api-remotes`、`window.__DSH_BOOT__`/HMR 验证）。
-- 扩展：把 hub 产出的 `attention/update`（frozen、redacted、带 item id/seq/epoch 的消息族）纳入转发集——只对本行新增的注意力消息生效，不改动官方白名单语义。
-- 自检（R4/R5/R6）：官方行 disabled、替代行唯一 active、runtime/包 `A.B.C` 一致、无组件 owner 冲突、parity probe；失败 ⇒ log + 官方转发行为照常（fork/官方行为 fallback）+ attention 路由不宣称（client delivery 走 typed unavailable；host hub 不受影响）；绝不留下官方行禁用而无工作替代的空洞。
-- 退役/上游：官方提供非白名单 typed publication seam 后退役（feature-list §3.1 U-series）。
+- 行：官方 `api-remotes`（web）disabled + insert 替代行（cap-strategy R1）；包/行名集成波定稿（中性命名）。
+- 复刻清单（cap-strategy R2，parity fixture 逐项）：`ctx.remote.$on` 合法键集 = 11 个白名单事件及其逐字转发语义；Remote Agent/Session identity BFF（含 not-found 与 subagent ownership 围栏）；错误/disposer 形状；client manifest 全半面（cap-strategy R7：自建 bundle、官方模块 id `@deepseek-ai/dsh-api-remotes`、`window.__DSH_BOOT__`/HMR 验证）。
+- 扩展：把 hub 产出的 `attention/update`（frozen、redacted、带 item id/seq/epoch 的消息族）纳入转发集——只对本行新增的注意力消息生效，不改动官方白名单语义；11 键官方语义不变（parity fixture 逐一断言），`attention/update` 为完整复刻（cap-strategy R2 顺序）后新增的 typed 扩展键、单独 fixture 断言，且不扩大 consumer 侧 `ctx.remote.$on` 合法键集（保持复刻的 11 键；扩展消息经替换模块自身复刻的管线送达 client-runtime slice，第三方消费者经 `ctx.pluginApi.attention` 获取，不经 `$on`）——送达路径由 Stage 3 parity probe 钉定（Requirement 11 AC3 与 §10 证据表 row 6 一致）。
+- 自检（cap-strategy R4/R5/R6）：官方行 disabled、替代行唯一 active、runtime/包 `A.B.C` 一致、无组件 owner 冲突、parity probe；失败 ⇒ log + 官方转发行为照常（官方原行为，不启用扩展）+ attention 路由不宣称（client delivery 走 typed unavailable；host hub 不受影响）；绝不留下官方行禁用而无工作替代的空洞。
+- 退役/上游：交付时在 feature-list §3.1 登记 U-series 上游提案与退役条件（capability-strategy §4.1）；官方提供非白名单 typed publication seam 后按登记退役。
 
 ### 4. Client-runtime slice（R；新建 `dsh-client-runtime` owner 包）
 
-- 行：官方 `client-runtime`（web）disabled + insert 替代行（R1）；包/行名集成波定稿。
-- 复刻清单（R2）：`slots`（含 `slots/changed`）、`conversationEvents`、`conversationViews`、`connection/reset`、sessions/workspaces reflect outward face；client manifest 全半面（R7；官方模块 id `@deepseek-ai/dsh-client-runtime`）。
-- 扩展——浏览器 attention runtime（内部契约，非公共 API）：订阅经管线送达的 `attention/update`；按 item id/seq 去重与对账；epoch 随 `connection/reset`/HMR 重建并重取 host snapshot；把 frozen/redacted 视图暴露给主包 client 面；提供 slots 呈现集成（consumer 选择使用）；client→host 请求（contribute/dismiss/invoke）经既有 client→host 请求通道转发（typed、不排队）。
+- 行：官方 `client-runtime`（web）disabled + insert 替代行（cap-strategy R1）；包/行名集成波定稿。
+- 复刻清单（cap-strategy R2）：`slots`（含 `slots/changed`）、`conversationEvents`、`conversationViews`、`connection/reset`、sessions/workspaces reflect outward face；client manifest 全半面（cap-strategy R7；官方模块 id `@deepseek-ai/dsh-client-runtime`）。
+- 扩展——浏览器 attention runtime（内部契约，非公共 API）：订阅经管线送达的 `attention/update`；按 item id/seq 去重与对账；epoch 随 `connection/reset`/HMR 重建并重取 host snapshot；把 frozen/redacted 视图暴露给主包 client 面；提供 slots 呈现集成（consumer 选择使用）；client→host 请求（contribute/dismiss/invoke）经已交付 session-channel 的 client→host 请求往返面（类型化传输；本 feature 只消费、不替换——R 决策表「不采纳 dsh-client-connection/dsh-api-gateway」呼应；集成波固定具体通道入口与 wire revision）转发（typed、不排队）。
 - 自检/版本/owner：同 §3；失败 ⇒ runtime 不宣称 + slots/conversation/reflect 官方行为照常 + client face unavailable（typed）。
 - 退役/上游：官方提供原生 attention/reconnect seam 后退役。
 
@@ -111,7 +111,7 @@ framework 横切语义与 boot 胶水不进任何 slice。两 slice 的契约复
 
 ### 1. Attention item（public 形状；frozen）与 hub 内部记录
 
-同 v1（item 形状含 id/ownerId/seq/scope 关联/level/title/body/dedupeKey/expiresAt/audience/actions/correlation/meta/observedAt；hub 记录含 state/removal/handlers/epoch）。
+公开形状同 requirements R2 AC1（id/ownerId/seq/scope 关联/level/title/body/dedupeKey/expiresAt/audience/actions/correlation/observedAt/meta）：`observedAt` 由 hub 指派、不可 caller 自报；`correlation`/`meta`/`observedAt` 为内容字段扩展（依据 M9 契约 §2.1 身份词表与 §2.5 可见性档位，见 requirements 偏离注 5）。hub 内部记录含 state/removal/handlers/epoch。
 
 ### 2. 转发消息族（host hub 产出 → 管线 → browser runtime）
 
@@ -144,30 +144,31 @@ title/body/meta 在 host hub 产出转发消息前按受众裁剪（fail-closed�
 | activity 派生信号（producer 可选适配） | A/B | `sessions.activity` 只读投影 | 缺位 ⇒ 适配不启用；correlation 不可验证 ⇒ unknown |
 | `connection/reset`、HMR、`slots/changed` | A→R | client-runtime slice 原生订阅（复刻官方事件语义） | runtime 不激活 ⇒ client face unavailable；epoch 重建纪律 |
 | 官方 host→browser 管线（attention 转发） | R | api-remotes slice 转发 `attention/update` | slice 不激活 ⇒ delivery unavailable；host hub 不受影响 |
-| client→host 请求（contribute/dismiss/invoke） | R+B | 既有 client→host 请求通道 + hub 裁决 | 不可达 ⇒ typed unavailable（不排队）；stale-guard |
+| client→host 请求（contribute/dismiss/invoke） | R+B | 已交付 session-channel 请求往返面（类型化传输；只消费不替换） + hub 裁决 | 不可达 ⇒ typed unavailable（不排队）；stale-guard |
 | 官方 `api-remotes` 白名单/BFF | R（复刻） | slice 全量复刻 + parity fixture | parity 失败 ⇒ slice 不宣称扩展 + 官方行为照常 |
 
 ## Error Handling And Lifecycle
 
 - 失败呈现（契约 §6）：P1/P2 统一；P3 per-face/slice degraded/unavailable（headless 无 client 行、slice 不激活/错配、管线中断）；业务冲突（same-owner/cross-owner、dedupe、capacity、not-found/stale）为 typed result。
-- 生命周期：hub 随主门面 ctx；runtime 随 client-runtime slice（被替换官方模块）生命周期；teardown = client 面关闭（新 epoch 不再回调）→ 管线消费注销 → hub 清理（owner 条目 `withdrawn`）；disposer 幂等且 identity-bound。
+- 生命周期：hub 随主门面 ctx；runtime 随 client-runtime slice（被替换官方模块）生命周期；teardown = client 面关闭（新 epoch 不再回调）→ 管线消费注销 → hub 清理（owner 条目 `withdrawn`）；disposer 幂等且 identity-bound。守卫映射：hub epoch 守卫观察/重建与转发消息代次；owner generation（opaque、跨 owner 不可比较）守卫 disposer/handler/回调提交资格（Requirement 6 AC2）；owner 上下文结束/reload 即 withdraw，reload 后重新 contribute 是新注册（Requirement 4 AC4）。
 - 容量与清理：驱逐只在注册点且可观测；expiry 扫描有界；owner teardown 不误删他人条目。
 - Redaction：fail-closed 硬规则（host 脱敏失败 ⇒ 不产出负载，宁可 unavailable）。
 
 ## Testing Strategy
 
-1. Contribution/conflict/dedupe（R1/R2/R13）：host/client 两 synthetic 插件反序验证同 owner/cross-owner 冲突、dedupeKey、dispose 幂等、容量驱逐可观测。
-2. 生命周期（R3/R4）：expiry/dismiss/withdraw/eviction 的 removal reason；owner teardown 隔离；无 durable 写入断言。
-3. Client/rebind/HMR（R5/R6）：snapshot+delta 对账、seq/id 去重、`connection/reset` 后 epoch 重建、HMR 后 client face 免 $mount 恢复、旧代次请求被 stale 拒绝、离线 unavailable（不排队）、client contribute 端到端（纯浏览器插件发布）。
-4. Action（R7）：live/可见性/action 校验、handler containment、owner 变更后 handler 失效。
-5. Slices（R11/R12）：api-remotes 的 11 事件白名单逐字转发 + BFF parity；client-runtime 的 slots/conversation/reflect parity；版本错配、boot 自检、owner 冲突、无双跑、模块 id 注册、HMR、移除恢复、headless 缺席；probe 失败 ⇒ 官方行为照常 + 扩展不宣称。
-6. Redaction/隐私（R2/R9/R10）：host 投影/转发负载/日志机械断言无 secret/owner-private；非 durable 断言。
-7. Registry/shape（R14）：host/client `attention` 命名空间、成员、capability、catalog（`attention/update`）、两个新包/行登记机械一致。
-8. 终验：受护 `npm test`、`git diff --check`、registry/surface 一致性、官方包零修改审计、全局对抗性终审。
+1. Contribution/conflict/dedupe（Requirement 1/2/13）：host/client 两 synthetic 插件反序验证同 owner/cross-owner 冲突、dedupeKey、dispose 幂等、容量驱逐可观测。
+2. 生命周期（Requirement 3/4）：expiry/dismiss/withdraw/eviction 的 removal reason；owner teardown 隔离（reload 后重新 contribute 为新注册）；无 durable 写入断言。
+3. Client/rebind/HMR（Requirement 5/6）：snapshot+delta 对账、seq/id 去重、`connection/reset` 后 epoch 重建、HMR 后 client face 免 $mount 恢复、旧代次请求被 stale 拒绝、离线 unavailable（不排队）、client contribute 端到端（纯浏览器插件发布）。
+4. Action（Requirement 7）：live/可见性/action 校验、handler containment、owner 变更后 handler 失效。
+5. Slices（Requirement 11/12）：api-remotes 的 11 事件白名单逐字转发 + BFF parity（`attention/update` 扩展键单列、不参与官方 parity 断言）；client-runtime 的 slots/conversation/reflect parity；版本错配、boot 自检、owner 冲突、无双跑、模块 id 注册、HMR、移除恢复、headless 缺席；probe 失败 ⇒ 官方行为照常 + 扩展不宣称。
+6. Redaction/隐私（Requirement 2 AC2、Requirement 9、Requirement 14 AC4）：host 投影/转发负载/日志机械断言无 secret/owner-private；client 形状校验；非 durable 断言。
+7. Availability/边界（Requirement 8/9/10）：per-face availability 状态断言（hub/管线/runtime/本地消费路径）；P1/P2 typed error；degraded view 不抛；模型可见性默认 deny（Requirement 9 AC4）；scope 关联不产生 durable claim（Requirement 9 AC3）；R10 负向断言（不申请浏览器权限、不发声、不向 session authority 发 request/cancel，Requirement 10 AC1–AC4）。
+8. Registry/shape（Requirement 14）：host/client `attention` 命名空间、成员、capability、catalog（`attention/update`）、两个新包/行登记机械一致。
+9. 终验：受护 `npm test`、`git diff --check`、registry/surface 一致性、官方包零修改审计、全局对抗性终审。
 
 ## Standards Applicability And Alignment
 
-- `capability-strategy.md`: applicable。两个 R slice（新 owner 包；六问全中 ⇒ 完整 client 半面 R7）；framework 语义不进本 feature；残余 C（原生动态发现、UI 载体）附证据。
+- `capability-strategy.md`: applicable。两个 R slice（新 owner 包；§10 六问命中即完整 client 半面（cap-strategy R7），逐问证据见 requirements R11/R12 各表）；framework 语义不进本 feature；残余 C（原生动态发现、UI 载体）附证据。
 - `api-shape.md`: applicable。contribution 不写领域事实 + projection 只读双面；无 mutation/策略混入。
 - `api-idioms.md`: applicable。verb/handle/判别式结果/availability 全对齐。
 - `public-api-shape.md`: applicable。host/client `attention` 领域根；两新行/包运行时命名中性；不暴露 remote key/包/行身份。
@@ -192,11 +193,11 @@ title/body/meta 在 host hub 产出转发消息前按受众裁剪（fail-closed�
 
 契约 §2/§5/§6 采纳；§2.5 attention 条款落实。偏离记录：
 
-1. contribution verb `contribute`（保留）。
+1. contribution verb 定稿为 `contribute`（偏离 Goal 措辞 `publish`；依据 delivered contribution idiom，见 requirements 偏离注 1）。
 2. v1"零 R + 集中 $mount"废弃 → 两个 R slice（R 决策表见 §6）。
 3. client-only 生产者支持（Requirement 5/10 AC5）。
 4. 契约 §7.1 共享文件边界：本线在并行期只写 `docs/specs/client-attention-contribution/**` 与两个新建 owner 包目录（api-remotes、client-runtime；该两官方组件 owner 属本线）；registry/feature-list/README/full 聚合装配由集成波统一更新。
 
 ## Design Completion Condition
 
-本设计覆盖 v2 requirements（R1–R14）：三层职责与单 authority 不变式；两个 R slice 的复刻清单、parity fixture 与 fallback 语义；转发消息族与 runtime 状态机；装配/presence 路径；registry/包/行拟新增清单；失败/guard 策略逐钩子声明。用户确认前的修订就地更新本文与 requirements 对应条目。
+本设计覆盖 v2 requirements（Requirement 1–14）：三层职责与单 authority 不变式；两个 R slice 的复刻清单、parity fixture 与 fallback 语义；转发消息族与 runtime 状态机；装配/presence 路径；registry/包/行拟新增清单；失败/guard 策略逐钩子声明。用户确认前的修订就地更新本文与 requirements 对应条目。

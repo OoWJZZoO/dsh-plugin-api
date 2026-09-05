@@ -2,15 +2,15 @@
 
 > feature_name: `client-attention-contribution`
 > milestone: M9
-> status: SPEC1 Stage 1 草案 v2（2026-09-05 批次；v2 按人类指示以 R-first/能力优先修订），待用户确认；Stage 2 Design 只可在本阶段获批后开始。
+> status: SPEC1 Stage 1 草案 v2（2026-09-05 批次；v2 按人类指示以 R-first/能力优先修订），与 Design v2 同批提交待用户确认；同批文档均获明确批准后方进入 Stage 3（Tasks）。
 
 ## Status
 
-SPEC1 Stage 1 草案 v2（M9 四条线批量交付）。v1 曾以"facade 零 R + 主包集中 $mount"定稿，与 Goal"优先以 replacement 扩大 client loader 能力面、而不是要求手写 $mount 胶水"的方向相悖；v2 按人类裁决修订为 **R-first**：host contribution hub 为 facade B（单一 authority），host→client 传输与浏览器侧运行时由两个 R slice 承载（`dsh-api-remotes`、`dsh-client-runtime`，均为新建 owner 包）。本文依据 Stage 0 Goal、M9 共同契约（`temp/m9-parallel-development-contract.md`）与本仓库 `docs/standards/` 编写。用户确认本文件后进入 Stage 2；本文档获批前不写实现代码。
+SPEC1 Stage 1 草案 v2（M9 四条线批量交付）。v1 曾以"facade 零 R + 主包集中 $mount"定稿，与 Goal"优先以 replacement 扩大 client loader 能力面、而不是要求手写 $mount 胶水"的方向相悖；v2 按人类裁决修订为 **R-first**：host contribution hub 为 facade B（单一 authority），host→client 传输与浏览器侧运行时由两个 R slice 承载（`dsh-api-remotes`、`dsh-client-runtime`，均为新建 owner 包）。本文依据 Stage 0 Goal、M9 共同契约（`temp/m9-parallel-development-contract.md`）与本仓库 `docs/standards/` 编写。本文件与 Design v2 同批提交待批（M9 批量确认门）；同批文档均获明确批准后方进入 Stage 3（Tasks），获批前不写实现代码。
 
 ## Introduction
 
-`client-attention-contribution` 为第三方插件提供统一、可撤销、可去重且可重连的 attention contribution：向 Web/TUI/desktop consumer 提供 scoped notification、toast、status indicator 与 action。公共面拆为两个 idiom：`contribute`（contribution，加内容）+ `dismiss`/`invoke`（受控领域动作）+ 两侧冻结投影与 `observe`（projection）。公共路径：host `pluginApi.attention`；client `ctx.pluginApi.attention`（web profile）。
+`client-attention-contribution` 为第三方插件提供统一、可撤销、可去重且可重连的 attention contribution：向 Web/TUI/desktop consumer 提供 scoped notification、toast、status indicator 与 action。公共面拆为两个 idiom：**contribution**（`contribute` 加内容；`dismiss`/`invoke` 为贡献域内受控动作）+ **projection**（两侧冻结投影与 `observe`）。公共路径：host `pluginApi.attention`；client `ctx.pluginApi.attention`（web profile）。
 
 **实现通道方向（v2）：**
 
@@ -34,7 +34,7 @@ SPEC1 Stage 1 草案 v2（M9 四条线批量交付）。v1 曾以"facade 零 R +
 5. WHEN a producer calls `dispose()` on its live handle THEN the item SHALL be withdrawn; a stale or cross-owner handle SHALL return the typed stale/no-op result and SHALL NOT remove the current item.
 6. WHEN contribution capacity is exhausted THEN the hub SHALL evict the oldest removable items observably or return the typed capacity outcome when none is removable; every eviction SHALL be observable as a removal with its reason.
 
-**Classification:** B facade contribution hub; entry verb `contribute` follows the delivered contribution idiom（M8 归并决策：`publish`→`contribute` 先例）——偏离 Goal 措辞已登记。
+**Classification:** B facade contribution hub; entry verb `contribute` follows the delivered contribution idiom（`docs/standards/api-idioms.md` §contribution，入口 `contribute(spec)` + 判别式结果 + `{id, ownerId, seq, dispose()}`）——偏离 Goal 措辞 `publish` 已登记。
 
 ## Requirement 2: Item Content Contract And Redaction Envelope
 
@@ -42,7 +42,7 @@ SPEC1 Stage 1 草案 v2（M9 四条线批量交付）。v1 曾以"facade 零 R +
 
 ### Acceptance Criteria
 
-1. WHEN an item is registered THEN its public shape SHALL carry at most: `id`, `ownerId`, `seq`, scope association (`{sessionId?}`/`{workspaceId?}`; association only, never a durable scope claim), `level` (`info | warning | error`), `title`, bounded `body`, `dedupeKey`, `expiresAt`, `audience` (fixed client-kind vocabulary), optional `actions` (`[{id,label}]`), optional `correlation` (`{activityId?, executionId?}` from the shared projection), and bounded non-secret `meta`.
+1. WHEN an item is registered THEN its public shape SHALL carry at most: `id`, `ownerId`, `seq`, scope association (`{sessionId?}`/`{workspaceId?}`; association only, never a durable scope claim), `level` (`info | warning | error`), `title`, bounded `body`, `dedupeKey`, `expiresAt`, `audience` (fixed client-kind vocabulary), optional `actions` (`[{id,label}]`), optional `correlation` (`{activityId?, executionId?}` from the shared projection), hub-assigned `observedAt`, and bounded non-secret `meta`.
 2. WHEN content is contributed THEN redaction SHALL be applied host-side before the item enters any projection, forwarded payload or log exit; secret/owner-private values SHALL be rejected or stripped at the host boundary and SHALL NOT reach the client under any field name.
 3. WHEN an item references a session/activity correlation THEN the system SHALL validate the reference against the shared projection vocabulary and SHALL mark an unverifiable reference `unknown`.
 4. WHEN an item has no session/workspace association THEN it SHALL be presented as unscoped and SHALL NOT be attributed to any session durable record.
@@ -73,7 +73,7 @@ SPEC1 Stage 1 草案 v2（M9 四条线批量交付）。v1 曾以"facade 零 R +
 1. WHEN a consumer dismisses an item (host or client `dismiss(itemId, { by })`) THEN the hub SHALL remove it with reason `dismissed`, return a typed result, and SHALL NOT require producer consent for dismissing items legitimately visible to that consumer.
 2. WHEN an item reaches `expiresAt` THEN the hub SHALL remove it with reason `expired`; items without expiry SHALL remain until withdrawn, dismissed or evicted.
 3. WHEN cleanup runs (expiry scan, capacity eviction, owner teardown) THEN it SHALL be observable through projection removals and SHALL NOT write any durable record or session fact.
-4. WHEN a producer's owner context ends or reloads THEN the hub SHALL dispose that owner's live items with reason `withdrawn` unless re-registration across reload was declared; stale producer disposers SHALL NOT remove newer-generation items.
+4. WHEN a producer's owner context ends or reloads THEN the hub SHALL dispose that owner's live items with reason `withdrawn`; a contribution after reload SHALL be a new registration; stale producer disposers SHALL NOT remove newer-generation items.
 
 **Classification:** B facade lifecycle; disposer ownership per `concurrency-and-cancellation.md` §5.
 
@@ -84,9 +84,9 @@ SPEC1 Stage 1 草案 v2（M9 四条线批量交付）。v1 曾以"facade 零 R +
 ### Acceptance Criteria
 
 1. WHEN a client plugin accesses the attention face THEN `ctx.pluginApi.attention.current()/list()/observe()` SHALL present the same frozen shape semantics as the host projection for items whose audience includes that client, delivered through the official host→browser pipeline (api-remotes slice) and the browser attention runtime (client-runtime slice).
-2. WHEN a client plugin contributes an attention item THEN `ctx.pluginApi.attention.contribute(spec)` SHALL forward the validated spec to the host hub through the pipeline and SHALL return the same typed outcome/handle semantics as the host face, with owner derived from the client caller context; the host hub SHALL remain the single item authority.
+2. WHEN a client plugin contributes an attention item THEN `ctx.pluginApi.attention.contribute(spec)` SHALL forward the validated spec to the host hub through the supported client→host request channel (delivered session-channel transport; consumed, not replaced — see the R decision table for `dsh-client-connection`/`dsh-api-gateway`) and SHALL return the same typed outcome/handle semantics as the host face, with owner derived from the client caller context; the host hub SHALL remain the single item authority.
 3. WHEN a client consumer dismisses an item or invokes an action THEN `dismiss(itemId, {by})`/`invoke(itemId, actionId)` SHALL forward the typed request to the host hub and return the same typed outcome as the host face.
-4. WHEN the pipeline, host connection or hub is unavailable (offline, rebind, headless profile without the client rows) THEN client calls SHALL return typed `unavailable` outcomes and the client projection SHALL report its own availability truthfully; v1 SHALL NOT queue client requests invisibly.
+4. WHEN the pipeline, host connection or hub is unavailable (offline, rebind, headless profile without the client rows) THEN client calls SHALL return typed `unavailable` outcomes and the client projection SHALL report its own availability truthfully; the client SHALL NOT queue requests invisibly in any revision.
 5. WHEN client payloads are delivered THEN redaction SHALL already be applied host-side; the client SHALL validate shape only and SHALL NOT receive secret/owner-private/diagnostic material; the client SHALL NOT be able to inject arbitrary host-visible fields.
 6. WHEN no client consumer is present in the profile THEN the host hub SHALL remain active and report the client delivery path as degraded/unavailable; host-side consumers (TUI/desktop/operator) stay served.
 
@@ -99,7 +99,7 @@ SPEC1 Stage 1 草案 v2（M9 四条线批量交付）。v1 曾以"facade 零 R +
 ### Acceptance Criteria
 
 1. WHEN a client connection rebinds, reconnects or hot-reloads THEN the browser attention runtime SHALL rebuild its projection from the host hub's current snapshot with a new epoch and SHALL NOT carry live items from the old epoch as current.
-2. WHEN the host hub epoch or generation changes THEN old client faces, disposers and callbacks SHALL lose commit eligibility: they SHALL NOT write to the new hub state, SHALL NOT remove new-generation items, and SHALL NOT be delivered as current events on the new face.
+2. WHEN the host hub epoch changes or a caller's owner generation becomes stale THEN old client faces, disposers and callbacks SHALL lose commit eligibility: they SHALL NOT write to the new hub state, SHALL NOT remove new-generation items, and SHALL NOT be delivered as current events on the new face.
 3. WHEN a client call or callback from a stale connection generation arrives at the host THEN the host SHALL return the typed stale/conflict outcome and SHALL NOT apply it to the current hub state.
 4. WHEN the browser runtime itself reloads (module HMR) THEN the runtime SHALL re-establish the projection from the host snapshot under the official connection lifecycle rather than requiring third-party `$mount` glue; the client face SHALL be present again after reload without manual remount by consumers.
 5. WHEN duplicate or reordered deliveries occur across a rebind THEN the client SHALL dedupe by item `id`/`seq` and SHALL NOT double-render one item.
@@ -115,7 +115,7 @@ SPEC1 Stage 1 草案 v2（M9 四条线批量交付）。v1 曾以"facade 零 R +
 1. WHEN a contribution declares `actions` THEN the producer SHALL provide, per action id, a bounded owner-bound handler registered with the item; handlers SHALL NOT be replaceable by another owner.
 2. WHEN a consumer invokes `attention.invoke(itemId, actionId)` THEN the hub SHALL verify the item is live and visible, the action exists, execute the owner's handler with bounded context, and return a typed outcome (`invoked | not-found | conflict | unavailable`); handler exceptions SHALL be contained and surfaced with owner attribution.
 3. WHEN an action targets a session/activity that has moved on THEN the hub SHALL NOT invoke the handler and SHALL return the typed stale/conflict outcome.
-4. WHEN the invoking consumer lacks visibility or the item is not live THEN the hub SHALL return `not-found`/`conflict` typed outcomes SHALL NOT leak whether the item exists.
+4. WHEN the invoking consumer lacks visibility or the item is not live THEN the hub SHALL return `not-found`/`conflict` typed outcomes and SHALL NOT leak whether the item exists.
 5. WHEN a producer disposes the item or its owner context ends THEN pending handlers SHALL be disabled with the item.
 
 **Classification:** B facade operation-within-contribution (producer-owned handler execution with containment); no generic unrestricted executor.
@@ -132,7 +132,7 @@ SPEC1 Stage 1 草案 v2（M9 四条线批量交付）。v1 曾以"facade 零 R +
 4. WHEN capability presence is negotiated THEN `capabilities` SHALL expose the attention capability without package, row, remote key or replacement identities.
 5. WHEN a consumer or producer is entirely absent THEN the hub SHALL NOT disable itself or other features.
 
-**Classification:** Facade selfDescription; taxonomy per contract §6 and `capability-strategy.md` §6.2.
+**Classification:** B（facade selfDescription）；taxonomy per contract §6 and `capability-strategy.md` §6.2.
 
 ## Requirement 9: Scope, Durability And Privacy Boundaries
 
@@ -169,16 +169,28 @@ SPEC1 Stage 1 草案 v2（M9 四条线批量交付）。v1 曾以"facade 零 R +
 ### Acceptance Criteria
 
 1. WHEN the api-remotes slice is added THEN it SHALL become the replacement owner of the official `api-remotes` row (web profile) through the official patch mechanism only; SHALL NOT modify official package files and SHALL NOT add unrelated rows.
-2. WHEN the slice is active THEN it SHALL reproduce the full official contract of the replaced row — the forwarded-event allowlist semantics for every currently forwarded host event (the eleven allowlisted event names), the Remote Agent/Session identity BFF behavior, receiver/error/disposer shapes and the client manifest half (R2).
-3. WHEN attention updates travel host→browser THEN they SHALL be routed through the same official forwarding machinery extended by the slice (typed, frozen, host-redacted messages with item `id`/`seq`/epoch), and SHALL NOT bypass or duplicate the official pipeline with a parallel private channel.
-4. WHEN the slice applies THEN it SHALL verify the official row is disabled, exactly one replacement row is active, runtime/package identities match, and no component-owner conflict exists (R4/R5/R6).
-5. WHEN a self-check or parity fixture fails THEN the slice SHALL log bounded diagnostics and SHALL NOT claim the attention route; official forwarding behavior SHALL remain functional (fork/官方行为 fallback) and the installation SHALL NEVER be left with the official row disabled and no working official-contract path.
-6. WHEN the replaced row's client half is reproduced THEN it SHALL follow R7: self-built client bundle registered under the official module id, with `window.__DSH_BOOT__` assembly and HMR verification.
-7. WHEN third-party code directly imports the official `@deepseek-ai/dsh-api-remotes` package THEN the slice SHALL NOT claim to intercept or replace that import surface (R3).
-8. WHEN the official component later provides an equivalent typed publication seam THEN the slice SHALL have a registered upstream proposal and retirement condition.
-9. WHEN the official row is absent (e.g., headless profile) THEN the slice is not present and the client delivery path reports unavailable per Requirement 8 AC3.
+2. WHEN the slice is active THEN it SHALL reproduce the full official contract of the replaced row — the forwarded-event allowlist semantics for every currently forwarded host event (the eleven allowlisted event names), the Remote Agent/Session identity BFF behavior, receiver/error/disposer shapes and the client manifest half (cap-strategy R2); parity fixtures SHALL assert the eleven official event keys and their per-event semantics one-to-one against the official implementation.
+3. WHEN attention updates travel host→browser THEN they SHALL be routed through the same official forwarding machinery extended by the slice (typed, frozen, host-redacted messages with item `id`/`seq`/epoch), and SHALL NOT bypass or duplicate the official pipeline with a parallel private channel; `attention/update` SHALL be a typed extension key added only after full reproduction (cap-strategy R2 ordering) and SHALL NOT participate in official parity assertions; the extension SHALL NOT expand the consumer-side `ctx.remote.$on` legal key set (kept at the eleven allowlisted events) — `attention/update` is delivered through the replaced module's own reproduced forwarding path to the browser runtime and reaches third-party consumers via `ctx.pluginApi.attention`, not via `$on`; the Stage 3 parity probe SHALL pin this boundary.
+4. WHEN the slice applies THEN it SHALL verify the official row is disabled, exactly one replacement row is active, runtime/package identities match, and no component-owner conflict exists (cap-strategy R4/R5/R6).
+5. WHEN a self-check or parity fixture fails THEN the slice SHALL log bounded diagnostics and SHALL NOT claim the attention route; official forwarding behavior SHALL remain functional (官方原行为照常，不启用扩展) and the installation SHALL NEVER be left with the official row disabled and no working official-contract path.
+6. WHEN the replaced row's client half is reproduced THEN it SHALL follow capability-strategy R7: self-built client bundle registered under the official module id, with `window.__DSH_BOOT__` assembly and HMR verification.
+7. WHEN third-party code directly imports the official `@deepseek-ai/dsh-api-remotes` package THEN the slice SHALL NOT claim to intercept or replace that import surface (cap-strategy R3).
+8. WHEN the api-remotes slice is delivered THEN it SHALL register its U-series upstream proposal and retirement condition in feature-list §3.1 at the integration wave (capability-strategy §4.1).
+9. WHEN the official component later provides an equivalent typed publication seam THEN the slice SHALL follow the registered retirement condition to migrate back to official binding.
+10. WHEN the official row is absent (e.g., headless profile) THEN no replacement row SHALL be inserted and the client delivery path SHALL report unavailable per Requirement 8 AC3.
 
-**Classification:** R（新建 `dsh-api-remotes` owner 包；client manifest 六问全中 ⇒ 完整 client 半面）；capability-strategy R1–R8 适用条款逐条满足。
+**§10 六问证据（capability-strategy §10；任何一项命中即要求完整 client 半面）：**
+
+| §10 问 | verdict | 证据 |
+|---|---|---|
+| 1 client manifest | 命中 | 官方 `dsh-api-remotes` 声明 `dsh.client` manifest（inject `[dsh-api-gateway]`；Stage 3 probe 复核） |
+| 2 remote namespace | 未命中 | 转发/网关角色，无独立 remote namespace 注册面 |
+| 3 slot/settings bridge | 未命中 | 无 slot/settings bridge 面 |
+| 4 版本协商 | 未命中 | 无 host↔client 版本协商 |
+| 5 browser state/reconnect | 未命中 | 该行无 browser state/reconnect 语义 |
+| 6 client-facing event/service | 命中 | `ctx.remote.$on` 合法键集（= 11 事件白名单）即 consumer 端事件面 |
+
+**Classification:** R（新建 `dsh-api-remotes` owner 包；§10 六问命中第 1/6 问 ⇒ 完整 client 半面，落地按 capability-strategy R7）；capability-strategy R1–R8 适用条款逐条满足。
 
 ## Requirement 12: Client-Runtime Replacement Slice Contract (R)
 
@@ -187,15 +199,27 @@ SPEC1 Stage 1 草案 v2（M9 四条线批量交付）。v1 曾以"facade 零 R +
 ### Acceptance Criteria
 
 1. WHEN the client-runtime slice is added THEN it SHALL become the replacement owner of the official `client-runtime` row (web profile) through the official patch mechanism only; SHALL NOT modify official package files and SHALL NOT add unrelated rows.
-2. WHEN the slice is active THEN it SHALL reproduce the full official browser-module contract — `slots` (with `slots/changed`), `conversationEvents`, `conversationViews`, `connection/reset`, and the outward `sessions`/`workspaces` reflect faces — before adding the attention runtime (R2).
+2. WHEN the slice is active THEN it SHALL reproduce the full official browser-module contract — `slots` (with `slots/changed`), `conversationEvents`, `conversationViews`, `connection/reset`, the outward `sessions`/`workspaces` reflect faces, and the `dsh.client` manifest half (inject list `[dsh-client-connection, dsh-typert-registry, dsh-api-remotes]` and assembly semantics) — before adding the attention runtime (cap-strategy R2).
 3. WHEN the attention runtime is active THEN it SHALL own the browser-side attention state machine (message reconciliation, item `id`/`seq` dedupe, epoch rebuild on `connection/reset`/HMR, host snapshot re-fetch), SHALL expose the internal runtime consumed by the main facade client face, and SHALL integrate presentation mounting through the reproduced `slots` contract where consumers choose to use slots.
-4. WHEN the slice applies THEN it SHALL verify the official row is disabled, exactly one replacement row is active, runtime/package identities match, and no component-owner conflict exists (R4/R5/R6).
+4. WHEN the slice applies THEN it SHALL verify the official row is disabled, exactly one replacement row is active, runtime/package identities match, and no component-owner conflict exists (cap-strategy R4/R5/R6).
 5. WHEN a self-check or parity fixture fails THEN the slice SHALL log bounded diagnostics and SHALL NOT claim the attention runtime; slots/conversation/reflect official behavior SHALL remain functional and the installation SHALL NEVER be left with the official row disabled and no working official-contract path.
-6. WHEN the client half is reproduced THEN it SHALL follow R7 (self-built bundle under the official module id, boot/HMR verification).
-7. WHEN third-party code directly imports the official `@deepseek-ai/dsh-client-runtime` package THEN the slice SHALL NOT claim to intercept or replace that import surface (R3).
-8. WHEN the official component later provides an equivalent native attention/reconnect seam THEN the slice SHALL have a registered upstream proposal and retirement condition.
+6. WHEN the client half is reproduced THEN it SHALL follow capability-strategy R7 (self-built bundle under the official module id, `window.__DSH_BOOT__` and HMR verification).
+7. WHEN third-party code directly imports the official `@deepseek-ai/dsh-client-runtime` package THEN the slice SHALL NOT claim to intercept or replace that import surface (cap-strategy R3).
+8. WHEN the client-runtime slice is delivered THEN it SHALL register its U-series upstream proposal and retirement condition in feature-list §3.1 at the integration wave (capability-strategy §4.1).
+9. WHEN the official component later provides an equivalent native attention/reconnect seam THEN the slice SHALL follow the registered retirement condition to migrate back to official binding.
 
-**Classification:** R（新建 `dsh-client-runtime` owner 包；完整 client 半面）；capability-strategy R1–R8 适用条款逐条满足。
+**§10 六问证据（capability-strategy §10；任何一项命中即要求完整 client 半面）：**
+
+| §10 问 | verdict | 证据 |
+|---|---|---|
+| 1 client manifest | 命中 | 官方 `dsh-client-runtime` 声明 `dsh.client` manifest（inject `[dsh-client-connection, dsh-typert-registry, dsh-api-remotes]`；Stage 3 probe 复核） |
+| 2 remote namespace | 未命中 | reflect 面为 outward 服务，无独立 remote namespace 注册语义 |
+| 3 slot/settings bridge | 未命中 | `slots` 属被复刻行自身服务契约，非另行提供的 bridge |
+| 4 版本协商 | 未命中 | 无 host↔client 版本协商 |
+| 5 browser state/reconnect | 命中 | `connection/reset` 与模块 HMR 即 browser-side state/reconnect 语义（被复刻契约；attention runtime 重建依赖） |
+| 6 client-facing event/service | 命中 | `slots/changed`、`connection/reset` 等浏览器服务/事件面 |
+
+**Classification:** R（新建 `dsh-client-runtime` owner 包；§10 六问命中第 1/5/6 问 ⇒ 完整 client 半面，落地按 capability-strategy R7）；capability-strategy R1–R8 适用条款逐条满足。
 
 ## Requirement 13: Multi-Owner Composition And Consumer Safety
 
@@ -237,14 +261,15 @@ SPEC1 Stage 1 草案 v2（M9 四条线批量交付）。v1 曾以"facade 零 R +
 
 契约 §2/§5/§6 采纳；契约 §2.5 attention 条款落实为 hub/运行时非 durable + scope 关联语义。偏离记录（契约 §8）：
 
-1. contribution verb 定稿 `contribute`（v1 偏离注 1 保留）。
+1. contribution verb 定稿为 `contribute`（偏离 Goal 措辞 `publish`）：依据既有 delivered contribution idiom（`docs/standards/api-idioms.md` §contribution，入口 `contribute(spec)` + 判别式结果 + `{id, ownerId, seq, dispose()}`）；M8 动词归并先例为 `remotes publish→register`，与本面不混淆。
 2. v1"零 R + 主包集中 $mount"废弃：v2 采纳 api-remotes/client-runtime 两个 R slice（requirements 偏离注于 R 决策节；动机与 Goal"优先 replacement 而非手写 $mount"对齐）。
 3. client-only 生产者 v1 排除废除：受支持路径 = client contribute 转发 host hub（Requirement 5/10 AC5）；host 不可达 typed unavailable，不建第二 authority。
 4. 契约 §7.1 共享文件边界：本线在并行期只写 `docs/specs/client-attention-contribution/**` 与两个新建 owner 包目录（api-remotes、client-runtime 的官方组件 owner 属本线）；registry/feature-list/README/full 聚合装配由集成波统一更新（行/包名集成波定稿，运行时命名中性）。
+5. 内容字段扩展：public item 形状在 Goal 枚举（scope/level/标题/正文/dedupeKey/expiresAt/action/audience）之外增加 `correlation`（依据 M9 契约 §2.1 身份词表）、`meta` 与 hub 指派的 `observedAt`（依据契约 §2.5 可见性档位）——扩展依据登记于此；`observedAt` 由 hub 指派、不可 caller 自报（Requirement 2 AC1）。
 
 ## Standards Applicability And Alignment
 
-- `capability-strategy.md`: applicable。两个 R slice（新建 owner 包；client manifest 六问全中 ⇒ 完整 client 半面 R7）；framework 横切语义不进本 feature；残余 C 附证据。
+- `capability-strategy.md`: applicable。两个 R slice（新建 owner 包；§10 六问任一命中即完整 client 半面（cap-strategy R7），逐问证据见 R11/R12 各表）；framework 横切语义不进本 feature；残余 C 附证据。
 - `api-shape.md`: applicable。contribution 不写领域事实 + projection 只读双面；无 mutation/策略混入。
 - `api-idioms.md`: applicable。`contribute`/判别式结果/`{id,ownerId,seq,dispose()}`/`current/list/observe` handle/availability 全对齐。
 - `public-api-shape.md`: applicable。host/client 各挂 `attention` 领域根；不暴露 remote key/包/行身份。
