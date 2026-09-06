@@ -60,6 +60,7 @@ export function createMemoryFacility(options = {}) {
         handle: deepFreeze({ dispose: async () => domain.close(), purge: async () => {}, domain }),
       }
     },
+    domainOf: (name) => domains.get(name),
   }
 }
 
@@ -100,17 +101,17 @@ export function createAttemptFactsFixture(initial = {}) {
           return { ok: true, code: 'requested' }
         },
       },
-      onEnd: (listener) => {
-        endListeners.add(listener)
-        return { dispose: () => endListeners.delete(listener) }
-      },
+onEnd: (listener) => {
+      endListeners.add(listener)
+      return { dispose: () => endListeners.delete(listener) }
     },
-    set(sessionId, entry) { state[sessionId] = entry },
-    emitEnd(fact) {
-      for (const listener of [...endListeners]) listener(fact)
-    },
-    rejectNextStop(decision) { cancelReject = decision },
-  }
+  },
+  set(sessionId, entry) { state[sessionId] = entry },
+  async emitEnd(fact) {
+    await Promise.allSettled([...endListeners].map((listener) => listener(fact)))
+  },
+  rejectNextStop(decision) { cancelReject = decision },
+}
 }
 
 /** Session branch source fixture (owning authority face). */
@@ -131,12 +132,14 @@ export function createBranchAuthorityFixture(initial = {}) {
       },
       restore: async ({ sessionId, branchId, fence, supersession } = {}) => {
         if (!state.active) return { ok: false, code: 'unavailable', reason: state.reason ?? 'fixture inactive' }
+        if (state.failStep) return { ok: false, code: state.failStep.code, reason: state.failStep.reason }
         state.branches.push({ branchId, sessionId, restored: true, supersession })
         return { ok: true, code: 'restored' }
       },
       availabilityReport: () => state.active,
     },
     setActive(active, reason) { state.active = active; state.reason = reason },
+    setFailStep(failStep) { state.failStep = failStep },
     branches: () => state.branches,
   }
 }
@@ -238,7 +241,7 @@ export function createCoordinationFixture(initial = {}) {
   const leases = new Map()
   let seq = 0
   const fail = typeof initial.fail === 'function' ? initial.fail : () => undefined
-  const state = { lostAt: initial.lostAfterHeartbeats, heartbeats: 0 }
+  const state = { failHeartbeats: 0, heartbeats: 0 }
   return {
     face: {
       acquire: async ({ resource, ownerId, leaseMs }) => {
@@ -260,7 +263,7 @@ export function createCoordinationFixture(initial = {}) {
           return { ok: false, code: 'conflict', reason: 'lease is no longer held' }
         }
         state.heartbeats += 1
-        if (state.lostAt !== undefined && state.heartbeats >= state.lostAt) {
+        if (state.failHeartbeats > 0 && state.heartbeats <= state.failHeartbeats) {
           lease.active = false
           return { ok: false, code: 'conflict', reason: 'lease expired (fixture)' }
         }
@@ -276,7 +279,7 @@ export function createCoordinationFixture(initial = {}) {
       const lease = leases.get(`${resource.scope}:${resource.key}`)
       return lease?.active ? lease : undefined
     },
-    setLostAfter(heartbeats) { state.lostAt = heartbeats },
+    setFailHeartbeats(count) { state.failHeartbeats = count },
   }
 }
 
