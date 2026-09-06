@@ -103,7 +103,7 @@ test('apply mounts session after events with a composed events catalog', () => {
 
   const catalog = state.pluginApi.events.catalog()
   assert.ok(catalog, 'events catalog must exist')
-  assert.equal(Object.keys(catalog).length, 47)
+  assert.equal(Object.keys(catalog).length, 48)
   assert.ok(Object.isFrozen(catalog), 'composed catalog must be frozen')
   for (const name of [
     'session/created',
@@ -117,7 +117,7 @@ test('apply mounts session after events with a composed events catalog', () => {
   assert.equal(state.pluginApi.sessions.availability().status, 'active')
   assert.deepEqual(
     state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').map((feature) => feature.name),
-    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel'],
+    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel', 'sessionActivity', 'sessionInteraction', 'attention', 'checkpoints'],
   )
   assert.ok(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').slice(0, 15).every((feature) => feature.name === 'sessionBranch' || feature.isActive))
   assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')[15].isActive, false)
@@ -167,7 +167,7 @@ test('apply completes every guard pass before pass-2 publication and an early fe
   const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   assert.deepEqual(
     features.map((feature) => feature.name),
-    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel'],
+    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel', 'sessionActivity', 'sessionInteraction', 'attention', 'checkpoints'],
   )
   assert.equal(features.find((feature) => feature.name === 'tools')?.isActive, false)
   assert.equal(features.find((feature) => feature.name === 'execRoute')?.isActive, false)
@@ -188,8 +188,10 @@ test('session guard failure disables only session and keeps the facade active', 
   assert.equal(state.pluginApi.isActive, true)
 
   const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
-assert.equal(features.length, 31)
-  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel'])
+// 31 established features plus the four integration-wave features
+  // (sessionActivity, sessionInteraction, attention, checkpoints).
+  assert.equal(features.length, 35)
+  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel', 'sessionActivity', 'sessionInteraction', 'attention', 'checkpoints'])
   assert.equal(features[0].isActive, true)
   assert.equal(features[1].isActive, true)
   assert.equal(features[2].isActive, true)

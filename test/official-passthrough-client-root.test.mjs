@@ -29,7 +29,7 @@ test('the root and all seven pending shells are observable synchronously while t
   assert.equal(typeof api.codec, 'object')
   // Top-level capability paths match the published root members.
   const expectedPaths = ['isActive', 'apiVersion', 'assertCompatible', 'capabilities', 'connection',
-    'events', 'remotes', 'settings', 'slots', 'lifecycle', 'codec', 'services']
+    'events', 'remotes', 'settings', 'slots', 'lifecycle', 'codec', 'services', 'sessions', 'attention']
   assert.deepEqual([...api.capabilities.list()].sort(), [...expectedPaths].sort())
   for (const path of expectedPaths) {
     assert.equal(api.capabilities.get(path).status, 'active', `${path} must be reported as active`)
@@ -142,7 +142,7 @@ test('each client getter read creates a fresh composition while member identitie
   assert.equal(first.connection, second.connection)
   assert.notEqual(first.services.conversation, second.services.conversation)
   // Top-level capabilities list contains the expected paths.
-  assert.equal(api.capabilities.list().length, 12)
+  assert.equal(api.capabilities.list().length, 14)
 })
 
 test('cache invalidation retires only the affected leaf, typed-fails old references, logs once, and never rebinds', async () => {

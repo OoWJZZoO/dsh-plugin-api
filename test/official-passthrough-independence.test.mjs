@@ -270,7 +270,7 @@ test('host regression: the boundary-era and current hosts agree on every pre-exi
     // excluded from the pre-existing-face equality check.
     const helperMembers = ['renderContextSnapshot', 'joinContextSections']
     const LATER_ADDED_MEMBERS = ['assemble', 'defineTool', 'executionMode', 'discovery', 'availability', 'capabilityMatrix', 'list', 'presentation', 'contribute']
-const BRANCH_ADDED_FEATURES = ['security', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'tasks', 'diagnostics', 'toolDiscovery', 'skillsActivation', 'sessionBranch', 'context', 'profile', 'llmAdapters', 'sessionChannel']
+const BRANCH_ADDED_FEATURES = ['security', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'tasks', 'diagnostics', 'toolDiscovery', 'skillsActivation', 'sessionBranch', 'context', 'profile', 'llmAdapters', 'sessionChannel', 'sessionActivity', 'sessionInteraction', 'attention', 'checkpoints']
     // The host cutover removed the public features snapshot (registry snapshot
     // is an internal state), removed routeOf delegates, and added the prompts
     // provenance face; both eras keep the same internal feature keys, so only

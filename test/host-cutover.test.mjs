@@ -31,7 +31,7 @@ test('capabilities surface is frozen and lists registry-backed capability paths'
   assert.deepEqual(capabilities.list(), CAPABILITY_PATHS)
   assert.deepEqual(capabilities.list({ prefix: 'llm.' }), ['llm.requestTransforms', 'llm.admissionPolicies', 'llm.adapters', 'llm.routing'])
   assert.deepEqual(capabilities.list({ prefix: 'llm' }), ['llm', 'llm.requestTransforms', 'llm.admissionPolicies', 'llm.adapters', 'llm.routing'])
-  assert.deepEqual(capabilities.list({ prefix: 'sessions.' }), ['sessions.branches', 'sessions.channels'])
+  assert.deepEqual(capabilities.list({ prefix: 'sessions.' }), ['sessions.branches', 'sessions.channels', 'sessions.activity', 'sessions.request', 'sessions.cancel'])
 })
 
 test('capabilities.get reports active status for a mounted capability', () => {

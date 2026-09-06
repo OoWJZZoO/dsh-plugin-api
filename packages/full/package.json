@@ -25,7 +25,10 @@
     "@deepseek-ai/dsh-plugin-api-tool-skill": "workspace:*",
     "@deepseek-ai/dsh-plugin-api-llm": "workspace:*",
     "@deepseek-ai/dsh-plugin-api-session-channel-connection": "workspace:*",
-    "@deepseek-ai/dsh-plugin-api-session-channel-gateway": "workspace:*"
+    "@deepseek-ai/dsh-plugin-api-session-channel-gateway": "workspace:*",
+    "@deepseek-ai/dsh-plugin-api-workspace": "workspace:*",
+    "@deepseek-ai/dsh-plugin-api-api-remotes": "workspace:*",
+    "@deepseek-ai/dsh-plugin-api-client-runtime": "workspace:*"
   },
   "devDependencies": {
     "@deepseek-ai/dsh-app-boot": "^0.1.0-rc.6"

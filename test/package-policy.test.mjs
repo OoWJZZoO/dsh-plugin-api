@@ -19,11 +19,14 @@ const toolSkill = readPackage('..', 'packages', 'tool-skill', 'package.json')
 const llm = readPackage('..', 'packages', 'llm', 'package.json')
 const sessionChannelConnection = readPackage('..', 'packages', 'session-channel-connection', 'package.json')
 const sessionChannelGateway = readPackage('..', 'packages', 'session-channel-gateway', 'package.json')
+const workspace = readPackage('..', 'packages', 'workspace', 'package.json')
+const apiRemotes = readPackage('..', 'packages', 'api-remotes', 'package.json')
+const clientRuntime = readPackage('..', 'packages', 'client-runtime', 'package.json')
 const full = readPackage('..', 'packages', 'full', 'package.json')
 
 test('main, auxiliary, and full packages all share the unified full-version + dsh.api policy', () => {
   const VERSION_RE = /^(.+)-(\d+\.\d+)\.(\d+)$/
-  for (const pkg of [main, compaction, sessionTitle, mcp, attachments, routePolicy, sessionBranch, profileManager, toolSkill, llm, sessionChannelConnection, sessionChannelGateway, full]) {
+  for (const pkg of [main, compaction, sessionTitle, mcp, attachments, routePolicy, sessionBranch, profileManager, toolSkill, llm, sessionChannelConnection, sessionChannelGateway, workspace, apiRemotes, clientRuntime, full]) {
     assert.match(pkg.version, VERSION_RE, `${pkg.name}: full unique version shape`)
     const match = pkg.version.match(VERSION_RE)
     assert.equal(match[2], pkg.dsh.api, `${pkg.name}: version suffix must equal dsh.api`)
@@ -36,7 +39,7 @@ test('main, auxiliary, and full packages all share the unified full-version + ds
 })
 
 test('the auxiliary packages do not declare the main package as a runtime dependency', () => {
-  for (const pkg of [compaction, sessionTitle, mcp, attachments, routePolicy, sessionBranch, toolSkill, llm, sessionChannelConnection, sessionChannelGateway]) {
+  for (const pkg of [compaction, sessionTitle, mcp, attachments, routePolicy, sessionBranch, toolSkill, llm, sessionChannelConnection, sessionChannelGateway, workspace, apiRemotes, clientRuntime]) {
     assert.ok(!pkg.dependencies?.['@deepseek-ai/dsh-plugin-api-main'], pkg.name)
     assert.ok(!pkg.peerDependencies?.['@deepseek-ai/dsh-plugin-api-main'], `${pkg.name}: version consistency is enforced by apply-time metadata check`)
   }
@@ -56,6 +59,9 @@ test('the full aggregate bundle depends on main and every auxiliary package at w
     '@deepseek-ai/dsh-plugin-api-llm': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-session-channel-connection': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-session-channel-gateway': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-workspace': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-api-remotes': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-client-runtime': 'workspace:*',
   })
   assert.equal(full.dsh.bundle.patch, './cordis.patch.yml')
 })
@@ -70,6 +76,9 @@ test('replacement row ids use capability names without governance suffixes', () 
   const llmPatch = readFileSync(join(here, '..', 'packages', 'llm', 'cordis.patch.yml'), 'utf8')
   const connectionPatch = readFileSync(join(here, '..', 'packages', 'session-channel-connection', 'cordis.patch.yml'), 'utf8')
   const gatewayPatch = readFileSync(join(here, '..', 'packages', 'session-channel-gateway', 'cordis.patch.yml'), 'utf8')
+  const workspacePatch = readFileSync(join(here, '..', 'packages', 'workspace', 'cordis.patch.yml'), 'utf8')
+  const apiRemotesPatch = readFileSync(join(here, '..', 'packages', 'api-remotes', 'cordis.patch.yml'), 'utf8')
+  const clientRuntimePatch = readFileSync(join(here, '..', 'packages', 'client-runtime', 'cordis.patch.yml'), 'utf8')
   const fullPatch = readFileSync(join(here, '..', 'packages', 'full', 'cordis.patch.yml'), 'utf8')
   assert.match(compactionPatch, /id: plugin-api-compaction-events/)
   assert.doesNotMatch(compactionPatch, /r1/)
@@ -93,6 +102,16 @@ test('replacement row ids use capability names without governance suffixes', () 
   assert.match(gatewayPatch, /id: typert-gateway[\s\S]*disabled: true/)
   assert.match(gatewayPatch, /id: plugin-api-session-channel-gateway/)
   assert.doesNotMatch(gatewayPatch, /r1/)
+  assert.match(workspacePatch, /id: workspace[\s\S]*disabled: true/)
+  assert.match(workspacePatch, /id: plugin-api-workspace/)
+  assert.doesNotMatch(workspacePatch, /r1/)
+  assert.match(apiRemotesPatch, /id: api-remotes[\s\S]*disabled: true/)
+  assert.match(apiRemotesPatch, /id: plugin-api-api-remotes/)
+  assert.doesNotMatch(apiRemotesPatch, /r1/)
+  assert.match(clientRuntimePatch, /id: client-runtime[\s\S]*disabled: true/)
+  assert.match(clientRuntimePatch, /id: plugin-api-client-runtime/)
+  assert.doesNotMatch(clientRuntimePatch, /r1/)
+
   assert.match(fullPatch, /id: plugin-api-main/)
   assert.match(fullPatch, /id: plugin-api-compaction-events/)
   assert.match(fullPatch, /id: plugin-api-session-title/)
@@ -103,6 +122,9 @@ test('replacement row ids use capability names without governance suffixes', () 
   assert.match(fullPatch, /id: plugin-api-llm/)
   assert.match(fullPatch, /id: plugin-api-session-channel-connection/)
   assert.match(fullPatch, /id: plugin-api-session-channel-gateway/)
+  assert.match(fullPatch, /id: plugin-api-workspace/)
+  assert.match(fullPatch, /id: plugin-api-api-remotes/)
+  assert.match(fullPatch, /id: plugin-api-client-runtime/)
   assert.doesNotMatch(fullPatch, /r1/)
 })
 

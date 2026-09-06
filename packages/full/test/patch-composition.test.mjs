@@ -47,9 +47,15 @@ const CONNECTION_REPLACEMENT = {
 }
 const GATEWAY_OFFICIAL = { id: 'typert-gateway', name: '@deepseek-ai/dsh-api-gateway', config: {} }
 const GATEWAY_REPLACEMENT = { id: 'plugin-api-session-channel-gateway', name: '@deepseek-ai/dsh-plugin-api-session-channel-gateway' }
+const WORKSPACE_OFFICIAL = { id: 'workspace', name: '@deepseek-ai/dsh-workspace', config: {} }
+const WORKSPACE_REPLACEMENT = { id: 'plugin-api-workspace', name: '@deepseek-ai/dsh-plugin-api-workspace' }
+const API_REMOTES_OFFICIAL = { id: 'api-remotes', name: '@deepseek-ai/dsh-api-remotes', config: {} }
+const API_REMOTES_REPLACEMENT = { id: 'plugin-api-api-remotes', name: '@deepseek-ai/dsh-plugin-api-api-remotes', inject: ['loader'] }
+const CLIENT_RUNTIME_OFFICIAL = { id: 'client-runtime', name: '@deepseek-ai/dsh-client-runtime', config: {} }
+const CLIENT_RUNTIME_REPLACEMENT = { id: 'plugin-api-client-runtime', name: '@deepseek-ai/dsh-plugin-api-client-runtime', inject: ['loader'] }
 
 const officialBaseLayer = [
-  { insert: [COMPACTION_OFFICIAL, TITLE_OFFICIAL, MCP_OFFICIAL, ATTACHMENT_OFFICIAL, AGENT_LOOP_OFFICIAL, SESSION_OFFICIAL, TOOL_SKILL_OFFICIAL, LLM_OFFICIAL, CONNECTION_OFFICIAL, GATEWAY_OFFICIAL] },
+  { insert: [COMPACTION_OFFICIAL, TITLE_OFFICIAL, MCP_OFFICIAL, ATTACHMENT_OFFICIAL, AGENT_LOOP_OFFICIAL, SESSION_OFFICIAL, TOOL_SKILL_OFFICIAL, LLM_OFFICIAL, CONNECTION_OFFICIAL, GATEWAY_OFFICIAL, WORKSPACE_OFFICIAL, API_REMOTES_OFFICIAL, CLIENT_RUNTIME_OFFICIAL] },
 ]
 
 const fullLayer = [
@@ -74,6 +80,12 @@ const fullLayer = [
   { insert: [CONNECTION_REPLACEMENT] },
   { id: 'typert-gateway', disabled: true },
   { insert: [GATEWAY_REPLACEMENT] },
+  { id: 'workspace', disabled: true },
+  { insert: [WORKSPACE_REPLACEMENT] },
+  { id: 'api-remotes', disabled: true },
+  { insert: [API_REMOTES_REPLACEMENT] },
+  { id: 'client-runtime', disabled: true },
+  { insert: [CLIENT_RUNTIME_REPLACEMENT] },
 ]
 
 test('the full package follows the unified full-version and dsh.api policy', () => {
@@ -98,6 +110,9 @@ test('the full package depends on the main facade, the companion executor, and e
     '@deepseek-ai/dsh-plugin-api-llm': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-session-channel-connection': 'workspace:*',
     '@deepseek-ai/dsh-plugin-api-session-channel-gateway': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-workspace': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-api-remotes': 'workspace:*',
+    '@deepseek-ai/dsh-plugin-api-client-runtime': 'workspace:*',
   })
 })
 
@@ -115,6 +130,9 @@ test('the full patch assembles main and all replacement rows in deterministic or
     LLM_REPLACEMENT,
     CONNECTION_REPLACEMENT,
     GATEWAY_REPLACEMENT,
+    WORKSPACE_REPLACEMENT,
+    API_REMOTES_REPLACEMENT,
+    CLIENT_RUNTIME_REPLACEMENT,
   ])
 })
 
@@ -131,6 +149,9 @@ test('composing over an official base disables all official rows and appends the
     { ...LLM_OFFICIAL, disabled: true },
     { ...CONNECTION_OFFICIAL, disabled: true },
     { ...GATEWAY_OFFICIAL, disabled: true },
+    { ...WORKSPACE_OFFICIAL, disabled: true },
+    { ...API_REMOTES_OFFICIAL, disabled: true },
+    { ...CLIENT_RUNTIME_OFFICIAL, disabled: true },
     MAIN_ROW,
     COMPACTION_REPLACEMENT,
     TITLE_REPLACEMENT,
@@ -142,6 +163,9 @@ test('composing over an official base disables all official rows and appends the
     LLM_REPLACEMENT,
     CONNECTION_REPLACEMENT,
     GATEWAY_REPLACEMENT,
+    WORKSPACE_REPLACEMENT,
+    API_REMOTES_REPLACEMENT,
+    CLIENT_RUNTIME_REPLACEMENT,
   ])
 })
 
@@ -157,10 +181,13 @@ test('the full patch text keeps the deterministic order and adds no extra row', 
   const llmIndex = patchFile.indexOf('id: plugin-api-llm')
   const connectionIndex = patchFile.indexOf('id: plugin-api-session-channel-connection')
   const gatewayIndex = patchFile.indexOf('id: plugin-api-session-channel-gateway')
+  const workspaceIndex = patchFile.indexOf('id: plugin-api-workspace')
+  const apiRemotesIndex = patchFile.indexOf('id: plugin-api-api-remotes')
+  const clientRuntimeIndex = patchFile.indexOf('id: plugin-api-client-runtime')
   assert.ok(
-    mainIndex >= 0 && compactionIndex > mainIndex && titleIndex > compactionIndex && mcpIndex > titleIndex && attachmentIndex > mcpIndex && agentLoopIndex > attachmentIndex && sessionBranchIndex > agentLoopIndex && toolSkillIndex > sessionBranchIndex && llmIndex > toolSkillIndex && connectionIndex > llmIndex && gatewayIndex > connectionIndex,
-    'rows must appear main → compaction → session-title → mcp → attachment → agent-loop → session-branch → tool-skill → llm → connection → typert-gateway',
+    mainIndex >= 0 && compactionIndex > mainIndex && titleIndex > compactionIndex && mcpIndex > titleIndex && attachmentIndex > mcpIndex && agentLoopIndex > attachmentIndex && sessionBranchIndex > agentLoopIndex && toolSkillIndex > sessionBranchIndex && llmIndex > toolSkillIndex && connectionIndex > llmIndex && gatewayIndex > connectionIndex && workspaceIndex > gatewayIndex && apiRemotesIndex > workspaceIndex && clientRuntimeIndex > apiRemotesIndex,
+    'rows must appear main → compaction → session-title → mcp → attachment → agent-loop → session-branch → tool-skill → llm → connection → typert-gateway → workspace → api-remotes → client-runtime',
   )
-  assert.equal((patchFile.match(/- insert:/g) ?? []).length, 11, 'exactly main + ten replacement inserts')
-  assert.equal((patchFile.match(/disabled: true/g) ?? []).length, 10, 'exactly ten official rows disabled')
+  assert.equal((patchFile.match(/- insert:/g) ?? []).length, 14, 'exactly main + thirteen replacement inserts')
+  assert.equal((patchFile.match(/disabled: true/g) ?? []).length, 13, 'exactly thirteen official rows disabled')
 })

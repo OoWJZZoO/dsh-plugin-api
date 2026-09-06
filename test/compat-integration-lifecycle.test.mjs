@@ -74,11 +74,20 @@ test('combined host publishes additive immutable compat shapes once without synt
   apply(ctx)
   assert.equal(state.pluginApi, first)
   assert.equal(state.provides, 1)
+  // The integration wave adds the shared loop boundary slice guest
+  // listeners (attempt-fact probe + ingestion for the activity projection
+  // and the session interaction authority) and the per-source evidence
+  // subscriptions of the session activity projection.
   assert.deepEqual(state.listeners.map(({ name }) => name).sort(), [
-    'agent-loop/assembled-context', 'agent/error', 'agent/request', 'approval/request', 'compaction/completed', 'fs/edit-intent', 'fs/write-intent',
+    'agent-loop/assembled-context', 'agent/attempt/end', 'agent/attempt/end', 'agent/attempt/end',
+    'agent/attempt/start', 'agent/attempt/start', 'agent/attempt/start',
+    'agent/error', 'agent/error', 'agent/inbox/claimed', 'agent/inbox/discarded',
+    'agent/inbox/inserted', 'agent/request', 'agent/status', 'approval/request',
+    'compaction/completed', 'fs/edit-intent', 'fs/write-intent',
     'jobs/changed', 'jobs/done', 'llm/stream', 'llm/stream', 'llm/stream',
-    'session/created', 'session/disposed', 'session/event', 'session/event',
-    'subagent/end', 'subagent/start', 'tools/execute', 'tools/post-execute', 'tools/pre-execute',
+    'session/created', 'session/created', 'session/disposed', 'session/disposed',
+    'session/event', 'session/event', 'session/event',
+    'subagent/end', 'subagent/start', 'tools/change', 'tools/execute', 'tools/post-execute', 'tools/pre-execute',
     'tools/pre-execute', 'tools/pre-execute', 'tools/pre-execute', 'tools/result', 'workflow/end', 'workflow/start',
   ])
   assert.equal(typeof first.llm.routing.forExecution, 'function')
@@ -87,7 +96,7 @@ test('combined host publishes additive immutable compat shapes once without synt
   assert.equal(typeof first.llm.admissionPolicies.register, 'function')
   assert.equal(typeof first.sessions.durable.observe, 'function')
   assert.equal(typeof first.sessions.durable.appendMessage, 'function')
-  assert.equal(Object.keys(first.events.catalog()).length, 47)
+  assert.equal(Object.keys(first.events.catalog()).length, 48)
   for (const excluded of ['llm/request', 'llm/admission', 'exec.route', 'agent/create', 'compaction/started']) {
     assert.equal(first.events.catalog()[excluded], undefined)
   }
@@ -154,5 +163,5 @@ test('durable retained references, repeated cleanup, and stale cleanup cannot af
   assert.equal(firstCleanup(), false)
   assert.equal(feature(state, 'sessionDurable').isActive, true)
   assert.equal(typeof state.pluginApi.llm.requestTransforms.register, 'function')
-  assert.equal(state.listeners.filter(({ name }) => name === 'session/event').length, 2)
+  assert.equal(state.listeners.filter(({ name }) => name === 'session/event').length, 3)
 })

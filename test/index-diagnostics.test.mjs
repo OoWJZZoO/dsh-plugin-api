@@ -55,14 +55,18 @@ test('healthy apply mounts diagnostics after remote and exposes a working projec
 
   const names = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').map((entry) => entry.name)
 assert.equal(names.indexOf('diagnostics'), names.indexOf('workspaceTransactions') + 1, 'diagnostics mounts directly after workspaceTransactions')
-  assert.equal(names[names.length - 8], 'diagnostics', 'diagnostics mounts directly before tasks')
-  assert.equal(names[names.length - 7], 'tasks', 'tasks stays directly before toolDiscovery')
-  assert.equal(names[names.length - 6], 'toolDiscovery', 'tool discovery mounts directly before skillsActivation')
-  assert.equal(names[names.length - 5], 'skillsActivation', 'skills activation mounts directly before context')
-  assert.equal(names[names.length - 4], 'context', 'context mounts directly before profile')
-  assert.equal(names[names.length - 3], 'profile', 'profile stays directly before llmAdapters')
-  assert.equal(names[names.length - 2], 'llmAdapters', 'adapter decoration mounts directly before sessionChannel')
-  assert.equal(names[names.length - 1], 'sessionChannel', 'sessionChannel is the last FEATURE_MOUNTERS entry')
+  assert.equal(names[names.length - 12], 'diagnostics', 'diagnostics mounts directly before tasks')
+  assert.equal(names[names.length - 11], 'tasks', 'tasks stays directly before toolDiscovery')
+  assert.equal(names[names.length - 10], 'toolDiscovery', 'tool discovery mounts directly before skillsActivation')
+  assert.equal(names[names.length - 9], 'skillsActivation', 'skills activation mounts directly before context')
+  assert.equal(names[names.length - 8], 'context', 'context mounts directly before profile')
+  assert.equal(names[names.length - 7], 'profile', 'profile stays directly before llmAdapters')
+  assert.equal(names[names.length - 6], 'llmAdapters', 'adapter decoration mounts directly before sessionChannel')
+  assert.equal(names[names.length - 5], 'sessionChannel', 'sessionChannel stays directly before sessionActivity')
+  assert.equal(names[names.length - 4], 'sessionActivity', 'session activity projection appends in the integration wave tail')
+  assert.equal(names[names.length - 3], 'sessionInteraction', 'session interaction operation appends in the integration wave tail')
+  assert.equal(names[names.length - 2], 'attention', 'attention appends in the integration wave tail')
+  assert.equal(names[names.length - 1], 'checkpoints', 'checkpoints is the last FEATURE_MOUNTERS entry')
 
 
   const diag = state.pluginApi.diagnostics

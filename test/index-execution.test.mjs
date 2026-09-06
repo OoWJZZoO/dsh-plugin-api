@@ -99,5 +99,5 @@ test('a missing ctx.on disables execution without throwing through apply', () =>
 test('execution does not add new events catalog entries', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
-  assert.equal(Object.keys(state.pluginApi.events.catalog()).length, 47)
+  assert.equal(Object.keys(state.pluginApi.events.catalog()).length, 48)
 })

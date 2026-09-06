@@ -125,7 +125,7 @@ test('apply mounts events with the frozen catalog and usable bus', () => {
   const catalog = state.pluginApi.events.catalog()
   assert.equal(catalog['tools/change']?.mode, 'emit')
   assert.ok(catalog)
-  assert.equal(Object.keys(catalog).length, 47)
+  assert.equal(Object.keys(catalog).length, 48)
   assert.ok(Object.isFrozen(catalog), 'composed catalog must be frozen')
   for (const name of [
     'session/created',
@@ -194,7 +194,9 @@ test('events guard failure disables only events and keeps facade active', () => 
 
 
 
-assert.equal(features.length, 31)
+// 31 established features plus the four integration-wave features
+  // (sessionActivity, sessionInteraction, attention, checkpoints).
+  assert.equal(features.length, 35)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.equal(features[1].name, 'events')
@@ -260,7 +262,9 @@ test('web service absence keeps the services feature active while disabling only
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
 
-assert.equal(features.length, 31)
+// 31 established features plus the four integration-wave features
+  // (sessionActivity, sessionInteraction, attention, checkpoints).
+  assert.equal(features.length, 35)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
@@ -350,7 +354,7 @@ test('available host event producers contribute exactly nine catalog rows with t
   const { ctx, state } = createMockCtx({ services: createHostEventProducers() })
   apply(ctx)
   const catalog = state.pluginApi.events.catalog()
-  assert.equal(Object.keys(catalog).length, 47 + HOST_EVENT_LEAF_NAMES.length)
+  assert.equal(Object.keys(catalog).length, 48 + HOST_EVENT_LEAF_NAMES.length)
   for (const name of HOST_EVENT_LEAF_NAMES) {
     const entry = catalog[name]
     assert.ok(entry, `${name} is cataloged`)
@@ -363,11 +367,11 @@ test('available host event producers contribute exactly nine catalog rows with t
   }
 })
 
-test('missing host event producers keep the catalog at the baseline 47 rows', () => {
+test('missing host event producers keep the catalog at the baseline 48 rows', () => {
   const { ctx, state } = createMockCtx()
   apply(ctx)
   const catalog = state.pluginApi.events.catalog()
-  assert.equal(Object.keys(catalog).length, 47)
+  assert.equal(Object.keys(catalog).length, 48)
   for (const name of HOST_EVENT_LEAF_NAMES) {
     assert.equal(catalog[name], undefined, `${name} stays omitted when its producer is absent`)
   }
@@ -387,5 +391,5 @@ test('malformed host event producers omit only their own rows', () => {
   assert.equal(catalog['agent-loop/config-start-failed'], undefined)
   assert.equal(catalog['agent-preset/selected'] !== undefined, true)
   assert.equal(catalog['cordis/request-run'] !== undefined, true)
-  assert.equal(Object.keys(catalog).length, 47 + 7)
+  assert.equal(Object.keys(catalog).length, 48 + 7)
 })

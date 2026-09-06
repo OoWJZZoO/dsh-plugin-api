@@ -80,3 +80,24 @@
 - insert:
     - id: plugin-api-session-channel-gateway
       name: '@deepseek-ai/dsh-plugin-api-session-channel-gateway'
+
+#   12. workspace replacement: disable the official workspace row, insert ours;
+#   13. api-remotes replacement: disable the official browser-roster row, insert ours;
+#   14. client-runtime replacement: disable the official browser-roster row, insert ours.
+- id: workspace
+  disabled: true
+- insert:
+    - id: plugin-api-workspace
+      name: '@deepseek-ai/dsh-plugin-api-workspace'
+- id: api-remotes
+  disabled: true
+- insert:
+    - id: plugin-api-api-remotes
+      name: '@deepseek-ai/dsh-plugin-api-api-remotes'
+      inject: [loader]
+- id: client-runtime
+  disabled: true
+- insert:
+    - id: plugin-api-client-runtime
+      name: '@deepseek-ai/dsh-plugin-api-client-runtime'
+      inject: [loader]

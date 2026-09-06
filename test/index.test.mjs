@@ -143,6 +143,13 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
 
     // sessionChannel mounts through the real _assignFeature path now.
     { name: 'sessionChannel', isActive: true },
+
+    // Integration wave: the four session/executions/attention domain faces
+    // mount through the real _assignFeature path in the established tail.
+    { name: 'sessionActivity', isActive: true },
+    { name: 'sessionInteraction', isActive: true },
+    { name: 'attention', isActive: true },
+    { name: 'checkpoints', isActive: true },
   ])
   assert.equal(state.pluginApi.llm.availability().status, 'active')
   assert.equal(typeof state.pluginApi.llm.requestTransforms.register, 'function')
@@ -206,7 +213,9 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-assert.equal(features.length, 31)
+// 31 established features plus the four integration-wave features
+  // (sessionActivity, sessionInteraction, attention, checkpoints).
+  assert.equal(features.length, 35)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })

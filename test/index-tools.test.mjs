@@ -139,7 +139,9 @@ test('tools active: apply mounts pluginApi.tools and extends the events catalog 
   assert.equal(state.pluginApi.tools.availability().status, 'active')
 
   const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
-assert.equal(features.length, 31)
+// 31 established features plus the four integration-wave features
+  // (sessionActivity, sessionInteraction, attention, checkpoints).
+  assert.equal(features.length, 35)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -162,7 +164,7 @@ assert.equal(features[25].name, 'toolDiscovery')
   const catalog = state.pluginApi.events.catalog()
   assert.equal(catalog['tools/change']?.mode, 'emit')
   assert.equal(catalog['tools/execute']?.freeze, 'except-signal')
-  assert.equal(Object.keys(catalog).length, 47)
+  assert.equal(Object.keys(catalog).length, 48)
 
   const definition = { name: 'demo', output: {} }
   const disposer = state.pluginApi.tools.register(definition)
@@ -175,7 +177,7 @@ assert.equal(features[25].name, 'toolDiscovery')
   assert.equal(tools.executeCalls[0], input)
 })
 
-test('tools guard failure disables only tools and keeps the events catalog at base 41', () => {
+test('tools guard failure disables only tools and keeps the events catalog at base 42', () => {
   const { ctx, state } = createMockCtx({ tools: false })
   assert.doesNotThrow(() => apply(ctx))
 
@@ -183,7 +185,9 @@ test('tools guard failure disables only tools and keeps the events catalog at ba
   assert.equal(state.pluginApi.isActive, true)
 
   const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
-assert.equal(features.length, 31)
+// 31 established features plus the four integration-wave features
+  // (sessionActivity, sessionInteraction, attention, checkpoints).
+  assert.equal(features.length, 35)
   assert.equal(features[0].name, 'tools')
   assert.equal(features[0].isActive, false)
   assert.match(features[0].reason, /tools service/)
@@ -208,7 +212,7 @@ assert.equal(features.length, 31)
 
   assert.equal(state.pluginApi.events.catalog()['session/created']?.mode, 'emit')
   assert.equal(state.pluginApi.events.catalog()['tools/change'], undefined)
-  assert.equal(Object.keys(state.pluginApi.events.catalog()).length, 41)
+  assert.equal(Object.keys(state.pluginApi.events.catalog()).length, 42)
 
   assert.throws(
     () => state.pluginApi.tools.register({ name: 'x' }),

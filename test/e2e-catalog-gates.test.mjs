@@ -165,10 +165,10 @@ function observeOn(events, name, listener, opts) {
   return handle
 }
 
-test('catalog composition after apply covers all 47 stabilized events', () => {
+test('catalog composition after apply covers all 48 stabilized events', () => {
   const { ctx, state } = createFullCtx()
   apply(ctx)
-  assert.equal(Object.keys(state.pluginApi.events.catalog()).length, 47)
+  assert.equal(Object.keys(state.pluginApi.events.catalog()).length, 48)
   for (const name of ['session/created', 'agent/created', 'llm/stream', 'system-prompt/assemble', 'settings/updated', 'tools/execute']) {
     assert.ok(state.pluginApi.events.catalog()[name], `${name} must be cataloged`)
   }
@@ -327,7 +327,7 @@ const COMPACTION_EVENTS = [
 test('without the replacement row the public catalog does not list compaction/* events', () => {
   const { ctx, state } = createFullCtx()
   apply(ctx)
-  assert.equal(Object.keys(state.pluginApi.events.catalog()).length, 47)
+  assert.equal(Object.keys(state.pluginApi.events.catalog()).length, 48)
   for (const name of COMPACTION_EVENTS) {
     assert.ok(!(name in state.pluginApi.events.catalog()), `${name} must be hidden when the replacement is inactive`)
   }
@@ -337,7 +337,7 @@ test('with the replacement row active the public catalog lists all five compacti
   const { ctx, state } = createFullCtx({ withCompactionReplacement: true })
   apply(ctx)
   const catalog = state.pluginApi.events.catalog()
-  assert.equal(Object.keys(catalog).length, 52)
+  assert.equal(Object.keys(catalog).length, 53)
   for (const name of COMPACTION_EVENTS) {
     const entry = catalog[name]
     assert.ok(entry, `${name} must be cataloged`)
