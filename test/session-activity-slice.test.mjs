@@ -123,6 +123,16 @@ test('slice: observation contract marker matches the frozen contract mirror', ()
   ])
 })
 
+test('slice: null-key payloads (no external attribution, no reason) stay valid and observed', () => {
+  const projection = makeProjection()
+  projection.setSliceState({ active: true, versionMatched: true })
+  assert.equal(projection.ingestAttemptFact('agent/attempt/start', AT.start({ operationId: null, executionId: null })), true)
+  assert.equal(projection.ingestAttemptFact('agent/attempt/end', AT.end({ operationId: null, executionId: null, reason: null, classification: null })), true)
+  const history = projection.api.history('s1')
+  assert.equal(history.items[0].terminal.outcome, 'success')
+  assert.equal(history.items[0].terminal.confidence, 'observed')
+})
+
 test('slice: disabled projection throws the typed feature-disabled error and nothing else', () => {
   const projection = makeProjection({ enabled: false })
   assert.throws(() => projection.api.current('s1'), (error) => {

@@ -155,6 +155,34 @@ test('adapters: without ctx.on no evidence source is reachable and availability 
   assert.equal(availability.reason, 'evidence-sources-unavailable')
 })
 
+test('adapters: per-view unavailable markers surface single-value source degradation', () => {
+  const listeners = new Map()
+  const sessions = {}
+  const ctx = {
+    on(name, listener) {
+      if (name === 'tools/change') throw new Error('tools blocked')
+      if (!listeners.has(name)) listeners.set(name, [])
+      listeners.get(name).push(listener)
+      return () => {}
+    },
+    get(service) {
+      if (service === 'sessions') return { get: (id) => sessions[id] }
+      return undefined
+    },
+  }
+  const projection = createSessionActivityProjection({ ctx, observe: true })
+  sessions.s1 = sessionObject('s1', [
+    durableEvent('turn/start', 0, { turn: 1 }),
+    durableEvent('turn/end', 1, { turn: 1, reason: { kind: 'completed' } }),
+  ])
+  projection.joinDurable(sessions.s1)
+  const history = projection.api.history('s1')
+  assert.deepEqual(history.unavailable, ['tools:degraded'])
+  assert.equal(history.items[0].terminal.outcome, 'success')
+  const current = projection.api.current('s1')
+  assert.equal(current.code, 'absent')
+})
+
 test('adapters: dispose is idempotent and stops consumption', () => {
   const { projection, fire, sessions } = makeHarness()
   sessions.s1 = sessionObject('s1', [])

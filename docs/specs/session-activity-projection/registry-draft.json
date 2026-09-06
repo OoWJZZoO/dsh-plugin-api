@@ -26,10 +26,13 @@
       "availabilityShape": "namespace availability member on sessions.activity",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "frozen { snapshot, sessionQueue, gap } | typed absence { ok:false, code:'absent' }",
+      "currentShape": "frozen { snapshot, sessionQueue, gap, unavailable } | typed absence { ok:false, code:'absent' }",
       "migrationAction": "retain",
       "status": "recommended",
-      "verification": ["registry-draft", "surface-consistency"]
+      "verification": [
+        "registry-draft",
+        "surface-consistency"
+      ]
     },
     {
       "publicPath": "sessions.activity.get",
@@ -56,10 +59,13 @@
       "availabilityShape": "namespace availability member on sessions.activity",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "frozen { snapshot, sessionQueue, gap } | typed absence { ok:false, code:'absent' }",
+      "currentShape": "frozen { snapshot, sessionQueue, gap, unavailable } | typed absence { ok:false, code:'absent' }",
       "migrationAction": "retain",
       "status": "recommended",
-      "verification": ["registry-draft", "surface-consistency"]
+      "verification": [
+        "registry-draft",
+        "surface-consistency"
+      ]
     },
     {
       "publicPath": "sessions.activity.list",
@@ -86,10 +92,13 @@
       "availabilityShape": "namespace availability member on sessions.activity",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "frozen { items, nextCursor, truncated, gap }",
+      "currentShape": "frozen { items, nextCursor, truncated, gap, unavailable }",
       "migrationAction": "retain",
       "status": "recommended",
-      "verification": ["registry-draft", "surface-consistency"]
+      "verification": [
+        "registry-draft",
+        "surface-consistency"
+      ]
     },
     {
       "publicPath": "sessions.activity.history",
@@ -119,7 +128,10 @@
       "currentShape": "frozen { items, truncated, unavailable, gap, boundary:'facade-lifetime' }",
       "migrationAction": "retain",
       "status": "recommended",
-      "verification": ["registry-draft", "surface-consistency"]
+      "verification": [
+        "registry-draft",
+        "surface-consistency"
+      ]
     },
     {
       "publicPath": "sessions.activity.observe",
@@ -149,7 +161,10 @@
       "currentShape": "handle { current(), subscribe(listener), dispose(), epoch }",
       "migrationAction": "retain",
       "status": "recommended",
-      "verification": ["registry-draft", "surface-consistency"]
+      "verification": [
+        "registry-draft",
+        "surface-consistency"
+      ]
     },
     {
       "publicPath": "sessions.activity.observe.handle",
@@ -179,7 +194,10 @@
       "currentShape": "members: current() / subscribe(listener) / dispose() / epoch",
       "migrationAction": "retain",
       "status": "recommended",
-      "verification": ["registry-draft", "surface-consistency"]
+      "verification": [
+        "registry-draft",
+        "surface-consistency"
+      ]
     },
     {
       "publicPath": "sessions.activity.availability",
@@ -209,7 +227,10 @@
       "currentShape": "frozen { status: active|degraded|unavailable, reason?: string }",
       "migrationAction": "retain",
       "status": "recommended",
-      "verification": ["registry-draft", "surface-consistency"]
+      "verification": [
+        "registry-draft",
+        "surface-consistency"
+      ]
     }
   ],
   "namespaces": [
@@ -217,7 +238,9 @@
       "namespace": "sessions.activity",
       "runtime": "host",
       "capabilityPath": "sessions.activity",
-      "contributingFeatures": ["session-activity-projection"],
+      "contributingFeatures": [
+        "session-activity-projection"
+      ],
       "availabilityMember": "sessions.activity.availability",
       "availabilityExemption": null
     }
@@ -225,25 +248,55 @@
   "capabilityMatrix": [
     {
       "capabilityCluster": "sessions.activity",
-      "currentPaths": ["sessions.activity.current", "sessions.activity.get", "sessions.activity.list", "sessions.activity.history", "sessions.activity.observe", "sessions.activity.availability"],
-      "targetPaths": ["sessions.activity.current", "sessions.activity.get", "sessions.activity.list", "sessions.activity.history", "sessions.activity.observe", "sessions.activity.availability"],
+      "currentPaths": [
+        "sessions.activity.current",
+        "sessions.activity.get",
+        "sessions.activity.list",
+        "sessions.activity.history",
+        "sessions.activity.observe",
+        "sessions.activity.availability"
+      ],
+      "targetPaths": [
+        "sessions.activity.current",
+        "sessions.activity.get",
+        "sessions.activity.list",
+        "sessions.activity.history",
+        "sessions.activity.observe",
+        "sessions.activity.availability"
+      ],
       "status": "retained",
       "qualifiers": [],
       "replacement": null,
       "gapReason": null,
-      "affectedConsumers": ["session-interaction-operation", "client-attention-contribution", "checkpoint-restore-contract"],
-      "verification": ["registry-draft", "capability-matrix"]
+      "affectedConsumers": [
+        "session-interaction-operation",
+        "client-attention-contribution",
+        "checkpoint-restore-contract"
+      ],
+      "verification": [
+        "registry-draft",
+        "capability-matrix"
+      ]
     },
     {
       "capabilityCluster": "sessions.activity.attempt-facts",
       "currentPaths": [],
       "targetPaths": [],
       "status": "retained",
-      "qualifiers": ["split"],
+      "qualifiers": [
+        "split"
+      ],
       "replacement": "agent-loop owner slice (shared capability, feature-list 3.1 joint registration)",
       "gapReason": null,
-      "affectedConsumers": ["session-activity-projection", "session-interaction-operation", "checkpoint-restore-contract"],
-      "verification": ["registry-draft", "capability-matrix"]
+      "affectedConsumers": [
+        "session-activity-projection",
+        "session-interaction-operation",
+        "checkpoint-restore-contract"
+      ],
+      "verification": [
+        "registry-draft",
+        "capability-matrix"
+      ]
     }
   ],
   "eventCatalogConsumptionCheck": [

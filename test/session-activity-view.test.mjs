@@ -90,7 +90,7 @@ test('view: list pages by stable order with cursor continuation', () => {
   // no duplicates across pages
   const ids = [...page1.items, ...page2.items, ...page3.items].map((item) => item.activityId)
   assert.equal(new Set(ids).size, 5)
-  assert.deepEqual(projection.api.list({ sessionId: 'nope' }), { items: [], nextCursor: undefined, truncated: false, gap: null })
+  assert.deepEqual(projection.api.list({ sessionId: 'nope' }), { items: [], nextCursor: undefined, truncated: false, gap: null, unavailable: [] })
 })
 
 test('view: history is frozen, bounded by the facade lifetime and states its boundary', () => {

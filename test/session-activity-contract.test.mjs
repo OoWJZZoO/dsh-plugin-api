@@ -100,3 +100,34 @@ test('contract: field lists and validators agree on the approved payload contrac
     assert.notEqual(contract.attemptEnd.fields.indexOf(field), -1)
   }
 })
+
+test('contract: null-key optional fields are treated as absent (producer serialization)', () => {
+  const contract = activityObservationContract()
+  const start = {
+    attemptId: 'att-1',
+    sessionId: 's1',
+    seq: 0,
+    observedAt: '2026-09-06T00:00:00.000Z',
+  }
+  const end = {
+    attemptId: 'att-1',
+    sessionId: 's1',
+    outcome: 'success',
+    followUp: 'none',
+    seq: 1,
+    observedAt: '2026-09-06T00:00:00.000Z',
+  }
+  // a start without external request attribution emits null correlation keys
+  assert.equal(contract.attemptStart.validate({ ...start, operationId: null, executionId: null }), true)
+  assert.equal(contract.attemptStart.validate({ ...start, operationId: null }), true)
+  assert.equal(contract.attemptStart.validate({ ...start, executionId: null }), true)
+  // an end without a reason emits null reason/classification keys
+  assert.equal(contract.attemptEnd.validate({ ...end, operationId: null, executionId: null, reason: null, classification: null }), true)
+  assert.equal(contract.attemptEnd.validate({ ...end, reason: null }), true)
+  assert.equal(contract.attemptEnd.validate({ ...end, classification: null }), true)
+  // present-but-invalid values are still rejected
+  assert.equal(contract.attemptStart.validate({ ...start, operationId: 7 }), false)
+  assert.equal(contract.attemptStart.validate({ ...start, executionId: 7 }), false)
+  assert.equal(contract.attemptEnd.validate({ ...end, reason: 42 }), false)
+  assert.equal(contract.attemptEnd.validate({ ...end, classification: 42 }), false)
+})

@@ -28,8 +28,14 @@
 
 ## 消费方行为约束
 
-1. 切片活性门控：`setSliceState({active, versionMatched})` 全真才受理 attempt 事实；否则拒绝（`ingestAttemptFact` 返回 false）并走降级路径——投影按 availability 如实降级（`terminal-evidence=reconstructed` / `attempt-facts=version-mismatch`），**绝不把猜测标成 observed**（R3 AC4 / R10 AC2）。
-2. 只读订阅：适配器只订阅 `agent/attempt/start|end` 事件并校验 payload；不 dispatch、不 transform、不 veto（R11 AC2）。
-3. 不冒充 durable：attempt 事实为 in-memory 事件；host 重启后丢失 ⇒ 重建视图只对 durable 可再现事实保留 observed（R6 AC2）。
-4. 观测契约 marker：`Symbol.for('dsh-plugin-api.session-activity.observation-contract')`（`activityObservationContract()`：version 1 + 字段清单 + 校验器）供切片 apply 自检核对「facade's internal observation contract is compatible」（R9 AC4）；装配级验证归集成波 I4。
+1. 切片活性门控：`setSliceState({active, versionMatched})` 全真才受理 attempt 事实；否则拒绝（`ingestAttemptFact` 返回 false）并走降级路径——投影按 availability 如实降级（`terminal-evidence=reconstructed` / `attempt-facts=version-mismatch`），**绝不把猜测标成 observed**。
+2. 只读订阅：适配器只订阅 `agent/attempt/start|end` 事件并校验 payload；不 dispatch、不 transform、不 veto。
+3. 不冒充 durable：attempt 事实为 in-memory 事件；host 重启后丢失 ⇒ 重建视图只对 durable 可再现事实保留 observed。
+4. 观测契约 marker：`Symbol.for('dsh-plugin-api.session-activity.observation-contract')`（`activityObservationContract()`：version 1 + 字段清单 + 校验器）供切片 apply 自检核对「facade's internal observation contract is compatible」；装配级验证归集成波 I4。
 5. 词汇机械一致性：本镜像与 interaction/checkpoint 线声明必须逐字段一致（共享词汇机械一致性测试，集成波 I3）。
+
+## 可空性对齐决定（终审修订，2026-09-06）
+
+- **`null` 键 = 序列化缺省**：生产侧对缺省的可选字段发射 `null` 键（`operationId`/`executionId` 缺省为 `null`；`reason`/`classification` 无值时为 `null`）。消费侧校验器将 `null` 视为缺省——仅「存在且非法」的值（非空串之外的类型）判为非法。这与「`operationId` 外部 request 发起时有」「`reason` 有则带」的契约语义一致。
+- 消费侧 fixture：无外部归因的 `start`（`operationId:null, executionId:null`）与无 reason 的 `end`（`reason:null, classification:null`）均合法并产生 observed 档事实。
+- **集成波 I3/I4 验收口径**：跨线全链路集成测试以「null 键 payload 被消费为 observed 事实」为断言之一；装配验证同时核对生产侧与消费侧对 `null=缺省` 的一致理解，词汇机械比对把「可选字段 null 归一化」纳入一致性清单。

@@ -161,10 +161,16 @@ test('observe: invalid inputs are typed and never corrupt other subscriptions', 
   assert.throws(() => handle.subscribe(null), TypeError)
   startAttempt(projection)
   assert.equal(received.length, 1)
-  // a no-session observer handle still carries its own fresh epoch
-  const wide = projection.api.observe({})
-  assert.match(wide.epoch, /^epoch:\d+$/)
-  wide.dispose()
+  // observe without a session is refused with a typed invalid-input error and
+  // never corrupts other subscriptions
+  assert.throws(() => projection.api.observe({}), TypeError)
+  assert.throws(() => projection.api.observe({ sessionId: '' }), TypeError)
+  assert.throws(() => projection.api.observe(undefined), TypeError)
+  const after = projection.api.observe({ sessionId: 's1' })
+  const stillReceived = []
+  after.subscribe((p) => stillReceived.push(p))
+  startAttempt(projection)
+  assert.equal(stillReceived.length, 1)
 })
 
 test('observe: cleanupOwner removes only that owner\'s observers', () => {
