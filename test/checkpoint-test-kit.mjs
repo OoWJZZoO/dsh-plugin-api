@@ -120,15 +120,32 @@ export function createBranchAuthorityFixture(initial = {}) {
     active: initial.active ?? true,
     reason: initial.reason,
     branches: initial.branches ?? [],
+    sessions: new Set(initial.sessions ?? []),
+    failStep: undefined,
   }
   return {
     face: {
       availability: () => deepFreeze(state.active ? { status: 'active' } : { status: 'unavailable', reason: state.reason ?? 'fixture inactive' }),
       create: async (spec) => {
         if (!state.active) return { ok: false, code: 'unavailable', reason: state.reason ?? 'fixture inactive' }
+        state.sessions.add(spec.sessionId)
         const branchId = `branch-${state.branches.length + 1}`
         state.branches.push({ branchId, sessionId: spec.sessionId })
         return { ok: true, code: 'created', handle: { id: branchId }, observedAt: new Date().toISOString() }
+      },
+      get: (id) => {
+        if (!state.active) return undefined
+        return state.branches.find((item) => item.branchId === id)
+      },
+      sessionKnown: async (sessionId) => {
+        if (!state.active) return false
+        return state.sessions.has(sessionId)
+      },
+      confirmAnchor: async ({ branchId }) => {
+        if (!state.active) return { ok: false, code: 'unavailable', reason: state.reason ?? 'fixture inactive' }
+        return state.branches.some((item) => item.branchId === branchId)
+          ? { ok: true }
+          : { ok: false, code: 'missing', reason: `branch anchor '${branchId}' no longer exists` }
       },
       restore: async ({ sessionId, branchId, fence, supersession } = {}) => {
         if (!state.active) return { ok: false, code: 'unavailable', reason: state.reason ?? 'fixture inactive' }
@@ -140,7 +157,14 @@ export function createBranchAuthorityFixture(initial = {}) {
     },
     setActive(active, reason) { state.active = active; state.reason = reason },
     setFailStep(failStep) { state.failStep = failStep },
+    addSession(sessionId) { state.sessions.add(sessionId) },
+    removeSession(sessionId) { state.sessions.delete(sessionId) },
+    removeBranch(branchId) {
+      const index = state.branches.findIndex((item) => item.branchId === branchId)
+      if (index >= 0) state.branches.splice(index, 1)
+    },
     branches: () => state.branches,
+    sessions: () => state.sessions,
   }
 }
 
@@ -151,12 +175,14 @@ export function createTransactionsAuthorityFixture(initial = {}) {
     reason: initial.reason,
     transactions: initial.transactions ?? [],
     failRecover: initial.failRecover,
+    workspaces: new Set(initial.workspaces ?? []),
   }
   return {
     face: {
       availability: () => deepFreeze(state.active ? { status: 'active' } : { status: 'unavailable', reason: state.reason ?? 'fixture inactive' }),
       prepare: async (spec) => {
         if (!state.active) return { ok: false, code: 'unavailable', reason: state.reason ?? 'fixture inactive' }
+        state.workspaces.add(spec.workspaceId)
         const transactionId = `txn-${state.transactions.length + 1}`
         state.transactions.push({ transactionId, workspaceId: spec.workspaceId, entries: [] })
         return { ok: true, code: 'prepared', handle: { id: transactionId } }
@@ -166,6 +192,20 @@ export function createTransactionsAuthorityFixture(initial = {}) {
         if (!txn) return { ok: false, code: 'missing', reason: 'unknown transaction' }
         txn.entries.push({ kind: input.kind, reason: input.reason })
         return { ok: true, code: 'recorded', observedAt: new Date().toISOString() }
+      },
+      get: (transactionId) => {
+        if (!state.active) return undefined
+        return state.transactions.find((item) => item.transactionId === transactionId)
+      },
+      workspaceKnown: async (workspaceId) => {
+        if (!state.active) return false
+        return state.workspaces.has(workspaceId)
+      },
+      confirmAnchor: async ({ transactionId }) => {
+        if (!state.active) return { ok: false, code: 'unavailable', reason: state.reason ?? 'fixture inactive' }
+        return state.transactions.some((item) => item.transactionId === transactionId)
+          ? { ok: true }
+          : { ok: false, code: 'missing', reason: `transaction anchor '${transactionId}' no longer exists` }
       },
       recover: async (transactionId, { fence } = {}) => {
         if (!state.active) return { ok: false, code: 'unavailable', reason: state.reason ?? 'fixture inactive' }
@@ -185,6 +225,12 @@ export function createTransactionsAuthorityFixture(initial = {}) {
     },
     setActive(active, reason) { state.active = active; state.reason = reason },
     setFailRecover(code) { state.failRecover = code },
+    removeTransaction(transactionId) {
+      const index = state.transactions.findIndex((item) => item.transactionId === transactionId)
+      if (index >= 0) state.transactions.splice(index, 1)
+    },
+    addWorkspace(workspaceId) { state.workspaces.add(workspaceId) },
+    removeWorkspace(workspaceId) { state.workspaces.delete(workspaceId) },
     transactions: () => state.transactions,
   }
 }
@@ -196,6 +242,7 @@ export function createSnapshotSliceFixture(initial = {}) {
     reason: initial.reason,
     snapshots: initial.snapshots ?? new Map(),
     failApply: initial.failApply,
+    workspaces: new Set(initial.workspaces ?? []),
     seq: 0,
   }
   return {
@@ -204,7 +251,9 @@ export function createSnapshotSliceFixture(initial = {}) {
       capture: async (spec) => {
         if (!state.active) return { ok: false, code: 'unavailable', reason: state.reason ?? 'fixture inactive' }
         const snapshotId = `snap-${++state.seq}`
+        state.workspaces.add(spec.workspaceId)
         const entry = {
+          snapshotId,
           workspaceId: spec.workspaceId,
           workspaceIds: [],
           records: {},
@@ -219,6 +268,17 @@ export function createSnapshotSliceFixture(initial = {}) {
           capturedAt: entry.capturedAt,
         }
       },
+      get: (snapshotId) => (state.snapshots.has(snapshotId) ? state.snapshots.get(snapshotId) : undefined),
+      workspaceKnown: async (workspaceId) => {
+        if (!state.active) return false
+        return state.workspaces.has(workspaceId)
+      },
+      confirmAnchor: async ({ snapshotId }) => {
+        if (!state.active) return { ok: false, code: 'unavailable', reason: state.reason ?? 'fixture inactive' }
+        return state.snapshots.has(snapshotId)
+          ? { ok: true }
+          : { ok: false, code: 'missing', reason: `snapshot anchor '${snapshotId}' no longer exists` }
+      },
       apply: async ({ state: snapshot, fence } = {}) => {
         if (!state.active) return { ok: false, code: 'unavailable', reason: state.reason ?? 'fixture inactive' }
         if (state.failApply) return { ok: false, code: state.failApply, reason: 'fixture apply failure' }
@@ -226,11 +286,13 @@ export function createSnapshotSliceFixture(initial = {}) {
         state.lastApplied = snapshot
         return { ok: true, code: 'applied' }
       },
-      get: (snapshotId) => (state.snapshots.has(snapshotId) ? state.snapshots.get(snapshotId) : undefined),
       availabilityReport: () => state.active,
     },
     setActive(active, reason) { state.active = active; state.reason = reason },
     setFailApply(code) { state.failApply = code },
+    addWorkspace(workspaceId) { state.workspaces.add(workspaceId) },
+    removeWorkspace(workspaceId) { state.workspaces.delete(workspaceId) },
+    removeSnapshot(snapshotId) { state.snapshots.delete(snapshotId) },
     lastApplied: () => state.lastApplied,
     snapshots: () => state.snapshots,
   }

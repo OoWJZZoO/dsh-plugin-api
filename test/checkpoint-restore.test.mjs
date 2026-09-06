@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { createRestoreAuthority } from '../lib/checkpoint-restore.js'
 import { createRestorePlanner } from '../lib/checkpoint-plan.js'
 import { createLoopFacts } from '../lib/checkpoint-facts.js'
-import { createRestoreStepAdapters } from '../lib/checkpoint-sources.js'
+import { createBranchSource, createRestoreStepAdapters, createWorkspaceJournalSource, createWorkspaceSnapshotSource } from '../lib/checkpoint-sources.js'
 import { createCaptureAuthority } from '../lib/checkpoint-capture.js'
 import {
   createTestStore,
@@ -40,9 +40,9 @@ function harness(options = {}) {
     store,
     facts,
     sources: {
-      branch: { availability: () => branch.face.availability() },
-      'workspace-journal': { availability: () => journal.face.availability() },
-      'workspace-snapshot': { availability: () => snapshot.face.availability() },
+      branch: createBranchSource({ branches: branch.face }),
+      'workspace-journal': createWorkspaceJournalSource({ transactions: journal.face }),
+      'workspace-snapshot': createWorkspaceSnapshotSource({ snapshot: snapshot.face }),
     },
   })
   const stepAdapters = createRestoreStepAdapters({ branches: branch.face, transactions: journal.face, snapshot: snapshot.face })
@@ -114,6 +114,18 @@ test('restore: preflight denies a plan with no restoreable slice and executes no
   const result = await h.restore.restore(checkpointId, { plan: degraded.plan }, { owner: 'plugin-a' })
   assert.equal(result.ok, false)
   assert.equal(result.code, 'denied')
+  assert.equal(h.branch.branches().filter((item) => item.restored).length, 0)
+})
+
+test('restore: a plan whose anchor is gone by execution time is rejected as stale without running steps', async () => {
+  const h = harness()
+  const { checkpointId, plan } = await seedSession({ harness: h })
+  const anchorBranchId = plan.slices[0].steps[0].steps.branchId
+  h.branch.removeBranch(anchorBranchId)
+  const result = await h.restore.restore(checkpointId, { plan }, { owner: 'plugin-a' })
+  assert.equal(result.ok, false)
+  assert.equal(result.code, 'conflict')
+  assert.match(result.reason, /stale|anchors changed/)
   assert.equal(h.branch.branches().filter((item) => item.restored).length, 0)
 })
 
@@ -207,7 +219,7 @@ test('restore: running session without the shared cancel boundary is denied befo
   const capture = createCaptureAuthority({ store, authorities: { branch: branch.face }, ownerOf: stubOwnerOf, idFactory: createIdFactory('cp') })
   const outcome = await capture.create({ scope: { sessionId: 'session-1' }, source: { kind: 'branch' } }, { owner: 'plugin-a' })
   const facts = createLoopFacts({ facts: undefined }) // no slice
-  const planner = createRestorePlanner({ store, facts, sources: { branch: { availability: () => branch.face.availability() } } })
+  const planner = createRestorePlanner({ store, facts, sources: { branch: createBranchSource({ branches: branch.face }) } })
   const planned = await planner.planRestore(outcome.summary.checkpointId)
   assert.equal(planned.plan.overallRestoreability, 'unavailable')
   const stepAdapters = createRestoreStepAdapters({ branches: branch.face })

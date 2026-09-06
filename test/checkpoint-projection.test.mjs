@@ -93,3 +93,33 @@ test('projection: host-side redaction strips anchor free-form fields in list ite
     assert.ok(!('owner' in item.data))
   }
 })
+
+test('projection: a gone scope resource keeps the record inspectable and marks the scope unavailable', async () => {
+  const store = createTestStore()
+  const branch = createBranchAuthorityFixture()
+  branch.addSession('session-1')
+  const confirmScopeResource = async (record) => {
+    const sessionId = record?.scope?.session
+    if (!sessionId) return { status: 'unknown' }
+    const known = await branch.face.sessionKnown(sessionId)
+    return known ? { status: 'reachable' } : { status: 'unavailable', reason: `session '${sessionId}' no longer exists or is unreachable` }
+  }
+  const projection = createCheckpointProjection({ store, confirmScopeResource })
+  const { ids } = await seed(store, 1)
+  const before = await projection.inspect(ids[0])
+  assert.equal(before.record.scope.resourceStatus, 'reachable')
+  const storedBefore = await store.get(ids[0])
+  branch.removeSession('session-1')
+  const inspected = await projection.inspect(ids[0])
+  assert.equal(inspected.ok, true)
+  assert.equal(inspected.code, 'inspected')
+  assert.equal(inspected.record.scope.resourceStatus, 'unavailable')
+  assert.match(inspected.record.scope.resourceReason, /no longer exists or is unreachable/)
+  // The record itself is never rewritten or deleted.
+  const storedAfter = await store.get(ids[0])
+  assert.equal(storedAfter.ok, true)
+  assert.deepEqual(storedAfter.record.data, storedBefore.record.data)
+  const page = await projection.list({ scope: 'session' })
+  assert.equal(page.items.length, 1)
+  assert.equal(page.items[0].scope.resourceStatus, 'unavailable')
+})

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { createRestorePlanner } from '../lib/checkpoint-plan.js'
 import { createCaptureAuthority } from '../lib/checkpoint-capture.js'
 import { createLoopFacts } from '../lib/checkpoint-facts.js'
+import { createBranchSource, createWorkspaceJournalSource, createWorkspaceSnapshotSource } from '../lib/checkpoint-sources.js'
 import {
   createTestStore,
   createMemoryFacility,
@@ -33,16 +34,17 @@ function harness(options = {}) {
   const facility = options.facility ?? createMemoryFacility()
   const store = options.store ?? createTestStore({ facility })
   const branch = options.branch ?? createBranchAuthorityFixture()
+  const journal = options.journal ?? createTransactionsAuthorityFixture()
   const snapshot = options.snapshot ?? createSnapshotSliceFixture()
   const attempts = options.attempts ?? createAttemptFactsFixture()
   const facts = createLoopFacts({ facts: attempts.facet })
-  const sources = {
-    branch: { availability: () => branch.face.availability() },
-    'workspace-journal': { availability: () => ({ status: 'unavailable', reason: 'no journal fixture wired here' }) },
-    'workspace-snapshot': { availability: () => snapshot.face.availability() },
+  const sources = options.sources ?? {
+    branch: createBranchSource({ branches: branch.face }),
+    'workspace-journal': createWorkspaceJournalSource({ transactions: journal.face }),
+    'workspace-snapshot': createWorkspaceSnapshotSource({ snapshot: snapshot.face }),
   }
-  const planner = createRestorePlanner({ store, facts, sources })
-  return { store, branch, facts, attempts, planner, snapshot }
+  const planner = options.planner ?? createRestorePlanner({ store, facts, sources })
+  return { store, branch, journal, snapshot, facts, attempts, planner, sources }
 }
 
 test('planRestore: pure frozen plan bound to the concrete owning authority', async () => {
@@ -100,7 +102,7 @@ test('planRestore: slice-inactive degrades to unavailable with the concrete reas
   const planner = createRestorePlanner({
     store,
     facts,
-    sources: { branch: { availability: () => branch.face.availability() } },
+    sources: { branch: createBranchSource({ branches: branch.face }) },
   })
   const planned = await planner.planRestore(checkpointId)
   assert.equal(planned.plan.liveState.evidence, 'unknown')
@@ -115,7 +117,7 @@ test('planRestore: unconfirmable idle without the cancel boundary is fail-closed
   const checkpointId = await seedSessionCheckpoint({ store, branch })
   attempts.set('session-1', { state: 'running', attemptId: 'attempt-9' })
   const facts = createLoopFacts({ facts: undefined, activity: undefined })
-  const sources = { branch: { availability: () => branch.face.availability() } }
+  const sources = { branch: createBranchSource({ branches: branch.face }) }
   const planner = createRestorePlanner({ store, facts, sources })
   const planned = await planner.planRestore(checkpointId)
   assert.equal(planned.plan.slices[0].steps[0].restoreability, 'unavailable')
@@ -135,7 +137,7 @@ test('planRestore: unknown v1 slice yields not-applicable; unavailable authority
   const plannerDown = createRestorePlanner({
     store,
     facts: createLoopFacts({}),
-    sources: { branch: { availability: () => branch.face.availability() } },
+    sources: { branch: createBranchSource({ branches: branch.face }) },
   })
   const unavailable = await plannerDown.planRestore(outcome.summary.checkpointId)
   assert.equal(unavailable.plan.slices[0].steps[0].restoreability, 'unavailable')
@@ -167,6 +169,70 @@ test('planRestore: missing and unsupported records are typed, never guessed', as
   assert.equal(invalid.code, 'invalid-input')
 })
 
+test('planRestore: an anchor deleted after capture is marked unavailable/stale with the concrete reason', async () => {
+  const { store, branch, planner } = harness()
+  const checkpointId = await seedSessionCheckpoint({ store, branch })
+  const before = await planner.planRestore(checkpointId)
+  assert.equal(before.plan.slices[0].steps[0].restoreability, 'restoreable')
+  const anchorBranchId = before.plan.slices[0].steps[0].steps.branchId
+  branch.removeBranch(anchorBranchId)
+  const after = await planner.planRestore(checkpointId)
+  assert.equal(after.plan.slices[0].steps[0].restoreability, 'unavailable')
+  assert.equal(after.plan.slices[0].overall, 'unavailable')
+  assert.match(after.plan.slices[0].reasons.join(' '), /anchor cannot be confirmed/)
+})
+
+test('planRestore: a gone scope resource marks the slice unavailable while the record stays intact', async () => {
+  const { store, branch, planner } = harness()
+  const checkpointId = await seedSessionCheckpoint({ store, branch })
+  const before = await planner.planRestore(checkpointId)
+  assert.equal(before.plan.slices[0].scopeResource.status, 'reachable')
+  // The session disappears after capture: the record is never rewritten.
+  const storedBefore = await store.get(checkpointId)
+  branch.removeSession('session-1')
+  const after = await planner.planRestore(checkpointId)
+  assert.equal(after.plan.slices[0].scopeResource.status, 'unavailable')
+  assert.equal(after.plan.slices[0].steps[0].restoreability, 'unavailable')
+  assert.equal(after.plan.slices[0].overall, 'unavailable')
+  assert.match(after.plan.slices[0].reasons.join(' '), /no longer exists or is unreachable/)
+  const storedAfter = await store.get(checkpointId)
+  assert.deepEqual(storedAfter.record, storedBefore.record, 'the record is not rewritten')
+})
+
+test('planRestore: journal and snapshot anchors are confirmed through their owning authorities', async () => {
+  const store = createTestStore()
+  const journal = createTransactionsAuthorityFixture()
+  const snapshot = createSnapshotSliceFixture()
+  const capture = createCaptureAuthority({
+    store,
+    authorities: { branch: undefined, journal: journal.face, snapshot: snapshot.face },
+    ownerOf: stubOwnerOf,
+    idFactory: createIdFactory('cp'),
+  })
+  const journalCp = await capture.create({ scope: { workspaceId: 'workspace-1' }, source: { kind: 'workspace-journal' } }, { owner: 'plugin-a' })
+  const snapshotCp = await capture.create({ scope: { workspaceId: 'workspace-1' }, source: { kind: 'workspace-snapshot' } }, { owner: 'plugin-a' })
+  const planner = createRestorePlanner({
+    store,
+    facts: createLoopFacts({}),
+    sources: {
+      'workspace-journal': createWorkspaceJournalSource({ transactions: journal.face }),
+      'workspace-snapshot': createWorkspaceSnapshotSource({ snapshot: snapshot.face }),
+    },
+  })
+  const journalPlan = await planner.planRestore(journalCp.summary.checkpointId)
+  assert.equal(journalPlan.plan.slices[0].steps[0].restoreability, 'restoreable')
+  assert.equal(journalPlan.plan.slices[0].scopeResource.status, 'reachable')
+  journal.removeTransaction(journalPlan.plan.slices[0].steps[0].steps.transactionId)
+  const journalAfter = await planner.planRestore(journalCp.summary.checkpointId)
+  assert.equal(journalAfter.plan.slices[0].steps[0].restoreability, 'unavailable')
+  assert.match(journalAfter.plan.slices[0].reasons.join(' '), /anchor cannot be confirmed/)
+  const snapshotPlan = await planner.planRestore(snapshotCp.summary.checkpointId)
+  assert.equal(snapshotPlan.plan.slices[0].steps[0].restoreability, 'restoreable')
+  snapshot.removeSnapshot(snapshotPlan.plan.slices[0].steps[0].steps.snapshotId)
+  const snapshotAfter = await planner.planRestore(snapshotCp.summary.checkpointId)
+  assert.equal(snapshotAfter.plan.slices[0].steps[0].restoreability, 'unavailable')
+})
+
 test('planRestore: journal and snapshot checkpoints bind to their declared authorities', async () => {
   const store = createTestStore()
   const journal = createTransactionsAuthorityFixture()
@@ -183,8 +249,8 @@ test('planRestore: journal and snapshot checkpoints bind to their declared autho
     store,
     facts: createLoopFacts({}),
     sources: {
-      'workspace-journal': { availability: () => journal.face.availability() },
-      'workspace-snapshot': { availability: () => snapshot.face.availability() },
+      'workspace-journal': createWorkspaceJournalSource({ transactions: journal.face }),
+      'workspace-snapshot': createWorkspaceSnapshotSource({ snapshot: snapshot.face }),
     },
   })
   const journalPlan = await planner.planRestore(journalCp.summary.checkpointId)
