@@ -441,3 +441,18 @@ test('multi-owner composition is isolated and views are immutable', () => {
   const view = hub.current(desktop)
   assert.throws(() => { 'use strict'; view.push({}) }, TypeError)
 })
+test('hub snapshotAll exposes the whole-hub redacted snapshot for the pipeline', () => {
+  const hub = createAttentionHub({ resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
+  const alice = webCaller('alice')
+  hub.contribute({ id: 's1', title: 'one', level: 'info', audience: ['web'] }, alice)
+  hub.contribute({ id: 's2', title: 'two', level: 'warning', audience: ['desktop'] }, alice)
+  const snapshot = hub.snapshotAll()
+  assert.equal(snapshot.status, undefined)
+  assert.deepEqual(snapshot.items.map((item) => item.id), ['s1', 's2'])
+  assert.equal(Object.isFrozen(snapshot), true)
+  assert.equal(Object.isFrozen(snapshot.items[0]), true)
+  // unavailable hub returns the typed view, not a snapshot
+  hub.setAvailability({ status: 'unavailable', reason: 'slice gone' })
+  const view = hub.snapshotAll()
+  assert.equal(view.status, 'unavailable')
+})

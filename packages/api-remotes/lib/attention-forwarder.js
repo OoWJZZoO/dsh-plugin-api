@@ -112,7 +112,7 @@ export function createAttentionForwarder(options = {}) {
    * @param {{ push: (frame: object) => void }} wiring.stream
    * @returns {{ ok: boolean, code: string, reason?: string }}
    */
-  function attach({ source, stream }) {
+  function attach({ source, stream, snapshot }) {
     if (attached) return { ok: false, code: 'conflict', reason: 'already attached' }
     if (source === null || source === undefined || typeof source.subscribe !== 'function') {
       return { ok: false, code: 'unavailable', reason: 'attention update source is not reachable' }
@@ -144,6 +144,26 @@ export function createAttentionForwarder(options = {}) {
         log('browser event stream push failed')
       }
     })
+    // On attach, seed the stream with a fresh host snapshot so the browser
+    // runtime can rebuild its projection after a rebind (Requirements R6 AC1).
+    if (snapshot !== undefined && typeof snapshot === 'function') {
+      try {
+        const current = snapshot()
+        if (current !== null && current !== undefined && Array.isArray(current.items)) {
+          const snapshotMessage = {
+            kind: 'attention.snapshot',
+            epoch: current.epoch ?? 0,
+            seq: current.seq ?? 0,
+            items: current.items.map((item) => ({ ...item })),
+          }
+          if (isValidAttentionUpdate(snapshotMessage)) {
+            stream.push(buildAttentionFrame(snapshotMessage))
+          }
+        }
+      } catch {
+        log('initial host snapshot could not be produced; deltas will still flow')
+      }
+    }
     attached = true
     return { ok: true, code: 'attached' }
   }

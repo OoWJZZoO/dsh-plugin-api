@@ -119,6 +119,25 @@ function defaultResolveStream(ctx) {
 }
 
 /**
+ * Default host snapshot resolver: the attention hub exposes its whole-hub
+ * redacted snapshot through the mounted facade; the exact access path is
+ * fixed at the integration wave. When the hub is not resolvable the route
+ * still forwards live deltas (no snapshot seed).
+ */
+function defaultResolveSnapshot(ctx) {
+  try {
+    const pluginApi = ctx.get('pluginApi')
+    const hub = pluginApi && pluginApi.attention && typeof pluginApi.attention.hubSnapshot === 'function'
+      ? pluginApi.attention
+      : undefined
+    if (hub !== undefined) return () => hub.hubSnapshot()
+  } catch {
+    // facade absent
+  }
+  return null
+}
+
+/**
  * Build the plugin `apply` function with optional test seams.
  *
  * @param {{
@@ -126,6 +145,7 @@ function defaultResolveStream(ctx) {
  *   readPackageApi?: Function,
  *   resolveSource?: Function,
  *   resolveStream?: Function,
+ *   resolveSnapshot?: Function,
  *   logger?: object,
  *   allowlist?: string[],
  * }} [overrides]
@@ -135,6 +155,7 @@ export function createApiRemotesApply(overrides = {}) {
   const readApi = overrides.readPackageApi ?? readPackageApi
   const resolveSource = overrides.resolveSource ?? defaultResolveSource
   const resolveStream = overrides.resolveStream ?? defaultResolveStream
+  const resolveSnapshot = overrides.resolveSnapshot ?? defaultResolveSnapshot
 
   return function apply(ctx) {
     try {
@@ -176,11 +197,12 @@ export function createApiRemotesApply(overrides = {}) {
       // Official row disabled (patch applied) or absent → attach the slice.
       const source = resolveSource(ctx)
       const stream = resolveStream(ctx)
+      const snapshot = resolveSnapshot(ctx)
       const forwarder = createAttentionForwarder({
         logger: overrides.logger ?? ctx.logger,
         allowlist: overrides.allowlist ?? [...API_REMOTE_FORWARDED_EVENTS],
       })
-      const attached = forwarder.attach({ source, stream })
+      const attached = forwarder.attach({ source, stream, snapshot: snapshot ?? undefined })
       if (!attached.ok) {
         forwarder.dispose()
         logDiagnostic(ctx, `api-remotes: forwarding route not attached (${attached.reason}); official behavior remains`)

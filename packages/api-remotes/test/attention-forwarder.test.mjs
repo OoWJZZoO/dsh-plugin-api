@@ -77,6 +77,23 @@ test('forwarder: forwards validated hub messages as frames onto the stream', () 
   forwarder.dispose()
 })
 
+test('forwarder: seeds a fresh host snapshot on attach so the runtime can rebuild', () => {
+  const source = channel()
+  const stream = sink()
+  const forwarder = createAttentionForwarder({ allowlist: [...OFFICIAL_11] })
+  const attached = forwarder.attach({
+    source,
+    stream,
+    snapshot: () => ({ epoch: 7, seq: 12, items: [{ id: 'a', seq: 5, level: 'info' }, { id: 'b', seq: 9, level: 'warning' }] }),
+  })
+  assert.equal(attached.ok, true)
+  assert.equal(stream.frames.length, 1)
+  assert.equal(stream.frames[0].args[0].kind, 'attention.snapshot')
+  assert.equal(stream.frames[0].args[0].epoch, 7)
+  assert.equal(stream.frames[0].args[0].items.length, 2)
+  forwarder.dispose()
+})
+
 test('forwarder: drops malformed messages and never lets them reach the stream', () => {
   const source = channel()
   const stream = sink()
