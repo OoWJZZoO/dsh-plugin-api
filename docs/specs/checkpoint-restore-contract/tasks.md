@@ -6,7 +6,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 
 **并行纪律**：M9 四线 worktree 并行开发，遵循 `docs/specs/plugin-api-m1-integration/parallel-workflow.md` 三阶段协议与 M9 串并行契约（`temp/m9-parallel-development-contract.md`，下称「契约」）§7 共享文件边界、§8 合并顺序。任何任务不得修改 `/usr/lib/node_modules/@deepseek-ai/dsh/**`（官方包文件）或本文「文件范围与并行纪律」节的冻结文件。
 
-**串并行折线（本线铁律）**：任务批次 A（checkpoint record / capture status / restoreability / external-effect / plan 的无副作用先行部分；契约 §3.2 第一波 + §3.4 第三波 plan 对齐）在本波实现；**完整 restore operation 是 M9 最后进入实现的部分**（契约 §3.5）——批次 B 必须在 checkpoint record/plan、coordination fencing、workspace transaction、session branch/edit 与 recovery consumption contract 均无未决 authority 冲突后串行开工；批次 B 开门即 authority 对齐检查（任务 10），authority 无法闭合时交付诚实降级（任务 10.2/13.4），绝不伪装完整能力。批次 A 对应契约 §8 合并顺序第 4 步（checkpoint projection/plan），批次 B 对应第 5 步（restore operation 与跨组件 R slices），集成波对应第 6 步。
+**串并行折线（本线铁律）**：任务批次 A（checkpoint record / capture status / restoreability / external-effect / plan 的无副作用先行部分；契约 §3.2 第一波 + §3.4 第三波 plan 对齐）在本波实现；**完整 restore operation 是 M9 最后进入实现的部分**（契约 §3.5）——批次 B 必须在 checkpoint record/plan、coordination fencing、workspace transaction、session branch/edit 与 recovery consumption contract 均无未决 authority 冲突后串行开工；批次 B 开门即 authority 对齐检查（任务 10），authority 无法闭合时交付诚实降级（任务 10.2/13.4），绝不伪装完整能力。批次 A 交付契约 §8 第 4 步范围（checkpoint projection/plan）及第 5 步 R slice 包的安装面前置（workspace 替代包的 parity/capture 面，其 restore-path 仅交付接口、首次驱动随批次 B 第 5 步合并）；批次 B 对应第 5 步的 restore operation 主体与 R slice restore 驱动；集成波对应第 6 步。
 
 ## 需求锚点
 
