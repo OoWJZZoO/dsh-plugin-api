@@ -1,0 +1,17 @@
+# Bundle patch for @deepseek-ai/dsh-plugin-api-api-remotes.
+# Replacement boundary: we replace the `api-remotes` loader row's ctx
+# service/event behavior ONLY; the `@deepseek-ai/dsh-api-remotes` import
+# surface stays official (the host api proxy keeps importing the forwarded-event
+# allowlist and BFF identity helpers from the official package).
+# The official `id: api-remotes` row is a browser-roster row with no
+# inject/config; the replacement row matches that shape and additionally
+# injects `loader` so its apply can inspect the composition for its boot
+# self-check. Attention updates ride the official host→browser event stream
+# through this row's forwarder; the consumer-side `$on` legal key set is kept
+# at the reproduced official eleven-event allowlist.
+- id: api-remotes
+  disabled: true
+- insert:
+    - id: plugin-api-api-remotes
+      name: '@deepseek-ai/dsh-plugin-api-api-remotes'
+      inject: [loader]

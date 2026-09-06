@@ -1,6 +1,6 @@
 /**
- * Focused tests for the host attention hub (Wave 2; Requirements R1–R4, R7–R9,
- * R13 host side). The hub is a pure module, constructed directly with test
+ * Focused tests for the host attention hub (host-side requirements):
+ * the hub is a pure module, constructed directly with test
  * seams — it is not mounted into the gate here (integration wave owns that).
  */
 import test from 'node:test'
@@ -31,7 +31,7 @@ function webCaller(ownerId) {
   return { ownerId, kind: 'web', scopes: null }
 }
 
-test('R1: contribute registers one item and returns an owner-scoped handle', () => {
+test('contribute registers one item and returns an owner-scoped handle', () => {
   let now = 1000
   const hub = createAttentionHub({ now: () => now, resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
   const alice = webCaller('alice')
@@ -51,7 +51,7 @@ test('R1: contribute registers one item and returns an owner-scoped handle', () 
   assert.equal(outcome.handle.ownerId, 'alice')
 })
 
-test('R1: same-owner same-id is a stable conflict; cross-owner is owner-conflict', () => {
+test('same-owner same-id is a stable conflict; cross-owner is owner-conflict', () => {
   const hub = createAttentionHub({ resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
   const alice = webCaller('alice')
   const bob = webCaller('bob')
@@ -66,7 +66,7 @@ test('R1: same-owner same-id is a stable conflict; cross-owner is owner-conflict
   assert.equal(hub.current(alice)[0].title, 'first')
 })
 
-test('R1: malformed specs return invalid-input and register nothing', () => {
+test('malformed specs return invalid-input and register nothing', () => {
   const hub = createAttentionHub({ resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
   const alice = webCaller('alice')
   const cases = [
@@ -89,7 +89,7 @@ test('R1: malformed specs return invalid-input and register nothing', () => {
   assert.equal(hub.current(alice).length, 0)
 })
 
-test('R1: dispose withdraws the live item; double dispose is an idempotent no-op', () => {
+test('dispose withdraws the live item; double dispose is an idempotent no-op', () => {
   const hub = createAttentionHub({ resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
   const alice = webCaller('alice')
   const bob = webCaller('bob')
@@ -105,7 +105,7 @@ test('R1: dispose withdraws the live item; double dispose is an idempotent no-op
   assert.equal(hub.current(alice).length, 1)
 })
 
-test('R1: capacity eviction is observable and reports capacity when nothing is removable', () => {
+test('capacity eviction is observable and reports capacity when nothing is removable', () => {
   let now = 1000
   const hub = createAttentionHub({
     now: () => now,
@@ -135,7 +135,7 @@ test('R1: capacity eviction is observable and reports capacity when nothing is r
   assert.equal(squeezed.code, CODE_CAPACITY)
 })
 
-test('R2: the public item shape is bounded, frozen and loses hub-private state', () => {
+test('the public item shape is bounded, frozen and loses hub-private state', () => {
   const hub = createAttentionHub({
     resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }),
     bounds: { maxTitleLength: 10 },
@@ -176,7 +176,7 @@ test('R2: the public item shape is bounded, frozen and loses hub-private state',
   assert.equal(handle.dispose().code, CODE_WITHDRAWN)
 })
 
-test('R2: redaction rejects secret-typed keys and credential material at the boundary', () => {
+test('redaction rejects secret-typed keys and credential material at the boundary', () => {
   const hub = createAttentionHub({ resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
   const alice = webCaller('alice')
   const secretKey = hub.contribute({ id: 'k1', title: 'x', level: 'info', meta: { apiKey: 'abc' } }, alice)
@@ -191,7 +191,7 @@ test('R2: redaction rejects secret-typed keys and credential material at the bou
   assert.equal(hub.current(alice).length, 0)
 })
 
-test('R3: observe handle exposes current/subscribe/dispose/epoch with frozen changes', () => {
+test('observe handle exposes current/subscribe/dispose/epoch with frozen changes', () => {
   let now = 1000
   const hub = createAttentionHub({ now: () => now, resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
   const alice = webCaller('alice')
@@ -219,7 +219,7 @@ test('R3: observe handle exposes current/subscribe/dispose/epoch with frozen cha
   assert.equal(seen.length, 2)
 })
 
-test('R3: projection honors audience and scope authorization without leaking', () => {
+test('projection honors audience and scope authorization without leaking', () => {
   const hub = createAttentionHub({ resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
   const wide = caller('wide', 'web', { sessions: new Set(['s1', 's2']), workspaces: null, unscoped: true })
   const narrow = caller('narrow', 'web', { sessions: new Set(['s1']), workspaces: null, unscoped: false })
@@ -246,7 +246,7 @@ test('R3: projection honors audience and scope authorization without leaking', (
   assert.equal(pageB.items[0].id, 'p3')
 })
 
-test('R3: degraded/unavailable hub returns typed views and never throws', () => {
+test('degraded/unavailable hub returns typed views and never throws', () => {
   const hub = createAttentionHub({ resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
   const alice = webCaller('alice')
   hub.setAvailability({ status: 'unavailable', reason: 'slice mismatch' })
@@ -262,7 +262,7 @@ test('R3: degraded/unavailable hub returns typed views and never throws', () => 
   assert.equal(ob.current().status, 'unavailable')
 })
 
-test('R4: dismiss, expiry and withdraw follow one lifecycle with observable reasons', () => {
+test('dismiss, expiry and withdraw follow one lifecycle with observable reasons', () => {
   let now = 1000
   const hub = createAttentionHub({ now: () => now, resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
   const alice = webCaller('alice')
@@ -295,7 +295,7 @@ test('R4: dismiss, expiry and withdraw follow one lifecycle with observable reas
   assert.equal(changes.some((change) => change.op === 'remove' && change.reason === 'withdrawn'), true)
 })
 
-test('R4: reloaded owner gets a new generation; stale disposers cannot remove newer items', () => {
+test('reloaded owner gets a new generation; stale disposers cannot remove newer items', () => {
   const hub = createAttentionHub({ resolveOwner: (c) => ({ ownerId: c.ownerId, generation: c.gen ?? 0 }) })
   const alice = (gen) => ({ ownerId: 'alice', kind: 'web', scopes: null, gen })
   // reload withdraws the owner's live items and bumps the opaque generation
@@ -317,7 +317,7 @@ test('R4: reloaded owner gets a new generation; stale disposers cannot remove ne
   assert.equal(second.handle.dispose().code, CODE_WITHDRAWN)
 })
 
-test('R5: dedupeKey duplicate inside the live window references the live item', () => {
+test('dedupeKey duplicate inside the live window references the live item', () => {
   const hub = createAttentionHub({ resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
   const alice = webCaller('alice')
   hub.contribute({ id: 'd1', title: 'first', level: 'info', dedupeKey: 'same' }, alice)
@@ -328,7 +328,7 @@ test('R5: dedupeKey duplicate inside the live window references the live item', 
   assert.equal(hub.current(alice).length, 1)
 })
 
-test('R7: action invocation is owner-bound, contained and stale-aware', () => {
+test('action invocation is owner-bound, contained and stale-aware', () => {
   const hub = createAttentionHub({
     resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }),
     isCurrentExecution: (executionId) => executionId !== 'moved-exec',
@@ -383,7 +383,7 @@ test('R7: action invocation is owner-bound, contained and stale-aware', () => {
   assert.equal(hub.invoke('a4', 'late', bob).code, CODE_NOT_FOUND)
 })
 
-test('R8: availability never throws and reflects set state', () => {
+test('availability never throws and reflects set state', () => {
   const hub = createAttentionHub({ resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
   const active = hub.availability()
   assert.equal(active.status, 'active')
@@ -394,7 +394,7 @@ test('R8: availability never throws and reflects set state', () => {
   assert.equal(hub.availability().status, 'active')
 })
 
-test('R9: attention never becomes a durable fact store', () => {
+test('attention never becomes a durable fact store', () => {
   const one = createAttentionHub({ resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
   const two = createAttentionHub({ resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
   const alice = webCaller('alice')
@@ -408,7 +408,7 @@ test('R9: attention never becomes a durable fact store', () => {
   }
 })
 
-test('R13: multi-owner composition is isolated and views are immutable', () => {
+test('multi-owner composition is isolated and views are immutable', () => {
   const hub = createAttentionHub({ resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
   // reverse registration order: client-face-style, then a host-style owner
   const browser = caller('browser-plugin', 'web', {

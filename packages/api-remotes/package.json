@@ -1,0 +1,38 @@
+{
+  "name": "@deepseek-ai/dsh-plugin-api-api-remotes",
+  "description": "Replacement bundle for @deepseek-ai/dsh-api-remotes: faithful fork of the forwarded-event allowlist and Remote Agent/Session identity BFF, plus a typed attention/update forwarding path over the official host-to-browser event stream (kept out of the consumer-side $on key set).",
+  "version": "0.1.0-rc.6-0.1.0",
+  "type": "module",
+  "main": "lib/apply.js",
+  "exports": {
+    ".": "./lib/apply.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "api": "0.1",
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-api-gateway"
+      ],
+      "immediately": true
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test",
+    "build:client": "node scripts/build-client.mjs"
+  },
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-api-remotes": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-typert-protocol": "^0.1.0-rc.6",
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "devDependencies": {
+    "@deepseek-ai/dsh-app-boot": "^0.1.0-rc.6"
+  }
+}
