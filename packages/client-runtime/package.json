@@ -1,0 +1,42 @@
+{
+  "name": "@deepseek-ai/dsh-plugin-api-client-runtime",
+  "description": "Replacement bundle for @deepseek-ai/dsh-client-runtime: verbatim browser-module contract (slots, conversationEvents, conversationViews, connection/reset, sessions/workspaces reflect) plus the browser attention runtime consumed by the main facade client face.",
+  "version": "0.1.0-rc.6-0.1.0",
+  "type": "module",
+  "main": "lib/apply.js",
+  "exports": {
+    ".": "./lib/apply.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "api": "0.1",
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-typert-registry",
+        "@deepseek-ai/dsh-api-remotes"
+      ],
+      "immediately": true
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test",
+    "build:client": "node scripts/build-client.mjs"
+  },
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-client-runtime": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-api-remotes": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-typert-registry": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-client-connection": "^0.1.0-rc.6",
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "devDependencies": {
+    "@deepseek-ai/dsh-app-boot": "^0.1.0-rc.6"
+  }
+}
