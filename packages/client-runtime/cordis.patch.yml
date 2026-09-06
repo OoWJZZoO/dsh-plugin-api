@@ -1,0 +1,15 @@
+# Bundle patch for @deepseek-ai/dsh-plugin-api-client-runtime.
+# Replacement boundary: we replace the `client-runtime` loader row's ctx
+# service/event behavior ONLY; the `@deepseek-ai/dsh-client-runtime` import
+# surface stays official. The official `id: client-runtime` row is a
+# browser-roster row with no inject/config whose real contract lives in the
+# browser half; the replacement row matches that shape and additionally
+# injects `loader` so its apply can inspect the composition for its boot
+# self-check. The browser attention runtime extends the reproduced browser
+# module; slots/conversation/reflect official behavior is preserved verbatim.
+- id: client-runtime
+  disabled: true
+- insert:
+    - id: plugin-api-client-runtime
+      name: '@deepseek-ai/dsh-plugin-api-client-runtime'
+      inject: [loader]
