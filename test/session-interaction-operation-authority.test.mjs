@@ -284,3 +284,62 @@ test('resolveAgentLoopBoundary reads the shared marker symbol with a duck-type c
   const partial = { get: (name) => (name === 'agentLoop' ? { [INTERACTION_BOUNDARY_SYMBOL]: { admit: () => {} } } : undefined) }
   assert.equal(resolveAgentLoopBoundary(partial), null)
 })
+
+test('parent cancellation cascades to still-live children; child does not reverse-cancel the parent', async () => {
+  const boundary = makeBoundary()
+  const { authority } = makeAuthority({ boundary })
+  const parent = await authority.request({ sessionId: 's1', message: { kind: 'user-message', text: 'parent' } })
+  const child = await authority.request({ sessionId: 's2', message: { kind: 'user-message', text: 'child' }, parent: parent.operation.id, cause: 'parent-work' })
+  assert.equal(child.code, 'accepted')
+  // child cancel does NOT reverse-cancel the parent
+  assert.equal(authority.cancel({ operationId: child.operation.id }).code, 'accepted')
+  assert.equal(child.operation.status().terminal.outcome, 'aborted')
+  assert.equal(parent.operation.status().phase, 'accepted', 'child cancellation never reverse-cancels the parent')
+  // parent cancel cascades to a second still-live child
+  const child2 = await authority.request({ sessionId: 's3', message: { kind: 'user-message', text: 'child2' }, parent: parent.operation.id })
+  assert.equal(authority.cancel({ operationId: parent.operation.id }).code, 'accepted')
+  assert.equal(parent.operation.status().terminal.outcome, 'aborted')
+  assert.equal(child2.operation.status().phase, 'terminal')
+  assert.equal(child2.operation.status().terminal.outcome, 'aborted')
+})
+
+test('parent cancellation propagates to a live child attempt through the shared boundary', async () => {
+  const boundary = makeBoundary()
+  const { authority } = makeAuthority({ boundary })
+  const parent = await authority.request({ sessionId: 's1', message: { kind: 'user-message', text: 'parent' } })
+  const child = await authority.request({ sessionId: 's2', message: { kind: 'user-message', text: 'child' }, parent: parent.operation.id })
+  authority.ingestAttemptFact({ name: 'agent/attempt/start', attemptId: 'c-a1', operationId: child.operation.id, sessionId: 's2', seq: 1, observedAt: 't1' })
+  assert.equal(child.operation.status().phase, 'running')
+  authority.cancel({ operationId: parent.operation.id, by: 'system', reason: 'parent stopped' })
+  // the cascade reached the child's live attempt (best-effort); the terminal is
+  // adjudicated at the commit point when the loop-side attempt-end fact lands
+  authority.ingestAttemptFact({ name: 'agent/attempt/end', attemptId: 'c-a1', operationId: child.operation.id, sessionId: 's2', seq: 1, observedAt: 't2', outcome: 'aborted', classification: 'aborted', followUp: 'none' })
+  assert.equal(child.operation.status().terminal.outcome, 'aborted', 'live child attempt resolved from the cascaded signal at its commit point')
+})
+
+test('accepted handle exposes the frozen declared retry capability', async () => {
+  const { authority } = makeAuthority()
+  const withKey = await authority.request({ sessionId: 's1', message: { kind: 'user-message', text: 'x' }, idempotencyKey: 'k1' })
+  assert.deepEqual(withKey.operation.capability, { idempotent: true, autoRetry: false, failClosed: true })
+  assert.ok(Object.isFrozen(withKey.operation.capability))
+  const withoutKey = await authority.request({ sessionId: 's2', message: { kind: 'user-message', text: 'y' } })
+  assert.deepEqual(withoutKey.operation.capability, { idempotent: false, autoRetry: false, failClosed: true })
+})
+
+test('direct durable append is not interpreted as a processing request (no admission, no operation, no acceptance effect)', async () => {
+  const boundary = makeBoundary()
+  const fixtureAppends = []
+  const durableAppend = async (sessionId, kind, payload) => {
+    fixtureAppends.push({ sessionId, kind, payload })
+    return { ok: true, seq: fixtureAppends.length }
+  }
+  const { authority } = makeAuthority({ boundary, durableAppend })
+  // a third-party plugin appends directly to the durable layer — NOT through
+  // the request authority
+  await durableAppend('s1', 'user-message', { text: 'direct append' })
+  assert.equal(boundary.admitted.length, 0, 'no admission happened for the direct append')
+  assert.equal(authority.internalAudit().records.some((r) => r.outcomeCode === 'accepted'), false, 'no operation acceptance was recorded')
+  // the authority still serves a request normally afterward
+  const out = await authority.request({ sessionId: 's1', message: { kind: 'user-message', text: 'via authority' } })
+  assert.equal(out.code, 'accepted')
+})

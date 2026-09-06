@@ -239,6 +239,21 @@ test('cancelAttempt propagates best-effort to the live attempt without writing a
   assert.equal(agent.lastCause[ATTEMPT_SUPERSEDED_CAUSE], true)
 })
 
+test('supersede marker carried through cancelAttempt produces a superseded attempt-end fact', () => {
+  const boundary = createInteractionBoundary({})
+  const agent = makeAgent('s1')
+  boundary.attachAgent(agent)
+  const { attemptRef } = boundary.admit({ sessionId: 's1', operationId: 'op1' })
+  boundary.beginAttempt(agent, { turn: 1, observedAt: 't1' })
+  // a superseding consumer (e.g. stop-then-restore calling the shared boundary
+  // with the marker) requests the replacement
+  boundary.cancelAttempt(attemptRef, { reason: { message: 'replaced by restore', superseded: true } })
+  const caused = agent.calls.at(-1)?.cause
+  const ended = boundary.endAttempt(agent, { turnEnds: { kind: 'aborted', reason: caused }, turn: 1, observedAt: 't2' })
+  assert.equal(ended.outcome, 'superseded')
+  assert.equal(ended.followUp, 'none')
+})
+
 test('stale and invalid cancel attempts return typed results', () => {
   const boundary = createInteractionBoundary({})
   assert.deepEqual(boundary.cancelAttempt({ sessionId: 's-x', operationId: 'op1' }), { ok: false, code: 'stale' })

@@ -352,16 +352,23 @@ export function createAgentLoopApply(overrides = {}) {
           }
           // Activity observation contract marker probe (shared vocabulary):
           // the marker is defined and exported by the session-activity-projection
-          // line. When present the slice cross-checks the shared attempt-fact
-          // contract version; when absent the mutual compatibility check is
-          // carried by the integration wave. Absence never downgrades the
-          // official loop contract or changes fact emission (facts-only).
+          // line as `{ version: number }`. When present the slice cross-checks
+          // the shared attempt-fact contract version by numeric comparison; when
+          // absent the mutual compatibility check is carried by the integration
+          // wave. Absence never downgrades the official loop contract or changes
+          // fact emission (facts-only).
           try {
             const marker = root?.[ACTIVITY_OBSERVATION_CONTRACT_SYMBOL]
             if (marker === undefined) {
               log(ctx, 'plugin-api-agent-loop: activity observation contract marker is not installed; attempt-fact compatibility is verified at the integration wave')
-            } else if (marker?.attemptFactsVersion !== ATTEMPT_FACTS_CONTRACT_VERSION) {
-              log(ctx, `plugin-api-agent-loop: activity observation contract version mismatch (expected ${ATTEMPT_FACTS_CONTRACT_VERSION}, got ${marker?.attemptFactsVersion}); observed-grade attempt-fact consumption must be aligned at the integration wave`)
+            } else {
+              const markerVersion = Number(marker?.version)
+              const expectedVersion = Number(ATTEMPT_FACTS_CONTRACT_VERSION)
+              if (!Number.isFinite(markerVersion)) {
+                log(ctx, 'plugin-api-agent-loop: activity observation contract marker is malformed; observed-grade attempt-fact consumption must be aligned at the integration wave')
+              } else if (markerVersion !== expectedVersion) {
+                log(ctx, `plugin-api-agent-loop: activity observation contract version mismatch (expected ${expectedVersion}, got ${markerVersion}); observed-grade attempt-fact consumption must be aligned at the integration wave`)
+              }
             }
           } catch (error) {
             log(ctx, `plugin-api-agent-loop: activity observation contract probe failed: ${error?.name ?? 'Error'}`)
