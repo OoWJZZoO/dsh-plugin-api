@@ -82,7 +82,7 @@ test('facade: two synthetic plugins exercising the same paths in reverse registr
   assert.equal(listed.items.length, 2)
 })
 
-test('facade: inactive core raises the uniform P1 error at every entry', async () => {
+test('facade: inactive core raises the uniform core-inactive error at every entry', async () => {
   const facade = buildFacade({ active: () => false })
   await assert.rejects(() => facade.api.create({}, { owner: 'plugin-a' }), PluginApiInactiveError)
   await assert.rejects(() => facade.api.list({}), PluginApiInactiveError)
@@ -92,7 +92,7 @@ test('facade: inactive core raises the uniform P1 error at every entry', async (
   assert.equal(facade.api.availability().status, 'unavailable')
 })
 
-test('facade: disabled surface is shape-preserving with typed P2 failures', async () => {
+test('facade: disabled surface is shape-preserving with typed capability-disabled failures', async () => {
   const disabled = createDisabledCheckpointsApi(() => true, 'checkpoints capability is disabled')
   assert.throws(() => disabled.create({}), PluginApiFeatureDisabledError)
   assert.throws(() => disabled.list({}), PluginApiFeatureDisabledError)

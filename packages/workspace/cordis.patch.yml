@@ -1,0 +1,11 @@
+# dsh bundle patch for @deepseek-ai/dsh-plugin-api-workspace.
+# Replacement boundary: we replace the `ctx.workspaceRegistry` service face
+# ONLY; the `@deepseek-ai/dsh-workspace` import face stays official (the
+# replacement composes the official WorkspaceRegistry instance and delegates
+# 1:1, never re-implementing the row). The official `id: workspace` row has
+# no config block; the replacement row matches that shape.
+- id: workspace
+  disabled: true
+- insert:
+    - id: plugin-api-workspace
+      name: '@deepseek-ai/dsh-plugin-api-workspace'

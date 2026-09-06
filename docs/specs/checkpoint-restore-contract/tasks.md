@@ -1,5 +1,7 @@
 # Stage 3 — Tasks
 
+> 实现注记（Stage 4 回写，2026-09-06；不改变已获批验收边界）：① captureKey 去重采用持久去重语义——settle/commit 后同 (owner, scope, captureKey) 重试返回既有记录（`deduplicated` + `idempotent`），显式重触发 = 新 captureKey 或省略 captureKey（此时 lineage 派生自同 scope/resource 上一记录），对应 M-contract mutation 幂等语义；② workspace snapshot state 持久化于 slice 自有 owner-scoped durable unit（checkpoint 记录 anchor 只存 `snapshotId`），restore 步骤经 `snapshot.get(snapshotId)` 取状态后 apply；③ planRestore 的 `not-applicable` 分支为防御性守卫（合法记录必经 v1 source 校验，未知 source 记录以 typed unavailable 呈现，绝不猜测）；④ overall capture status 聚合规则：任一 `unavailable` ⇒ unavailable；任一 `partial` ⇒ partial；captured+missing 混合 ⇒ partial（诚实部分捕获）；仅 missing ⇒ missing；⑤ workspace 替代行的 apply 路径按 probe 修订为 fail-closed 官方-API 重建（见 `workspace-slice-probe.md` (c) 修订）。
+
 ## Status
 
 SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `design.md`（M9 批量确认门，2026-09-06 人类批准，requirements/design 均 v2）。本文按 AGENTS.md §3.2 以对抗性审查为门；审查返回「无偏差」后由编排主代理直接放行进入 Stage 4，不设用户确认门。

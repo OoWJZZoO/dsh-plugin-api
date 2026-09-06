@@ -48,8 +48,9 @@
 
 - `storageDomain.open()` 对已开 domain 抛 `already-open`（官方 registry 已在 init 打开 `workspace` domain）；facility 的 `get(name)` 虽可取得已开 domain 句柄，但**直接写 domain 会使官方 registry 的内存 entity/state 缓存失同步**（其缓存仅在自身 mutate/recover 后更新）⇒ 明确不采用直接 domain 写入。
 - 采用 **fail-closed 官方 API 重建**：apply 按快照经官方 registry 公共 API 逐项重建——`insertBefore`（order）、`setTitle`（title）、`attachSession`/`detachSession`/`insertSessionBefore`（sessionIds 成员与顺序）、`create`（同 path 幂等复用既有 id ⇒ captured 时存在的 workspace 身份保留）、`delete`（快照之外的多余 workspace）、`archiveSession`（archive 集合增项）。全部写入经官方队列 ⇒ 无缓存失同步、无旁路、无双跑。
-- 不可经官方 API 表达的组件**如实 fail-closed / partial**，绝不伪装：① archive 集合只增不减（无 unarchive 公共 API）⇒ 快照 archive 集与当前不等时该组件 restoreability `unavailable`（原因注明），slice 级 `partial`；② 快照中的 workspace 在捕获后被 `delete` ⇒ 身份已消灭，以新 id 重建会破坏血缘 ⇒ 该记录 restoreability `unavailable`（原因注明），不重建；③ 目录缺失（`status() === 'missing-dir'` ⇒ create 的 realpath 会 ENOENT）⇒ 该记录 `partial`/`unavailable` + 原因。
-- apply 前置校验：当前 registry 状态指纹 == 快照指纹（order + 每条记录字段 + archive 集）时才开始；不等 ⇒ typed `conflict`，绝不半写。apply 只处理该行拥有的领域（workspace registry 状态），不越界 session/external（Req8 AC3）。
+- apply 前置（fail-closed）：必须携带 restore operation 的 fencing（`fencingToken` + `generation`），否则 `denied`；state 必须为合法快照形状；registry 必须已启动。**注意：apply 是恢复语义（回滚捕获后的变更），前置校验不要求当前状态等于快照**——修订本 probe 草案早期表述。
+- 不可经官方 API 表达的组件**如实 fail-closed / partial，绝不伪装**：① archive 集合只增不减（无 unarchive 公共 API）⇒ 快照 archive 集与当前不等（当前有多余归档）时该组件 restoreability `partial` / `unavailable`（原因注明），slice 级 `partial`；② 快照中的 workspace 在捕获后被 `delete` ⇒ 身份已消灭，以新 id 重建会破坏血缘 ⇒ 该记录 restoreability `unavailable`（原因注明），不重建；③ 目录缺失（`status() === 'missing-dir'` ⇒ create 的 realpath 会 ENOENT）⇒ 该记录 `partial`/`unavailable` + 原因。
+- 每组件经官方 API 调用本身原子（官方队列串行）；组件级结果如实聚合，绝不虚构组件。
 
 **判定：probe PASS ⇒ 交付 workspace snapshot slice 包（packages/workspace）**；capture-point 与 restore-path（fail-closed 官方 API 重建）作为 delegate 的加法接口；restore-path 首次真实驱动在批次 B restore authority。
 
