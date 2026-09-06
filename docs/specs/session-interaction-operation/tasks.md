@@ -63,6 +63,10 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
   - 版本锁定事实：官方 `dsh-agent-loop` 全量 identity `0.1.0-rc.6`（与既有 replacement 锁定一致）。
 - **1.2 决策门裁决**：
   - **Exit A（官方 seam 确已足够）**：在 requirements/design 就地登记偏离（含证据与补偿路径），任务 2/3/4 标记为按门不执行；任务 5/6/7/8 改为直接消费官方 seam，availability 按官方 seam 可达性如实报告；仍遵守冻结决策 2/3/7。本出口属 requirements 引言已载明的已获批决策规则的自然执行，不触发新的人类确认门；**但若 probe 取证显示需删改已确认 Goal/Requirements 验收边界之外的内容（不止于"退回纯 facade + 登记修订"），则暂停并请求人类裁决**（AGENTS.md §3.2 Stage 4 通用规则）。
+  - **Exit A 下游建模（MAJOR-2 补齐）**：
+    - **(a) 任务 9.4 去向**：任务 9.4 撤标为按门不执行，并改写为「**官方 seam parity 测试**」——断言官方 seam 的 request/cancel/attempt 面与 design Data Models 冻结契约逐字段对齐、availability 如实反映官方 seam 可达性、无双路径、无 append 猜测；原 R 自检矩阵各子项（版本错配/owner 冲突/无双跑等）仅保留适用于官方 seam 的部分。
+    - **(b) 跨线消费依赖声明**：Exit A 的偏离登记必须明确声明对 `session-activity-projection` 与 `checkpoint-restore-contract` 两线消费依赖的影响（attempt 事实词汇不再由本线提供、observed 终态/排队与 stop-then-restore 的 live-attempt 前置条件退回各线 reconstruction/降级口径）；两线需**同步走其自身偏离/修订路径**（各线 requirements/design 修订注记），本线不替他线登记。
+    - **(c) 共享词汇单一来源在 Exit A 下的处理**：Requirement 11 AC5「词汇只定义一次」承诺在 Exit A 下改由**集成波阻塞性对齐项**承载——任务 11.3/11.6 的验收口径改为「在三线各自的 seam（官方或切片）之上比对 attempt 事实字段契约一致；若任何一线缺少同源事实，集成波须显式声明该能力的降级档（reconstructed/unknown）并阻塞至对齐或登记差异」，不得出现三线各自定义词汇的平行漂移。
   - **Exit B（缺省；取证不足或官方 seam 不满足等价语义）**：继续任务 2/3/4（R 切片），facade 经内部 symbol-keyed 契约消费切片；切片 inactive/mismatch 时 execute 面 typed `unavailable`，绝不用 append 猜测补位。
 - **1.3 验收**：probe 证据表落盘（文件/行引用 + 包 identity 锁定）；门裁决无歧义；任一偏离已在 requirements/design 修订注记登记；下游任务按门结论展开。
 
@@ -102,7 +106,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 
 > Exit B 执行。
 
-- **4.1 apply 自检矩阵扩展**：在既有 `packages/agent-loop/lib/apply.js` 自检之上增加切片契约 probe——官方行 disabled、恰一个替代行 active、runtime/包 `A.B.C` 与锁定 runtime 一致、主门面内部操作契约可解析且 compatible、无组件 owner 冲突（Requirement 11 AC3、capability-strategy R4/R5/R6）。
+- **4.1 apply 自检矩阵扩展**：在既有 `packages/agent-loop/lib/apply.js` 自检之上增加切片契约 probe——官方行 disabled、恰一个替代行 active、runtime/包 `A.B.C` 与锁定 runtime 一致、主门面内部操作契约可解析且 compatible、无组件 owner 冲突（Requirement 11 AC3、capability-strategy R4/R5/R6）。**activity 观测契约 marker 项（MINOR）**：切片 apply 检查 activity 线定义的观测契约 marker（`Symbol.for('dsh-plugin-api.session-activity.observation-contract')`，activity 线定义并导出、本线切片 apply 消费）——present 且兼容 ⇒ attempt 事实可完整宣称 observed；absent ⇒ 仅 log bounded 诊断（不降级官方契约行为、不影响事实发射安全），**该 marker 的互相兼容性核对由集成波统一装配验证（任务 11.3/11.6）兜底**，避免两线职责悬空。
 - **4.2 自检失败 fail-safe**：log bounded diagnostics + 切片不激活（既有官方契约行为照常）；不双跑、不杀 boot、不半服务边界；绝不留「官方行 disabled 而无工作官方契约路径」空洞（Requirement 11 AC4）。
 - **4.3 host-only 判定（capability-strategy §10 六问）**：逐项取证并记录——被替代官方行无 client manifest / 无 remote namespace / 无 slot/settings bridge / 无 host↔client 版本协商 / 无 browser state/reconnect / 无 client-facing event/service ⇒ 六问全否 ⇒ **host-only slice**（无 client bundle 义务）；判定结论与证据写入本线 spec 制品（Requirement 11 AC9）。
 - **4.4 U-series 上游提案与退役条件登记（写入本线 spec 制品；feature-list §3.1 registry 登记留集成波）**：官方提供等价 request acceptance/cancel/attempt 公开 seam（或官方 execution identity 常态化）后，切片退化为官方直绑、consumers 迁移官方 seam（Requirement 11 AC6/AC7 与设计退役条件；feature-list 登记见任务 11.2）。
@@ -130,9 +134,9 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 
 ### [ ] 6. Facade cancel 与 terminal 裁决 — host 面 owner 模块（Requirement 4、2 AC3、3 AC4、6 AC4）
 
-- **6.1 `sessions.cancel({ sessionId?, operationId?, reason? })`（Requirement 4 AC1）**：signal 型 operation；typed result（`accepted|conflict|stale|invalid-input|unavailable`）；取消是请求不是终态。
-- **6.2 传播（Requirement 4 AC1/AC5/AC6）**：向活 operation、当前 attempt 与 owned provider/tool（经切片 `cancelAttempt` / Exit A 官方等价路径）尽力传播；**不自行写 terminal**；`AbortSignal` 组合保留调用方上游取消语义，不加本地 signal 替换调用方 signal。
-- **6.3 提交窗口裁决（Requirement 4 AC2、Requirement 2 AC5）**：把仍有效的竞争信号（cancel 请求、attempt 事实、deadline、域 deny 结果）按 `aborted > superseded > error > timeout-error` 收敛为唯一 terminal；timeout ⇒ terminal `error`（`reason`/`classification` 标记 timeout，不新增 terminal 词）；原子提交后不可改写；迟到信号只作 bounded diagnostic/audit（Requirement 6 AC4）。
+- **6.1 `sessions.cancel({ sessionId?, operationId?, reason?, by?: 'user'|'owner'|'system' })`（Requirement 4 AC1）**：signal 型 operation；typed result（`accepted|conflict|stale|invalid-input|unavailable`）；取消是请求不是终态。`by` 字段与 design Data Models §3 冻结签名一致——`system` 身份供 checkpoint 线 stop-then-restore 经本 request authority 唯一 cancel 路径以 `by:'system'` + restore cause 请求停止；本线不做第二条 cancel 通道（Requirement 11 共享切片消费方契约；checkpoint 线 consumption 见其 Requirements 对应条目）。
+- **6.2 传播（Requirement 4 AC1/AC5/AC6、checkpoint 线 stop-then-restore 消费方）**：向活 operation、当前 attempt 与 owned provider/tool（经切片 `cancelAttempt` / Exit A 官方等价路径）尽力传播；**不自行写 terminal**；`AbortSignal` 组合保留调用方上游取消语义，不加本地 signal 替换调用方 signal；`by:'system'` 的 cancel 与 `user`/`owner` 走同一唯一 cancel 路径（仅 cause/by 元数据不同），不做特殊旁路或第二条通道。
+- **6.3 提交窗口裁决（Requirement 4 AC2、Requirement 2 AC5）**：把仍有效的竞争信号（cancel 请求（含 `by:'system'` 的 stop-then-restore 请求）、attempt 事实、deadline、域 deny 结果）按 `aborted > superseded > error > timeout-error` 收敛为唯一 terminal；timeout ⇒ terminal `error`（`reason`/`classification` 标记 timeout，不新增 terminal 词）；原子提交后不可改写；迟到信号只作 bounded diagnostic/audit（Requirement 6 AC4）。`by:'system'` 裁决结果照常进入 audit/可用性口径，不下钻到 checkpoint 消费侧的 restore 时序（那是 checkpoint 线的 `stop-then-restore` 编排职责，本线只保证走唯一 cancel 路径与正确裁决）。
 - **6.4 终态后 cancel（Requirement 4 AC3）**：typed stale/conflict；不重写已提交 terminal、不启动新 attempt；operation 终态后禁止新 attempt（`durable-state-and-scope.md` §3）。
 - **6.5 parent/child 传播（Requirement 4 AC4）**：父 operation/execution 取消 ⇒ 传播到存活的 child operation/attempt；child 取消/失败默认不反向取消父（除非 operation 契约声明 required）。
 - **6.6 provider/工具不可立即停止（Requirement 4 AC6）**：经提交资格（owner/generation/operation 终态/资源持有/epoch）正确完结 operation；停止努力不呈现为终态证明。
@@ -160,7 +164,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 - **8.2 切片 inactive/mismatch（Requirement 8 AC2）**：execute admission/cancel 面 typed `unavailable`；`sessions.availability()` 报 `degraded` + reason（边界未激活）；不静默双跑、不停用整个主门面或无关能力。
 - **8.3 P1/P2 统一（Requirement 8 AC3）**：facade core inactive / capability disabled ⇒ `PluginApiInactiveError` / `PluginApiFeatureDisabledError`；不得观察部分操作状态。
 - **8.4 capabilities（Requirement 8 AC5）**：根 `capabilities` 携带 request/cancel 能力条目；不带 package/row/replacement 身份（集成波登记，见任务 11.1）。
-- **8.5 audit（Requirement 10 AC1/AC2）**：v1 authority 内部 bounded in-memory 诊断——owner、operationId、sessionId、时间戳、outcome 码、attempt 数、关联 id；无 payload 内容/凭据/secret；写失败 ⇒ bounded gap marker，不伪造记录（不建 audit projection 子系统）。
+- **8.5 audit（Requirement 10 AC1/AC2）**：v1 authority 内部 bounded in-memory 诊断——owner、operationId、sessionId、时间戳、outcome 码、attempt 数、关联 id、**cancel cause 与 `by` 维度（`'user'|'owner'|'system'`，供 checkpoint stop-then-restore 的 `by:'system'` 调用可追溯）**；无 payload 内容/凭据/secret；写失败 ⇒ bounded gap marker，不伪造记录（不建 audit projection 子系统）。
 - **8.6 owner 派生与脱敏（Requirement 10 AC3/AC4、Requirement 8 AC4）**：owner identity 从实际调用方 fiber 派生，不接收 caller 自报 owner；reason/error 逐出口有界、脱敏，无 payload 内容/凭据/owner-private 状态。
 
 **验收**：availability 三态（含 per-context reason）fixture；capabilities 无身份泄漏；audit bounded + gap；owner 派生不可伪造；见任务 9.6。
@@ -170,7 +174,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md` / `requirements.md` / `
 ### [ ] 9. Focused 测试套件与回归（Requirement 12 AC1-AC5；design Testing Strategy 1–6）
 
 - **9.1 acceptance/dedupe/already-running/terminal handle 生命周期（Requirement 1/2/3/5 + design Testing 1）**：契约保真 loop fixture 上验证单次受理、duplicate 引用、already-running、rejected kind、denied 域码、unavailable、append provenance、**direct `appendMessage` 不隐含启动处理（Requirement 3 AC2 负向断言）**；operation handle 生命周期：terminal 唯一冻结不可改写、stale handle 返回 typed stale/no-op（Requirement 2 AC2/AC4）。
-- **9.2 cancel/adjudication（Requirement 4 + design Testing 2）**：信号传播、提交窗口裁决优先级、终态后 stale cancel、child/parent 传播、provider 不可停时正确终态、无伪造 aborted。
+- **9.2 cancel/adjudication（Requirement 4 + design Testing 2）**：信号传播、提交窗口裁决优先级、终态后 stale cancel、child/parent 传播、provider 不可停时正确终态、无伪造 aborted；**覆盖 `by:'system'`（stop-then-restore 语义）与 `by:'user'|'owner'` 触发用例**——system 身份经唯一 cancel 路径传播、cause/by 进入 audit、裁决路径与 user/owner 逐项等价断言。
 - **9.3 attempt/retry 与 activity correlation（Requirement 5/6/7 + design Testing 3）**：attempt 同 execution、外部重触发新 operation（parent/cause 记录）、默认不自动 retry、recovery 不 double-consume；activity correlation confidence 三态（projection 缺位 ⇒ unavailable、证据未出现 ⇒ unknown）。
 - **9.4 slice 完整性（Requirement 11 + design Testing 4）**：官方契约 parity、版本错配、boot 自检、owner 冲突、无双跑、移除恢复、切片 inactive 时 unavailable 报告；host-only 六问证据核对；共享 attempt 事实词汇机械一致性（逐字段冻结断言，Requirement 11 AC5）。
 - **9.5 client face（Requirement 9 + design Testing 5）**：同形结果、offline/rebind typed unavailable、stale guard、host 脱敏先行断言、两 synthetic 插件反序。
