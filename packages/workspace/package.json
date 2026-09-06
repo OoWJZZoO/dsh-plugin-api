@@ -1,0 +1,29 @@
+{
+  "name": "@deepseek-ai/dsh-plugin-api-workspace",
+  "description": "Replacement bundle for @deepseek-ai/dsh-workspace (web profile): faithful delegate of the workspaceRegistry service face plus a workspace snapshot slice (managed-state capture and a fail-closed official-API reconstruction restore path) — host-only.",
+  "version": "0.1.0-rc.6-0.1.0",
+  "type": "module",
+  "main": "lib/apply.js",
+  "exports": {
+    ".": "./lib/apply.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "api": "0.1",
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-workspace": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-storage-domain": "^0.1.0-rc.6",
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "devDependencies": {
+    "@deepseek-ai/dsh-app-boot": "^0.1.0-rc.6"
+  }
+}
