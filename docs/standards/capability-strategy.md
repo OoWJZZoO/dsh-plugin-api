@@ -91,6 +91,9 @@ R8. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 | `plugin-api-llm` | `@deepseek-ai/dsh-plugin-api-llm` | `llm` | `@deepseek-ai/dsh-llm` | 无（host-only） |
 | `plugin-api-session-channel-connection` | `@deepseek-ai/dsh-plugin-api-session-channel-connection` | `connection` | `@deepseek-ai/dsh-client-connection` | 有（`dsh.client` manifest） |
 | `plugin-api-session-channel-gateway` | `@deepseek-ai/dsh-plugin-api-session-channel-gateway` | `typert-gateway` | `@deepseek-ai/dsh-api-gateway` | 有（`dsh.client` manifest） |
+| `plugin-api-workspace` | `@deepseek-ai/dsh-plugin-api-workspace` | `workspace` | `@deepseek-ai/dsh-workspace` | 无（host-only；六问全否） |
+| `plugin-api-api-remotes` | `@deepseek-ai/dsh-plugin-api-api-remotes` | `api-remotes` | `@deepseek-ai/dsh-api-remotes` | 有（`dsh.client` manifest 半面复刻 + 浏览器 attention 运行时 receiver 通道） |
+| `plugin-api-client-runtime` | `@deepseek-ai/dsh-plugin-api-client-runtime` | `client-runtime` | `@deepseek-ai/dsh-client-runtime` | 有（`dsh.client` manifest 半面复刻 + 浏览器 attention 运行时） |
 
 - 全量聚合 bundle `@deepseek-ai/dsh-plugin-api-full` 持有按确定顺序装配主包行与上述全部替代行的 patch，不新增第三方 API。
 - `packages/profile-manager/` 提供 profile 变更落地的配套 CLI，不是 replacement 行（其 `package.json` 没有 `dsh.bundle.patch`）。

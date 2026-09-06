@@ -198,7 +198,9 @@
     "slots",
     "lifecycle",
     "codec",
-    "services"
+    "services",
+    "sessions",
+    "attention"
   ],
   "members": [
     {
@@ -15227,6 +15229,1236 @@
         "member-inventory",
         "registry-validation"
       ]
+    },
+    {
+      "publicPath": "sessions.activity.current",
+      "targetPath": "sessions.activity.current",
+      "capability": "sessions.activity",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session activity projection owner",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "facade-derived activity identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.activity",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { snapshot, sessionQueue, gap, unavailable } | typed absence { ok:false, code:'absent' }",
+      "migrationAction": "retain",
+      "status": "recommended",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.activity.get",
+      "targetPath": "sessions.activity.get",
+      "capability": "sessions.activity",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session activity projection owner",
+      "scope": "session",
+      "resourceKey": "activityId",
+      "identitySource": "facade-derived activity identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.activity",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { snapshot, sessionQueue, gap, unavailable } | typed absence { ok:false, code:'absent' }",
+      "migrationAction": "retain",
+      "status": "recommended",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.activity.list",
+      "targetPath": "sessions.activity.list",
+      "capability": "sessions.activity",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session activity projection owner",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "facade-derived activity identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.activity",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { items, nextCursor, truncated, gap, unavailable }",
+      "migrationAction": "retain",
+      "status": "recommended",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.activity.history",
+      "targetPath": "sessions.activity.history",
+      "capability": "sessions.activity",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session activity projection owner",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "facade-derived activity identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.activity",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { items, truncated, unavailable, gap, boundary:'facade-lifetime' }",
+      "migrationAction": "retain",
+      "status": "recommended",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.activity.observe",
+      "targetPath": "sessions.activity.observe",
+      "capability": "sessions.activity",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "additive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session activity projection owner",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "observer epoch-local",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.activity",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "handle { current(), subscribe(listener), dispose(), epoch }",
+      "migrationAction": "retain",
+      "status": "recommended",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.activity.observe.handle",
+      "targetPath": "sessions.activity.observe.handle",
+      "capability": "sessions.activity",
+      "kind": "handle",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "additive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session activity projection owner",
+      "scope": "session",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "observer epoch-local",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "none",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "members: current() / subscribe(listener) / dispose() / epoch",
+      "migrationAction": "retain",
+      "status": "recommended",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.activity.availability",
+      "targetPath": "sessions.activity.availability",
+      "capability": "sessions.activity",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session activity projection owner",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "leaf",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { status: active|degraded|unavailable, reason?: string }",
+      "migrationAction": "retain",
+      "status": "recommended",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.request",
+      "targetPath": "sessions.request",
+      "capability": "sessions.request",
+      "kind": "leaf",
+      "idiom": "operation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "exclusive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session request authority",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "facade-minted operation identity (accepted)",
+      "conflictRule": "owner-conflict",
+      "lifecycle": "operation lifetime: pending -> accepted/running -> terminal (success|error|aborted|denied|superseded)",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability() with reason layering",
+      "concurrency": "deduplicate",
+      "reducer": "none",
+      "currentShape": "accepted { ok:true, code:accepted, operation:{ id, ownerId, capability:{idempotent,autoRetry,failClosed}, status(), observe(), dispose() } } | typed {ok:false, code:duplicate|already-running|rejected|denied|unavailable}",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.request.handle",
+      "targetPath": "sessions.request.handle",
+      "capability": "sessions.request",
+      "kind": "handle",
+      "idiom": "operation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "exclusive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session request authority",
+      "scope": "session",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "operation lifetime (accepted handle); declared-capability member is read-only metadata",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "none",
+      "concurrency": "deduplicate",
+      "reducer": "none",
+      "currentShape": "members: id / ownerId / capability(deduped,noAutoRetry,failClosed) / status() / observe() / dispose()",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.cancel",
+      "targetPath": "sessions.cancel",
+      "capability": "sessions.cancel",
+      "kind": "leaf",
+      "idiom": "operation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "exclusive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session request authority",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "facade-minted operation identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "signal operation: cancellation is a request, never a terminal",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability() with reason layering",
+      "concurrency": "deduplicate",
+      "reducer": "none",
+      "currentShape": "typed {ok:true, code:accepted} | {ok:false, code:conflict|stale|invalid-input|unavailable}",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.cancel.handle",
+      "targetPath": "sessions.cancel.handle",
+      "capability": "sessions.cancel",
+      "kind": "handle",
+      "idiom": "operation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "exclusive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session request authority",
+      "scope": "session",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "operation lifetime (accepted signal)",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "none",
+      "concurrency": "deduplicate",
+      "reducer": "none",
+      "currentShape": "members: id / ownerId / capability(deduped,noAutoRetry,failClosed) / status() / observe() / dispose()",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions",
+      "targetPath": "sessions",
+      "capability": "client.sessions",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "facade client root",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "client semantic root with same-shape request/cancel members",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.request",
+      "targetPath": "sessions.request",
+      "capability": "client.sessions",
+      "kind": "leaf",
+      "idiom": "operation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "exclusive",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "session request authority",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "facade-minted operation identity (accepted)",
+      "conflictRule": "owner-conflict",
+      "lifecycle": "operation lifetime: pending -> accepted/running -> terminal",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability() with reason layering",
+      "concurrency": "deduplicate",
+      "reducer": "none",
+      "currentShape": "accepted { ok:true, code:accepted, operation:{ id, ownerId, capability, status(), observe(), dispose() } } | typed failure",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.cancel",
+      "targetPath": "sessions.cancel",
+      "capability": "client.sessions",
+      "kind": "leaf",
+      "idiom": "operation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "exclusive",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "session request authority",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "facade-minted operation identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "signal operation: cancellation is a request, never a terminal",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability() with reason layering",
+      "concurrency": "deduplicate",
+      "reducer": "none",
+      "currentShape": "typed {ok:true, code:accepted} | {ok:false, code:conflict|stale|invalid-input|unavailable}",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention.current",
+      "targetPath": "attention.current",
+      "capability": "attention",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "attention hub item identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "hub epoch lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen array of redacted items or availability view",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention.list",
+      "targetPath": "attention.list",
+      "capability": "attention",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "attention hub item identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "hub epoch lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { items, nextCursor } or availability view",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention.observe",
+      "targetPath": "attention.observe",
+      "capability": "attention",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "subscribe",
+      "composition": "additive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "observer epoch-local (hub epoch rebind invalidates stale observers)",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "handle { current(), subscribe(listener), dispose(), epoch }",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention.observe.handle",
+      "targetPath": "attention.observe.handle",
+      "capability": "attention",
+      "kind": "handle",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "additive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "session",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "observer epoch-local",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "none",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "members: current() / subscribe(listener) / dispose() / epoch",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention.contribute",
+      "targetPath": "attention.contribute",
+      "capability": "attention",
+      "kind": "leaf",
+      "idiom": "contribution",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "register",
+      "composition": "exclusive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "session",
+      "resourceKey": "item id",
+      "identitySource": "facade-derived caller owner (never caller-reported)",
+      "conflictRule": "owner-conflict",
+      "lifecycle": "owner-scoped item lifetime with generation fencing",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "typed {ok:true, code:registered, handle:{id, ownerId, seq, dispose()}} | {ok:false, code:conflict|owner-conflict|invalid-input|capacity|stale}",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention.dismiss",
+      "targetPath": "attention.dismiss",
+      "capability": "attention",
+      "kind": "leaf",
+      "idiom": "operation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "exclusive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "session",
+      "resourceKey": "item id",
+      "identitySource": "facade-derived caller owner",
+      "conflictRule": "owner-conflict",
+      "lifecycle": "signal operation: removal request; visibility must be proven",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "deduplicate",
+      "reducer": "none",
+      "currentShape": "typed {ok:true, code:dismissed} | {ok:false, code:not-found|unavailable|invalid-input}",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention.invoke",
+      "targetPath": "attention.invoke",
+      "capability": "attention",
+      "kind": "leaf",
+      "idiom": "operation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "exclusive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "session",
+      "resourceKey": "item id",
+      "identitySource": "facade-derived caller owner",
+      "conflictRule": "owner-conflict",
+      "lifecycle": "action invocation is owner-bound and terminated with the item",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "deduplicate",
+      "reducer": "none",
+      "currentShape": "typed {ok:true, code:invoked, result?} | {ok:false, code:not-found|conflict|unavailable}",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention.availability",
+      "targetPath": "attention.availability",
+      "capability": "attention",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "leaf",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { status: active|degraded|unavailable, reason?: string }",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention",
+      "targetPath": "attention",
+      "capability": "client.attention",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "facade client root",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "client attention projection (audience-filtered) over the browser runtime",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention.current",
+      "targetPath": "attention.current",
+      "capability": "client.attention",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "attention hub item identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "runtime epoch lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen array of audience-filtered redacted items",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention.list",
+      "targetPath": "attention.list",
+      "capability": "client.attention",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "attention hub item identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "runtime epoch lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { items, nextCursor }",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention.observe",
+      "targetPath": "attention.observe",
+      "capability": "client.attention",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "subscribe",
+      "composition": "additive",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "observer epoch-local (runtime rebind invalidates stale observers)",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "handle { current(), subscribe(listener), dispose(), epoch }",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention.observe.handle",
+      "targetPath": "attention.observe.handle",
+      "capability": "client.attention",
+      "kind": "handle",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "additive",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "session",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "observer epoch-local",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "none",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "members: current() / subscribe(listener) / dispose() / epoch",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention.contribute",
+      "targetPath": "attention.contribute",
+      "capability": "client.attention",
+      "kind": "leaf",
+      "idiom": "contribution",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "register",
+      "composition": "exclusive",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "session",
+      "resourceKey": "item id",
+      "identitySource": "facade-derived caller owner (never caller-reported)",
+      "conflictRule": "owner-conflict",
+      "lifecycle": "owner-scoped item lifetime with generation fencing",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "typed contribution outcome over the client-request carrier",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention.dismiss",
+      "targetPath": "attention.dismiss",
+      "capability": "client.attention",
+      "kind": "leaf",
+      "idiom": "operation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "exclusive",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "session",
+      "resourceKey": "item id",
+      "identitySource": "facade-derived caller owner",
+      "conflictRule": "owner-conflict",
+      "lifecycle": "signal operation over the client-request carrier",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "deduplicate",
+      "reducer": "none",
+      "currentShape": "typed dismissal outcome",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "attention.invoke",
+      "targetPath": "attention.invoke",
+      "capability": "client.attention",
+      "kind": "leaf",
+      "idiom": "operation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "exclusive",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "session",
+      "resourceKey": "item id",
+      "identitySource": "facade-derived caller owner",
+      "conflictRule": "owner-conflict",
+      "lifecycle": "action invocation over the client-request carrier",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "deduplicate",
+      "reducer": "none",
+      "currentShape": "typed invocation outcome",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "executions.recovery.checkpoints.create",
+      "targetPath": "executions.recovery.checkpoints.create",
+      "capability": "executions.recovery.checkpoints",
+      "kind": "leaf",
+      "idiom": "mutation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "mutate",
+      "composition": "coordinated",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "checkpoint capture authority",
+      "scope": "session",
+      "resourceKey": "checkpointId",
+      "identitySource": "facade-minted checkpoint identity",
+      "conflictRule": "content-conflict",
+      "lifecycle": "durable record lifetime (write-once keys)",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "typed {ok:true, code:created|deduplicated, summary:{checkpointId,...}} | {ok:false, code:conflict|unavailable|denied|invalid-input}",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "executions.recovery.checkpoints.list",
+      "targetPath": "executions.recovery.checkpoints.list",
+      "capability": "executions.recovery.checkpoints",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "checkpoint projection owner",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "durable checkpoint identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "durable record lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { items, nextCursor, truncated, unavailable, gap }",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "executions.recovery.checkpoints.inspect",
+      "targetPath": "executions.recovery.checkpoints.inspect",
+      "capability": "executions.recovery.checkpoints",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "checkpoint projection owner",
+      "scope": "session",
+      "resourceKey": "checkpointId",
+      "identitySource": "durable checkpoint identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "durable record lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen record view { record, scope: {session|workspace, resourceStatus}, availability } | typed absence",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "executions.recovery.checkpoints.planRestore",
+      "targetPath": "executions.recovery.checkpoints.planRestore",
+      "capability": "executions.recovery.checkpoints",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [
+        {
+          "memberPath": "executions.recovery.checkpoints.planRestore",
+          "baseContract": "projection",
+          "exception": "verb-name-exception",
+          "reason": "planRestore is the pre-announced plan verb of the checkpoints contract; the closed projection verb list (get/list/inspect/current/history/observe) is not extended, the plan shape is a pure frozen projection",
+          "replacementShape": "frozen plan { steps, fingerprint, per-slice restoreability, external-effects, anchorStatus } | typed unavailable",
+          "verification": "surface-consistency"
+        }
+      ],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "checkpoint restore planner",
+      "scope": "session",
+      "resourceKey": "checkpointId",
+      "identitySource": "durable checkpoint identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "pure plan-time projection (no side effects)",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen plan projection; anchored steps carry owner authority binding",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "executions.recovery.checkpoints.restore",
+      "targetPath": "executions.recovery.checkpoints.restore",
+      "capability": "executions.recovery.checkpoints",
+      "kind": "leaf",
+      "idiom": "operation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "coordinated",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "checkpoint restore authority (single operation terminal)",
+      "scope": "session",
+      "resourceKey": "checkpointId",
+      "identitySource": "facade-minted restore identity",
+      "conflictRule": "fencing",
+      "lifecycle": "operation lifetime; terminal once committed",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "exclusive",
+      "reducer": "none",
+      "currentShape": "typed {ok:true, code:accepted|completed, handle:{id, status(), observe(), dispose()}} | {ok:false, code:denied|conflict|unavailable|stale}",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "executions.recovery.checkpoints.restore.handle",
+      "targetPath": "executions.recovery.checkpoints.restore.handle",
+      "capability": "executions.recovery.checkpoints",
+      "kind": "handle",
+      "idiom": "operation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "coordinated",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "checkpoint restore authority",
+      "scope": "session",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "fencing",
+      "lifecycle": "operation lifetime; terminal once committed",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "none",
+      "concurrency": "exclusive",
+      "reducer": "none",
+      "currentShape": "members: id / ownerId / status() / observe() / dispose()",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "executions.recovery.checkpoints.availability",
+      "targetPath": "executions.recovery.checkpoints.availability",
+      "capability": "executions.recovery.checkpoints",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "checkpoint projection owner",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "leaf",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { status: active|degraded|unavailable, reason?: string, sources: per-source availability }",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
     }
   ],
   "servicesWhitelist": [
@@ -16556,6 +17788,45 @@
       "priority": "normal",
       "observerFailure": "contained",
       "producerAuthority": "workflow authority",
+      "dispatch": "emit",
+      "implementationChannel": "facade"
+    },
+    {
+      "name": "agent/attempt/start",
+      "runtime": "host",
+      "eventSemantics": "fact",
+      "scope": "session",
+      "payloadShape": "{ attemptId, operationId, executionId?, sessionId, seq, observedAt }",
+      "freeze": "all",
+      "priority": "normal",
+      "observerFailure": "contained",
+      "producerAuthority": "agent-loop loop boundary slice owner",
+      "dispatch": "emit",
+      "implementationChannel": "replacement"
+    },
+    {
+      "name": "agent/attempt/end",
+      "runtime": "host",
+      "eventSemantics": "fact",
+      "scope": "session",
+      "payloadShape": "{ attemptId, operationId, executionId?, sessionId, seq, observedAt, outcome, reason?, classification?, followUp }",
+      "freeze": "all",
+      "priority": "normal",
+      "observerFailure": "contained",
+      "producerAuthority": "agent-loop loop boundary slice owner",
+      "dispatch": "emit",
+      "implementationChannel": "replacement"
+    },
+    {
+      "name": "attention/update",
+      "runtime": "host",
+      "eventSemantics": "observation",
+      "scope": "session",
+      "payloadShape": "AttentionUpdate { kind: attention.snapshot | attention.delta, epoch, seq, changes?: [{op, item?, id?, reason?}], items?: [...] }",
+      "freeze": "all",
+      "priority": "normal",
+      "observerFailure": "contained",
+      "producerAuthority": "attention hub (host)",
       "dispatch": "emit",
       "implementationChannel": "facade"
     }
@@ -18598,6 +19869,146 @@
       "targetPath": "codec.invocation",
       "action": "retain",
       "relation": null
+    },
+    {
+      "oldPath": "sessions.activity.current",
+      "targetPath": "sessions.activity.current",
+      "action": "retain"
+    },
+    {
+      "oldPath": "sessions.activity.get",
+      "targetPath": "sessions.activity.get",
+      "action": "retain"
+    },
+    {
+      "oldPath": "sessions.activity.list",
+      "targetPath": "sessions.activity.list",
+      "action": "retain"
+    },
+    {
+      "oldPath": "sessions.activity.history",
+      "targetPath": "sessions.activity.history",
+      "action": "retain"
+    },
+    {
+      "oldPath": "sessions.activity.observe",
+      "targetPath": "sessions.activity.observe",
+      "action": "retain"
+    },
+    {
+      "oldPath": "sessions.activity.observe.handle",
+      "targetPath": "sessions.activity.observe.handle",
+      "action": "retain"
+    },
+    {
+      "oldPath": "sessions.activity.availability",
+      "targetPath": "sessions.activity.availability",
+      "action": "retain"
+    },
+    {
+      "oldPath": "sessions.request",
+      "targetPath": "sessions.request",
+      "action": "retain"
+    },
+    {
+      "oldPath": "sessions.request.handle",
+      "targetPath": "sessions.request.handle",
+      "action": "retain"
+    },
+    {
+      "oldPath": "sessions.cancel",
+      "targetPath": "sessions.cancel",
+      "action": "retain"
+    },
+    {
+      "oldPath": "sessions.cancel.handle",
+      "targetPath": "sessions.cancel.handle",
+      "action": "retain"
+    },
+    {
+      "oldPath": "sessions",
+      "targetPath": "sessions",
+      "action": "retain"
+    },
+    {
+      "oldPath": "attention.current",
+      "targetPath": "attention.current",
+      "action": "retain"
+    },
+    {
+      "oldPath": "attention.list",
+      "targetPath": "attention.list",
+      "action": "retain"
+    },
+    {
+      "oldPath": "attention.observe",
+      "targetPath": "attention.observe",
+      "action": "retain"
+    },
+    {
+      "oldPath": "attention.observe.handle",
+      "targetPath": "attention.observe.handle",
+      "action": "retain"
+    },
+    {
+      "oldPath": "attention.contribute",
+      "targetPath": "attention.contribute",
+      "action": "retain"
+    },
+    {
+      "oldPath": "attention.dismiss",
+      "targetPath": "attention.dismiss",
+      "action": "retain"
+    },
+    {
+      "oldPath": "attention.invoke",
+      "targetPath": "attention.invoke",
+      "action": "retain"
+    },
+    {
+      "oldPath": "attention.availability",
+      "targetPath": "attention.availability",
+      "action": "retain"
+    },
+    {
+      "oldPath": "attention",
+      "targetPath": "attention",
+      "action": "retain"
+    },
+    {
+      "oldPath": "executions.recovery.checkpoints.create",
+      "targetPath": "executions.recovery.checkpoints.create",
+      "action": "retain"
+    },
+    {
+      "oldPath": "executions.recovery.checkpoints.list",
+      "targetPath": "executions.recovery.checkpoints.list",
+      "action": "retain"
+    },
+    {
+      "oldPath": "executions.recovery.checkpoints.inspect",
+      "targetPath": "executions.recovery.checkpoints.inspect",
+      "action": "retain"
+    },
+    {
+      "oldPath": "executions.recovery.checkpoints.planRestore",
+      "targetPath": "executions.recovery.checkpoints.planRestore",
+      "action": "retain"
+    },
+    {
+      "oldPath": "executions.recovery.checkpoints.restore",
+      "targetPath": "executions.recovery.checkpoints.restore",
+      "action": "retain"
+    },
+    {
+      "oldPath": "executions.recovery.checkpoints.restore.handle",
+      "targetPath": "executions.recovery.checkpoints.restore.handle",
+      "action": "retain"
+    },
+    {
+      "oldPath": "executions.recovery.checkpoints.availability",
+      "targetPath": "executions.recovery.checkpoints.availability",
+      "action": "retain"
     }
   ],
   "deletionReport": [
@@ -18701,7 +20112,7 @@
       "path": "services.*(audit-removal-candidates)",
       "category": "remove",
       "status": "approved",
-      "note": "second-approval list approved 2026-08-28 (deletion-report.md 批准记录): members approval.setPolicy, planMode.set, permissionPresets.set, permissionPresets.selectFor, credentials.set, credentials.unset, sessionProjectionCache.write; whole keys compaction, workflows. agentDefaultModel.saveSelection vetoed and retained. Deferred wrapped passthrough interface obligations recorded in deletion-report.md."
+      "note": "second-approval list approved 2026-08-28 (deletion-report.md \u6279\u51c6\u8bb0\u5f55): members approval.setPolicy, planMode.set, permissionPresets.set, permissionPresets.selectFor, credentials.set, credentials.unset, sessionProjectionCache.write; whole keys compaction, workflows. agentDefaultModel.saveSelection vetoed and retained. Deferred wrapped passthrough interface obligations recorded in deletion-report.md."
     }
   ],
   "statusByPath": {
@@ -18905,7 +20316,9 @@
       "slots",
       "lifecycle",
       "codec",
-      "services"
+      "services",
+      "sessions",
+      "attention"
     ],
     "officialLeaves": [
       "locale",
@@ -19322,6 +20735,66 @@
       ],
       "availabilityMember": null,
       "availabilityExemption": "official passthrough surfaces acquire no facade availability semantics"
+    },
+    {
+      "namespace": "sessions.activity",
+      "runtime": "host",
+      "capabilityPath": "sessions.activity",
+      "contributingFeatures": [
+        "session-activity-projection"
+      ],
+      "availabilityMember": "sessions.activity.availability",
+      "availabilityExemption": null
+    },
+    {
+      "namespace": "sessions.request",
+      "runtime": "host",
+      "capabilityPath": "sessions.request",
+      "contributingFeatures": [
+        "session-interaction-operation"
+      ],
+      "availabilityMember": "sessions.availability",
+      "availabilityExemption": null
+    },
+    {
+      "namespace": "attention",
+      "runtime": "host",
+      "capabilityPath": "attention",
+      "contributingFeatures": [
+        "client-attention-contribution"
+      ],
+      "availabilityMember": "attention.availability",
+      "availabilityExemption": null
+    },
+    {
+      "namespace": "attention",
+      "runtime": "client",
+      "capabilityPath": "client.attention",
+      "contributingFeatures": [
+        "client-attention-contribution"
+      ],
+      "availabilityMember": null,
+      "availabilityExemption": "client root availability()"
+    },
+    {
+      "namespace": "executions.recovery.checkpoints",
+      "runtime": "host",
+      "capabilityPath": "executions.recovery.checkpoints",
+      "contributingFeatures": [
+        "checkpoint-restore-contract"
+      ],
+      "availabilityMember": "executions.recovery.checkpoints.availability",
+      "availabilityExemption": null
+    },
+    {
+      "namespace": "sessions",
+      "runtime": "client",
+      "capabilityPath": "client.sessions",
+      "contributingFeatures": [
+        "session-interaction-operation"
+      ],
+      "availabilityMember": null,
+      "availabilityExemption": "client root availability()"
     }
   ],
   "capabilityMatrix": [
@@ -21176,6 +22649,235 @@
         "member-inventory",
         "registry-validation",
         "capability-strategy review"
+      ]
+    },
+    {
+      "capabilityCluster": "sessions.activity",
+      "currentPaths": [
+        "sessions.activity.current",
+        "sessions.activity.get",
+        "sessions.activity.list",
+        "sessions.activity.history",
+        "sessions.activity.observe",
+        "sessions.activity.availability"
+      ],
+      "targetPaths": [
+        "sessions.activity.current",
+        "sessions.activity.get",
+        "sessions.activity.list",
+        "sessions.activity.history",
+        "sessions.activity.observe",
+        "sessions.activity.availability"
+      ],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "session-interaction-operation",
+        "client-attention-contribution",
+        "checkpoint-restore-contract"
+      ],
+      "verification": [
+        "registry-draft",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "sessions.activity.attempt-facts",
+      "currentPaths": [],
+      "targetPaths": [],
+      "status": "retained",
+      "qualifiers": [
+        "split"
+      ],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "session-activity-projection",
+        "session-interaction-operation",
+        "checkpoint-restore-contract"
+      ],
+      "verification": [
+        "registry-draft",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "sessions.request",
+      "currentPaths": [],
+      "targetPaths": [],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "session-interaction-operation"
+      ],
+      "verification": [
+        "member-inventory",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "sessions.cancel",
+      "currentPaths": [],
+      "targetPaths": [],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "session-interaction-operation",
+        "checkpoint-restore-contract"
+      ],
+      "verification": [
+        "member-inventory",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "attention",
+      "currentPaths": [],
+      "targetPaths": [],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "client-attention-contribution"
+      ],
+      "verification": [
+        "member-inventory",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "executions.recovery.checkpoints",
+      "currentPaths": [],
+      "targetPaths": [],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "checkpoint-restore-contract"
+      ],
+      "verification": [
+        "member-inventory",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "executions.recovery.checkpoints.capture.branch",
+      "currentPaths": [],
+      "targetPaths": [],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "checkpoint-restore-contract"
+      ],
+      "verification": [
+        "member-inventory",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "executions.recovery.checkpoints.capture.workspace-journal",
+      "currentPaths": [],
+      "targetPaths": [],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "checkpoint-restore-contract"
+      ],
+      "verification": [
+        "member-inventory",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "executions.recovery.checkpoints.capture.workspace-snapshot",
+      "currentPaths": [],
+      "targetPaths": [],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "checkpoint-restore-contract"
+      ],
+      "verification": [
+        "member-inventory",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "executions.recovery.checkpoints.restore",
+      "currentPaths": [],
+      "targetPaths": [],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "checkpoint-restore-contract"
+      ],
+      "verification": [
+        "member-inventory",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "executions.recovery.checkpoints.restore.stop-then-restore",
+      "currentPaths": [],
+      "targetPaths": [],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "checkpoint-restore-contract"
+      ],
+      "verification": [
+        "member-inventory",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "client.sessions",
+      "currentPaths": [],
+      "targetPaths": [],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "session-interaction-operation"
+      ],
+      "verification": [
+        "member-inventory",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "client.attention",
+      "currentPaths": [],
+      "targetPaths": [],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "client-attention-contribution"
+      ],
+      "verification": [
+        "member-inventory",
+        "capability-matrix"
       ]
     }
   ]
