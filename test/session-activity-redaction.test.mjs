@@ -106,5 +106,5 @@ test('redaction: degradation logs carry source names but never payload content',
   projection.api.availability()
   const serialized = logs.join('\n')
   assert.ok(!serialized.includes(SECRET))
-  assert.match(serialized, /session-activity/)
+  assert.match(serialized, /activity-projection/)
 })

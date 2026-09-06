@@ -27,7 +27,7 @@ function boundaryCtx({ active = true, rowActive = true } = {}) {
 
 test('catalog slice declares the two attempt facts with frozen payload shapes', () => {
   const slice = createAgentAttemptFactsCatalogSlice({ expectedContract: EXPECTED_CONTRACT, auxiliaryManifest: AUX })
-  assert.equal(slice.name, 'session-interaction-operation')
+  assert.equal(slice.name, 'attempt-facts')
   assert.equal(slice.entries.length, 2)
   const [start, end] = slice.entries
   assert.equal(start.name, 'agent/attempt/start')
@@ -63,5 +63,5 @@ test('boundary probing failures are contained (never throw through the catalog)'
 
 test('metadata-only default slice carries the catalog entries for pure consumers', () => {
   assert.equal(agentAttemptFactsCatalogSlice.entries.length, 2)
-  assert.equal(agentAttemptFactsCatalogSlice.name, 'session-interaction-operation')
+  assert.equal(agentAttemptFactsCatalogSlice.name, 'attempt-facts')
 })
