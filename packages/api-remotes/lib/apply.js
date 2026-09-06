@@ -130,7 +130,7 @@ function defaultResolveSnapshot(ctx) {
     const hub = pluginApi && pluginApi.attention && typeof pluginApi.attention.hubSnapshot === 'function'
       ? pluginApi.attention
       : undefined
-    if (hub !== undefined) return () => hub.hubSnapshot()
+    if (hub !== undefined) return (kind) => hub.hubSnapshot(kind)
   } catch {
     // facade absent
   }

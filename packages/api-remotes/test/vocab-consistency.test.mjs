@@ -25,3 +25,20 @@ test('shared-vocab: marker symbols are fixed and neutral', () => {
   assert.equal(shared.REPLACEMENT_ROW_ID, 'plugin-api-api-remotes')
   assert.match(shared.REPLACEMENT_PACKAGE_NAME, /^@deepseek-ai\/dsh-plugin-api-api-remotes$/)
 })
+
+test('per-stream audience trim agrees with the host payload trim semantics', async () => {
+  const { trimItemForKind } = await import('../lib/attention-forwarder.js')
+  const { buildRedactedItemPayload } = await import('../../../lib/attention-redaction.js')
+  const cases = [
+    { id: 'a', audience: 'all', title: 'x' },
+    { id: 'b', audience: ['web'], title: 'y' },
+    { id: 'c', audience: ['desktop'], title: 'z' },
+  ]
+  for (const item of cases) {
+    for (const kind of ['web', 'desktop', 'tui', 'all']) {
+      const ours = trimItemForKind(item, kind) !== null
+      const reference = buildRedactedItemPayload(item, { kind }) !== null
+      assert.equal(ours, reference, `trim disagreement for ${item.id} @ ${kind}`)
+    }
+  }
+})

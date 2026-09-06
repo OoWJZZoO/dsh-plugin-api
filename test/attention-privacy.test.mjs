@@ -99,6 +99,33 @@ test('model visibility stays denied by default: no model-target field anywhere',
   }
 })
 
+test('host boundary: cross-audience content never leaves the host toward another stream', () => {
+  const hub = createAttentionHub({ resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
+  const producer = caller('producer', 'web')
+  hub.contribute({ id: 'open', title: 'everywhere', level: 'info', audience: 'all' }, producer)
+  hub.contribute({ id: 'desk', title: 'desktop secret', level: 'info', audience: ['desktop'] }, producer)
+  // host-side snapshot already trims by stream kind (fail-closed)
+  const webSnapshot = hub.snapshotAll('web')
+  assert.deepEqual(webSnapshot.items.map((item) => item.id), ['open'])
+  const desktopSnapshot = hub.snapshotAll('desktop')
+  assert.deepEqual(desktopSnapshot.items.map((item) => item.id), ['open', 'desk'])
+  // and the forwarder re-trims on the wire (belts and suspenders)
+  const frames = []
+  const forwarder = createAttentionForwarder({ allowlist: ['agent-preset/selected'] })
+  forwarder.attach({
+    source: { subscribe: (listener) => hub.onUpdate(listener) },
+    stream: { push: (frame) => frames.push(frame) },
+    snapshot: (kind) => hub.snapshotAll(kind),
+    kind: 'web',
+  })
+  const [seed] = frames
+  assert.equal(seed.args[0].items.some((item) => item.id === 'desk'), false)
+  const deskContent = seed.args[0].items.some((item) => item.title === 'desktop secret')
+  assert.equal(deskContent, false)
+  assert.equal(JSON.stringify(seed).includes('desktop secret'), false)
+  forwarder.dispose()
+})
+
 test('the attention surface never grows UI-policy or session-authority powers', () => {
   const hub = createAttentionHub({ resolveOwner: (c) => ({ ownerId: c.ownerId, generation: 0 }) })
   const allowed = new Set([

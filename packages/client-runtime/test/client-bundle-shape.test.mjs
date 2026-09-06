@@ -44,3 +44,25 @@ test('client bundle: checked-in artifact is reproducible from the build entry', 
   const rebuilt = readFileSync(join(dir, 'client.js'), 'utf8')
   assert.equal(rebuilt, bundle, 'bundle must be byte-identical to the rebuild')
 })
+
+test('official bundle is never modified by the client-half build (stat + hash stable)', async () => {
+  const { createHash } = await import('node:crypto')
+  const { execFileSync } = await import('node:child_process')
+  const { mkdtempSync, statSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const officialPath = fileURLToPath(import.meta.resolve('@deepseek-ai/dsh-client-runtime/client'))
+  const snapshot = () => {
+    const stat = statSync(officialPath)
+    return {
+      size: stat.size,
+      mtimeMs: stat.mtimeMs,
+      hash: createHash('sha256').update(readFileSync(officialPath)).digest('hex'),
+    }
+  }
+  const before = snapshot()
+  const dir = mkdtempSync(join(tmpdir(), 'client-runtime-audit-'))
+  execFileSync('node', [fileURLToPath(new URL('../scripts/build-client.mjs', import.meta.url)), '--out', join(dir, 'client.js')], { cwd: fileURLToPath(new URL('..', import.meta.url)) })
+  const after = snapshot()
+  assert.deepEqual(after, before, 'the official published bundle must remain untouched by the build')
+})

@@ -25,6 +25,26 @@ import {
 } from './shared-vocab.js'
 
 /**
+ * Per-stream audience trim (host-side, fail-closed): when `kind` is provided
+ * and the item's audience excludes it, no payload is produced at all — the
+ * cross-audience content never leaves the host boundary toward that stream.
+ * @param {object | null | undefined} payload
+ * @param {string | undefined} kind - this stream's client kind ('all' = every kind).
+ * @returns {object | null} a shallow copy for the stream, or null when trimmed.
+ */
+export function trimItemForKind(payload, kind) {
+  if (kind === undefined || kind === null || kind === 'all') {
+    return payload === null || payload === undefined || typeof payload !== 'object'
+      ? null
+      : { ...payload }
+  }
+  if (payload === null || payload === undefined || typeof payload !== 'object') return null
+  if (payload.audience === 'all') return { ...payload }
+  if (Array.isArray(payload.audience) && payload.audience.includes(kind)) return { ...payload }
+  return null
+}
+
+/**
  * Shape-check an inbound attention update message (shape-only validation;
  * the host enforces redaction before this slice ever sees the payload).
  * @param {unknown} message
@@ -110,9 +130,13 @@ export function createAttentionForwarder(options = {}) {
    * @param {object} wiring
    * @param {{ subscribe: (listener: (message: object) => void) => () => void }} wiring.source
    * @param {{ push: (frame: object) => void }} wiring.stream
+   * @param {(() => object) | null} [wiring.snapshot] - whole-hub snapshot provider.
+   * @param {string} [wiring.kind] - this stream's client audience kind; every
+   *   item whose audience excludes it is trimmed host-side before leaving the
+   *   host boundary (cross-audience content never rides the stream).
    * @returns {{ ok: boolean, code: string, reason?: string }}
    */
-  function attach({ source, stream, snapshot }) {
+  function attach({ source, stream, snapshot, kind }) {
     if (attached) return { ok: false, code: 'conflict', reason: 'already attached' }
     if (source === null || source === undefined || typeof source.subscribe !== 'function') {
       return { ok: false, code: 'unavailable', reason: 'attention update source is not reachable' }
@@ -123,42 +147,87 @@ export function createAttentionForwarder(options = {}) {
     if (!keepAttentionOutOfAllowlist({ forwardedEvents: allowlist, attentionEvent: ATTENTION_UPDATE_EVENT })) {
       return { ok: false, code: 'conflict', reason: 'attention event is inside the consumer allowlist' }
     }
+
+    const streamKind = kind ?? 'all'
+    /** @type {Set<string>} ids actually delivered to this stream (removes only forward known ids) */
+    const deliveredIds = new Set()
+
+    const pushFrame = (message) => {
+      if (pushed >= maxInFlight) {
+        log('forwarding bound reached; dropping frame')
+        return false
+      }
+      const frame = buildAttentionFrame(message)
+      if (frame.args[0] === null) {
+        log('dropping attention update that could not be copied')
+        return false
+      }
+      try {
+        stream.push(frame)
+        pushed += 1
+        return true
+      } catch {
+        log('browser event stream push failed')
+        return false
+      }
+    }
+
+    const trimForStream = (payload) => trimItemForKind(payload, streamKind)
+
     unsubscribe = source.subscribe((message) => {
       if (!isValidAttentionUpdate(message)) {
         log('dropping malformed attention update')
         return
       }
-      if (pushed >= maxInFlight) {
-        log('forwarding bound reached; dropping frame')
+      if (message.kind === 'attention.snapshot') {
+        const items = []
+        for (const item of message.items) {
+          const payload = trimForStream(item)
+          if (payload === null) continue
+          items.push(payload)
+        }
+        // a snapshot replaces the whole projection for this stream
+        deliveredIds.clear()
+        for (const item of items) deliveredIds.add(item.id)
+        pushFrame({ kind: 'attention.snapshot', epoch: message.epoch, seq: message.seq, items })
         return
       }
-      const frame = buildAttentionFrame(message)
-      if (frame.args[0] === null) {
-        log('dropping attention update that could not be copied')
-        return
+      // delta: per-stream audience trim; removes only forward ids we actually
+      // delivered to this stream (never leak a cross-audience existence).
+      const changes = []
+      for (const change of message.changes) {
+        if (change.op === 'remove') {
+          if (!deliveredIds.has(change.id)) continue
+          deliveredIds.delete(change.id)
+          changes.push({ op: 'remove', id: change.id, reason: change.reason })
+          continue
+        }
+        const payload = trimForStream(change.item)
+        if (payload === null) continue
+        deliveredIds.add(change.id)
+        changes.push({ op: change.op, id: change.id, item: payload })
       }
-      try {
-        stream.push(frame)
-        pushed += 1
-      } catch {
-        log('browser event stream push failed')
-      }
+      if (changes.length === 0) return
+      pushFrame({ kind: 'attention.delta', epoch: message.epoch, seq: message.seq, changes })
     })
+
     // On attach, seed the stream with a fresh host snapshot so the browser
-    // runtime can rebuild its projection after a rebind.
+    // runtime can rebuild its projection after a rebind. The kind is passed
+    // through so the hub can trim host-side; the forwarder trims again
+    // (idempotent) as the last line before the wire.
     if (snapshot !== undefined && typeof snapshot === 'function') {
       try {
-        const current = snapshot()
+        const current = snapshot(streamKind)
         if (current !== null && current !== undefined && Array.isArray(current.items)) {
-          const snapshotMessage = {
-            kind: 'attention.snapshot',
-            epoch: current.epoch ?? 0,
-            seq: current.seq ?? 0,
-            items: current.items.map((item) => ({ ...item })),
+          const items = []
+          for (const item of current.items) {
+            const payload = trimForStream(item)
+            if (payload === null) continue
+            items.push(payload)
           }
-          if (isValidAttentionUpdate(snapshotMessage)) {
-            stream.push(buildAttentionFrame(snapshotMessage))
-          }
+          deliveredIds.clear()
+          for (const item of items) deliveredIds.add(item.id)
+          pushFrame({ kind: 'attention.snapshot', epoch: current.epoch ?? 0, seq: current.seq ?? 0, items })
         }
       } catch {
         log('initial host snapshot could not be produced; deltas will still flow')

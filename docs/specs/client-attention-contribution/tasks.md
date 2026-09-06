@@ -135,7 +135,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md`（2026-09-06 人类批�
 - [ ] **7.1 版本错配局部停用**：runtime/包 `A.B.C` 错配 ⇒ 只停用对应 slice 覆盖能力（pipeline slice 失配 ⇒ host→client 投递 `unavailable`；runtime slice 失配 ⇒ client 面 `unavailable`），host hub 与 host 消费者保持 active，availability 明确命名具体原因（R8 AC3）。
 - [ ] **7.2 失败回退与无双跑**：probe/parity/boot 自检失败 ⇒ 重跑官方 apply（官方行为照常）、扩展不宣称、能力 typed `unavailable`；断言「官方行 disabled 且无工作替代」空洞不存在；无双跑（R11 AC5、R12 AC5）。
 - [ ] **7.3 owner 冲突与重复插入检测**：组件唯一 owner 冲突、目标行未禁用、重复插入均被检测并 fail-safe（R6）。
-- [ ] **7.4 模块 id 注册 / `__DSH_BOOT__` / HMR**：两 slice 的 client 半面以官方模块 id 注册、`window.__DSH_BOOT__` 装配、HMR 后替换模块恢复（R7/R11 AC6/R12 AC6）。
+- [ ] **7.4 模块 id 注册 / `__DSH_BOOT__` / HMR**：两 slice 的 client 半面以官方模块 id 注册、`window.__DSH_BOOT__` 装配、HMR 后替换模块恢复（R7/R11 AC6/R12 AC6）。`__DSH_BOOT__` 真装配与浏览器 HMR 重载在本线为结构性验证（bundle shape + wrapper 重执行路径），执行级覆盖留集成波真装配 fixture——范围声明与验收口径见 `probe-and-delivery-notes.md` §5。
 - [ ] **7.5 移除与官方行恢复**：移除替代行后官方行恢复且官方行为完整（patch 撤销路径）。
 - [ ] **7.6 headless 缺席回归**：headless profile 下两 slice 均不插入替代行、对应能力 typed `unavailable`。
 - [ ] **7.7 官方包零修改审计（slice 级）**：两 slice 各自断言未 touch 官方包文件（生成物重建读官方 bundle 为只读、比对官方包 mtime/hash 或 git 隔离基线）。
@@ -160,7 +160,7 @@ SPEC3 Stage 3：本任务书承接已确认的 `goal.md`（2026-09-06 人类批�
 ### [ ] 9. Wave 9 — 终验、登记与交付（R14 AC7；AGENTS.md §3.2/§6/§8）
 
 - [ ] **9.1 套件全绿**：受护 `npm test` 全绿（护栏脚本，`systemd-run --user --scope -p MemoryMax=4G`，不用裸 `node --test`；覆盖 `test/**/*.mjs` 与 `packages/*/test/*.mjs`）；`git diff --check` 通过；官方包零修改审计（`/usr/lib/node_modules/@deepseek-ai/dsh/**`）通过；registry/surface 一致性（集成后）通过。任一验证失败/超时/无法建立证据按阻塞处理，阻塞登记含解除动作。
-- [ ] **9.2 规格制品回写与登记**：核对 requirements/design/tasks 与交付一致；执行中发现的 spec 细节偏差就地修订对应文档并在最终报告列出；动摇 Goal/Requirements 验收边界的偏差按「条件性人类裁决门」上报。已知待确认项：probe 结论（3.1/4.1）与 design §3/§4 复刻清单的符合性就地记录。
+- [ ] **9.2 规格制品回写与登记**：核对 requirements/design/tasks 与交付一致；执行中发现的 spec 细节偏差就地修订对应文档并在最终报告列出；动摇 Goal/Requirements 验收边界的偏差按「条件性人类裁决门」上报。probe 结论（3.1/4.1）、官方转发机械归属、attention 送达三条 seam 的集成波归属与 `__DSH_BOOT__`/HMR 验证范围限制已就地记录于 `probe-and-delivery-notes.md`（终审 MINOR-1/MINOR-3）。
 - [ ] **9.3 全局终审（阻塞，编排主代理执行）**：全部顶层任务完成后，由编排主代理调用一次只读阻塞式全局终审，核对整个 Stage 4 交付与 Tasks/Design/Requirements 的一致性，并按 `docs/standards/` 适用分册（capability-strategy/api-shape/api-idioms/public-api-shape/composition-and-authority/domain-composition/ordering/durable-state-and-scope/visibility-and-redaction/concurrency-and-cancellation/versioning-and-protocols；identity-and-lifecycle 为 partially applicable）比对规范符合性；返回「无偏差」后才可交付；有意见则在整体范围内集中修订后再次全局终审，直至通过。
 - [ ] **9.4 Stage 4 完成提交**：终审通过后提交本 Stage 全部实现、测试、spec 制品修订与登记（先 `git diff --check`，提交只含本线文件，工作区保持干净）。
 

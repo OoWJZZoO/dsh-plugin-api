@@ -87,7 +87,7 @@ test('apply: official row disabled + identities ok → forwarder attaches once',
   const { ctx, disposer, stm, src } = testApplyRows([{ id: 'api-remotes', disabled: true }])
   assert.equal(typeof disposer, 'function')
   assert.equal(ctx[FORWARDER_OWNER_SYMBOL], true)
-  src.listeners[0]({ kind: 'attention.delta', epoch: 1, seq: 3, changes: [{ op: 'add', id: 'x' }] })
+  src.listeners[0]({ kind: 'attention.delta', epoch: 1, seq: 3, changes: [{ op: 'add', id: 'x', item: { id: 'x', seq: 1, audience: 'all' } }] })
   assert.equal(stm.frames.length, 1)
   assert.equal(stm.frames[0].type, 'host/remote-event')
   assert.equal(stm.frames[0].event, 'attention/update')
