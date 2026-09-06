@@ -28,6 +28,10 @@ import { EVIDENCE_ACTIVE_SYMBOL, emitAssembledEvidence } from "./evidence-slice.
 // preparation failure). Additive internal import; the exported surface stays
 // identical to the official one.
 import { consumeRequestRecovery, consumeToolRecovery } from "./recovery-slice.js";
+// replacement patch: shared loop boundary interaction slice — external
+// request admission/cancel boundary and attempt lifecycle facts. Additive
+// internal import; the exported surface stays identical to the official one.
+import { INTERACTION_ACTIVE_SYMBOL, createInteractionBoundary } from "./interaction-slice.js";
 //#region lib/types/runtime-context.js
 /**
 * Durable projection state for dynamic runtime context.
@@ -418,11 +422,18 @@ var ReactLoopAgent = class {
 	// replacement patch: per-session assembled-context evidence sequence
 	// (owner-specific opaque generation, ascending; evidence-only).
 	evidenceSeq = 0;
-	constructor(loopCtx, id, options, session) {
+	/**
+	* replacement patch: shared loop boundary interaction state.
+	* Admission/cancel boundary + attempt lifecycle facts. Additive; never
+	* alters official event timing, payloads, or loop decisions.
+	*/
+	interaction;
+	constructor(loopCtx, id, options, session, interactionBoundary = null) {
 		this.loopCtx = loopCtx;
 		this.id = id;
 		this.options = options;
 		this.session = session;
+		this.interaction = interactionBoundary;
 		this.dispatch = agentEvents(loopCtx, this);
 		this.inbox = new Inbox(session, {
 			inserted: (message) => {
@@ -608,6 +619,12 @@ var ReactLoopAgent = class {
 			this.throwError(error);
 		}
 		phase.turn = turn;
+		// replacement patch: shared loop boundary interaction — attempt-start
+		// fact at the turn-open commit point (additive, facts-only; failure never
+		// changes the loop).
+		try {
+			this.interaction?.beginAttempt?.(this, { turn, observedAt: new Date().toISOString() });
+		} catch {}
 		let turnEnds = null;
 		let target = "next-turn";
 		try {
@@ -679,6 +696,16 @@ var ReactLoopAgent = class {
 			} catch (error) {
 				this.throwError(error);
 			}
+			// replacement patch: shared loop boundary interaction — attempt-end
+			// fact at the turn-close commit point (additive, facts-only; failure
+			// never changes the loop; outcome/followUp are loop-side facts only).
+			try {
+				this.interaction?.endAttempt?.(this, {
+					turnEnds,
+					turn,
+					observedAt: new Date().toISOString()
+				});
+			} catch {}
 		}
 		if (!this.inbox.hasPending) return false;
 		phase.abort = new AbortController();
@@ -1166,6 +1193,11 @@ var AgentLoop = class extends Service {
 		// replacement patch: assembled-context evidence capability marker
 		// (additive; instance-level, never a prototype member).
 		this[EVIDENCE_ACTIVE_SYMBOL] = true;
+		// replacement patch: shared loop boundary interaction capability marker
+		// (additive, instance-level). Exposes the admit/cancel boundary and
+		// attempt-fact state to the facade request authority.
+		this.interaction = createInteractionBoundary({ logger: this.ctx.logger });
+		this[INTERACTION_ACTIVE_SYMBOL] = this.interaction;
 		const entry = { maxParallelToolCalls: resolveMaxParallelToolCalls(config.maxParallelToolCalls) };
 		let source = () => entry;
 		this.config = {
@@ -1186,6 +1218,14 @@ var AgentLoop = class extends Service {
 		this.ownership = new FactoryOwnership(ctx.fiber);
 		this.runtime = { ctx };
 		ctx.effect(() => () => this.ownership.dispose(), "agentLoop.transactions()");
+		// replacement patch: shared loop boundary interaction state cleanup with
+		// the service lifetime (additive; disposal never affects the official
+		// contract surface).
+		ctx.effect(() => () => {
+			try {
+				this.interaction?.dispose?.();
+			} catch {}
+		}, "agentLoop.interaction()");
 		ctx.effect(() => ctx.agents.setFactory(this), "agentLoop.setFactory()");
 		ctx.systemPrompt.variable("provider", (context) => context.agent?.options.provider);
 		ctx.systemPrompt.variable("model", (context) => context.agent?.options.model);
@@ -1337,7 +1377,7 @@ var AgentLoop = class extends Service {
 			throw abort.signal.reason instanceof Error ? abort.signal.reason : new Error(String(abort.signal.reason));
 		};
 		try {
-			const agent = machine = new ReactLoopAgent(loopCtx, id, options, session);
+			const agent = machine = new ReactLoopAgent(loopCtx, id, options, session, this.interaction);
 			machineReady.resolve();
 			assertLive();
 			return {

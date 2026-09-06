@@ -16,6 +16,12 @@ import {
   createRoutePolicyOwner,
 } from './route-policy.js'
 import { EVIDENCE_ACTIVE_SYMBOL } from './evidence-slice.js'
+import {
+  ACTIVITY_OBSERVATION_CONTRACT_SYMBOL,
+  ATTEMPT_FACTS_CONTRACT_VERSION,
+  INTERACTION_ACTIVE_SYMBOL,
+  interactionBoundaryOf,
+} from './interaction-slice.js'
 
 export const name = 'plugin-api-agent-loop'
 export const inject = ['loader']
@@ -327,6 +333,38 @@ export function createAgentLoopApply(overrides = {}) {
           // official loop contract stay fully active (evidence-only iron rule).
           if (agentLoop?.[EVIDENCE_ACTIVE_SYMBOL] !== true) {
             log(ctx, 'plugin-api-agent-loop: assembled-context evidence capability is unavailable; sent evidence is degraded (route policy unaffected)')
+          }
+          // Additive boot self-check: the shared loop boundary interaction
+          // slice (admission/cancel boundary + attempt facts). Its absence
+          // leaves the official loop contract fully active and degrades only
+          // the external session request boundary (the facade reports it as
+          // typed unavailable); it never double-runs or half-serves.
+          if (!interactionBoundaryOf(agentLoop)) {
+            log(ctx, 'plugin-api-agent-loop: interaction boundary is unavailable; session request admission/cancel will report typed unavailable (official loop contract unaffected)')
+          } else {
+            const boundary = agentLoop[INTERACTION_ACTIVE_SYMBOL]
+            const boundaryAvailability = boundary.availability?.()
+            if (boundaryAvailability?.status !== 'active' || boundaryAvailability?.contractVersion !== ATTEMPT_FACTS_CONTRACT_VERSION) {
+              log(ctx, 'plugin-api-agent-loop: interaction boundary contract mismatch; session request admission/cancel will report typed unavailable (official loop contract unaffected)')
+            } else {
+              log(ctx, 'plugin-api-agent-loop: interaction boundary active')
+            }
+          }
+          // Activity observation contract marker probe (shared vocabulary):
+          // the marker is defined and exported by the session-activity-projection
+          // line. When present the slice cross-checks the shared attempt-fact
+          // contract version; when absent the mutual compatibility check is
+          // carried by the integration wave. Absence never downgrades the
+          // official loop contract or changes fact emission (facts-only).
+          try {
+            const marker = root?.[ACTIVITY_OBSERVATION_CONTRACT_SYMBOL]
+            if (marker === undefined) {
+              log(ctx, 'plugin-api-agent-loop: activity observation contract marker is not installed; attempt-fact compatibility is verified at the integration wave')
+            } else if (marker?.attemptFactsVersion !== ATTEMPT_FACTS_CONTRACT_VERSION) {
+              log(ctx, `plugin-api-agent-loop: activity observation contract version mismatch (expected ${ATTEMPT_FACTS_CONTRACT_VERSION}, got ${marker?.attemptFactsVersion}); observed-grade attempt-fact consumption must be aligned at the integration wave`)
+            }
+          } catch (error) {
+            log(ctx, `plugin-api-agent-loop: activity observation contract probe failed: ${error?.name ?? 'Error'}`)
           }
           log(ctx, 'plugin-api-agent-loop: replacement active')
           return registration
