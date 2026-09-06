@@ -145,7 +145,7 @@ export function createAttentionForwarder(options = {}) {
       }
     })
     // On attach, seed the stream with a fresh host snapshot so the browser
-    // runtime can rebuild its projection after a rebind (Requirements R6 AC1).
+    // runtime can rebuild its projection after a rebind.
     if (snapshot !== undefined && typeof snapshot === 'function') {
       try {
         const current = snapshot()

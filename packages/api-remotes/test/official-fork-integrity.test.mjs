@@ -1,6 +1,6 @@
 /**
  * Official-contract parity fixture gate for `@deepseek-ai/dsh-plugin-api-api-remotes`
- * (R-class parity gate). Asserts the vendored fork reproduces the official
+ * (parity gate). Asserts the vendored fork reproduces the official
  * `@deepseek-ai/dsh-api-remotes` host contract one-to-one:
  * - all official export names,
  * - the eleven-event forwarded allowlist verbatim,

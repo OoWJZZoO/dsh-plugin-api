@@ -64,8 +64,8 @@ test('delta reconciliation: add/update/remove with id/seq dedupe', () => {
   assert.equal(runtime.current().length, 1)
   assert.equal(seen.length, 1)
   // update replaces the item
-  receive.emit({ kind: 'attention.delta', epoch: 1, seq: 13, changes: [{ op: 'update', id: 'c', item: { id: 'c', seq: 4, title: 'C2' } }] })
-  assert.equal(runtime.current()[0].title, 'C2')
+  receive.emit({ kind: 'attention.delta', epoch: 1, seq: 13, changes: [{ op: 'update', id: 'c', item: { id: 'c', seq: 4, title: 'C-2' } }] })
+  assert.equal(runtime.current()[0].title, 'C-2')
   assert.equal(seen[seen.length - 1].op, 'update')
   // remove with reason
   receive.emit({ kind: 'attention.delta', epoch: 1, seq: 14, changes: [{ op: 'remove', id: 'c', reason: 'dismissed' }] })
