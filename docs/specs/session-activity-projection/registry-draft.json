@@ -1,0 +1,332 @@
+{
+  "$comment": "session-activity-projection registry draft — 集成波 I1 机械合并输入。publicPath 均为本 feature 拟新增成员/词条；字段按 M8 冻结决策 3 字段全集（不适用字段显式 null）。agent/attempt/* catalog 条目为消费侧核对输入，正式登记由切片装配方（interaction 线）+ 集成波 I1 执行。本文件为制品数据，非运行时资源。",
+  "members": [
+    {
+      "publicPath": "sessions.activity.current",
+      "targetPath": "sessions.activity.current",
+      "capability": "sessions.activity",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": "projection",
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session activity projection owner",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "facade-derived activity identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.activity",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { snapshot, sessionQueue, gap, unavailable } | typed absence { ok:false, code:'absent' }",
+      "migrationAction": "retain",
+      "status": "recommended",
+      "verification": [
+        "registry-draft",
+        "surface-consistency"
+      ]
+    },
+    {
+      "publicPath": "sessions.activity.get",
+      "targetPath": "sessions.activity.get",
+      "capability": "sessions.activity",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": "projection",
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session activity projection owner",
+      "scope": "session",
+      "resourceKey": "activityId",
+      "identitySource": "facade-derived activity identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.activity",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { snapshot, sessionQueue, gap, unavailable } | typed absence { ok:false, code:'absent' }",
+      "migrationAction": "retain",
+      "status": "recommended",
+      "verification": [
+        "registry-draft",
+        "surface-consistency"
+      ]
+    },
+    {
+      "publicPath": "sessions.activity.list",
+      "targetPath": "sessions.activity.list",
+      "capability": "sessions.activity",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": "projection",
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session activity projection owner",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "facade-derived activity identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.activity",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { items, nextCursor, truncated, gap, unavailable }",
+      "migrationAction": "retain",
+      "status": "recommended",
+      "verification": [
+        "registry-draft",
+        "surface-consistency"
+      ]
+    },
+    {
+      "publicPath": "sessions.activity.history",
+      "targetPath": "sessions.activity.history",
+      "capability": "sessions.activity",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": "projection",
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session activity projection owner",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "facade-derived activity identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.activity",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { items, truncated, unavailable, gap, boundary:'facade-lifetime' }",
+      "migrationAction": "retain",
+      "status": "recommended",
+      "verification": [
+        "registry-draft",
+        "surface-consistency"
+      ]
+    },
+    {
+      "publicPath": "sessions.activity.observe",
+      "targetPath": "sessions.activity.observe",
+      "capability": "sessions.activity",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": "projection",
+      "effect": "read",
+      "composition": "additive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session activity projection owner",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "observer epoch-local",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.activity",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "handle { current(), subscribe(listener), dispose(), epoch }",
+      "migrationAction": "retain",
+      "status": "recommended",
+      "verification": [
+        "registry-draft",
+        "surface-consistency"
+      ]
+    },
+    {
+      "publicPath": "sessions.activity.observe.handle",
+      "targetPath": "sessions.activity.observe.handle",
+      "capability": "sessions.activity",
+      "kind": "handle",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": "projection",
+      "effect": "read",
+      "composition": "additive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session activity projection owner",
+      "scope": "session",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "observer epoch-local",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "none",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "members: current() / subscribe(listener) / dispose() / epoch",
+      "migrationAction": "retain",
+      "status": "recommended",
+      "verification": [
+        "registry-draft",
+        "surface-consistency"
+      ]
+    },
+    {
+      "publicPath": "sessions.activity.availability",
+      "targetPath": "sessions.activity.availability",
+      "capability": "sessions.activity",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session activity projection owner",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "leaf",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { status: active|degraded|unavailable, reason?: string }",
+      "migrationAction": "retain",
+      "status": "recommended",
+      "verification": [
+        "registry-draft",
+        "surface-consistency"
+      ]
+    }
+  ],
+  "namespaces": [
+    {
+      "namespace": "sessions.activity",
+      "runtime": "host",
+      "capabilityPath": "sessions.activity",
+      "contributingFeatures": [
+        "session-activity-projection"
+      ],
+      "availabilityMember": "sessions.activity.availability",
+      "availabilityExemption": null
+    }
+  ],
+  "capabilityMatrix": [
+    {
+      "capabilityCluster": "sessions.activity",
+      "currentPaths": [
+        "sessions.activity.current",
+        "sessions.activity.get",
+        "sessions.activity.list",
+        "sessions.activity.history",
+        "sessions.activity.observe",
+        "sessions.activity.availability"
+      ],
+      "targetPaths": [
+        "sessions.activity.current",
+        "sessions.activity.get",
+        "sessions.activity.list",
+        "sessions.activity.history",
+        "sessions.activity.observe",
+        "sessions.activity.availability"
+      ],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "session-interaction-operation",
+        "client-attention-contribution",
+        "checkpoint-restore-contract"
+      ],
+      "verification": [
+        "registry-draft",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "sessions.activity.attempt-facts",
+      "currentPaths": [],
+      "targetPaths": [],
+      "status": "retained",
+      "qualifiers": [
+        "split"
+      ],
+      "replacement": "agent-loop owner slice (shared capability, feature-list 3.1 joint registration)",
+      "gapReason": null,
+      "affectedConsumers": [
+        "session-activity-projection",
+        "session-interaction-operation",
+        "checkpoint-restore-contract"
+      ],
+      "verification": [
+        "registry-draft",
+        "capability-matrix"
+      ]
+    }
+  ],
+  "eventCatalogConsumptionCheck": [
+    {
+      "name": "agent/attempt/start",
+      "runtime": "host",
+      "eventSemantics": "fact",
+      "scope": "session",
+      "payloadShape": "{ attemptId, operationId?, executionId?, sessionId, seq, observedAt }",
+      "freeze": "all",
+      "priority": "normal",
+      "observerFailure": "contained",
+      "producerAuthority": "agent-loop owner slice",
+      "dispatch": "emit",
+      "implementationChannel": "replacement",
+      "consumption": "session-activity-projection (observed start evidence; gate-enabled)"
+    },
+    {
+      "name": "agent/attempt/end",
+      "runtime": "host",
+      "eventSemantics": "fact",
+      "scope": "session",
+      "payloadShape": "{ attemptId, operationId?, executionId?, sessionId, outcome, reason?, classification?, followUp, seq, observedAt }",
+      "freeze": "all",
+      "priority": "normal",
+      "observerFailure": "contained",
+      "producerAuthority": "agent-loop owner slice",
+      "dispatch": "emit",
+      "implementationChannel": "replacement",
+      "consumption": "session-activity-projection (observed terminal/queue facts; gate-enabled)"
+    }
+  ]
+}
