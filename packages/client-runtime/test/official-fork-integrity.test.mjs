@@ -1,5 +1,5 @@
 /**
- * Official-contract parity fixture gate (capability-strategy R2): the vendored
+ * Official-contract parity fixture gate: the vendored
  * fork reproduces the official `@deepseek-ai/dsh-client-runtime` host entry
  * and the browser-module manifest half.
  */
