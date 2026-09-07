@@ -101,13 +101,13 @@ function makeHost() {
   const boundary = makeBoundary()
   const appends = []
   const ctx = {
+    // Owner attribution follows the Cordis fiber (the shared host-side
+    // derivation), so the serving context carries a fiber name.
+    fiber: { name: 'client-route' },
     get(name) {
       if (name === 'pluginApi') {
         return {
           isActive: true,
-          // Host-side owner attribution (never a caller-supplied string): the
-          // route handler must resolve the owner from the serving context.
-          services: { identity: () => 'client-route' },
           sessions: { durable: { appendMessage: async () => ({ ok: true }) } },
         }
       }
@@ -351,4 +351,19 @@ test('one terminal stays terminal: repeated status reads never rewrite the outco
   await flush()
   const second = wire.host.owner.operationStatus(accepted.operation.id)
   assert.deepEqual(second.terminal, first.terminal, 'late signals never rewrite a committed terminal')
+})
+
+test('owner attribution follows the caller fiber, never a caller-reported string', async () => {
+  const { host } = makeWire()
+  const callerA = { fiber: { name: 'plugin-a' } }
+  const callerB = { fiber: { name: 'plugin-b' } }
+  const a = await host.owner.request({ sessionId: 's1', message: { kind: 'user-message', text: 'a' } }, callerA)
+  const b = await host.owner.request({ sessionId: 's2', message: { kind: 'user-message', text: 'b' } }, callerB)
+  assert.equal(a.operation.ownerId, 'plugin-a')
+  assert.equal(b.operation.ownerId, 'plugin-b')
+  // Over the wire the owner comes from the serving context, not the payload.
+  const handler = createSessionInteractionRouteHandler({ owner: host.owner, ctx: host.ctx })
+  const viaWire = await handler({ method: 'sessions.request', payload: { sessionId: 's3' } })
+  assert.equal(viaWire.operation.ownerId, 'client-route')
+  assert.equal(viaWire.operation.ownerId, host.ctx.fiber.name)
 })
