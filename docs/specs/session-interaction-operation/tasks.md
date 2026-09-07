@@ -3,6 +3,8 @@
 > feature_name: `session-interaction-operation`
 > milestone: M9
 > status: SPEC3 Stage 3（Tasks）已产出，待对抗性审查门；通过后直接进入 Stage 4。
+>
+> 现状注（2026-09-07 核对）：对抗性审查门已通过，Stage 4 已交付并合入 main（实现提交 `fe5b3c7`、终审修订 `4992090`）。本任务书保留为历史记录：下方复选框维持完成时的勾选状态口径以提交与回归测试为准，不因本注逐项改写；2026-09-07 另按既有验收边界完成 client↔host wire 维护（status/observe 接线，提交 `266dee1`），无合同变更。
 
 ## Status
 

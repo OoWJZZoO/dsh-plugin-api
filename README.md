@@ -92,12 +92,15 @@ Agent extension 成员是官方 AgentRegistry 的同参直通。调用从消费�
 ```js
 pluginApi.llm.routing.forExecution(exec)
 pluginApi.llm.routing.current(session)
-pluginApi.llm.routing.on(session, listener)
-pluginApi.llm.routing.once(session, listener)
+pluginApi.llm.routing.observe(session, listener)   // 原 on/once 已并入 observe
 pluginApi.llm.routing.wait(session, options?)
-pluginApi.llm.routing.policies   // 原 routePolicy 面（复数 policies）
-pluginApi.llm.routing.candidates / health / circuit / decisions
+pluginApi.llm.routing.policies.register(...)       // 原 routePolicy 面（复数 policies）
+pluginApi.llm.routing.candidates.register/list
+pluginApi.llm.routing.health.observe / get / history / circuitPolicy.register / probe.register
+pluginApi.llm.routing.circuit.inspect / decisions.get / decisions.history
 pluginApi.llm.routing.availability // { status: 'active' | 'degraded' | 'unavailable', reason?: string }
+
+> 现状注：`on` / `once` 成员已统一并入 `observe`（返回句柄式订阅），旧名不再存在于公共面；`availability` 为 `{status, reason?}`，与全门面自描述口径一致。
 ```
 
 `forExecution()` 只返回已在 `tools/pre-execute` 捕获的 execution-time snapshot；`current/observe/wait` 只表示已提交的 session route（`on/once` 已合并为 `observe`）。两者都不是 session-created 或 prompt-assembly 时的 final route。旧的 `agent.routeOf(exec)` / `tools.routeOf(exec)` 兼容委托**已删除**，route 查询唯一入口为 `llm.routing.forExecution()`。pre-assembly prepared-route 与 route-conditioned contribution 仍是 upstream proposal，不提供 runtime contribution API。

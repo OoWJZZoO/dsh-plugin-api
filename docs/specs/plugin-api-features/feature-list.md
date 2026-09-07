@@ -28,6 +28,8 @@
 >
 > 现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；本表正文与 §7 条目中出现的 `0.1.0-rc.6-0.x` 为各批次历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动任何 feature 已获批的验收边界。
 >
+> **已删除写路径的现状注（2026-09-07 核对）**：§2.11 的 SV5（工作流引擎 `services.workflows.start`）、SV17（压缩服务 `services.compaction.*`）、SV26（凭据服务 `services.credentials.set/unset`）三条直通写路径已在公共契约重构中删除（删除经 deletion report 人类双批批准）。这些行的 `delivered` 只描述**当时的交付边界**，不代表现行公共面仍提供这些写路径；删除同时登记了「功能不删减」的后续义务（planMode / permissionPresets / credentials / workflows 写入面与主动压缩入口），替代能力在当前基线上**尚未兑现**，属后续范围。现行 `services.*` 逐成员状态以 `public-contract.registry.json` 为唯一事实源，不得据本表历史行推断能力可用。
+>
 > feature_name: `plugin-api-features`
 > 范围：全量（host 面 + client 面 + C 类上游提案）
 > 组织方式：按 API 命名空间分组，每项标注 A/B/C 类型与建议里程碑；已交付项标注 `**delivered**`。
@@ -331,7 +333,7 @@
 | SV2 代码执行 seam | `pluginApi.services.codeRuntime`：`run` + `language/isolation` 直通 | A | `dsh-code-runtime/lib/index.js`（服务 `codeRuntime`） | M1 | **delivered** |
 | SV3 工作区注册表 | `pluginApi.services.workspaces`：`create/get/list/delete/insertBefore/archiveSession/resolveByPath` + `archivedSessionIds` 直通 | A | `dsh-workspace/lib/index.js:309`（服务 `workspaceRegistry`） | M1 | **delivered** |
 | SV4 子代理运行时 | `pluginApi.services.subagents`：`registerProvider/getProvider/list/start` 等 12 个公开方法直通 | A | `dsh-subagent/lib/index.js:2467`（服务 `subagents`） | M1 | **delivered** |
-| SV5 工作流引擎 | `pluginApi.services.workflows.start(request)` 直通 | A | `dsh-workflow/lib/index.js:59`（服务 `workflowEngine`） | M1 | **delivered** |
+| SV5 工作流引擎 | `pluginApi.services.workflows.start(request)` 直通 | A | `dsh-workflow/lib/index.js:59`（服务 `workflowEngine`） | M1 | **delivered**（写路径已删除，见文首现状注） |
 | SV6 审批服务 | `pluginApi.services.approval.request()` / `setPolicy()` / `overrideOf()` 直通（fail-closed 不变） | A | `dsh-user-approval/lib/index.js:89`（服务 `approval`） | M1 | **delivered** |
 | SV7 用户提问服务 | `pluginApi.services.userQuestions.registerProvider()` / `ask()` 直通 | A | `dsh-user-questions/lib/index.js:23`（服务 `userQuestions`） | M1 | **delivered** |
 | SV8 附件存储 | `pluginApi.services.attachments`：`validateImage/saveImage/readImage` + `imageLimits` 直通 | A | `dsh-attachment/lib/index.js:44`（服务 `attachments`） | M1 | **delivered** |
@@ -343,7 +345,7 @@
 | SV14 会话遥测 seam | `pluginApi.services.sessionTelemetry`（backend seam 直通；`session-telemetry/record` 事件已由 O16 交付） | A | `dsh-session-telemetry/lib/index.js:174`（服务 `sessionTelemetry`） | M1 | **delivered** |
 | SV15 会话引用解析 | `pluginApi.services.sessionReferences.listCandidates/prepare` + `encodeSessionReferenceUri/decodeSessionReferenceUri` 转发 | A | `dsh-session-reference`（服务 `sessionReferenceResolver`） | M1 | **delivered** |
 | SV16 Token 计量 | `pluginApi.services.tokenMeter.measure(session, requestHeader)` / `estimateMessage` 直通 | A | `dsh-token-meter`（服务 `tokenMeter`） | M1 | **delivered** |
-| SV17 压缩服务 seam | `pluginApi.services.compaction.compactIfNeeded/compactNow/compactRegion` 直通；不暴露 Basic 专有成员。SV17 直通本身不产生 events；`compaction/*` 事件词汇由 replacement 包 `@deepseek-ai/dsh-plugin-api-compaction-events` 提供（见 U8） | A | `dsh-compaction`（服务 `compaction`） | M2 | **delivered** |
+| SV17 压缩服务 seam | `pluginApi.services.compaction.compactIfNeeded/compactNow/compactRegion` 直通；不暴露 Basic 专有成员。SV17 直通本身不产生 events；`compaction/*` 事件词汇由 replacement 包 `@deepseek-ai/dsh-plugin-api-compaction-events` 提供（见 U8） | A | `dsh-compaction`（服务 `compaction`） | M2 | **delivered**（写路径已删除，见文首现状注） |
 | SV18 默认模型选择 | `pluginApi.services.agentDefaultModel.currentSelection()` / `saveSelection(next)` 直通 | A | `dsh-agent-default-model`（服务 `agentDefaultModel`） | M1 | **delivered** |
 | SV19 后台任务注册表 seam | `pluginApi.services.jobs`：`start/list/get/read/kill/wait/onJobDone/onJobsChanged/attachController` 九个抽象 `JobRegistry` 操作直通；`onJobDone/onJobsChanged/attachController` 返回官方 disposer；不暴露 concrete-provider 私有成员，且无 `jobs/*` events API | A | `dsh-jobs` 抽象 Service Definition（服务 `jobs`；live provider `dsh-jobs-local`） | M4 | **delivered**（旧 M4 交付，经 M4 official passthrough 回归复证） |
 | SV20 受管环境 seam | `pluginApi.services.shellEnv`：`register/collect/list` 三个 `ShellEnvRegistry` 操作直通；`register` 返回官方 disposer；不暴露 registry 私有成员，且无 `shellEnv/*` events API | A | `dsh-shell-env`（服务 `shellEnv`） | M4 | **delivered**（旧 M4 交付，经 M4 official passthrough 回归复证） |
@@ -352,7 +354,7 @@
 | SV23 API proxy seam | `pluginApi.services.apiProxy.downloads/respond` 直通 | A | 同上（服务 `apiProxy`） | M4 | **delivered**（M4 official passthrough 交付） |
 | SV24 Host client-module registry seam | `pluginApi.services.clientModules`：`graph/clientPath/rebuilt/onRebuilt/onGraphChanged` 直通；与浏览器 `client.modules`（C10）分属两面 | A | 同上（服务 `clientModules`） | M4 | **delivered**（M4 official passthrough 交付） |
 | SV25 命令服务 seam | `pluginApi.services.commands.register/list/find/execute` 直通 | A | 同上（服务 `commands`） | M4 | **delivered**（M4 official passthrough 交付） |
-| SV26 凭据服务 seam | `pluginApi.services.credentials.resolve/describe/set/unset` 直通 | A | 同上（服务 `credentials`） | M4 | **delivered**（M4 official passthrough 交付） |
+| SV26 凭据服务 seam | `pluginApi.services.credentials.resolve/describe/set/unset` 直通 | A | 同上（服务 `credentials`） | M4 | **delivered**（M4 official passthrough 交付；写路径已删除，见文首现状注） |
 | SV27 目录选择 capability | `pluginApi.services.directoryPicker.capability()` 直通 | A | 同上（服务 `directoryPicker`） | M4 | **delivered**（M4 official passthrough 交付） |
 | SV28 E2B sandbox seam | `pluginApi.services.e2b.cwd/runtimeRoot/getSandbox` 直通 | A | 同上（服务 `e2b`） | M4 | **delivered**（M4 official passthrough 交付） |
 | SV29 目标服务 seam | `pluginApi.services.goals.get/disarm/create/edit/pause/resume/complete/block/clear/remoteExportCreate` 直通 | A | 同上（服务 `goals`） | M4 | **delivered**（M4 official passthrough 交付） |

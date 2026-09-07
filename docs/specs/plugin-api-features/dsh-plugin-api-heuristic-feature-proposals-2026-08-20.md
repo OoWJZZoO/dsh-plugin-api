@@ -98,7 +98,7 @@ done
 | [dsh-better-sidebar](https://github.com/omdsh-dev/DSH-better-sidebar) | terminal reconnect/replay、后台任务、session-isolated layout、插件工作台 |
 | [dsh-open-in-vscode](https://github.com/omdsh-dev/dsh-open-in-vscode) | 原生 slot + compatibility adapter、Typert Remote、client/host 降级 |
 
-本地证据位于 `/home/wanwe/global_workspace/agent/dsh-plugin-api/temp/research/`；上一轮市场观察底稿见 [dsh-plugin-api-market-research-2026-08-18.md](./dsh-plugin-api-market-research-2026-08-18.md)。
+本地证据位于 `/home/wanwe/global_workspace/agent/dsh-plugin-api/temp/research/`；上一轮市场观察底稿为 `dsh-plugin-api-market-research-2026-08-18.md`（该底稿已于后续清理中移出本目录，链接不再有效；本文结论不依赖底稿原件）。
 
 ## 已有能力和去重边界
 

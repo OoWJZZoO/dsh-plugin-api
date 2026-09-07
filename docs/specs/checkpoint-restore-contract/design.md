@@ -3,6 +3,7 @@
 > feature_name: `checkpoint-restore-contract`
 > milestone: M9
 > status: SPEC1 Stage 2 已确认（v2，2026-09-06 人类批准；与 Requirements v2 同批）；Stage 3（Tasks）待进行——Tasks 经对抗性审查门通过后进入 Stage 4。
+> 现状注（2026-09-07 核对）：Tasks（Stage 3）已通过对抗性审查门，Stage 4 已交付并合入 main（实现提交 `7c94827`、终审修订 `d254d18`）；本线随 M9 集成波在 `85c0dd9` 收尾。本行之上的历史批准记录原样保留，不代表当前仍在进行。
 
 ## Status
 
