@@ -105,6 +105,13 @@ client 领域树新增根 `sessions`（facade 语义面，与 `services.*` 下�
 - client 面：`ctx.pluginApi.sessions.request/cancel` 同形 stub；请求/响应 payload 在 host 侧脱敏后序列化，client 只做形状校验；offline/rebind/通道缺失 ⇒ typed `unavailable`（v1 不排队、不静默丢弃）；connection generation/epoch 变更后旧 handle/回调 stale-guard。
 - 若既有通道在目标 profile 不可达（如 headless），client 面 availability 如实报告 degraded/unavailable，不影响 host authority。
 
+#### 现状注：request message → durable 写入的适配（实现细节 + 已知缺口）
+
+- 公共输入 `message.kind` 使用 source-audited 的请求词表（v1 `user-message`），durable 层只接受 surface message 词表（`user/message` 等）且要求完整消息形状 `{ id, role, content, source }`；门面在 durable 适配层做唯一映射（文本写入 `{ type:'text', text }`，`source: { kind:'user' }`），两侧词表互不泄漏。
+- durable append 的写入目标是**活的官方 session 对象**而非 session id；id 由 host 侧解析，公共面继续只暴露 id。
+- **已知缺口（登记，不掩盖）**：`message.attachmentRefs` 尚无 durable content block 映射。当前为 fail-closed —— 带附件的请求返回 typed `unavailable`（reason 明确指向附件未映射）且**不写入任何内容**，绝不静默丢弃附件或伪造纯文本写入。附件 content block 的公共语义与映射属交互接入线的正式范围，不在本线维护内解决。
+- 写入失败时，authority 透出 durable 层自身的原因（bounded）：「content write failed」单句无法区分被拒绝、未映射与不可用。
+
 #### 现状注：client operation status/observe 的 wire 承载（实现细节，无合同变更）
 
 已交付的 client handle 形状（`{id,ownerId,status(),observe(),dispose()}`）要求 client 能持续获知 host operation 的真实进展。当前固定的实现细节如下：
