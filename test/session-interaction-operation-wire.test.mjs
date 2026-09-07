@@ -275,3 +275,80 @@ test('rebind stops wire polling: a stale generation never observes the new one',
   await wire.timer.tick()
   assert.equal(seen.length, delivered, 'no delivery into the stale generation')
 })
+
+test('operationStatus is a read-only projection: unknown and disposed ids never forge a terminal', async () => {
+  const { host } = makeWire()
+  assert.equal(host.owner.operationStatus('op_missing'), null)
+  const accepted = await host.owner.request({ sessionId: 's1', message: { kind: 'user-message', text: 'x' } })
+  const status = host.owner.operationStatus(accepted.operation.id)
+  assert.equal(status.phase, 'accepted')
+  assert.equal(status.terminal, null)
+  host.owner.dispose()
+  assert.equal(host.owner.operationStatus(accepted.operation.id), null, 'a disposed authority answers null, not a terminal')
+})
+
+test('a host without the status method degrades honestly: the client never invents progress', async () => {
+  const host = makeHost()
+  const carrier = makeCarrier()
+  // Legacy host route: request/cancel only, no `sessions.operation.status`.
+  const route = installClientRequestRoute({
+    ctx: { get: (name) => (name === 'connection' ? carrier.connection : undefined) },
+    path: ROUTE,
+    handler: async (args) => {
+      const method = typeof args?.method === 'string' ? args.method : ''
+      if (method === 'sessions.request') {
+        const outcome = await host.owner.request(args.payload ?? {}, host.ctx)
+        return { ok: outcome.ok, code: outcome.code, operation: { id: outcome.operation?.id, ownerId: outcome.operation?.ownerId } }
+      }
+      if (method === 'sessions.cancel') return host.owner.cancel(args.payload ?? {}, host.ctx)
+      return { ok: false, code: 'unsupported', reason: `unsupported client method '${method}'` }
+    },
+    logger: { warn: () => {} },
+  })
+  const transport = createClientRequestTransport({
+    ctx: { get: (name) => (name === 'connection' ? carrier.connection : undefined) },
+    path: ROUTE,
+    pollIntervalMs: 5,
+    timer: manualTimer(),
+  })
+  const client = createClientSessionInteractionOperation({ transport, logger: { warn: () => {} } })
+  const accepted = await client.request({ sessionId: 's1', message: { kind: 'user-message', text: 'go' } })
+  assert.equal(accepted.code, 'accepted')
+  const seen = []
+  accepted.operation.observe((snapshot) => seen.push(snapshot))
+  await flush()
+  await flush()
+  // No status answer means "not observed": pending with a null terminal, never
+  // a fabricated success/error outcome.
+  const status = accepted.operation.status()
+  assert.equal(status.terminal, null)
+  assert.equal(status.phase, 'pending')
+  assert.deepEqual(seen, [])
+  route.dispose()
+})
+
+test('a disposed route answers typed unavailable without queueing or forging', async () => {
+  const wire = makeWire()
+  const first = await wire.client.request({ sessionId: 's1', message: { kind: 'user-message', text: 'go' } })
+  assert.equal(first.code, 'accepted')
+  wire.route.dispose()
+  const after = await wire.client.request({ sessionId: 's1', message: { kind: 'user-message', text: 'again' } })
+  assert.equal(after.ok, false)
+  assert.equal(after.code, 'unavailable')
+  assert.equal(wire.host.owner.operationStatus(first.operation.id).phase, 'accepted', 'nothing was queued or committed')
+})
+
+test('one terminal stays terminal: repeated status reads never rewrite the outcome', async () => {
+  const wire = makeWire()
+  const accepted = await wire.client.request({ sessionId: 's1', message: { kind: 'user-message', text: 'go' } })
+  wire.host.owner.ingestAttemptFact({ name: 'agent/attempt/start', operationId: accepted.operation.id, attemptId: 'at1', observedAt: 't1' })
+  wire.host.owner.ingestAttemptFact({ name: 'agent/attempt/end', operationId: accepted.operation.id, outcome: 'success', classification: 'completed', observedAt: 't2' })
+  await flush()
+  const first = wire.host.owner.operationStatus(accepted.operation.id)
+  assert.equal(first.phase, 'terminal')
+  assert.equal(first.terminal.outcome, 'success')
+  wire.host.owner.ingestAttemptFact({ name: 'agent/attempt/end', operationId: accepted.operation.id, outcome: 'error', classification: 'failed', observedAt: 't3' })
+  await flush()
+  const second = wire.host.owner.operationStatus(accepted.operation.id)
+  assert.deepEqual(second.terminal, first.terminal, 'late signals never rewrite a committed terminal')
+})
