@@ -104,6 +104,16 @@ client 领域树新增根 `sessions`（facade 语义面，与 `services.*` 下�
 - client 面：`ctx.pluginApi.sessions.request/cancel` 同形 stub；请求/响应 payload 在 host 侧脱敏后序列化，client 只做形状校验；offline/rebind/通道缺失 ⇒ typed `unavailable`（v1 不排队、不静默丢弃）；connection generation/epoch 变更后旧 handle/回调 stale-guard。
 - 若既有通道在目标 profile 不可达（如 headless），client 面 availability 如实报告 degraded/unavailable，不影响 host authority。
 
+#### 现状注：client operation status/observe 的 wire 承载（实现细节，无合同变更）
+
+已交付的 client handle 形状（`{id,ownerId,status(),observe(),dispose()}`）要求 client 能持续获知 host operation 的真实进展。当前固定的实现细节如下：
+
+- 路由 `/plugin-api/sessions` 除 `sessions.request` / `sessions.cancel` 外，新增方法 token `sessions.operation.status`：`{ ok:true, code:'status', status }` 返回与 handle 同源的 value-only 状态；未知/已终结并回收的 id 返回 `{ ok:false, code:'stale' }`，不伪造终态。
+- accepted outcome 在 host 端经 value-only 投影后过线：handle 的方法成员（`status()` / `observe()` / `dispose()`）永不进入 wire，由 client 依 operation id 重建等价 handle；私有对象与函数一律不过线。
+- client transport 的 `operation.observe` 以该 unary carrier 的状态路由做变更探测（carrier 本身无 push 语义）：首次投递最近快照后立即拉取一次，随后按 cadence 刷新，phase 变化即投递；到达 terminal 或 connection generation（epoch）变化即停止并清理，旧 generation 的回调绝不写入新代。
+- 调用方 abort signal 经 carrier 传播到 host 路由并注入 request spec：请求仍在途时已 abort 的 signal 不会启动新 operation（authority 立即按 `aborted` 裁决），已 running 的 operation 由既有 cancel 传播路径处理，唯一终态语义不变。
+- 未接线/通道缺失时 transport 不提供 `operation` 面，client 按既有降级路径报告 typed `unavailable`。
+
 ### 5. 并发与 retry 声明
 
 - 并发策略：同 session **exclusive**（同时只允许一个活外部 request；冲突 ⇒ `already-running`）+ **deduplicate**（同 owner 同 idempotencyKey ⇒ 共享同一 operation 引用，不合并 execution identity）；queue 不在 v1。
