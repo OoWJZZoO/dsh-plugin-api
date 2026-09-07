@@ -288,3 +288,12 @@ Stage 2 源码调研发现 feature-list 草案中的四处「示意方法名」�
 2. SV3 `workspaces`：删除不存在的 `attachSession`，改为官方方法 `create/get/list/delete/insertBefore/archiveSession/resolveByPath` + `archivedSessionIds` getter。
 3. SV9 `skills`：删除不存在的 `collect`，改为官方方法 `registerProvider/register/list/snapshot/get`。
 4. SV15 `sessionReferences`：`listCandidates` + `prepare` 为官方服务方法；URI encode/decode 改为官方包公开导出转发。
+
+## 9. 现状注：client 能力自描述口径（实现细节，无合同变更）
+
+client 半面的 `capabilities` 曾经以「成员对象是否存在」判定状态，导致三类失真：官方浏览器 leaf 仍是 pending shell 时 `services` 报 active、未安装 attention runtime 时 `attention` 报 active、请求 carrier 未接线时 `sessions` 报 active。现按与 host 相同的分级口径（active | degraded | unavailable）修正为真实状态：
+
+- `sessions` / `attention`：取各自面自报的零参 availability 探针（carrier / runtime 真实状态）；不采用鸭子类型探测，因为部分成员的 `availability(id, owner)` 是按 face 查询而非自描述。
+- `services`：聚合七个官方 leaf 记录状态 —— 全 active 为 active，部分 active 为 degraded，无 active（pending 或 disabled）为 unavailable。
+- 其余成员没有更细粒度的状态源，维持存在性判定（真实存在即 active）。
+- `require` 与 host 对齐：只有 `unavailable` 阻断消费者；`degraded` 是真实的部分可用状态，保持可调用并通过 `get` 可查询，不被静默当成缺失。

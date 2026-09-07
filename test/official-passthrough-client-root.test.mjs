@@ -32,7 +32,11 @@ test('the root and all seven pending shells are observable synchronously while t
     'events', 'remotes', 'settings', 'slots', 'lifecycle', 'codec', 'services', 'sessions', 'attention']
   assert.deepEqual([...api.capabilities.list()].sort(), [...expectedPaths].sort())
   for (const path of expectedPaths) {
-    assert.equal(api.capabilities.get(path).status, 'active', `${path} must be reported as active`)
+    // Self-describing faces answer with their real state: the seven leaves are
+    // still pending shells, so `services` is not yet active, and no attention
+    // runtime is installed in this fixture.
+    const expectedStatus = path === 'services' || path === 'attention' ? 'unavailable' : 'active'
+    assert.equal(api.capabilities.get(path).status, expectedStatus, `${path} must report ${expectedStatus}`)
   }
   // All seven official leaves are published under services.* as pending shells.
   for (const descriptor of CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS) {
@@ -48,6 +52,7 @@ test('the root and all seven pending shells are observable synchronously while t
   for (const surfaceKey of CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => d.surfaceKey)) {
     assert.equal(leafState(ctx.get('pluginApi'), surfaceKey), true, `${surfaceKey} must be active after resolving`)
   }
+  assert.equal(api.capabilities.get('services').status, 'active', 'all leaves active -> services active')
   await dispose()
 })
 
