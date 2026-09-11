@@ -113,6 +113,53 @@ test('unguarded context gaps degrade to typed unavailable instead of guessing', 
   }
 })
 
+test('surface default reads the activity correlation from the facade projection, honouring every grade', async () => {
+  const records = []
+  const activity = {
+    availability: () => ({ status: 'active' }),
+    current: () => ({ snapshot: records[records.length - 1] }),
+    history: () => ({ items: records }),
+  }
+  const ctx = {
+    get: (name) => {
+      if (name === 'agentLoop') return { [INTERACTION_BOUNDARY_SYMBOL]: makeBoundary() }
+      if (name === 'pluginApi') {
+        return { isActive: true, sessions: { durable: { appendMessage: async () => ({ ok: true }) }, activity } }
+      }
+      if (name === 'sessions') return { get: (id) => ({ id }) }
+      return undefined
+    },
+  }
+  const surface = createSessionInteractionOperation({ ctx, ownerOf: () => 'o' })
+
+  const out = await surface.request({ sessionId: 's1', message: { kind: 'user-message', text: 'x' } })
+  assert.equal(out.activity.confidence, 'unknown', 'a healthy projection without evidence is unknown')
+
+  // The projection evidences the execution: the surface mirrors its id and grade.
+  records.push({
+    activityId: 'act_1',
+    execution: { executionId: out.activity.executionId, correlationConfidence: 'observed' },
+  })
+  assert.equal(out.operation.status().activity.activityId, 'act_1')
+  assert.equal(out.operation.status().activity.confidence, 'observed')
+
+  // A record that is not graded evidenced is never promoted by matching alone.
+  const weak = await surface.request({ sessionId: 's2', message: { kind: 'user-message', text: 'y' } })
+  records.push({
+    activityId: 'act_2',
+    execution: { executionId: weak.activity.executionId, correlationConfidence: 'unknown' },
+  })
+  assert.equal(weak.operation.status().activity.activityId, null)
+
+  // A degraded probe and a throwing probe both report unavailable, never a guess.
+  activity.availability = () => ({ status: 'degraded', reason: 'sources=agent' })
+  const degraded = await surface.request({ sessionId: 's3', message: { kind: 'user-message', text: 'z' } })
+  assert.equal(degraded.activity.confidence, 'unavailable')
+  activity.availability = () => { throw new Error('probe blew up') }
+  const throwing = await surface.request({ sessionId: 's4', message: { kind: 'user-message', text: 'w' } })
+  assert.equal(throwing.activity.confidence, 'unavailable')
+})
+
 test('resolveAgentLoopBoundary finds the boundary through the surface default', async () => {
   const boundary = makeBoundary()
   const ctx = {

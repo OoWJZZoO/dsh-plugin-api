@@ -97,7 +97,7 @@ function makeCarrier() {
   return { connection, handlers }
 }
 
-function makeHost() {
+function makeHost({ activity } = {}) {
   const boundary = makeBoundary()
   const appends = []
   const ctx = {
@@ -108,7 +108,10 @@ function makeHost() {
       if (name === 'pluginApi') {
         return {
           isActive: true,
-          sessions: { durable: { appendMessage: async () => ({ ok: true }) } },
+          sessions: {
+            durable: { appendMessage: async () => ({ ok: true }) },
+            ...(activity === undefined ? {} : { activity }),
+          },
         }
       }
       if (name === 'sessions') return { get: (id) => (typeof id === 'string' && id.startsWith('s') ? { id } : undefined) }
@@ -128,8 +131,8 @@ function makeHost() {
   return { owner, ctx, boundary, appends }
 }
 
-function makeWire({ pollIntervalMs = 5, timer = manualTimer() } = {}) {
-  const host = makeHost()
+function makeWire({ pollIntervalMs = 5, timer = manualTimer(), activity } = {}) {
+  const host = makeHost({ activity })
   const carrier = makeCarrier()
   const routeCtx = { get: (name) => (name === 'connection' ? carrier.connection : undefined) }
   const route = installClientRequestRoute({
@@ -366,4 +369,40 @@ test('owner attribution follows the caller fiber, never a caller-reported string
   const viaWire = await handler({ method: 'sessions.request', payload: { sessionId: 's3' } })
   assert.equal(viaWire.operation.ownerId, 'client-route')
   assert.equal(viaWire.operation.ownerId, host.ctx.fiber.name)
+})
+
+test('the evidenced activity correlation rides the carrier as a value and reaches the client handle', async () => {
+  const records = []
+  const activity = {
+    availability: () => ({ status: 'active' }),
+    current: () => ({ snapshot: records[records.length - 1] }),
+    history: () => ({ items: records }),
+  }
+  const wire = makeWire({ activity })
+  const accepted = await wire.client.request({ sessionId: 's1', message: { kind: 'user-message', text: 'hello' } })
+  assert.equal(accepted.code, 'accepted')
+  assert.equal(accepted.activity.confidence, 'unknown', 'a healthy projection without evidence stays unknown across the carrier')
+  assert.equal(accepted.activity.activityId, null)
+
+  // The projection evidences the execution identity the host handed out.
+  records.push({
+    activityId: 'act_wire',
+    execution: { executionId: accepted.activity.executionId, correlationConfidence: 'observed' },
+  })
+  const handler = createSessionInteractionRouteHandler({ owner: wire.host.owner, ctx: wire.host.ctx })
+  const status = await handler({ method: 'sessions.operation.status', payload: { operationId: accepted.operation.id } })
+  assert.equal(status.ok, true)
+  assert.deepEqual(status.status.activity, {
+    activityId: 'act_wire',
+    executionId: accepted.activity.executionId,
+    confidence: 'observed',
+  })
+  assert.equal(typeof status.status.activity.status, 'undefined', 'the wire carries values only, never facade methods')
+
+  // The client handle reads the same correlation back through the carrier.
+  accepted.operation.status() // first read kicks the on-demand refresh
+  await flush()
+  const snapshot = accepted.operation.status()
+  assert.equal(snapshot.activity.activityId, 'act_wire')
+  assert.equal(snapshot.activity.confidence, 'observed')
 })

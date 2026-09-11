@@ -51,6 +51,7 @@ function makeAuthority(overrides = {}) {
       durableAppend: overrides.durableAppend ?? (async () => ({ ok: true, seq: 1 })),
       ownerOf: overrides.ownerOf ?? (() => 'o1'),
       userCtx: overrides.userCtx,
+      readActivityCorrelation: overrides.readActivityCorrelation,
       now: overrides.now ?? (() => new Date('2026-09-06T00:00:00Z')),
       timer: overrides.timer,
       cancelConfirmTimeoutMs: overrides.cancelConfirmTimeoutMs ?? 10,
@@ -71,7 +72,11 @@ test('accepted request returns a frozen discriminated outcome with a handle and 
   assert.equal(out.operation.ownerId, 'o1')
   assert.ok(out.operation.id.startsWith('op_'))
   assert.equal(out.activity.executionId.slice(0, 3), 'ex_')
-  assert.equal(out.activity.confidence, 'unknown')
+  // No projection reader is wired in this standalone fixture: the projection
+  // is unreachable, so the correlation says `unavailable` rather than
+  // pretending evidence was awaited from a healthy source (Requirement 6).
+  assert.equal(out.activity.confidence, 'unavailable')
+  assert.equal(out.activity.activityId, null)
   assert.ok(Object.isFrozen(out))
   assert.equal(boundary.admitted.length, 1)
   assert.equal(boundary.admitted[0].idempotencyKey, 'k1')
@@ -324,6 +329,94 @@ test('accepted handle exposes the frozen declared retry capability', async () =>
   assert.ok(Object.isFrozen(withKey.operation.capability))
   const withoutKey = await authority.request({ sessionId: 's2', message: { kind: 'user-message', text: 'y' } })
   assert.deepEqual(withoutKey.operation.capability, { idempotent: false, autoRetry: false, failClosed: true })
+})
+
+test('activity correlation: exposed once the shared projection evidences the execution', async () => {
+  const reads = []
+  let evidenced = false
+  const readActivityCorrelation = ({ executionId }) => {
+    reads.push(executionId)
+    return evidenced ? { confidence: 'observed', activityId: 'act_1' } : { confidence: 'unknown' }
+  }
+  const { authority } = makeAuthority({ readActivityCorrelation })
+  const out = await authority.request({ sessionId: 's1', message: { kind: 'user-message', text: 'hi' } })
+  assert.equal(out.activity.confidence, 'unknown', 'a healthy projection without evidence is unknown')
+  assert.equal(out.activity.activityId, null)
+  assert.equal(reads.includes(out.activity.executionId), true, 'the reader is consulted with the facade execution identity')
+
+  const observed = []
+  const off = out.operation.observe((status) => observed.push(status.activity))
+  evidenced = true
+  const status = out.operation.status()
+  assert.deepEqual(status.activity, {
+    activityId: 'act_1',
+    executionId: out.activity.executionId,
+    confidence: 'observed',
+  })
+  assert.equal(observed.at(-1).activityId, 'act_1', 'observers are notified when the correlation appears')
+  // an evidenced correlation is stable: it is not re-consulted on later reads
+  const readsAfterSettle = reads.length
+  out.operation.status()
+  assert.equal(reads.length, readsAfterSettle)
+  off()
+})
+
+test('activity correlation: the projection grade is passed through, never upgraded or invented', async () => {
+  const reconstructed = makeAuthority({
+    readActivityCorrelation: () => ({ confidence: 'reconstructed', activityId: 'act_r' }),
+  }).authority
+  const out = await reconstructed.request({ sessionId: 's1', message: { kind: 'user-message', text: 'hi' } })
+  assert.equal(out.activity.activityId, 'act_r')
+  assert.equal(out.activity.confidence, 'reconstructed', 'a weaker grade is never upgraded to observed')
+
+  // an evidenced answer without a usable identity degrades to `unknown`: the
+  // authority never claims evidence it cannot name.
+  const anonymous = makeAuthority({ readActivityCorrelation: () => ({ confidence: 'observed' }) }).authority
+  const second = await anonymous.request({ sessionId: 's1', message: { kind: 'user-message', text: 'hi' } })
+  assert.equal(second.activity.activityId, null)
+  assert.equal(second.activity.confidence, 'unknown')
+})
+
+test('activity correlation: a throwing or degraded projection reports unavailable, never a guess', async () => {
+  const throwing = makeAuthority({
+    readActivityCorrelation: () => { throw new Error('projection blew up') },
+  }).authority
+  const out = await throwing.request({ sessionId: 's1', message: { kind: 'user-message', text: 'hi' } })
+  assert.equal(out.activity.confidence, 'unavailable')
+  assert.equal(out.activity.activityId, null)
+
+  let healthy = true
+  const { authority } = makeAuthority({
+    readActivityCorrelation: () => (healthy ? { confidence: 'unknown' } : { confidence: 'unavailable' }),
+  })
+  const first = await authority.request({ sessionId: 's1', message: { kind: 'user-message', text: 'hi' } })
+  assert.equal(first.activity.confidence, 'unknown')
+  healthy = false
+  assert.equal(first.operation.status().activity.confidence, 'unavailable', 'degradation is folded into the next read')
+})
+
+test('activity correlation: a terminal commit folds in the evidence available at commit time', async () => {
+  let evidenced = false
+  const { authority } = makeAuthority({
+    readActivityCorrelation: () => (evidenced ? { confidence: 'observed', activityId: 'act_t' } : { confidence: 'unknown' }),
+  })
+  const out = await authority.request({ sessionId: 's1', message: { kind: 'user-message', text: 'hi' } })
+  authority.ingestAttemptFact({
+    name: 'agent/attempt/start', sessionId: 's1', operationId: out.operation.id,
+    executionId: out.activity.executionId, attemptId: 'a1',
+  })
+  evidenced = true
+  authority.ingestAttemptFact({
+    name: 'agent/attempt/end', sessionId: 's1', operationId: out.operation.id,
+    executionId: out.activity.executionId, attemptId: 'a1', outcome: 'success', followUp: 'none',
+  })
+  const status = out.operation.status()
+  assert.equal(status.phase, 'terminal')
+  assert.equal(status.terminal.outcome, 'success')
+  assert.equal(status.activity.activityId, 'act_t')
+  assert.equal(status.activity.confidence, 'observed')
+  // the correlation refresh never rewrites the committed terminal
+  assert.equal(out.operation.status().terminal.outcome, 'success')
 })
 
 test('direct durable append is not interpreted as a processing request (no admission, no operation, no acceptance effect)', async () => {

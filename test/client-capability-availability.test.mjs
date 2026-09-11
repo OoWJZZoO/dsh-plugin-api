@@ -61,6 +61,23 @@ test('attention without an installed runtime is unavailable, never an active she
   await dispose()
 })
 
+test('a leaf that cannot load degrades services and disables exactly that leaf', async () => {
+  const { ctx, loader } = bootFixture({ deferred: true })
+  const dispose = apply(ctx)
+  const api = ctx.get('pluginApi')
+  const broken = DESCRIPTORS[0]
+  loader.rejectPending(broken.moduleId)
+  for (const descriptor of DESCRIPTORS.slice(1)) loader.resolvePending(descriptor.moduleId)
+  await settleAll()
+  assert.equal(api.capabilities.get('services').status, 'degraded', 'one disabled leaf is a partial state, not a full capability')
+  assert.throws(
+    () => api.services[broken.serviceName].registerSource({}),
+    (error) => error?.feature === broken.surfaceKey,
+    'the disabled leaf typed-fails instead of serving through a shell',
+  )
+  await dispose()
+})
+
 test('sessions reports the request carrier state instead of the facade shape', async () => {
   const { ctx, loader } = bootFixture({ deferred: true })
   const dispose = apply(ctx)

@@ -234,3 +234,46 @@ test('m9: client-request bridge routes session request/cancel over the RPC carri
   assert.notEqual(outcome.ok, undefined)
   assert.equal(outcome.code === 'accepted' || outcome.code === 'duplicate', true, 'host authority answers the typed request')
 })
+
+test('m9: an accepted operation exposes the activity correlation the projection evidences', async () => {
+  const { ctx, state } = makeBootCtx({ withBoundary: true })
+  apply(ctx)
+  const outcome = await state.pluginApi.sessions.request(
+    { sessionId: 's1', content: [{ type: 'text', text: 'hi' }], idempotencyKey: 'k-corr' },
+    undefined,
+  )
+  assert.equal(outcome.code, 'accepted')
+  const executionId = outcome.activity.executionId
+  // Healthy projection, no evidence yet: `unknown`, never a fabricated id.
+  assert.equal(outcome.activity.activityId, null)
+  assert.equal(outcome.activity.confidence, 'unknown')
+
+  const fire = (name, payload) => {
+    for (const entry of ctx.listeners.filter((entry) => entry.name === name)) entry.listener(payload)
+  }
+  fire('agent/attempt/start', {
+    attemptId: 'att-corr', operationId: outcome.operation.id, executionId,
+    sessionId: 's1', seq: 7, observedAt: '2026-09-06T00:01:00.000Z',
+  })
+
+  // The projection owns the activity identity; the operation mirrors exactly
+  // that id instead of minting its own from the event sequence.
+  const record = state.pluginApi.sessions.activity.current('s1')
+  assert.ok(record.snapshot, 'the attempt fact produced an activity record')
+  assert.equal(record.snapshot.execution.executionId, executionId)
+  const correlated = outcome.operation.status().activity
+  assert.equal(correlated.activityId, record.snapshot.activityId)
+  assert.equal(correlated.executionId, executionId)
+  assert.equal(correlated.confidence, 'observed')
+
+  fire('agent/attempt/end', {
+    attemptId: 'att-corr', operationId: outcome.operation.id, executionId,
+    sessionId: 's1', seq: 8, observedAt: '2026-09-06T00:01:02.000Z',
+    outcome: 'success', reason: null, classification: null, followUp: 'none',
+  })
+  const terminal = outcome.operation.status()
+  assert.equal(terminal.phase, 'terminal')
+  assert.equal(terminal.terminal.outcome, 'success')
+  assert.equal(terminal.activity.activityId, record.snapshot.activityId, 'the correlation survives the terminal')
+  assert.equal(terminal.activity.confidence, 'observed')
+})
