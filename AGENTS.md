@@ -126,9 +126,9 @@ agent/dsh-plugin-api/
 
 以下条款只约束 OpenAI Codex desktop/API 的协作运行时；其他 agent harness、普通人工流程和 DSH 运行时不因本节改变权限模型或工作流。
 
-已获批任务书/设计文档中出现的「Luna(max) 审查」字样（如 `plugin-api-repo-normalization` 的整体审查约定）是 Codex 协作运行时的审查规格，不代表仓库对非 Codex harness 的模型要求。非 Codex harness（如 DSH）执行同一审查门时，按 §3.2 相应模式的规则派发**阻塞式只读对抗性审查**（`run_in_background: false`），使用该 harness 可用的最强审查能力；不得因为没有 Luna 模型而阻塞或中断该门，不得编造/代答 Luna 审查结论，不得尝试设置 Codex 专属参数。SPEC1 的 Stage 0–2 不设审查门，Codex 在该模式不派发任何审查子代理；SPEC3 的 Stage 4 全局终审属于本节所称审查门，同样必须按上述 Luna(max) 只读子代理规则阻塞执行。
+已获批任务书/设计文档中出现的「Luna(max) 审查」字样（如 `plugin-api-repo-normalization` 的整体审查约定）是该制品成文时的 Codex 协作运行时审查规格；Codex 审查门的现行模型规格统一为本节规定的 **DeepSeek-Flash(max)**（见下），历史制品中的旧字样一律按现行规格执行，已交付制品中已记录的审查事实不改写。该字样不代表仓库对非 Codex harness 的模型要求。非 Codex harness（如 DSH）执行同一审查门时，按 §3.2 相应模式的规则派发**阻塞式只读对抗性审查**（`run_in_background: false`），使用该 harness 可用的最强审查能力；不得因为没有对应审查模型而阻塞或中断该门，不得编造/代答审查结论，不得尝试设置 Codex 专属参数。SPEC1 的 Stage 0–2 不设审查门，Codex 在该模式不派发任何审查子代理；SPEC3 的 Stage 4 全局终审属于本节所称审查门，同样必须按上述 DeepSeek-Flash(max) 只读子代理规则阻塞执行。
 
-- Codex 调用任何子 agent 时，必须显式传入 `model: gpt-5.6-luna` 与 `reasoning_effort: max`；不得省略 `model`、依赖主 agent 继承值，或选择 `gpt-5.6-sol` / 其他模型。为使模型覆盖生效，`fork_turns` 必须显式使用 `none` 或有界的正整数，不能使用会继承主 agent 模型且不接受覆盖的全量 fork。若 Luna 不可用，必须停止派发并报告阻塞，不得自动回退到其他模型。
+- Codex 调用任何子 agent 时，必须显式传入 `model: deepseek/deepseek-flash` 与 `reasoning_effort: max`（即「DeepSeek-Flash(max)」）；不得省略 `model`、依赖主 agent 继承值，或改用其他模型（含历史规格中的 `gpt-5.6-luna` 等）。为使模型覆盖生效且审查上下文独立，必须使用不继承主 agent 上下文的隔离派发（本运行时为 `fork_context: false`；提供 `fork_turns` 的等价运行时须显式使用 `none` 或有界的正整数），不能使用会继承主 agent 模型且不接受覆盖的全量 fork。若运行时无法以 DeepSeek-Flash(max) 派发（模型不可用或参数不被接受），必须停止派发并报告阻塞，不得自动回退到其他模型。
 - 创建子 agent 的首条提示必须以明确的角色栏开始，并把以下内容标记为不可因上下文压缩、省略或改写的约束：`[COMPRESSION-CRITICAL] ROLE=READ-ONLY-SUBAGENT`、本 agent 不是主 agent、不得修改任何文件或 worktree、不得提交、不得调用写工具、不得派生/唤起子 agent、只能返回审查结论。该角色栏还必须写明审查范围、对应的顶层任务和预期输出；不得只写“请审查”之类的短提示。
 - Codex 派出的对抗审查 agent 是**只读审查员**：不得调用写文件工具、不得提交、不得修改 worktree、不得派生或唤起任何子 agent。审查提示词中的“只读”必须视为硬性验收条件，而不是建议。
 - 子 agent 派出后，主 agent 必须使用协作运行时提供的阻塞等待原语等待其最终结论；等待期间不得循环轮询其状态。
