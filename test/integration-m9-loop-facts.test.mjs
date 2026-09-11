@@ -235,6 +235,38 @@ test('m9: client-request bridge routes session request/cancel over the RPC carri
   assert.equal(outcome.code === 'accepted' || outcome.code === 'duplicate', true, 'host authority answers the typed request')
 })
 
+test('m9: a pending approval surfaces as the operation waiting phase from the shared evidence', async () => {
+  const { ctx, state } = makeBootCtx({ withBoundary: true })
+  apply(ctx)
+  const outcome = await state.pluginApi.sessions.request(
+    { sessionId: 's1', content: [{ type: 'text', text: 'hi' }], idempotencyKey: 'k-wait' },
+    undefined,
+  )
+  assert.equal(outcome.code, 'accepted')
+  const executionId = outcome.activity.executionId
+  const fire = (name, ...args) => {
+    for (const entry of ctx.listeners.filter((entry) => entry.name === name)) entry.listener(...args)
+  }
+  fire('agent/attempt/start', {
+    attemptId: 'att-wait', operationId: outcome.operation.id, executionId,
+    sessionId: 's1', seq: 9, observedAt: '2026-09-06T00:02:00.000Z',
+  })
+  assert.equal(outcome.operation.status().phase, 'running')
+
+  // Official durable approval evidence reaches the shared projection, which
+  // grades the wait; the operation mirrors that grade instead of guessing and
+  // never resolves the approval or emits its own notification.
+  fire('session/event', { id: 's1' }, { type: 'approval/asked', seq: 10, time: Date.now(), data: { id: 'ap-1', toolName: 'bash' } })
+  const record = state.pluginApi.sessions.activity.current('s1')
+  assert.equal(record.snapshot.status.waiting.kind, 'approval')
+  const waited = outcome.operation.status()
+  assert.equal(waited.phase, 'waiting')
+  assert.equal(waited.terminal, null, 'a pending approval is not a terminal outcome')
+
+  fire('session/event', { id: 's1' }, { type: 'approval/decided', seq: 11, time: Date.now(), data: { id: 'ap-1', outcome: 'approved' } })
+  assert.equal(outcome.operation.status().phase, 'running', 'the wait clears on the official decision evidence')
+})
+
 test('m9: an accepted operation exposes the activity correlation the projection evidences', async () => {
   const { ctx, state } = makeBootCtx({ withBoundary: true })
   apply(ctx)

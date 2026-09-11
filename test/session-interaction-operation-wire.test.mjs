@@ -376,6 +376,7 @@ test('the evidenced activity correlation rides the carrier as a value and reache
   const activity = {
     availability: () => ({ status: 'active' }),
     current: () => ({ snapshot: records[records.length - 1] }),
+    get: (activityId) => ({ snapshot: records.find((record) => record.activityId === activityId) }),
     history: () => ({ items: records }),
   }
   const wire = makeWire({ activity })
@@ -405,4 +406,17 @@ test('the evidenced activity correlation rides the carrier as a value and reache
   const snapshot = accepted.operation.status()
   assert.equal(snapshot.activity.activityId, 'act_wire')
   assert.equal(snapshot.activity.confidence, 'observed')
+
+  // Waiting evidence reaches the client handle as the waiting phase through
+  // the same carrier, and clears the same way.
+  records[0].status = { phase: 'waiting', waiting: { kind: 'approval', confidence: 'observed' } }
+  const waited = await handler({ method: 'sessions.operation.status', payload: { operationId: accepted.operation.id } })
+  assert.equal(waited.status.phase, 'waiting')
+  const phases = []
+  accepted.operation.observe((snapshot) => phases.push(snapshot.phase))
+  await wire.timer.tick()
+  assert.equal(phases.at(-1), 'waiting', 'the waiting phase is delivered to the client observer')
+  records[0].status = null
+  await wire.timer.tick()
+  assert.equal(phases.at(-1), 'accepted', 'the wait ends with the evidence (no attempt had started here)')
 })

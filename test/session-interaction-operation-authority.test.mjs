@@ -334,15 +334,15 @@ test('accepted handle exposes the frozen declared retry capability', async () =>
 test('activity correlation: exposed once the shared projection evidences the execution', async () => {
   const reads = []
   let evidenced = false
-  const readActivityCorrelation = ({ executionId }) => {
-    reads.push(executionId)
+  const readActivityCorrelation = ({ executionId, activityId }) => {
+    reads.push({ executionId, activityId })
     return evidenced ? { confidence: 'observed', activityId: 'act_1' } : { confidence: 'unknown' }
   }
   const { authority } = makeAuthority({ readActivityCorrelation })
   const out = await authority.request({ sessionId: 's1', message: { kind: 'user-message', text: 'hi' } })
   assert.equal(out.activity.confidence, 'unknown', 'a healthy projection without evidence is unknown')
   assert.equal(out.activity.activityId, null)
-  assert.equal(reads.includes(out.activity.executionId), true, 'the reader is consulted with the facade execution identity')
+  assert.equal(reads.some((read) => read.executionId === out.activity.executionId), true, 'the reader is consulted with the facade execution identity')
 
   const observed = []
   const off = out.operation.observe((status) => observed.push(status.activity))
@@ -354,10 +354,12 @@ test('activity correlation: exposed once the shared projection evidences the exe
     confidence: 'observed',
   })
   assert.equal(observed.at(-1).activityId, 'act_1', 'observers are notified when the correlation appears')
-  // an evidenced correlation is stable: it is not re-consulted on later reads
+  // A known correlation is re-consulted by activity id, so the projection can
+  // answer cheaply while its waiting marker may still change.
   const readsAfterSettle = reads.length
   out.operation.status()
-  assert.equal(reads.length, readsAfterSettle)
+  assert.equal(reads.length, readsAfterSettle + 1)
+  assert.equal(reads.at(-1).activityId, 'act_1')
   off()
 })
 
@@ -393,6 +395,56 @@ test('activity correlation: a throwing or degraded projection reports unavailabl
   assert.equal(first.activity.confidence, 'unknown')
   healthy = false
   assert.equal(first.operation.status().activity.confidence, 'unavailable', 'degradation is folded into the next read')
+})
+
+test('waiting status: the projection waiting evidence drives the phase and never fabricates a terminal', async () => {
+  let waiting = null
+  const { authority } = makeAuthority({
+    readActivityCorrelation: () => ({ confidence: 'observed', activityId: 'act_w', waiting }),
+  })
+  const out = await authority.request({ sessionId: 's1', message: { kind: 'user-message', text: 'hi' } })
+  assert.equal(out.operation.status().phase, 'accepted')
+
+  authority.ingestAttemptFact({
+    name: 'agent/attempt/start', sessionId: 's1', operationId: out.operation.id,
+    executionId: out.activity.executionId, attemptId: 'a1',
+  })
+  assert.equal(out.operation.status().phase, 'running')
+
+  const seen = []
+  const off = out.operation.observe((status) => seen.push(status.phase))
+  waiting = { kind: 'approval', confidence: 'observed' }
+  const waited = out.operation.status()
+  assert.equal(waited.phase, 'waiting')
+  assert.equal(waited.terminal, null, 'a pending approval is a wait, never a fabricated terminal')
+  assert.equal(seen.at(-1), 'waiting', 'observers see the waiting phase')
+
+  waiting = null
+  assert.equal(out.operation.status().phase, 'running', 'the wait ends with the same evidence that opened it')
+  off()
+})
+
+test('waiting status: a terminal commit ends the wait and ungraded markers are refused', async () => {
+  const waiting = { kind: 'approval', confidence: 'observed' }
+  const { authority } = makeAuthority({
+    readActivityCorrelation: () => ({ confidence: 'observed', activityId: 'act_t', waiting }),
+  })
+  const out = await authority.request({ sessionId: 's1', message: { kind: 'user-message', text: 'hi' } })
+  assert.equal(out.operation.status().phase, 'waiting', 'waiting evidence at accept time governs the opening phase')
+  authority.ingestAttemptFact({
+    name: 'agent/attempt/end', sessionId: 's1', operationId: out.operation.id,
+    executionId: out.activity.executionId, attemptId: 'a1', outcome: 'success', followUp: 'none',
+  })
+  const terminal = out.operation.status()
+  assert.equal(terminal.phase, 'terminal')
+  assert.equal(terminal.terminal.outcome, 'success')
+
+  // A marker the projection did not grade is not evidence this facade may use.
+  const strict = makeAuthority({
+    readActivityCorrelation: () => ({ confidence: 'observed', activityId: 'act_s', waiting: { kind: 'approval' } }),
+  }).authority
+  const second = await strict.request({ sessionId: 's1', message: { kind: 'user-message', text: 'hi' } })
+  assert.equal(second.operation.status().phase, 'accepted', 'an ungraded marker never becomes a waiting status')
 })
 
 test('activity correlation: a terminal commit folds in the evidence available at commit time', async () => {

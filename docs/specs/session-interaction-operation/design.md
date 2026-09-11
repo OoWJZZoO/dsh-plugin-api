@@ -5,6 +5,7 @@
 > status: SPEC1 Stage 2 已确认（v2，2026-09-06 人类批准；与 Requirements v2 同批）；Stage 3（Tasks）待进行——Tasks 经对抗性审查门通过后进入 Stage 4。
 > 现状注（2026-09-07 核对）：Tasks（Stage 3）已通过对抗性审查门，Stage 4 已交付并合入 main（实现提交 `fe5b3c7`、终审修订 `4992090`）；本线随 M9 集成波在 `85c0dd9` 收尾。本行之上的历史批准记录原样保留，不代表当前仍在进行。
 > 现状注（2026-09-11 维护）：Data Models §2 与 Hook Exposure 表的 activity 关联在维护中补齐——authority 经 `sessions.activity` 的公共只读面按 facade execution identity 读取投影**已证实**的 activity 记录，采用投影自身的证据分级（`observed`/`reconstructed`，永不升格），投影缺位/降级记 `unavailable`、投影健康但尚无证据记 `unknown`（三态不互代）；读取器在 `lib/session-interaction-operation.js` 以 ctx 派生默认注入，接线与回归见 `test/session-interaction-operation-authority.test.mjs`、`test/session-interaction-operation.test.mjs`、`test/session-interaction-operation-wire.test.mjs`、`test/integration-m9-loop-facts.test.mjs`。作者权仍在投影 owner，本线不建第二套 activity 状态机；历史批准记录不改写。
+> 现状注（2026-09-11 维护，第二次）：同一读取路径同时承载 Data Models §2 的 `waiting` 相位——投影对同一条已证实记录发布的 waiting 标记（`approval`/`question`/`user-message`/`tool`/`queued`，含其证据分级）经同一读者折入 operation status：`waiting` 相位优先于 attempt 派生相位，证据清除即回到 `accepted`/`running`，终态提交终止等待；本线不代答审批、不发 UI 通知、不产生 waiting 证据。回归见上述四个测试文件中新增的 waiting 用例（含装配级 `approval/asked` → `waiting` → `approval/decided` → `running`）。
 
 ## Status
 

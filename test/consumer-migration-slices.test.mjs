@@ -2,10 +2,12 @@
  * Consumer migration slices over the existing approved contract.
  *
  * Each slice records the original consumer behavior, the current public call
- * that carries it, and the observed result — executed against the real facade
- * (no stand-in object injected straight into an internal registry). Slices only
- * cover behavior the current contract already claims; anything that needs a new
- * shape is recorded as a gap instead of being silently approximated.
+ * that carries it, and the observed result — executed against the real
+ * component or the real mounted facade, never a stand-in injected straight
+ * into an internal registry (slice A runs the real events bus with a Cordis-
+ * shaped ctx; B–E boot the mounted facade/leaf path). Slices only cover
+ * behavior the current contract already claims; anything that needs a new shape
+ * is recorded as a gap instead of being silently approximated.
  *
  * | slice | original behavior | current public call | observed result |
  * |---|---|---|---|
@@ -17,7 +19,9 @@
  *
  * Carried by existing tests instead of being duplicated here (re-checked
  * against these slice semantics, never inferred from a file name):
- * - the six official llm directory methods merged under `services.llm`:
+ * - the six official llm directory methods as a leaf member set:
+ *   `test/official-host-namespaces.test.mjs` (member set and receiver/argument
+ *   preservation); their merged wiring under the mounted `services.llm` leaf:
  *   `test/host-namespace-integration.test.mjs`;
  * - the client capability self-description over these same leaves:
  *   `test/client-capability-availability.test.mjs`.

@@ -118,6 +118,7 @@ test('surface default reads the activity correlation from the facade projection,
   const activity = {
     availability: () => ({ status: 'active' }),
     current: () => ({ snapshot: records[records.length - 1] }),
+    get: (activityId) => ({ snapshot: records.find((record) => record.activityId === activityId) }),
     history: () => ({ items: records }),
   }
   const ctx = {
@@ -142,6 +143,13 @@ test('surface default reads the activity correlation from the facade projection,
   })
   assert.equal(out.operation.status().activity.activityId, 'act_1')
   assert.equal(out.operation.status().activity.confidence, 'observed')
+
+  // Waiting evidence rides the same read surface: the phase follows the
+  // projection's graded marker and clears with it (no second state machine).
+  records[0].status = { phase: 'waiting', waiting: { kind: 'approval', confidence: 'observed' } }
+  assert.equal(out.operation.status().phase, 'waiting')
+  records[0].status = null
+  assert.equal(out.operation.status().phase, 'accepted')
 
   // A record that is not graded evidenced is never promoted by matching alone.
   const weak = await surface.request({ sessionId: 's2', message: { kind: 'user-message', text: 'y' } })
