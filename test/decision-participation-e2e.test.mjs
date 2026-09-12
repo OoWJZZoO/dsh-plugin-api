@@ -131,11 +131,11 @@ function createMockCtx() {
   return { ctx, state, hooks, hooksOf }
 }
 
-/** Official agent/pre-step producer shape (dsh-agent-loop preStep). */
+/** Official agent/pre-step producer shape (dsh-agent-loop preStep): the official fused dispatcher injects `agent` into the payload. */
 async function officialPreStep(ctx, { claimed, turn, step, signal }) {
   return await ctx.waterfall(
     'agent/pre-step',
-    { messages: claimed, turn, step, signal },
+    { agent: { id: 'agent-e2e' }, messages: claimed, turn, step, signal },
     () => Promise.resolve({ kind: 'enter', messages: [...claimed, 'official-context'] }),
   )
 }
@@ -504,4 +504,44 @@ test('events.decisions rejects diverted decision needs with the carrying face na
   const unknownResult = state.pluginApi.events.decisions.register('agent/created', { id: 'x', decide: () => undefined })
   assert.equal(unknownResult.code, 'unsupported')
   assert.match(unknownResult.reason, /fs\/write-intent/)
+})
+
+test('a decision settling after the dispatch was aborted never becomes the step decision (official abort re-check governs)', async () => {
+  const { ctx, state } = createMockCtx()
+  apply(ctx)
+
+  const controller = new AbortController()
+  const late = state.pluginApi.agents.decisions.register({
+    point: 'pre-step',
+    id: 'late-settler',
+    async decide(context) {
+      // The dispatch is aborted while the policy is in flight; the decision
+      // settles only afterwards.
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      assert.ok(controller.signal.aborted, 'the signal is aborted while the policy is settling')
+      return { kind: 'reject', reason: 'too late' }
+    },
+  })
+
+  // Official producer semantics: await the waterfall, then re-check abort
+  // before consuming the decision (dsh-agent-loop preStep/turn). The dispatch
+  // is aborted from outside (the loop driver cancels) while the policy is in
+  // flight.
+  async function officialPreStepWithAbortRecheck() {
+    const decision = await ctx.waterfall(
+      'agent/pre-step',
+      { agent: { id: 'agent-e2e' }, messages: ['user-input'], turn: 1, step: 0, signal: controller.signal },
+      () => Promise.resolve({ kind: 'enter', messages: ['user-input', 'official-context'] }),
+    )
+    controller.signal.throwIfAborted()
+    return decision
+  }
+  const pending = officialPreStepWithAbortRecheck()
+  setTimeout(() => controller.abort(), 5)
+  await assert.rejects(
+    pending,
+    (error) => error instanceof Error && error.name === 'AbortError',
+    'the late decision never becomes the step decision: the official abort re-check fires first',
+  )
+  late.dispose()
 })

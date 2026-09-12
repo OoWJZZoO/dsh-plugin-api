@@ -242,3 +242,61 @@ test('facade: the feature disposer removes every registry entry and stops the ch
   assert.deepEqual(outcome, { kind: 'enter', messages: ['default'] })
   assert.equal(bus.hooksOf ? true : true, true)
 })
+
+test('facade: turn-stopping availability rejects a replacement service whose component marker is foreign', () => {
+  const cordisCtx = createMockCordisCtx()
+  const foreignMarker = Symbol.for('dsh-plugin-api.agent-loop.contract')
+  cordisCtx.get = (name) => {
+    if (name === 'agentLoop') {
+      return { [foreignMarker]: { package: '@deepseek-ai/dsh-plugin-api-someone-else', rowId: 'foreign-row' } }
+    }
+    return undefined
+  }
+  cordisCtx.loader = { entries: () => [
+    { options: { id: 'agent-loop', name: '@deepseek-ai/dsh-agent-loop', disabled: true } },
+    { options: { id: 'plugin-api-agent-loop', name: '@deepseek-ai/dsh-plugin-api-agent-loop', disabled: false }, fiber: {} },
+  ] }
+  const warns = []
+  const bus = createEventsBus({ ctx: cordisCtx, catalog: coreCatalog, logger: createLogger(warns) })
+  const feature = createDecisionParticipationFeature({
+    ctx: cordisCtx,
+    eventsBus: bus,
+    logger: createLogger(warns),
+    facadeContract: FACADE_CONTRACT,
+  })
+  const agents = feature.providers.agents({})
+  const result = agents.register({ point: 'turn-stopping', id: 'p', decide: () => undefined })
+  assert.equal(result.code, 'unavailable')
+  assert.match(result.reason, /identity does not match/)
+  // The other agent points stay unaffected.
+  const active = agents.register({ point: 'pre-step', id: 'q', decide: () => undefined })
+  assert.ok(active.generation)
+  active.dispose()
+})
+
+test('facade: compaction and title points are typed unavailable while their replacement slices are inactive or mismatched', () => {
+  const { cordisCtx, feature, warns } = createFeature({
+    aux: {
+      compactionEvents: { version: '0.9.9-broken-0.1', api: '0.1' },
+      sessionTitle: undefined,
+    },
+  })
+  void warns
+  const events = feature.providers.events({})
+  assert.deepEqual([...events.admitted()], ['fs/write-intent', 'fs/edit-intent', 'compaction/request', 'session-title/candidate'])
+
+  const compaction = events.register('compaction/request', { id: 'c', decide: () => undefined })
+  assert.equal(compaction.ok, false)
+  assert.equal(compaction.code, 'unavailable')
+  assert.match(compaction.reason, /compaction-events replacement is inactive or version-mismatched/)
+
+  const title = events.register('session-title/candidate', { id: 't', decide: () => undefined })
+  assert.equal(title.ok, false)
+  assert.equal(title.code, 'unavailable')
+  assert.match(title.reason, /session-title replacement is inactive or version-mismatched/)
+
+  // The fs intent points ride the active base catalog and stay available.
+  const fsIntent = events.register('fs/write-intent', { id: 'f', decide: () => undefined })
+  assert.ok(fsIntent.generation)
+  fsIntent.dispose()
+})

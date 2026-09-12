@@ -85,7 +85,7 @@ R8. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 | `plugin-api-session-title` | `@deepseek-ai/dsh-plugin-api-session-title` | `session-title` | `@deepseek-ai/dsh-session-title` | 无（host-only） |
 | `plugin-api-mcp` | `@deepseek-ai/dsh-plugin-api-mcp` | `mcp-client` | `@deepseek-ai/dsh-mcp-client` | 无（host-only） |
 | `plugin-api-attachments` | `@deepseek-ai/dsh-plugin-api-attachments` | `attachment-local` | `@deepseek-ai/dsh-attachment-local` | 无（host-only） |
-| `plugin-api-agent-loop` | `@deepseek-ai/dsh-plugin-api-agent-loop` | `agent-loop` | `@deepseek-ai/dsh-agent-loop` | 无（host-only） |
+| `plugin-api-agent-loop` | `@deepseek-ai/dsh-plugin-api-agent-loop` | `agent-loop` | `@deepseek-ai/dsh-agent-loop` | 无（host-only）。能力切片：route policy、共享 loop boundary interaction、assembled-context evidence、automatic recovery、turn-stopping decision participation（经主包门面契约符号） |
 | `plugin-api-session-branch` | `@deepseek-ai/dsh-plugin-api-session-branch` | `session` | `@deepseek-ai/dsh-session` | 无（host-only） |
 | `plugin-api-tool-skill` | `@deepseek-ai/dsh-plugin-api-tool-skill` | `tool-skill` | `@deepseek-ai/dsh-tool-skill` | 无（host-only） |
 | `plugin-api-llm` | `@deepseek-ai/dsh-plugin-api-llm` | `llm` | `@deepseek-ai/dsh-llm` | 无（host-only） |

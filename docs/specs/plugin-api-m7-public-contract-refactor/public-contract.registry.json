@@ -9777,6 +9777,156 @@
       ]
     },
     {
+      "publicPath": "agents.decisions.register",
+      "targetPath": "agents.decisions.register",
+      "capability": "agents",
+      "kind": "leaf",
+      "idiom": "policy",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "decide",
+      "composition": "ordered",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "agent runtime authority",
+      "scope": "facade",
+      "resourceKey": "policy id (per point)",
+      "identitySource": "caller plugin context",
+      "conflictRule": "owner-conflict",
+      "lifecycle": "registry lifetime; handles invalidated by dispose, owner unload, or feature teardown",
+      "failureSemantics": "typed-throw",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "agents.decisions.register({ point, id, priority?, scope?, decide }) returns a frozen handle { id, ownerId, generation, dispose() }; decisions follow the per-point vocabulary and the value-aware waterfall semantics",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "tools.executionPolicies.register",
+      "targetPath": "tools.executionPolicies.register",
+      "capability": "tools",
+      "kind": "leaf",
+      "idiom": "policy",
+      "idiomExceptions": [
+        {
+          "memberPath": "tools.executionPolicies.register({ point: 'execute' })",
+          "baseContract": "policy",
+          "exception": "the execute point is an around-execution barrier: the policy decide receives the officially dispatched exec plus the trailing continuation and any defined return value is the chain result (including the tool outcome)",
+          "reason": "the official tools/execute waterfall has no return-value decision vocabulary; pre-capture before side effects and exec in-place signal replacement require the around idiom, not an ordered no-next policy",
+          "replacementShape": "decide(exec, next) returns the chain result; the exec reference is the officially dispatched object and only exec.signal may be replaced in place",
+          "verification": "e2e around-capture ordering and exec identity"
+        }
+      ],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "decide",
+      "composition": "ordered",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "tools execution authority",
+      "scope": "facade",
+      "resourceKey": "policy id (per point)",
+      "identitySource": "caller plugin context",
+      "conflictRule": "owner-conflict",
+      "lifecycle": "registry lifetime; handles invalidated by dispose, owner unload, or feature teardown",
+      "failureSemantics": "typed-throw",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "tools.executionPolicies.register({ point, id, priority?, scope?, decide }) returns a frozen handle; execute is the around-execution barrier and post-execute carries the official accept/block decision vocabulary",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "prompts.assemblyPolicies.register",
+      "targetPath": "prompts.assemblyPolicies.register",
+      "capability": "prompts",
+      "kind": "leaf",
+      "idiom": "policy",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "decide",
+      "composition": "ordered",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "system-prompt authority",
+      "scope": "facade",
+      "resourceKey": "policy id",
+      "identitySource": "caller plugin context",
+      "conflictRule": "owner-conflict",
+      "lifecycle": "registry lifetime; handles invalidated by dispose, owner unload, or feature teardown",
+      "failureSemantics": "typed-throw",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "prompts.assemblyPolicies.register({ id, priority?, scope?, decide }) returns a frozen handle; the decide receives (assembly, context, next) and a record with a sections array is the whole-assembly replacement",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "events.decisions.register",
+      "targetPath": "events.decisions.register",
+      "capability": "events",
+      "kind": "leaf",
+      "idiom": "policy",
+      "idiomExceptions": [
+        {
+          "memberPath": "events.decisions.register('fs/write-intent' | 'fs/edit-intent')",
+          "baseContract": "policy",
+          "exception": "the fs intent points are async barriers: the decide may await the official continuation and a deny verdict is converted into the point's typed denial error that propagates through the official dispatch to the producer",
+          "reason": "the official fs intent waterfall return is consumed as the write CAS expected, so there is no return-value deny channel; the deny must travel the official error channel and the capture must settle before the write",
+          "replacementShape": "decide({ target, exec, next }) returns undefined/official continuation or { kind: 'deny', reason? }; a deny throws the typed FsIntentDeniedError through the official dispatch",
+          "verification": "e2e barrier-settles-before-write and typed deny propagation"
+        }
+      ],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "decide",
+      "composition": "ordered",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "per-point producer authority",
+      "scope": "facade",
+      "resourceKey": "catalog decision point name",
+      "identitySource": "caller plugin context",
+      "conflictRule": "owner-conflict",
+      "lifecycle": "registry lifetime; handles invalidated by dispose, owner unload, or feature teardown",
+      "failureSemantics": "typed-throw",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "events.decisions.register(name, { id, priority?, scope?, decide }) returns a frozen handle; only the enumerated admitted points are accepted and every other name is a typed unsupported rejection naming the carrying face",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
       "publicPath": "security.redaction.register",
       "targetPath": "security.redaction.register",
       "capability": "security.redaction",
@@ -17006,7 +17156,8 @@
       "implementationChannel": "facade",
       "decisionPrecedence": "declared priority then successful registration order",
       "conflictConvergence": "last decision wins along the waterfall",
-      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point"
+      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point",
+      "participationChannel": "agents.decisions.register({ point: 'pre-step' })"
     },
     {
       "name": "agent/request",
@@ -17022,7 +17173,8 @@
       "implementationChannel": "facade",
       "decisionPrecedence": "declared priority then successful registration order",
       "conflictConvergence": "last decision wins along the waterfall",
-      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point"
+      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point",
+      "participationChannel": "agents.decisions.register({ point: 'request' })"
     },
     {
       "name": "agent/request-error",
@@ -17038,7 +17190,8 @@
       "implementationChannel": "facade",
       "decisionPrecedence": "declared priority then successful registration order",
       "conflictConvergence": "last decision wins along the waterfall",
-      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point"
+      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point",
+      "participationChannel": "agents.decisions.register({ point: 'request-error' })"
     },
     {
       "name": "agent/session-start",
@@ -17069,7 +17222,7 @@
     {
       "name": "agent/turn-stopping",
       "runtime": "host",
-      "eventSemantics": "fact",
+      "eventSemantics": "decision",
       "scope": "scope-filtered",
       "payloadShape": "{ agent, turn, signal }",
       "freeze": "deep fields",
@@ -17077,7 +17230,11 @@
       "observerFailure": "propagate",
       "producerAuthority": "agent runtime authority",
       "dispatch": "serial",
-      "implementationChannel": "facade"
+      "implementationChannel": "facade",
+      "decisionPrecedence": "priority lowest-first, then registration order; the last explicit continue wins",
+      "conflictConvergence": "an explicit continue decision overrides later undecided returns; proceed/malformed/failed participants are treated as undecided",
+      "listenerFailureDefault": "contained: a failed participant is treated as undecided and the official stop stands",
+      "participationChannel": "agent-loop replacement slice through the facade contract symbol; the official serial dispatch and its abort re-check are unchanged"
     },
     {
       "name": "approval/request",
@@ -17161,7 +17318,8 @@
       "implementationChannel": "replacement",
       "decisionPrecedence": "declared priority then successful registration order",
       "conflictConvergence": "last decision wins along the waterfall",
-      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point"
+      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point",
+      "participationChannel": "events.decisions.register('compaction/request')"
     },
     {
       "name": "compaction/skipped",
@@ -17320,7 +17478,8 @@
       "implementationChannel": "facade",
       "decisionPrecedence": "declared priority then successful registration order",
       "conflictConvergence": "last decision wins along the waterfall",
-      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point"
+      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point",
+      "participationChannel": "events.decisions.register('fs/edit-intent')"
     },
     {
       "name": "fs/observed",
@@ -17349,7 +17508,8 @@
       "implementationChannel": "facade",
       "decisionPrecedence": "declared priority then successful registration order",
       "conflictConvergence": "last decision wins along the waterfall",
-      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point"
+      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point",
+      "participationChannel": "events.decisions.register('fs/write-intent')"
     },
     {
       "name": "goal/changed",
@@ -17436,7 +17596,8 @@
       "implementationChannel": "replacement",
       "decisionPrecedence": "declared priority then successful registration order",
       "conflictConvergence": "last decision wins along the waterfall",
-      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point"
+      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point",
+      "participationChannel": "events.decisions.register('session-title/candidate')"
     },
     {
       "name": "session/created",
@@ -17595,7 +17756,8 @@
       "implementationChannel": "facade",
       "decisionPrecedence": "declared priority then successful registration order",
       "conflictConvergence": "last decision wins along the waterfall",
-      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point"
+      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point",
+      "participationChannel": "prompts.assemblyPolicies.register()"
     },
     {
       "name": "system-prompt/change",
@@ -17666,7 +17828,8 @@
       "implementationChannel": "facade",
       "decisionPrecedence": "declared priority then successful registration order",
       "conflictConvergence": "last decision wins along the waterfall",
-      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point"
+      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point",
+      "participationChannel": "tools.executionPolicies.register({ point: 'execute' }) (around idiom exception)"
     },
     {
       "name": "tools/post-execute",
@@ -17682,7 +17845,8 @@
       "implementationChannel": "facade",
       "decisionPrecedence": "declared priority then successful registration order",
       "conflictConvergence": "last decision wins along the waterfall",
-      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point"
+      "listenerFailureDefault": "contain the failure; apply the documented default decision for the decision point",
+      "participationChannel": "tools.executionPolicies.register({ point: 'post-execute' })"
     },
     {
       "name": "tools/pre-execute",
@@ -20112,7 +20276,7 @@
       "path": "services.*(audit-removal-candidates)",
       "category": "remove",
       "status": "approved",
-      "note": "second-approval list approved 2026-08-28 (deletion-report.md \u6279\u51c6\u8bb0\u5f55): members approval.setPolicy, planMode.set, permissionPresets.set, permissionPresets.selectFor, credentials.set, credentials.unset, sessionProjectionCache.write; whole keys compaction, workflows. agentDefaultModel.saveSelection vetoed and retained. Deferred wrapped passthrough interface obligations recorded in deletion-report.md."
+      "note": "second-approval list approved 2026-08-28 (deletion-report.md 批准记录): members approval.setPolicy, planMode.set, permissionPresets.set, permissionPresets.selectFor, credentials.set, credentials.unset, sessionProjectionCache.write; whole keys compaction, workflows. agentDefaultModel.saveSelection vetoed and retained. Deferred wrapped passthrough interface obligations recorded in deletion-report.md."
     }
   ],
   "statusByPath": {
@@ -21164,6 +21328,30 @@
       ]
     },
     {
+      "capabilityCluster": "agents.decisions",
+      "currentPaths": [
+        "agents.decisions.register",
+        "tools.executionPolicies.register",
+        "prompts.assemblyPolicies.register",
+        "events.decisions.register"
+      ],
+      "targetPaths": [
+        "agents.decisions.register",
+        "tools.executionPolicies.register",
+        "prompts.assemblyPolicies.register",
+        "events.decisions.register"
+      ],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [],
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
       "capabilityCluster": "executions",
       "currentPaths": [
         "executions.availability",
@@ -21604,7 +21792,8 @@
         "prompts.section",
         "prompts.suppressRuntimeContext",
         "prompts.tools",
-        "prompts.variable"
+        "prompts.variable",
+        "prompts.assemblyPolicies.register"
       ],
       "targetPaths": [
         "prompts.availability",
@@ -21613,7 +21802,8 @@
         "prompts.joinContextSections",
         "prompts.render",
         "prompts.renderContextSections",
-        "prompts.renderContextSnapshot"
+        "prompts.renderContextSnapshot",
+        "prompts.assemblyPolicies.register"
       ],
       "status": "merged",
       "qualifiers": [],

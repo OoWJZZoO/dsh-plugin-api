@@ -176,18 +176,20 @@ test('slice B: the anchor whole-assembly replacement and tool filtering reach th
   const { ctx, state } = createMockCtx()
   apply(ctx)
 
+  let replacement
   const anchor = state.pluginApi.prompts.assemblyPolicies.register({
     id: 'anchor-sections',
     decide(assembly, context, next) {
       void context
       void next
-      return {
+      replacement = {
         sections: [
           { id: 'anchor-brief', body: 'anchor instructions' },
           { id: 'base', body: assembly.sections.find((section) => section.id === 'base')?.body ?? '' },
         ],
         tools: assembly.tools.filter((tool) => tool !== 'shell'),
       }
+      return replacement
     },
   })
 
@@ -204,6 +206,12 @@ test('slice B: the anchor whole-assembly replacement and tool filtering reach th
     ],
     tools: ['read'],
   })
+  // Honest assertion of the official complete-section semantics: the facade
+  // participation layer converges the replacement as-is (same object identity,
+  // no facade-side re-convergence); the official complete-section
+  // post-transform runs upstream in the official producer after this
+  // waterfall return and is not this face's business.
+  assert.equal(assembled, replacement)
   anchor.dispose()
 })
 

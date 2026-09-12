@@ -389,6 +389,109 @@
         "telemetry",
         "remote"
       ]
+    },
+    {
+      "policyPath": "agents.decisions",
+      "registrationShape": "agents.decisions.register",
+      "registeredMembers": [
+        "agents.decisions.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade decision participation feature",
+      "componentOwner": "official agent-loop dispatch points; turn-stopping carried by the agent-loop replacement slice through the facade contract symbol",
+      "decisionVocabulary": "per-point: pre-step enter/reject; request provider+model rewrite; request-error retry; turn-stopping continue with a message record",
+      "reducer/conflictRule": "value-aware waterfall, priority lowest-first then registration order; last explicit decision wins; rejects cannot be overwritten",
+      "defaultDecision": "no participants or all undecided: the official continuation result stands unchanged",
+      "automaticDecisionPoint": "agent/pre-step, agent/request, agent/request-error waterfalls; turn-stopping dispatch via the replacement slice",
+      "protectedAction": "turn step entry, model request configuration, error retry, and turn continuation",
+      "cooperativeInterface": "official waterfall dispatch and the loop inbox splice",
+      "observableEvidence": "e2e suite over official producer shapes; registry unit tests; package slice tests",
+      "failureAndCancellation": "participant throw/rejection contained and treated as undecided; payload frozen; abort propagates on turn-stopping",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation; e2e",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "agent/pre-step",
+        "agent/request",
+        "agent/request-error",
+        "agent/turn-stopping"
+      ]
+    },
+    {
+      "policyPath": "tools.executionPolicies",
+      "registrationShape": "tools.executionPolicies.register",
+      "registeredMembers": [
+        "tools.executionPolicies.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade decision participation feature",
+      "componentOwner": "official tools execution dispatch",
+      "decisionVocabulary": "execute: around-execution (any defined return is the chain result; exec passed by reference); post-execute: official accept(content|value)/block(feedback) vocabulary with optional additionalContexts",
+      "reducer/conflictRule": "value-aware waterfall, priority lowest-first then registration order; last explicit decision wins",
+      "defaultDecision": "no participants or all undecided: the tool executes and its official result stands",
+      "automaticDecisionPoint": "tools/execute around dispatch; tools/post-execute waterfall",
+      "protectedAction": "tool execution and the tool result that reaches the model",
+      "cooperativeInterface": "official tools/execute and tools/post-execute waterfalls",
+      "observableEvidence": "e2e around-capture ordering, exec identity, post-execute rewrites; registry unit tests",
+      "failureAndCancellation": "participant throw/rejection contained and treated as undecided; payload frozen before the policy sees it",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation; e2e",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "tools/execute",
+        "tools/post-execute"
+      ]
+    },
+    {
+      "policyPath": "prompts.assemblyPolicies",
+      "registrationShape": "prompts.assemblyPolicies.register",
+      "registeredMembers": [
+        "prompts.assemblyPolicies.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade decision participation feature",
+      "componentOwner": "official system-prompt assemble waterfall",
+      "decisionVocabulary": "whole-assembly replacement: a record with a sections array replaces the assembly; tools filtering travels inside the replacement",
+      "reducer/conflictRule": "value-aware waterfall, priority lowest-first then registration order; last explicit replacement wins",
+      "defaultDecision": "no participants or all undecided: the officially assembled context stands (official complete-section convergence still applies)",
+      "automaticDecisionPoint": "system-prompt/assemble waterfall",
+      "protectedAction": "the assembled prompt context and tool selection",
+      "cooperativeInterface": "official system-prompt/assemble waterfall",
+      "observableEvidence": "e2e whole-assembly replacement and tool filtering; registry unit tests",
+      "failureAndCancellation": "participant throw/rejection contained and treated as undecided; assembly frozen per catalog policy",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation; e2e",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "system-prompt/assemble"
+      ]
+    },
+    {
+      "policyPath": "events.decisions",
+      "registrationShape": "events.decisions.register",
+      "registeredMembers": [
+        "events.decisions.register"
+      ],
+      "primaryIdiom": "policy",
+      "policyOwner": "facade decision participation feature",
+      "componentOwner": "per-point producer authority (fs tool owner, compaction-events owner, session-title owner)",
+      "decisionVocabulary": "fs intents: { kind: 'deny', reason? } converted to the typed denial error; compaction/request: { start, end } flat replace range; session-title/candidate: exclude(reason?) or replace(message seq + reason?); admitted point set is explicitly enumerated",
+      "reducer/conflictRule": "value-aware waterfall, priority lowest-first then registration order; last explicit decision wins; a deny propagates as the official typed error",
+      "defaultDecision": "no participants or all undecided: the official continuation result stands (fs write/edit proceeds with the official CAS intent)",
+      "automaticDecisionPoint": "fs/write-intent and fs/edit-intent async barriers; compaction/request; session-title/candidate",
+      "protectedAction": "filesystem writes and edits, compaction range selection, session title adoption",
+      "cooperativeInterface": "official fs intent waterfall returns consumed as the write CAS expected; compaction and title owner contracts",
+      "observableEvidence": "e2e barrier-settles-before-write and typed deny propagation; registry unit tests",
+      "failureAndCancellation": "participant throw/rejection contained and treated as undecided; a deny is a deliberate typed error, not a failure",
+      "coverageStatus": "automatic",
+      "verification": "inventory-validate; registry-validation; e2e",
+      "retirementCondition": null,
+      "enforcementPaths": [
+        "fs/write-intent",
+        "fs/edit-intent",
+        "compaction/request",
+        "session-title/candidate"
+      ]
     }
   ],
   "enforcementMatrix": [
@@ -652,6 +755,105 @@
       "reentry": "host redaction precedes client serialization",
       "coverageStatus": "automatic",
       "verification": "existing security-policy-redaction tests"
+    },
+    {
+      "officialPath": "agent/pre-step",
+      "decisionPoint": "pre-step waterfall before a proposed step enters (official enter continuation)",
+      "componentOwner": "dsh-agent-loop",
+      "implementationChannel": "facade",
+      "reentry": "per step proposal; disposal or owner unload removes the policy from the chain",
+      "coverageStatus": "automatic",
+      "verification": "e2e pre-step composition, reject propagation, containment"
+    },
+    {
+      "officialPath": "agent/request",
+      "decisionPoint": "request waterfall at model-request preparation (official seedConfig continuation)",
+      "componentOwner": "dsh-agent-loop",
+      "implementationChannel": "facade",
+      "reentry": "per request attempt",
+      "coverageStatus": "automatic",
+      "verification": "e2e request rewrite; registry unit tests"
+    },
+    {
+      "officialPath": "agent/request-error",
+      "decisionPoint": "request-error waterfall after a model request failure",
+      "componentOwner": "dsh-agent-loop",
+      "implementationChannel": "facade",
+      "reentry": "per failure",
+      "coverageStatus": "automatic",
+      "verification": "e2e and migration slice D retry verdict"
+    },
+    {
+      "officialPath": "agent/turn-stopping",
+      "decisionPoint": "turn-stopping dispatch after the official stop determination (message contribution channel)",
+      "componentOwner": "dsh-agent-loop",
+      "implementationChannel": "R",
+      "reentry": "per turn end; the chain reads the registry live and the loop inbox re-check governs continuation",
+      "coverageStatus": "automatic",
+      "verification": "package slice tests over the official Inbox; e2e contract convergence"
+    },
+    {
+      "officialPath": "tools/execute",
+      "decisionPoint": "around-execution barrier wrapping the tool body (exec by reference)",
+      "componentOwner": "dsh-tools",
+      "implementationChannel": "facade",
+      "reentry": "per tool dispatch",
+      "coverageStatus": "automatic",
+      "verification": "e2e around-capture ordering and exec identity"
+    },
+    {
+      "officialPath": "tools/post-execute",
+      "decisionPoint": "post-execute waterfall over the tool result before it reaches the model",
+      "componentOwner": "dsh-tools",
+      "implementationChannel": "facade",
+      "reentry": "per tool result",
+      "coverageStatus": "automatic",
+      "verification": "e2e post-execute content/value rewrites and block feedback"
+    },
+    {
+      "officialPath": "system-prompt/assemble",
+      "decisionPoint": "assemble waterfall over the assembled context and tool selection",
+      "componentOwner": "dsh-system-prompt",
+      "implementationChannel": "facade",
+      "reentry": "per assemble call",
+      "coverageStatus": "automatic",
+      "verification": "e2e whole-assembly replacement and tool filtering"
+    },
+    {
+      "officialPath": "fs/write-intent",
+      "decisionPoint": "async barrier before the write commits; the waterfall return is the write CAS expected",
+      "componentOwner": "dsh-tool-fs / dsh-fs-local",
+      "implementationChannel": "facade",
+      "reentry": "per write intent",
+      "coverageStatus": "automatic",
+      "verification": "e2e barrier-settles-before-write and typed deny propagation"
+    },
+    {
+      "officialPath": "fs/edit-intent",
+      "decisionPoint": "async barrier before the edit commits; the waterfall return is the edit CAS expected",
+      "componentOwner": "dsh-tool-fs / dsh-fs-local",
+      "implementationChannel": "facade",
+      "reentry": "per edit intent",
+      "coverageStatus": "automatic",
+      "verification": "registry unit tests; same deny channel as fs/write-intent"
+    },
+    {
+      "officialPath": "compaction/request",
+      "decisionPoint": "compaction request range decision before the owner settles a compaction",
+      "componentOwner": "compaction-events replacement owner",
+      "implementationChannel": "facade",
+      "reentry": "per compaction request",
+      "coverageStatus": "automatic",
+      "verification": "registry unit tests over the flat replace-range vocabulary; gated on the compaction-events replacement availability"
+    },
+    {
+      "officialPath": "session-title/candidate",
+      "decisionPoint": "session title candidate exclude/replace decision before adoption",
+      "componentOwner": "session-title replacement owner",
+      "implementationChannel": "facade",
+      "reentry": "per title candidate",
+      "coverageStatus": "automatic",
+      "verification": "registry unit tests over the exclude/replace vocabulary; gated on the session-title replacement availability"
     }
   ],
   "gaps": [
