@@ -126,5 +126,5 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定现行 `llm.adapt
 
 - `dsh-vision-toolkit`：图片变体适配器迁公共登记路径——独立 route 登记成功、原模型并存、选择器可见、真实调用生效（全链路 mock stream 证据）。
 - TUI vision-ask：自有 vision adapter 同路径迁移。
-- 既有装饰调用点与测试：全部迁 `llm.adapters.decorations.*`；`llm.adapters.register` 的装饰语义调用点清零（无 alias 残留，7.7a/b 同口径断言）。
+- 既有装饰调用点与测试：全部迁 `llm.adapters.decorations.*`；`llm.adapters.register` 的装饰语义调用点清零（无 alias 残留，依据 goal Scope direction 与本表「本地开发期无 alias」行，以 Req 7.5 四动作互指口径断言）。
 - decorate + route replace + dispose 交叉、双 owner 冲突、在途流撤销的运行证据按 requirements 10 逐条落测。
