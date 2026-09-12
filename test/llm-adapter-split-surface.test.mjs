@@ -156,3 +156,50 @@ test('a present instance with an absent official seam is typed unavailable', () 
     (error) => error instanceof LlmAdaptersUnavailableError && /official adapter registration seam/.test(error.message),
   )
 })
+
+test('capability status reflects both backings: decoration-only composition is degraded, not active', () => {
+  const { service } = createSplitHarness()
+  // the harness mounts only llmAdapters (decoration facet); the llm feature
+  // itself is not mounted here
+  assert.equal(service.capabilities.get('llm.adapters').status, 'degraded')
+  // the real registration side still works while degraded
+  const handle = service.llm.adapters.register(makeSpec())
+  assert.equal(handle.generation, 1)
+})
+
+test('capability status with only the llm feature mounted stays degraded and registration works', () => {
+  const registry = createFeatureRegistry()
+  const Service = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
+  const fiber = { name: 'plugin-a' }
+  const service = new Service({
+    fiber,
+    loader: { entries() { return [{ fiber, options: { name: 'plugin-a' } }] } },
+    reflect: { provide() {} },
+    get() { return undefined },
+    effect() { return () => {} },
+  })
+  service.mountFeature('llm', { modelInfo() {}, prepareCall() {}, stream() {} })
+  registry.mount('llm')
+  // same wiring the host mount path uses for the real registration
+  const officialLlm = { registerAdapter(providers, adapter) { return () => {} } }
+  service._setLlmAdapterRegistration(createLlmAdapterRegistration({
+    active: () => service.isActive,
+    llmProvider: () => officialLlm,
+    ownerOf: deriveAdapterRegistrationOwner,
+    facadeOwnerIds: new Set(['@deepseek-ai/dsh-plugin-api-main']),
+  }))
+  assert.equal(service.capabilities.get('llm.adapters').status, 'degraded')
+  // no decoration facet: decorations members are typed disabled
+  assert.throws(() => service.llm.adapters.decorations.register({ id: 'x' }), PluginApiFeatureDisabledError)
+  // ...while the real registration still functions
+  const handle = service.llm.adapters.register(makeSpec())
+  assert.equal(handle.id, 'vision-x')
+  assert.equal(service.capabilities.get('llm.adapters').status, 'degraded', 'neither backing alone claims active')
+})
+
+test('capability status is unavailable when neither backing is present', () => {
+  const registry = createFeatureRegistry()
+  const Service = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
+  const service = new Service({ reflect: { provide() {} }, get() { return undefined }, effect() { return () => {} } })
+  assert.equal(service.capabilities.get('llm.adapters').status, 'unavailable')
+})

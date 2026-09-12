@@ -68,6 +68,12 @@
 - [ ] 6.2 全局终审（阻塞式，只审整体交付与 Tasks/Design/Requirements 一致性 + standards 适用分册比对）：返回「无偏差」后才可进入 6.3；有意见则集中修订并再次派审。
 - [ ] 6.3 `git diff --check` 干净；全局终审通过后按阶段提交规则提交本 Stage 4 交付（实现 + 测试 + registry/文档同步 + tasks 勾选与状态行）并完成最终登记。
 
+## 执行注（Stage 4）
+
+- 终审第一轮（阻塞式）发现并已闭合六条意见：① 首轮 registry 修正因脚本变量遮蔽误写为仓库根杂散文件（`executions.recovery.checkpoints.availability`，已 `git rm`），canonical registry 已真实修正并过 validator；② 新行 concurrency 值改为 validator 合法词汇（mutation 行 `compare-and-swap`/`latest-wins`、只读行 null）；③ `llm.adapters` capability descriptor 特性列补 `llm`（混合装配态如实报 `degraded`），并补三条混合场景 status 断言；④ 实现代码注释中的需求编号引用清除（治理代号不进实现代码）；⑤ 投影合并改为官方真值字段优先、声明字段只补缺（注释与代码一致）；⑥ dispose 改为先官方撤销后删记录，官方撤销失败时记录保留、handle 可重试，两视图不发散。
+- 外部消费者仓库（vision toolkit / TUI）不在本工作区：迁移证据按 P6 以仓库内 migration slices 落盘（`test/llm-adapter-migration-slices.test.mjs`），不改动外部仓库。
+
+
 ## 执行边界
 
 - 版本冻结：不步进任何版本字段（AGENTS §3.0.1）。

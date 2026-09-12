@@ -1698,7 +1698,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "adapter snapshot query",
+      "currentShape": "real adapter route query: frozen union of facade owner records and official topology state with honest per-entry availability",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -1729,9 +1729,9 @@
       "idempotency": "content-idempotent",
       "retryLayer": null,
       "availabilityShape": "namespace availability()",
-      "concurrency": "latest-wins",
+      "concurrency": "compare-and-swap",
       "reducer": "none",
-      "currentShape": "owner-scoped facet handle with dispose",
+      "currentShape": "fixed registry handle { id, ownerId, generation, dispose() }; identity-bound caller teardown; stale disposer is a typed no-op",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -14504,7 +14504,7 @@
       "implementationChannel": "facade",
       "authority": "llm authority",
       "scope": "facade",
-      "resourceKey": "adapter definition id",
+      "resourceKey": "provider route id",
       "identitySource": "caller plugin context",
       "conflictRule": "content-conflict",
       "lifecycle": "new lifecycle after dispose; not a stale update",
@@ -14512,9 +14512,9 @@
       "idempotency": "content-idempotent",
       "retryLayer": null,
       "availabilityShape": "namespace availability()",
-      "concurrency": "latest-wins",
+      "concurrency": "compare-and-swap",
       "reducer": "none",
-      "currentShape": "adapter decoration registration with owner/generation handle",
+      "currentShape": "real adapter route registration (plain-object spec: provider route id, declared models with real capability fields, callable stream implementation; optional replace-by-generation CAS)",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -16609,6 +16609,147 @@
         "member-inventory",
         "registry-validation"
       ]
+    },
+    {
+      "publicPath": "llm.adapters.decorations.register",
+      "targetPath": "llm.adapters.decorations.register",
+      "capability": "llm.adapters",
+      "kind": "leaf",
+      "idiom": "resourceRegistry",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "register",
+      "composition": "additive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "llm domain authority",
+      "scope": "facade",
+      "resourceKey": "decoration definition id",
+      "identitySource": "caller plugin context",
+      "conflictRule": "content-conflict",
+      "lifecycle": "binding lifecycle (active/superseded/revoked)",
+      "failureSemantics": "typed-throw",
+      "idempotency": "content-idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "latest-wins",
+      "reducer": "none",
+      "currentShape": "decoration registration on the replacement-owned decoration registry (labels vocabulary, execution phase stream)",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "llm.adapters.decorations.list",
+      "targetPath": "llm.adapters.decorations.list",
+      "capability": "llm.adapters",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "llm domain authority",
+      "scope": "facade",
+      "resourceKey": "decoration definition id",
+      "identitySource": "caller plugin context",
+      "conflictRule": "not-applicable",
+      "lifecycle": "valid while the decoration backing is active",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "decoration snapshot query (frozen decoration registry projection)",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "llm.adapters.decorations.register.handle",
+      "targetPath": "llm.adapters.decorations.register.handle",
+      "capability": "llm.adapters",
+      "kind": "handle",
+      "idiom": "resourceRegistry",
+      "idiomExceptions": [
+        {
+          "memberPath": "llm.adapters.decorations.register.handle",
+          "baseContract": "resourceRegistry",
+          "exception": "caller-bound facet handle ({ dispose(), snapshot() })",
+          "reason": "the delivered decoration registry keeps its mechanism and independent identity; caller-fiber owner derivation and registry-internal generation bookkeeping already provide identity-bound disposal and stale semantics, so the handle face does not repeat them",
+          "replacementShape": "{ dispose(), snapshot() } (snapshot is a read-only projection of the registration, not a mutation face)",
+          "verification": "existing decoration suites stay green plus stale-disposer and identity-bound disposal assertions"
+        }
+      ],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "register",
+      "composition": "additive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "llm domain authority",
+      "scope": "facade",
+      "resourceKey": "decoration definition id",
+      "identitySource": "caller plugin context (registry-internal generation)",
+      "conflictRule": "content-conflict",
+      "lifecycle": "binding lifecycle (active/superseded/revoked)",
+      "failureSemantics": "typed-throw",
+      "idempotency": "content-idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "latest-wins",
+      "reducer": "none",
+      "currentShape": "caller-bound facet handle { dispose(), snapshot() } (idiom exception recorded)",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "llm.models.list",
+      "targetPath": "llm.models.list",
+      "capability": "llm",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "llm domain authority",
+      "scope": "facade",
+      "resourceKey": "provider route id",
+      "identitySource": "not-applicable",
+      "conflictRule": "not-applicable",
+      "lifecycle": "read-time snapshot; valid for the read only",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "unified model-catalog projection: frozen read-time merge of official adapter-route catalogs, facade-registered declared capability fields, and dormant directory entries; per-entry honest unavailable marking; decorations never feed the view",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
     }
   ],
   "servicesWhitelist": [
@@ -18106,7 +18247,7 @@
       "oldPath": "llm.registerAdapter",
       "targetPath": "llm.adapters.register",
       "action": "rename",
-      "relation": "moved under adapters one-table register/get/list; owner/generation/conflict semantics"
+      "relation": "moved under adapters; the register entry binds the official adapter registration action (real callable routes)"
     },
     {
       "oldPath": "llm.registerConfigurableProviders",
@@ -18182,15 +18323,15 @@
     },
     {
       "oldPath": "llm.adapters.decorate",
-      "targetPath": "llm.adapters.register",
+      "targetPath": "llm.adapters.decorations.register",
       "action": "split",
-      "relation": "registration split from projection; decorate folds into register"
+      "relation": "registration split from projection; decorations own their namespace under llm.adapters"
     },
     {
       "oldPath": "llm.adapters.snapshot",
       "targetPath": "llm.adapters.list",
       "action": "rename",
-      "relation": "frozen list projection"
+      "relation": "frozen list projection; the old decoration-snapshot consumers move to llm.adapters.decorations.list (no alias in the local refactor window)"
     },
     {
       "oldPath": "llm.routing.on",
