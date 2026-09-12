@@ -32,6 +32,11 @@ import { consumeRequestRecovery, consumeToolRecovery } from "./recovery-slice.js
 // request admission/cancel boundary and attempt lifecycle facts. Additive
 // internal import; the exported surface stays identical to the official one.
 import { INTERACTION_ACTIVE_SYMBOL, createInteractionBoundary } from "./interaction-slice.js";
+// replacement patch: turn-stopping decision participation — the facade's
+// decision chain may continue a turn by contributing a message at the
+// turn-stopping dispatch point. Additive internal import; the exported
+// surface stays identical to the official one.
+import { applyTurnStoppingParticipation, probeTurnStoppingParticipation } from "./participation-slice.js";
 //#region lib/types/runtime-context.js
 /**
 * Durable projection state for dynamic runtime context.
@@ -465,6 +470,14 @@ var ReactLoopAgent = class {
 		} catch {
 			this.routePolicy = void 0;
 		}
+		// replacement patch: the turn-stopping participation contract is
+		// installed by the main facade's decision feature and is optional so
+		// the official-equivalent fallback keeps the old path.
+		try {
+			this.turnStoppingParticipation = probeTurnStoppingParticipation(loopCtx.get?.("pluginApi"));
+		} catch {
+			this.turnStoppingParticipation = void 0;
+		}
 		this.routeWindow = { sessionId: session.id, turn: lastTurn, attemptEpoch: "0" };
 	}
 	get status() {
@@ -666,6 +679,11 @@ var ReactLoopAgent = class {
 						turn,
 						signal
 					});
+					// replacement patch: decision participation — a registered
+					// participant may continue the turn by contributing a message
+					// after the official dispatch. Failures are contained and the
+					// continuation stays governed by the loop's own re-check below.
+					await applyTurnStoppingParticipation(this, { turn, signal });
 					signal.throwIfAborted();
 				}
 				if (turnEnds && this.inbox.nextStep.length === 0) break;

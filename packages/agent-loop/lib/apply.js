@@ -16,6 +16,7 @@ import {
   createRoutePolicyOwner,
 } from './route-policy.js'
 import { EVIDENCE_ACTIVE_SYMBOL } from './evidence-slice.js'
+import { TURN_STOPPING_PARTICIPATION_SYMBOL, probeTurnStoppingParticipation } from './participation-slice.js'
 import {
   ACTIVITY_OBSERVATION_CONTRACT_SYMBOL,
   ATTEMPT_FACTS_CONTRACT_VERSION,
@@ -349,6 +350,24 @@ export function createAgentLoopApply(overrides = {}) {
             } else {
               log(ctx, 'plugin-api-agent-loop: interaction boundary active')
             }
+          }
+          // Additive boot self-check: the turn-stopping decision participation
+          // contract is installed on the facade service by the main package's
+          // decision feature and may not be mounted yet at replacement-row
+          // apply time, so an absent marker here is a normal ordering fact
+          // (resolved lazily per loop construction). A present marker with a
+          // wrong version is a real mismatch and degrades only the
+          // participation capability; the official loop contract is unaffected.
+          try {
+            const participation = probeTurnStoppingParticipation(getService(ctx, 'pluginApi'))
+            if (participation === undefined) {
+              const pluginApi = getService(ctx, 'pluginApi')
+              if (pluginApi?.[TURN_STOPPING_PARTICIPATION_SYMBOL] !== undefined) {
+                log(ctx, 'plugin-api-agent-loop: turn-stopping participation contract version mismatch; the participation capability stays unavailable (official loop contract unaffected)')
+              }
+            }
+          } catch {
+            // The self-check probe never changes activation.
           }
           // Activity observation contract marker probe (shared vocabulary):
           // the marker is defined and exported by the session-activity-projection
