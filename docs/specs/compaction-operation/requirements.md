@@ -72,7 +72,7 @@
 - WHEN the operation reaches a terminal THEN the result SHALL distinguish exactly five outcomes — success with lineage, success with skip (carrying a machine reason), denied (policy rejection, carrying a reason), error (carrying a stable machine code and stage), aborted (cancellation) — under the unified operation result contract (`ok` / `code` / `terminal` / outcome fields), and SHALL NOT express any of them by an overloaded `null`.
 - WHEN the terminal is success with lineage THEN the result SHALL carry the engine-reported compaction lineage (compactionId, shadowed range, shadowed seqs, shadowed token count, start/summary/end seqs, source correlation id when provided) as frozen data.
 - WHEN the engine reports no compactable candidate THEN the operation SHALL resolve success with skip (reason: no-candidate) and SHALL NOT fabricate lineage.
-- WHERE a policy veto and an absence of candidate would otherwise be indistinguishable THEN the marked provider's operation sub-face (R 类扩展) SHALL return a discriminated outcome (compacted / skipped / rejected with reason) instead of an overloaded `null`.
+- WHERE a policy veto and an absence of candidate would otherwise be indistinguishable THEN the marked provider's operation sub-face (R 类扩展) SHALL return a discriminated outcome (compacted / skipped / rejected with reason) instead of an overloaded `null`; the discriminating channel SHALL be built inside the replacement's own forked engine (the veto sentinel — carrying the decision reason — and the selection-null are distinguishable on the internal path before the public methods collapse them to `null`), and SHALL NOT rely on reinterpreting the public methods' overloaded `null`.
 
 ### R5 引擎唯一执行与事实生产权（B 类约束；事实为 A 类）
 
@@ -114,7 +114,7 @@
 - WHEN the replacement row is absent or inactive, the auxiliary package version mismatches, or the operation sub-face marker is missing THEN the facade SHALL keep the namespace present with availability reporting unavailable and SHALL fail operation invocations with the standard typed feature-disabled error, without affecting unrelated `sessions` members or the already-gated compaction event catalog behavior.
 - WHEN the gate state changes THEN degradation SHALL be confined to this operation surface (typed disabled/unavailable), and the engine's official-equivalent fallback contract, if present, SHALL remain untouched.
 
-### R10 host-only 客户端半面（§3 六问记录的结论条目）
+### R10 host-only 客户端半面（§3 六问记录的结论条目；元约束类——无独立实现通道，A/B/C/R 标注不适用）
 
 - WHERE the client half is concerned IF any client surface is evaluated THEN the facade SHALL NOT expose the compaction operation, its result shapes, or any compaction client member on the client half (per §3 six-question record: all answers negative).
 

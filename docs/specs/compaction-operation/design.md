@@ -35,7 +35,7 @@ flowchart TB
     OP --> GATE
     GATE -- "全部通过" --> SUB
     GATE -- "任一失败" --> ERR
-    SUB -- "mode now → compactNow / mode range → compactRegion" --> ENGINE
+    SUB -- "mode now → compactNow 内部序列 / mode range → compactRegion 内部路由（fork 内判别通道）" --> ENGINE
     ENGINE --> WF
     WF <-- "proceed / reject(reason) / replace-range" --> POLICY
     ENGINE --> TX
@@ -59,7 +59,7 @@ flowchart TB
 
 ### 3.2 门控条件与降级（主包，复用既有投影模式）
 
-门控解析器完全镜像 `sessions.branches` 挂载与 compaction 事件 catalog slice 的既有模式（marker + 行状态 + 全量版本契约），增加第 ④ 条：
+门控解析器以 `sessions.branches` 挂载与 compaction 事件 catalog slice 的既有模式（marker + 行状态 + 全量版本契约）为基底，如实标注来源：①③ 与既有 catalog slice `isActive` 的条件同款；② 在既有「替代行 active」之上扩展「官方行 disabled/absent」半句（现有 `isActive` 未查此点）；④ 为本 feature 新增。四个条件：
 
 1. 辅助包 manifest 版本与主包契约匹配（`parseFacadeVersion` + `dsh.api`）；
 2. loader 中替代行 `plugin-api-compaction-events` active，且官方行 `compaction-basic` disabled/absent；
@@ -102,9 +102,9 @@ provider.operation = {
   - `{ kind: 'rejected', reason?: string }`（`compaction/request` 否决；引擎已发 `compaction/skipped`，reason 取决策 reason，缺省 'rejected'）
   - `{ kind: 'aborted' }`（ManualCompactionError 'cancelled' / caller-signal AbortError）
   - `{ kind: 'failed', code, stage? }`（其余官方错误分类，见 §3.5 映射表）
-- 子面内部路由：`mode 'now'` → `compactNow(agent, signal, sourceCommandId)`；`mode 'range'` → `compactRegion(start, end, agent, signal)`。子面**只翻译结果，不改写触发行为**：range 选择、重试、锁、flush 全部留在引擎。
+- 判别通道在 bundle 自有的 forked-engine 内补齐（这是 R 扩展的真实点位，**不是「翻译两个公开方法的结果」**）：现状是 `compactNow` 与 `compactRegion` 把内部否决哨兵（`COMPACTION_REJECTED`）与选择器 null 一并坍缩为返回值 `null`，决策 reason 只存在于 `compaction/skipped` 事实 payload，且 `direct` 路径失败抛未分类裸错误（`no open turn`、range 校验错误、`SurfaceChangedError` 等）。因此 fork 内新增内部 outcome 通道：否决在其派发点（持有决策 reason 处）不再坍缩，连同 reason 透出；选择器 null（no-candidate）发生在否决之前，内部天然可区分；`no open turn` / range 校验 / surface 变更等错误在 fork 内补 typed 分类（fork 内可见 `SurfaceChangedError` 等本地类型，无需 message 匹配）。子面经由该内部通道触发：`mode 'now'` 走 `compactNow` 的内部序列（idle bracket → selection → 内部路由），`mode 'range'` 走 `compactRegion` 的内部路由（current-turn bracket + whole-surface 稳定性）。触发行为零改写：range 选择、重试、锁、flush、事件序列全部留在引擎既有路径，两个公开方法原样不动。
 - 子面随 provider 一起参与既有 apply 自检（R4：post-register verification 增加 marker 检查）；版本错配时子面不发布（R5）；`ctx.compaction` 被其他 provider 占有时整体 inert（R6）。
-- **登记义务（不在本阶段执行）**：落实时同步 `AGENTS.md` §2/§4、feature-list、capability-strategy §5 装配表（本行 client 半面仍为「无」），并登记覆盖该能力的 upstream proposal 与退役条件（官方提供等价公开触发 seam 时，本 operation 面退役为官方直通）。
+- **登记义务（不在本阶段执行）**：落实时同步 `AGENTS.md` §2/§4、feature-list、capability-strategy §5 装配表（本行 client 半面仍为「无」），并登记覆盖该能力的 upstream proposal 与退役条件（官方提供等价公开触发 seam 时，本 operation 面退役为官方直通）；同步 canonical registry（`sessions.compaction` 成员与 capability 登记）、`public-api-shape.md` §2 host 领域树、`domain-composition.md` §2 新增 `sessions.compaction` 领域行，以及 `sessions.compaction.run` 的 idiom 例外六元组（外层结果省略 `operation` 成员，理由与替代形状见 §3.5）。
 
 ### 3.5 结果映射与码表（goal 待定项：结果码集合）
 
@@ -124,6 +124,10 @@ provider.operation = {
   },
 }
 ```
+
+外层合同偏差（登记义务）：本结果省略 operation idiom 固定成员 `operation`——本域不铸造门面 operation 身份，`compactionId`（引擎铸造的资源身份）承担身份角色；该省略按 api-idioms §1 例外六元组登记（memberPath `sessions.compaction.run`，见 §3.4 登记义务）。
+
+码表分类机制：引擎路径的 `kind: 'failed'` 各行（busy / open-turn-required / invalid-range / surface-changed / summary-failed / commit-failed / persistence-failed）在 fork 内以类型判定完成（含本扩展新增的 typed 分类），不依赖 message 匹配；`invalid-target` / `invalid-arguments` 由引擎调用前的入口校验拒绝（同为类型判定，不经 fork）（见 §3.4）。
 
 | 子面 outcome / 官方错误 | code | terminal / outcome |
 |---|---|---|
@@ -209,7 +213,7 @@ provider.operation = {
 |---|---|
 | capability-strategy | **适用**。B 类主面 + R 类扩展判定；R1–R8 逐条对照（requirements §5）；组件唯一 owner 不变；§10 六问 host-only；§7 retirement：官方提供等价公开触发 seam 时本面退役 |
 | api-shape | **适用**。一面原则：主面 operation；决策（policy registry）与触发（operation）分离；引擎是唯一 mutation owner，门面不新增 mutation 面；投影只读（lineage 查询走既有面） |
-| api-idioms | **适用**。operation 外层合同 `{ok, code, terminal, …}`；统一终态词汇（本域无 superseded，`outcome` 承载 compacted/skipped 区分）；`availability()` 必备；id（compactionId）是引擎铸造的资源身份，门面不造第二套 |
+| api-idioms | **适用**（含一处登记例外）。operation 外层合同 `{ok, code, terminal, …}`；统一终态词汇（本域无 superseded，`outcome` 承载 compacted/skipped 区分）；`availability()` 必备；id（compactionId）是引擎铸造的资源身份，门面不造第二套；外层结果省略 `operation` 成员（不铸造 operation 身份），按 api-idioms §1 例外登记 |
 | public-api-shape | **适用**。挂最近领域 `sessions`（二级 namespace `sessions.compaction`），不新增顶层 namespace；无治理代号进入公开 path；capability path `sessions.compaction`；registry 同步在执行阶段 |
 | composition-and-authority | **适用**。composition mode `coordinated`（互斥压缩由引擎 durable lock 仲裁）；owner 从调用方 fiber 派生；authority closure：session 压缩写路径只有引擎一条，门面子面不新增写 authority |
 | domain-composition | **适用**。`sessions` 领域约束：不静默破坏 branch/事务保证——压缩是引擎的原子 durable 事务；不新增跨域状态机；不新增与压缩无关的 session 操作 |
