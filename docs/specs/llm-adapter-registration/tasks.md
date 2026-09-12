@@ -2,7 +2,7 @@
 
 > feature_name: `llm-adapter-registration`
 > milestone: M10
-> status: Stage 3 审查门已通过（2026-09-12 阻塞式对抗性审查「有意见/非阻塞」，七条文字与覆盖补强意见已全部就地闭合：悬空引用改直引 goal/design、Task 6 门序改为终审先行于提交、补 Req 4.2 事件唯一性与 Req 8.1 隔离断言落点、Req 9 锚点载入登记义务、snapshot mapping 行加注、registry 键定为单一 llm.adapters 最小改动；按 §3.2 小修改不再复审）。Stage 4 执行中。
+> status: Stage 4 已交付（2026-09-12）。终审两轮：第一轮「有意见/非阻塞」六条（registry 落点事故 + validator 词汇 + capability 混合态 + 注释治理编号 + 投影合并语义 + dispose 次序）全部闭合；第二轮阻塞式复审「无偏差」。全量 3156/3156 绿。
 > 输入溯源：goal.md；requirements.md（Reqs 1–10）；design.md（registry 拆分、A 类直绑、delegation wrapper、在途处置表）；执行前 probe 记录见文末「执行时探针记录」。
 
 ## 执行时探针记录（Stage 3 探针，实现以此为事实源）
@@ -65,8 +65,8 @@
 ## Task 6: 全量验证、全局终审与提交
 
 - [x] 6.1 `npm test`（4G 护栏）全绿；治理 token 审计不新增泄漏。
-- [ ] 6.2 全局终审（阻塞式，只审整体交付与 Tasks/Design/Requirements 一致性 + standards 适用分册比对）：返回「无偏差」后才可进入 6.3；有意见则集中修订并再次派审。
-- [ ] 6.3 `git diff --check` 干净；全局终审通过后按阶段提交规则提交本 Stage 4 交付（实现 + 测试 + registry/文档同步 + tasks 勾选与状态行）并完成最终登记。
+- [x] 6.2 全局终审（阻塞式，只审整体交付与 Tasks/Design/Requirements 一致性 + standards 适用分册比对）：返回「无偏差」后才可进入 6.3；有意见则集中修订并再次派审。
+- [x] 6.3 `git diff --check` 干净；全局终审通过后按阶段提交规则提交本 Stage 4 交付（实现 + 测试 + registry/文档同步 + tasks 勾选与状态行）并完成最终登记。
 
 ## 执行注（Stage 4）
 
