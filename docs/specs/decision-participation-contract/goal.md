@@ -3,6 +3,7 @@
 > feature_name: `decision-participation-contract`
 > milestone: M10
 > status: Stage 0–2 已交付（2026-09-12）；Requirements / Design 同批交付于本目录（requirements.md / design.md）
+> 2026-09-12 人类裁决：turn-stopping 参与走 R 类（agent-loop owner 切片）
 > 输入溯源：M10 工作纲领 §3.1（OBS-01、OBS-03）；观察报告 §5 OBS-01（含最小运行复现与消费源码锚点）；M8 migration ledger 第 30 行（侧向决策注册不再公共、汇编改写由 `prompts.contribute` 承载）与 8.3(a)（anchor 整体替换超出现有贡献语义的提案登记）；canonical registry eventCatalog 现状（decision 语义事件目录与 `events.observe` 投影）。
 
 ## Goal

@@ -32,13 +32,14 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定机制选型（�
 | 决策点（catalog） | 公共 path（候选，集成波同步 registry） | idiom | 引出机制 |
 |---|---|---|---|
 | `agent/pre-step`、`agent/request`、`agent/request-error` | `pluginApi.agents.decisions.register({ point, id, priority, scope?, decide })` | policy（decide 收 `next`，见下「idiom 归类」） | 官方 waterfall 直绑：participation 条目经 bus substrate 安装为非 monitor 官方 ctx 钩子 |
+| `agent/turn-stopping` | `pluginApi.agents.decisions.register({ point: 'turn-stopping', id, priority, scope?, decide })` | policy（R 切片承载，2026-09-12 人类裁决） | agent-loop 替代行在派发点路由进门面参与链（见下「R slice 设计」）；官方 serial fact 派发保持原样 |
 | `system-prompt/assemble` | `pluginApi.prompts.assemblyPolicies.register({ id, priority, scope?, decide })` | policy | 同上（scope-filtered 官方 dispatch） |
 | `tools/execute`、`tools/post-execute` | `pluginApi.tools.executionPolicies.register({ point: 'execute'\|'post-execute', id, priority, scope?, decide })` | policy + 显式 around 例外（execute 点） | 同上 |
 | `fs/write-intent`、`fs/edit-intent`、`compaction/request`、`session-title/candidate` | `pluginApi.events.decisions.register(name, spec)` | policy | 同上；准入集枚举 + catalog 校验 |
 
 path 理由：
 
-- `agents.decisions`：三个 agent 决策点同族（同一 producer、同一 scope 语义、同一收敛规则），一个 `point` 判别入口比三个平行 namespace 更符合「领域 registry」且避免 `agents.preStep` / `agents.request` 之类动词条目。`tools.executionPolicies` / `prompts.assemblyPolicies` 同理（复数资源 + `register`，符合 `public-api-shape.md` §3.5）。
+- `agents.decisions`：四个 agent 决策点同族（同一 producer 主体、同一 scope 语义、同族收敛规则），一个 `point` 判别入口比四个平行 namespace 更符合「领域 registry」且避免 `agents.preStep` / `agents.request` 之类动词条目；`turn-stopping` 点位的 backing 是 R 切片（见「R slice 设计」），公共登记面与其余三点位同形。`tools.executionPolicies` / `prompts.assemblyPolicies` 同理（复数资源 + `register`，符合 `public-api-shape.md` §3.5）。
 - `events.decisions`：fs 意图、compaction、session-title 没有一等领域 namespace；为其各造顶层命名空间会违反「挂最近既有领域」并制造单成员 namespace。events 是这些点位的 catalog 归属域；准入集枚举 + 逐点位 typed 决策词汇保证它不是万能 on。`approval/request`、`session-telemetry/record`、`tools/code-dispatch-log` 不进初始准入集（无实证消费者；需求 1.7 的 typed unsupported 显式拒绝，后续按增量准入）。
 - 不采用的替代：把全部点位统一塞进 `events.decisions`（会丢掉领域词汇与 tools/prompts 既有 owner 的连续性）；或为 fs 意图新建 `fs` 顶层域（单 feature 单点位，过度设计）。
 
@@ -49,7 +50,7 @@ path 理由：
 | `agent/pre-step` | `{agent, messages, turn, step, signal}`，freeze `deep:['messages']` | 决策对象 + 返回的 messages | `{kind:'enter', messages?}` \| `{kind:'reject', reason?}` | 策略可 `await next()` 取链末决策再改写；不调 `next` 则自身决策预占 | 保留（dispatch 待策略 promise 结算） | `signal` 贯通；abort 后按默认决策收口 | scope-filtered（agent） | contain + 沿用当前链决策 | priority + 注册顺序；last-decision-wins | A 类稳定化；无 R |
 | `agent/request` | `{agent, turn, step, signal}` | 决策对象 | 官方 producer 消费语义（Stage 4 probe 固化到 registry） | 同上 | 同上 | 同上 | 同上 | 同上 | 同上 | A 类稳定化；无 R |
 | `agent/request-error` | `{agent, turn, step, provider, failure, retryPolicy, signal}`，freeze `deep:['failure']` | 决策对象（retry/failover/abort 尝试） | 同上；route/health 决策归 `llm.routing.*` | 同上 | 同上 | 同上 | 同上 | 同上 | 同上 | A 类稳定化；无 R |
-| `agent/turn-stopping` | catalog 现状 `fact`/`serial` | —（不提供参与） | —（observe 只读） | — | — | — | scope-filtered | — | — | 对照声明：fact 保持；参与化须显式 catalog 修订（C 类通道） |
+| `agent/turn-stopping` | `{agent, turn, signal}`（agent 由官方 fused dispatcher 注入），freeze `deep:[]` | 决策对象 | proceed（无决定/\`{kind:'proceed'}\`）\| \`{kind:'continue', message}\`（经官方 next-step inbox 通道续延） | 官方 serial fact 派发原样保留；切片在派发结算后、循环停止复查前调用参与链并应用决定 | 循环 await 官方派发；参与链结算先于停止复查 | 载荷 `signal` 贯通；派发后官方 `throwIfAborted` 照常 | scope-filtered（agent） | contain + proceed（停止照官方判定）；畸形决定按未决定处理 | priority + 注册顺序；链上 last-decision-wins | **R 类**（2026-09-12 人类裁决，agent-loop owner 切片；见「R slice 设计」） |
 | `system-prompt/assemble` | assembly `{sections, contexts, tools, variables}` + `{scope?, signal?}` | 整体 sections 替换 / 删除、tools 筛选、contexts/variables 值 | 返回改写后 assembly（waterfall 收敛） | 同 waterfall 续延 | 保留 | context signal | scope-filtered | contain + assembly 原样继续 | 同上；`prompts.contribute` 追加先合成，策略见合并后 assembly | A 类稳定化；无 R（追加语义已在 prompts 域） |
 | `tools/pre-execute` | `exec` | —（既有面承载） | `tools.guard`：`{allow}` \| `{deny, reason}` \| `{ask, reason?}` | — | guard 既有语义 | exec.signal | scope-filtered | guard 既有 | guard 既有 | **既有面**：`tools.guard.register` 等价承载；需求 7.5 只做 algebra 覆盖核对，不建第二入口 |
 | `tools/execute` | `exec`（call identity 不可变，仅 `exec.signal` 可原位替换） | around 包裹（先于 `next()` 的异步捕获、结果包裹）；不改 call identity | 返回 `next()` 结果或包裹值 | 策略持有 `next`；不调用则执行不发生 | 保留；副作用不先于捕获完成 | exec.signal（可原位替换） | scope-filtered | contain + 直接 `next()` 放行 | priority + 注册顺序 | A 类稳定化；around 作为 policy idiom 的显式例外登记 |
@@ -64,6 +65,7 @@ path 理由：
 ### 统一参与承载（内部，不设公共万能入口）
 
 - **安装**：`registerParticipation(name, entry)`（bus substrate 内部）：校验 catalog 条目 `eventSemantics === 'decision'` 且 `dispatch === 'waterfall'`；创建与现行内部订阅同构的条目（priority、scope、order），经 `reconcile` 安装为官方 ctx 钩子。官方 dispatch 模式与 payload 冻结策略（`freezeByPolicy`）原样保留——**不新增派发内核，不改变 deepFreeze 语义**。
+- **串行 R 切片变体（仅 turn-stopping）**：该点位不走 ctx 监听安装（串行派发的返回值契约不属于公共面，且官方 fact 派发必须逐位保留）；替代行经契约符号探测调用门面 `agents.decisions` 的参与链，priority/冻结/containment/收敛仍在门面 registry（见「R slice 设计」）。
 - **返回值保真**：策略 `decide(context)` 的 `context` 含 `{ ...payload, next, signal }`；策略同步返回决策或返回 promise（await 保留，waterfall dispatch 等待结算）；`next` 由守卫续延（`guardedNext`）提供，不调 `next` 时链以其输入继续（`continueIfNeeded`）——现行 `runWaterfallListener` 的续延语义原样复用。
 - **containment 包装**：参与条目不使用 `fault: 'propagate'` 原样透传第三方异常；每个策略 slot 的 throw/rejection 被 containment（对齐 catalog `listenerFailureDefault`），该 slot 以「未决定」参与收敛，producer 按点位默认决定继续。理由：官方 propagate 语义保护的是官方 listener 契约；第三方策略的缺陷 containment 是 `composition-and-authority.md` §10 的门面义务。官方自身的 listener（若有）不经此包装。
 - **排序**：`sortEntries`（priority index + order）原样；`monitor` 不接受为参与优先级（保留给 observe feed）。
@@ -105,11 +107,72 @@ path 理由：
 - **compaction**：`compaction/request` 的参与归本线（`events.decisions`）；主动触发的 operation、终态与 provenance 归 compaction-operation 线。策略 registry 不是主动触发器。
 - **模型选择快照**：本线不拥有选择状态（归 interactive-session-access）；scoped 线定义消费侧一致性，本线 assembly policy 看到的 variables 为该步快照。
 
-## 横切派发语义与通道判定（只陈述，不登记 R）
+## 横切派发语义与通道判定
 
-- **priority / deepFreeze / fault containment 永不走替换通道**（constitution 与 `capability-strategy.md` §2）：本线全部机制在门面承载。
-- 逐点位通道判定：`agent/*`、`system-prompt/assemble`、`tools/*`、`fs/*`、`llm/stream`（消费侧）为 **A 类**（官方已 dispatch，门面稳定化引出参与）；`compaction/request`、`session-title/candidate` 为 **A 类 on top of 已交付 replacement**（producer 已由 compaction-events / session-title 替代行承载，参与登记是门面侧补足，不新增被禁用官方行、不新建 replacement 包）。全部点位**无组件 R slice 评估项**：没有出现「官方组件缺少必要业务边界」的情形——缺失的只是门面公共面；若 Stage 4 probe 证实某官方决策点的 producer 不经可订阅的 dispatch（结构上不可达），该点位转 C 类 upstream proposal 并登记，不擅自转 R。
-- `agent/turn-stopping` 参与化为 C 类通道（catalog 修订 / upstream proposal），本线不预批（需求 5）。
+- **priority / deepFreeze / fault containment 永不走替换通道**（constitution 与 `capability-strategy.md` §2）：即使 turn-stopping 的派发点位于替代行内，参与链的排序、冻结与 containment 仍在门面 registry（见下「R slice 设计」的边界条款）。
+- 逐点位通道判定：`agent/pre-step`、`agent/request`、`agent/request-error`、`system-prompt/assemble`、`tools/*`、`fs/*`、`llm/stream`（消费侧）为 **A 类**（官方已 dispatch，门面稳定化引出参与）；`compaction/request`、`session-title/candidate` 为 **A 类 on top of 已交付 replacement**（producer 已由 compaction-events / session-title 替代行承载，参与登记是门面侧补足，不新增被禁用官方行、不新建 replacement 包）。
+- **唯一 R 点位：`agent/turn-stopping`**（人类裁决 2026-09-12）：官方 runtime 在该派发点之后直接依循环内停止复查收口，除 next-step inbox 续延外无决策通道；经人类裁决走 R 类，由既有 agent-loop 组件唯一 owner 的替代行承载参与切片。其余点位维持无 R 判定：没有出现「官方组件缺少必要业务边界」的情形——缺失的只是门面公共面；若 Stage 4 probe 证实某官方决策点的 producer 不经可订阅的 dispatch（结构上不可达），该点位转 C 类 upstream proposal 并上报，不擅自转 R。
+
+## R slice 设计：`agent/turn-stopping` 参与（2026-09-12 人类裁决）
+
+### 裁决与替代单位
+
+- **替代单位 = turn-stopping 派发行**：该派发点位于官方 `dsh-agent-loop` 行的循环驱动内（已核实锚点：官方 `dsh-agent-loop/lib/index.js` 循环内 `await this.dispatch.serial("agent/turn-stopping", { turn, signal })`，其后 `signal.throwIfAborted()` 与停止复查 `if (turnEnds && this.inbox.nextStep.length === 0) break;`）。该行**已被既有 R 装配替代**（官方行 `agent-loop` `disabled: true` + 替代行 `plugin-api-agent-loop`，见 `packages/agent-loop/cordis.patch.yml` 与 capability-strategy §5 装配表）——本切片**不新增被禁用官方行、不新增替代行**，是在既有替代行内新增一个能力切片。
+- **owner = 既有组件唯一 owner**：`@deepseek-ai/dsh-plugin-api-agent-loop`（唯一官方组件包 `@deepseek-ai/dsh-agent-loop`）。不为本点位新建第二个 llm/agent-loop owner，也不在别处复制派发语义。
+
+### 官方契约基线（R2 完整复刻）
+
+替代行必须完整提供被替代行的 ctx 服务面与事件面契约——turn-stopping 派发点的官方等价基线为：
+
+1. 触发条件：`turnEnds` 已判且 next-step pending inbox 为空（turn 即将停止）。
+2. 派发形态：官方 fused serial dispatcher（`agentEvents(loopCtx, agent)`），payload `{ turn, signal }` 融合注入 `agent` → `{ agent, turn, signal }`，冻结策略按 catalog（`deep: []`）。
+3. 时序：loop `await` 派发 → 官方 `throwIfAborted()` → 停止复查（next-step pending 非空则继续本 turn）。
+4. 事实语义：无参与决定时行为与官方行逐位一致（serial 派发照发、observe 面照常、停止结果照官方判定）。
+
+fork 现行实现（`packages/agent-loop/lib/forked-loop.js`）已逐位复刻上述基线；本切片只**追加**参与链调用与决定应用，不改、不绕过、不双跑官方派发。
+
+### 决定词汇与默认语义（基于已核实派发语义）
+
+- **词汇**：`proceed`（无返回 / `{ kind: 'proceed' }`）| `{ kind: 'continue', message }`。
+- **语义依据**：官方循环在派发后复查 next-step pending inbox——这是官方唯一的本 turn 续延通道。`continue` 的应用方式是**经官方 next-step inbox 通道插入 message**（官方 Inbox 持久 splice，`agent/inbox/inserted` 等事实由官方路径照常发出），使循环自身的停止复查观察到 pending 项而继续下一步；切片不绕过、不复刻该复查。
+- **默认语义**：无参与者 / 全部未决定 / 收敛为 proceed → 与官方行逐位一致（派发照发、停止照判定）。畸形决定（词汇外或 message 不满足官方 pending 消息契约）按未决定处理 + 有界诊断（家族先例：session-title `malformed` 语义），不抛穿派发。
+- **收敛**：参与链上 last-decision-wins（与 catalog 决策族收敛规则一致）；proceed 不覆盖先到的 `continue` 之外的任何东西——链末决定即应用决定。
+
+### 参与链与横切语义归属（「横切语义永不 R」的边界）
+
+- **派发路由机制**：替代行在派发点经**契约符号探测**（与既有切片同模式：`Symbol.for` 键 + 门面侧契约标记）获取门面 `agents.decisions` 的 turn-stopping 参与链；切片以 `{ agent, turn, signal }` 冻结载荷调用链，取得收敛决定后应用。参与条目**不安装为 ctx 监听**（串行派发的返回值契约不属于公共面），官方 serial fact 派发保持原样——observe 面看到的时序与官方完全一致。
+- **横切语义归属**：priority 排序（固定词表 + 注册顺序）、载荷冻结（deepFreeze 策略）、participant 故障 containment、收敛规则全部在**门面 registry**实现；替代行只做两件事——把官方派发点路由进参与链、按收敛决定走官方 inbox 通道。替代行不复刻、不覆盖、不修改任何派发横切语义；这就是「横切语义永不 R」在本切片的落点。
+- **idiom 归类**：turn-stopping 参与为 policy idiom（`agents.decisions.register` 同形 handle `{ id, ownerId, generation, dispose() }`）；decide 不持有 `next`（无执行续延），与 pre-step 家族的水续延例外不同，不需 around 例外登记。
+
+### fail-safe、boot 自检、版本锁定
+
+- **fail-safe**：门面缺位（主门面未装、契约符号缺失、版本失配）或参与链调用失败 → 替代行回退**官方等价 serial 派发**（默认行为），绝不双跑（参与链与官方派发是同一次派发内的先后步骤，不存在两次事件）、绝不静默（降级写有界诊断）；参与登记面返回 typed `unavailable`。
+- **boot 自检（R4）**：沿用该包 apply 既有自检矩阵的**加性切片检查**模式（同 evidence/interaction 切片）：官方行已 disabled、替代行已 active、主门面版本一致、参与链契约符号可达；任一失败 → 仅本切片停用（登记 typed unavailable + 诊断），替代行其余能力与本包其他切片照常，绝不静默双跑。
+- **版本锁定（R5）**：复用该包既有 identity 矩阵（runtime 全量 identity `0.1.0-rc.6`、官方组件包 identity、主包 `A.B.C` 一致性）；失配仅停用本切片能力，不影响同包其他切片与主包无关能力（versioning-and-protocols §3 降级规则）。
+
+### 与同包既有切片的行级关系（互不干扰）
+
+同一替代行（`plugin-api-agent-loop`）当前承载：route-policy 能力（U11 上游提案对应）、loop-boundary 交互切片（M9 交付：attempt 事实/admission/cancel 契约，`INTERACTION_ACTIVE_SYMBOL` + activity 投影契约版本交叉核对）、assembled-context 证据切片（context-provenance 交付：`EVIDENCE_ACTIVE_SYMBOL` 标记）。本切片的行级共存关系：
+
+1. **同一替代行、独立契约符号与门控**：turn-stopping 参与切片使用独立的 `Symbol.for` 契约键与 active 标记，不读写其他切片的符号、状态或契约版本。
+2. **自检加性**：apply 自检矩阵追加本切片的加性检查项；本切片失败只降级本切片（先例：证据切片失败只降级证据，不整体回退）。
+3. **零共享状态机**：参与链状态只存于门面 `agents.decisions` registry；切片内不维护参与者状态（无状态路由 + 决定应用），与 interaction 切片的 attempt 事实、evidence 切片的证据发射互不引用。
+4. **事件面不交叉**：本切片不发新事件（决定应用经官方 inbox 通道，事实由官方路径发出）；不改 `agent/inbox/*`、attempt、evidence 任何既有事件语义。
+
+### client 半面（§10 六问，R 切片专项）
+
+1. 被替代的官方行（agent-loop）是否声明 client manifest？——**否**（该替代行现状 host-only，本切片不新增 manifest）。
+2. 是否注册 remote namespace？——**否**。3. 是否提供 slot 或 settings bridge？——**否**。4. 是否有 client↔host 版本协商？——**否**（复用既有包级 identity 检查，非 client 协商）。5. 是否有 browser-side state 或 reconnect 语义？——**否**。6. 官方行是否拥有 client-facing event/service？——**否**（turn-stopping 为 host 派发点）。
+
+结论：R 切片 **host-only**（与该替代行既有判定一致；未来任一项转正则触发新的 client 审计）。
+
+### 登记义务清单（Stage 4 动作，本文只陈述）
+
+- canonical registry：eventCatalog `agent/turn-stopping` 行由 `fact` 修订为 decision 参与语义（补 `decisionPrecedence` / `conflictConvergence` / `listenerFailureDefault`）；`agents.decisions` 成员行覆盖 `turn-stopping` 点位；capabilityMatrix 增补本切片条目。
+- `docs/standards/capability-strategy.md` §5 装配表注：`plugin-api-agent-loop` 行注明本能力切片。
+- `docs/specs/plugin-api-features/feature-list.md` §3.1 报备（同组件同包能力切片先例）与 **U-series 新条目**：agent-loop owner 已有 U11（route-policy seam）与 U19（assembled-context evidence seam）两条目，均不覆盖 turn-stopping 参与——本切片登记为**独立新条目**（不重复占用/扩展 U11/U19），退役条件：官方在 turn-stopping 派发点原生提供等价决策参与 seam（或等价公开 continuation/decision 钩子）后，本 R 切片退役、参与面迁官方 seam、门面 registry 保留。
+- AGENTS.md §2/§4 能力边界同步（如裁决后的表述需要）。
+- admission rationale：turn 即将停止时的受控续延（auto-continue 类场景）是真实第三方需求；官方无决策参与 seam 且结构上不可达（循环内复查），符合 R 类准入方向。
 
 ## 失败路径与 guard 策略
 
@@ -121,6 +184,7 @@ path 理由：
 | 同 owner 重复 id / 跨 owner 冲突 | typed `conflict`；跨 owner 不静默覆盖 |
 | backing 不可用 / 版本错配 | `unavailable` typed 结果 + capability degraded；不影响无关点位 |
 | 恶意/畸形决策对象（不满足点位词汇） | 按未决定处理（对齐 session-title 包既有 `malformed` 语义），不抛穿 |
+| turn-stopping 切片：门面缺位 / 契约符号缺失 / 参与链失败 | 替代行回退官方等价 serial 派发（默认行为）；绝不双跑、绝不静默（有界诊断）；参与登记 typed `unavailable`（见「R slice 设计」） |
 | 注册风暴 / 无界增长 | 每 owner 每 id 唯一 + dispose 义务；不设配额（cooperative 模型，`composition-and-authority.md` §9） |
 
 ## 并发与取消
@@ -144,7 +208,7 @@ path 理由：
 
 | 分册 | 结论 |
 |---|---|
-| capability-strategy | **适用**：全部点位 A 类稳定化；无 R 点位（判定表见上）；横切语义永不 R；host-only 六问已记录；无新 `services.*` 成员。 |
+| capability-strategy | **适用**：除 turn-stopping 外全部点位 A 类稳定化；**唯一 R 点位 `agent/turn-stopping`**（人类裁决 2026-09-12，agent-loop owner 既有替代行内的能力切片，R1–R8 对照与登记义务见「R slice 设计」）；横切语义永不 R（边界条款已写明）；host-only 六问已记录（含 R 切片专项）；无新 `services.*` 成员。 |
 | api-shape | **适用**：参与面 = policy 语义面（含显式 around/async-barrier idiom 例外）；observe 保持 projection 面无副作用；数据流单向（决策点→策略→producer 消费→事件→投影），策略不写共享状态（屏障例外的副作用前置工作除外，已登记例外）。 |
 | api-idioms | **适用**：policy idiom 形状（register/handle/priority/conflict）；around 与异步屏障按 §1 例外机制六项登记；`events.observe` 保持 projection；事件语义登记不变。 |
 | public-api-shape | **适用**：`agents.decisions` / `tools.executionPolicies` / `prompts.assemblyPolicies` 挂既有领域；`events.decisions` 为 events 域内 typed 准入面；无顶层新域；path 不泄漏治理名。 |
@@ -160,3 +224,5 @@ path 理由：
 ## 迁移证据义务（Stage 4）
 
 对每个已证实消费者建立「原行为 → 目标公共调用 → 运行证据」映射：agent-teams（pre-step 激活）、turn-rewind / checkpoint-rewind（fs 意图与 tools execute 屏障，含异步快照先于副作用）、model-failover（request/request-error 与 routing/health 分工）、secret-redactor（redaction 迁移）、anchor（assembly 整体替换 + tools 筛选）。官方 `agent/request` / `agent/request-error` 的决策词汇以 Stage 4 契约 probe 对照官方 producer 源码后固化，probe 结论与偏差按 spec 修订流程同步本文档。
+
+turn-stopping R 切片另需（R 类证据等级）：官方契约基线逐位对照证据（fork 派发 vs 官方行：payload/时序/停止复查）、双跑检测、门面缺位 fallback 行为、boot 自检矩阵（含与 interaction/evidence/route-policy 切片的加性独立降级）、`continue` 决定经官方 inbox 通道真实续延本 turn 的运行证据，以及「无参与者默认官方等价行为」的等价性断言。

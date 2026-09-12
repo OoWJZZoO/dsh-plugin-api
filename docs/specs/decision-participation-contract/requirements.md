@@ -13,7 +13,7 @@ Stage 1 与 Stage 2 同批交付（2026-09-12）。本文承接已确认 Stage 0
 
 本 feature 为第三方插件提供**参与官方真实决策点与必要执行边界**的稳定公共契约：纯 decision、串行 transform、异步执行前屏障与 around middleware 各按真实 idiom 表达，保留返回值、异步顺序与作用域语义。只读观察（`events.observe`，monitor feed，返回值不参与决定）与本 feature 的参与面明确分界。
 
-参与面按领域放置（policy idiom 为主，around/barrier 以显式登记的 idiom 例外表达），既有等价面（`llm.requestTransforms` / `llm.admissionPolicies` / `llm.routing.policies`、`tools.guard` / `tools.restrict`、`security.redaction`、`prompts.contribute`）优先承载并只补不足；没有领域归属的 catalog decision 点位由统一的 typed decision registry 承载（只接受 catalog decision 事件名，不是无语义约束的万能订阅入口）。横切派发语义（priority / deepFreeze / fault containment）保持门面承载，不走替换通道。
+参与面按领域放置（policy idiom 为主，around/barrier 以显式登记的 idiom 例外表达），既有等价面（`llm.requestTransforms` / `llm.admissionPolicies` / `llm.routing.policies`、`tools.guard` / `tools.restrict`、`security.redaction`、`prompts.contribute`）优先承载并只补不足；没有领域归属的 catalog decision 点位由统一的 typed decision registry 承载（只接受 catalog decision 事件名，不是无语义约束的万能订阅入口）。横切派发语义（priority / deepFreeze / fault containment）保持门面承载，不走替换通道。本 feature 的唯一 R 点位是 `agent/turn-stopping`（2026-09-12 人类裁决：经既有 agent-loop owner 替代包的能力切片提供决策参与）；其余点位维持无 R 判定。
 
 ## Requirement 1: 决策参与登记面与 idiom 合同
 
@@ -21,15 +21,15 @@ Stage 1 与 Stage 2 同批交付（2026-09-12）。本文承接已确认 Stage 0
 
 ### Acceptance Criteria
 
-1. WHEN a plugin calls `pluginApi.agents.decisions.register(spec)` with `spec.point` selected from `pre-step | request | request-error` and a spec containing `id`、`priority`、`decide(context)` THEN the system SHALL install the policy at the corresponding official decision dispatch point and SHALL return the policy handle `{ id, ownerId, generation, dispose() }`.
+1. WHEN a plugin calls `pluginApi.agents.decisions.register(spec)` with `spec.point` selected from `pre-step | request | request-error | turn-stopping` and a spec containing `id`、`priority`、`decide(context)` THEN the system SHALL install the policy at the corresponding official decision dispatch point and SHALL return the policy handle `{ id, ownerId, generation, dispose() }`.
 2. WHEN a plugin calls `pluginApi.tools.executionPolicies.register(spec)` with `spec.point` selected from `execute | post-execute` THEN the system SHALL install the policy at the corresponding official tools dispatch point with the same handle contract as Requirement 1.1.
 3. WHEN a plugin calls `pluginApi.prompts.assemblyPolicies.register(spec)` THEN the system SHALL install the policy at the `system-prompt/assemble` decision point with the same handle contract as Requirement 1.1.
 4. WHEN a plugin calls `pluginApi.events.decisions.register(name, spec)` with `name` in the admitted set enumerated in Requirement 10 THEN the system SHALL install the policy at the corresponding catalog decision dispatch point with the same handle contract as Requirement 1.1.
 5. WHEN any participation entry is registered THEN the registration SHALL be automatically effective for subsequent dispatches without a separate activation call, and the owner identity SHALL be derived from the caller context and SHALL NOT be forgeable by the caller.
 6. GIVEN a decision point whose equivalent domain face already exists (`tools/pre-execute` → `tools.guard.register`; tool result content rewrite → `security.redaction.register`; request mutation → `llm.requestTransforms.register`; route/health decisions → `llm.routing.policies` / `llm.routing.health.*`) WHEN a plugin needs to participate at that point THEN the system SHALL present only the existing face as the supported path and SHALL NOT expose a second registration entry for the same decision point.
-7. WHEN a caller attempts to register at a decision point that has no supported public participation in this generation (including `approval/request`, `session-telemetry/record`, `tools/code-dispatch-log`, `agent/turn-stopping`) THEN the system SHALL return a typed `unsupported` result whose reason names the catalog status of the point, and SHALL NOT install any listener.
+7. WHEN a caller attempts to register at a decision point that has no supported public participation in this generation (including `approval/request`, `session-telemetry/record`, `tools/code-dispatch-log`) THEN the system SHALL return a typed `unsupported` result whose reason names the catalog status of the point, and SHALL NOT install any listener.
 
-**Classification:** A 类稳定化为主（官方已 dispatch 的决策点由门面重新引出参与登记）；条目 7 为契约边界声明。R 类判定：无新增 R 点位（见 design.md 逐点位通道判定表）；横切派发语义永不转 R。
+**Classification:** A 类稳定化为主（官方已 dispatch 的决策点由门面重新引出参与登记）；条目 7 为契约边界声明。R 类判定：**唯一 R 点位为 `agent/turn-stopping`（人类裁决 2026-09-12，agent-loop owner 切片，见 design.md「R slice 设计」）**；其余点位维持无 R 判定（逐点位通道判定表见 design.md）；横切派发语义（priority / deepFreeze / fault containment）永不转 R。
 
 ## Requirement 2: `agent/pre-step` 参与保真
 
@@ -73,17 +73,24 @@ Stage 1 与 Stage 2 同批交付（2026-09-12）。本文承接已确认 Stage 0
 
 **Classification:** A 类稳定化；条目 3 为既有面分工义务（不制造第二个 route 决策 owner）。
 
-## Requirement 5: `agent/turn-stopping` 目录现状对照（不提供决策参与）
+## Requirement 5: `agent/turn-stopping` 参与保真（R 类切片，2026-09-12 人类裁决）
 
-**User Story:** 作为维护者，我要求把 catalog 现状为 fact 语义的点位与决策参与面显式区分，不静默把通知升级为决策。
+**User Story:** 作为 auto-continue 类插件的作者，我想在 turn 即将停止的官方派发点声明「以一条 next-step 消息继续本 turn」的决定，使停止可以被受控延续而不中断官方循环。
 
 ### Acceptance Criteria
 
-1. GIVEN the canonical registry currently records `agent/turn-stopping` with `eventSemantics: fact`, `dispatch: serial` (a turn-stop notification, not a decision) WHEN any caller attempts `agents.decisions.register` or `events.decisions.register` for that name THEN the system SHALL return the typed `unsupported` result of Requirement 1.7 with the catalog status named in the reason.
-2. WHEN a plugin needs to observe turn stopping THEN the system SHALL present `events.observe('agent/turn-stopping')` as the supported read-only path, and the observer's return value SHALL NOT affect the stop.
-3. WHEN a future need for stop-veto participation is evidenced THEN changing the point's semantics SHALL require an explicit canonical catalog revision through the contract-change process (including the convergence feature's change gate); this feature SHALL NOT convert the point by adding a participation entry.
+1. GIVEN the official dispatch semantics verified against the locked runtime source (the loop dispatches `agent/turn-stopping` via the official fused serial dispatcher with payload `{ turn, signal }` fused with `agent`, awaits the dispatch, re-checks abort, and then re-checks the stop condition against the next-step pending inbox before breaking) WHEN the replacement row runs that dispatch point THEN the official serial fact dispatch (payload shape `{ agent, turn, signal }`, catalog freeze policy, timing between the abort checks, and the loop's stop re-check) SHALL be preserved unmodified, and the participation slice SHALL only add the participant-chain invocation and the decision application.
+2. WHEN a participant registered via `agents.decisions.register({ point: 'turn-stopping', ... })` is invoked THEN it SHALL receive the frozen payload `{ agent, turn, signal }` plus the dispatch context, and its decision vocabulary SHALL be exactly: proceed (no return / `{ kind: 'proceed' }`) or `{ kind: 'continue', message }`.
+3. WHEN the converged decision is `continue` with a message conforming to the official next-step pending inbox contract THEN the slice SHALL insert the message through the official next-step inbox channel (durable splice; the official `agent/inbox/*` facts are emitted by the official path), so the loop's own stop re-check observes the pending item and the turn continues into a next step; the slice SHALL NOT bypass or reimplement the re-check.
+4. WHEN no participant is registered, all participants make no decision, or the converged decision is proceed THEN the point SHALL behave exactly as the official row: the serial fact dispatch completes, the loop re-check governs, and the turn stops as officially determined (无参与者默认官方等价行为).
+5. WHEN a participant's callback throws, rejects, or settles late THEN the failure SHALL be contained at the facade participation boundary per Requirement 11: that slot takes the documented default (proceed), the loop's stop flow SHALL NOT be broken, and the remaining participants SHALL still be consumed.
+6. WHEN multiple participants are registered THEN they SHALL be invoked in the fixed priority vocabulary order with same-priority successful-registration order, and the converged decision SHALL follow the point's declared convergence rule (last decision wins along the participation order); a malformed decision SHALL be treated as no decision with a bounded diagnostic (family precedent), never throwing through the dispatch.
+7. WHERE a participant declares an agent scope binding IF the stopping agent does not match the binding THEN the system SHALL NOT invoke that participant.
+8. WHEN the replacement row is inactive, its version identity does not match, or the component owner check fails THEN registration of a turn-stopping participant SHALL return the typed `unavailable` result; the official row's fact semantics and the `events.observe('agent/turn-stopping')` read-only path SHALL be unchanged, and unrelated decision points SHALL NOT be affected (可用性门控).
+9. WHEN the turn-stopping participation slice is inactive or fails its boot self-check THEN the other capability slices of the same replacement package (loop-boundary interaction facts, assembled-context evidence, route policy) SHALL be unaffected, and each slice's availability SHALL be reported independently (同包切片隔离).
+10. WHEN a participant is disposed or its owner reloads THEN the participation registry removal SHALL be identity-bound and idempotent, and the loop SHALL NOT observe a partially-removed participant chain on the next dispatch.
 
-**Classification:** 契约边界声明（catalog 现状对照：fact/serial 保持不变）；语义修订通道为 C 类（upstream proposal / catalog revision），本 feature 不预批。
+**Classification:** R 类（人类裁决 2026-09-12）：agent-loop 组件唯一 owner `@deepseek-ai/dsh-plugin-api-agent-loop` 的能力切片；R1–R8 逐条对照、与同包既有切片的行级关系及登记义务清单见 design.md「R slice 设计」。
 
 ## Requirement 6: `system-prompt/assemble` 参与保真（整体替换与筛选）
 
