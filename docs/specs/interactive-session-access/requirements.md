@@ -42,7 +42,7 @@
 1. WHEN a request message carries `attachmentRefs` THEN the durable adapter SHALL resolve every ref through the existing attachments authority and SHALL append one durable user message whose content blocks preserve each attachment (media kind, reference, source provenance); the system SHALL NOT shrink attachments to plain text, drop refs, or fabricate placeholder blocks.
 2. WHEN any ref cannot be resolved (missing, expired, unsupported) THEN the request SHALL fail closed with a typed rejected/unavailable outcome carrying the per-ref reason, and SHALL NOT append a partial message.
 3. WHEN a request arrives while the target session has a live operation THEN the request authority SHALL apply the caller-declared `delivery`: `steer` (official next-step splice into the live attempt) or `queue` (official next-turn inbox), returning a typed accepted outcome that references the live operation (steer) or a cancellable queued reference (queue); WHEN `delivery` is absent THEN the delivered same-session outcome (`already-running` with the live operation reference) SHALL be preserved unchanged.
-4. WHEN a steered or queued delivery is committed THEN its pending/queued state SHALL be observable through the official inbox durable facts and the shared activity projection; this feature SHALL NOT maintain a second queue or request state machine.
+4. WHEN a steered or queued delivery is committed THEN its pending/queued state SHALL be observable through the official inbox durable record `agent/inbox/spliced` (discard recorded as `outcome: 'canceled'`), the `inserted`/`claimed`/`discarded` dispatch notifications (`claimed` is not durable), and the shared activity projection; this feature SHALL NOT maintain a second queue or request state machine.
 5. WHEN a caller cancels a not-yet-claimed queued request via the delivered `sessions.cancel` with its queued reference THEN the authority SHALL request official discard and return a typed outcome; WHEN the loop has already claimed it THEN cancel SHALL follow the delivered live-operation cancel path (signal, never a forged terminal).
 6. WHEN the official inbox or loop boundary is unavailable THEN steer/queue SHALL return typed unavailable and SHALL NOT fall back to an append-and-guess path.
 
@@ -55,13 +55,13 @@
 ### Acceptance Criteria
 
 1. WHEN an interactive client queries model candidates THEN it SHALL consume the existing catalog faces (host `services.llm.listProviders`/`listModels`, `llm.routing.candidates`; client `services.modelDirectories`; presets via `services.agentPresets` where the sample uses them), and the system SHALL NOT publish a duplicate model catalog.
-2. WHEN a caller commits a model/effort selection for a target session via the selection mutation face THEN the system SHALL commit through the official model-selection path as a coordinated mutation with compare-and-swap revision, returning a typed `committed | conflict | rejected | unavailable` outcome; callers SHALL NOT write selection state through any parallel store.
+2. WHEN a caller commits a model/effort selection for a target session via the selection mutation face THEN the system SHALL commit through the single official selection submit seam — the audited `services.apiProxy` whitelist extension carrying the official per-session selection state — as a coordinated mutation with value-level compare-and-set, returning a typed `committed | conflict | rejected | unavailable` outcome; callers SHALL NOT write selection state through any parallel store.
 3. WHEN a selection is committed THEN the next processing step of that session SHALL route to the committed model and SHALL carry the same committed value in that step's prompt snapshot — route consumption and prompt consumption SHALL observe one identical selection value (joint acceptance with the scoped-contribution line's same-step snapshot verification); the system SHALL NOT split one selection into two independently-committed copies.
-4. WHEN a session is restored or the client reopens across modes THEN the visible selection SHALL equal the last committed selection (no drift); restoration SHALL read the official persisted selection, not a facade copy.
-5. WHEN a set arrives with a stale `expectedRevision` or a concurrent writer intervenes THEN the system SHALL return typed conflict and SHALL NOT silently last-win.
-6. WHEN the official selection path is unavailable THEN get/set SHALL return typed unavailable views/results and the namespace availability SHALL reflect it honestly.
+4. WHEN a session is restored or the client reopens across modes THEN the visible selection SHALL equal the last committed selection when the official persistence succeeded (no drift); WHEN official persistence failed or is unavailable THEN the selection view SHALL typed-disclose the effective source and its degradation (`source`/`observedAt` fields) instead of presenting a stale committed value as authoritative.
+5. WHEN a set arrives with an `expected` selection snapshot that no longer matches the official current value at commit time — including writes made through the official path outside the facade — THEN the system SHALL return typed conflict; the official submit seam itself is last-write-wins without an atomic compare-and-swap, so a write racing inside that window follows official semantics and the residual race SHALL be declared in Design.
+6. WHEN the official selection submit seam is unavailable (whitelist member not servable on the current runtime, or the Design fallback applies) THEN get/set SHALL return typed unavailable views/results and the namespace availability SHALL reflect it honestly.
 
-**Classification:** A（候选查询复用）+ B（选择提交为 facade mutation，协调官方选择路径落点）。R 类判定：官方选择路径经 prompt assembly 捕获并用于本步 route（官方既有行为），不新增 R。
+**Classification:** A（候选查询复用）+ A/B（选择提交：官方 selection 事实源与唯一提交入口在 `@deepseek-ai/dsh-host-apiproxy` 的 ApiProxyService；本线经 `services.apiProxy` 审计白名单扩展承接该 seam——§6 分级，submit 成员为 advanced passthrough 且声明 bypass——facade 选择面为其上的 coordinated mutation wrap）。R 类判定：基线不新增 R；若 probe 证明 submit 成员在当前 runtime 仅 mux 帧可达（不可作为 service 方法服务），按条件 R（dsh-host-apiproxy 的 apiProxy 行）或 C 类诚实 unavailable 基线处理（见 Design R-Point 陈述）。
 
 ## Requirement 4: Pending Interaction Restricted View
 
@@ -74,7 +74,7 @@
 3. WHEN the official pending source is unreachable or degraded THEN the view SHALL return the typed degraded/unavailable form and SHALL NOT present an empty list as a healthy "nothing pending" state.
 4. WHEN the caller lacks the session grant for a target session THEN its view SHALL NOT include that session's pending interactions.
 
-**Classification:** B（facade projection，基于既有官方 approval/userQuestions authority 的事件与状态）；不旁路、不吞并既有 approval/userQuestions/attention authority。R 类判定：不新增 R（可能的 R 点位仅作设计陈述，见 Design）。
+**Classification:** B（facade projection：approval 侧经官方 `approval/request`、`approval/decided` 事件可达；question 侧 pending 集位于官方 apiproxy 内部（官方 ctx.userQuestions 仅 registerProvider/ask 且单 provider），其视图 seam 与应答 seam 同归条件 R 探针范围（见 Design）——seam 未证实前交付基线为诚实 typed unavailable，不伪造视图）。不旁路、不吞并既有 approval/userQuestions/attention authority。R 类判定：不新增 R（条件点位见 Design）。
 
 ## Requirement 5: Matched Respond, Reject And Cancel
 
@@ -82,14 +82,14 @@
 
 ### Acceptance Criteria
 
-1. WHEN a caller submits a respond operation `{ id, action, answer? }` where `action` is `approve | reject | answer | cancel` and the action and answer match the pending interaction's kind and declared answer shape THEN the facade SHALL forward exactly one answer through the official answer entry (`services.apiProxy.respond` / official user-questions admission) and SHALL return a typed `accepted | stale | rejected | denied | unavailable` outcome.
+1. WHEN a caller submits a respond operation `{ id, action, answer?, reason?, signal? }` where `action` is `approve | reject | answer | cancel` and the action and answer match the pending interaction's kind and declared answer shape THEN the facade SHALL forward exactly one answer through the official answer entry (`services.apiProxy.respond` / official user-questions admission) and SHALL return a typed `accepted | stale | rejected | denied | unavailable` outcome.
 2. WHEN the answer shape mismatches the declared `answerShape`, the interaction is no longer pending, or the interaction belongs to a session without grant THEN the system SHALL return typed rejected/stale and SHALL NOT reinterpret or coerce the answer.
 3. WHEN two clients respond to the same interaction THEN the first accepted submission SHALL win and the second SHALL receive typed stale/conflict; the official authority SHALL remain the decision owner.
 4. WHEN a respond is accepted or refused THEN the facade SHALL record bounded audit (caller owner, interaction id, action, timestamp, outcome) without answer payload content or secrets.
 5. The system SHALL NOT auto-answer: no schedule, trigger, retry or default answer SHALL be provided by the facade; every answered interaction SHALL be exactly one explicit caller action.
 6. WHEN `services.apiProxy.respond` or the official question admission is unavailable THEN respond SHALL return typed unavailable; the delivered `services.apiProxy` passthrough (downloads/respond) SHALL remain unchanged.
 
-**Classification:** B（facade operation，承载于官方 answer seams；`services.apiProxy.respond` 为底层机制，插件不管理官方私有 registry）；不代答。R 类判定：官方 answer seam 可达，不新增 R。
+**Classification:** B（facade operation；官方 answer entry——respond、pending approval/question registry 与 /api/respond 路由——归属 `@deepseek-ai/dsh-host-apiproxy` 的 ApiProxyService，`services.apiProxy.respond` 为其白名单底层，插件不管理官方私有 registry）；不代答。R 类判定：官方 answer seam 可达，不新增 R；question 侧视图/应答 seam 的条件点位见 Design。
 
 ## Requirement 6: Event Baseline, Increment, Reconnect And Correlation
 
@@ -169,7 +169,7 @@
 1. WHEN the feature is verified THEN an interactive test client that imports no official business API SHALL complete: create session, query candidates and switch model/effort, send input with attachments, receive stream/operation progress, handle an approval and a question through the restricted view, cancel, disconnect and reconnect, and restore history.
 2. WHEN concurrency is verified THEN two clients operating the same session, an old (superseded) reply, an old owner and an old epoch SHALL each produce the delivered commit-eligibility/stale-guard outcomes without cross-owner interference.
 3. WHEN interop is verified THEN the official browser plugin and an independent client SHALL observe consistent pending interactions and consistent session state for the same session, within the redaction envelope.
-4. WHEN selection is verified THEN one committed selection SHALL be observed identically by this-step route and prompt snapshot (joint evidence with the scoped-contribution line), and restored sessions SHALL show no drift.
+4. WHEN selection is verified THEN one committed selection SHALL be observed identically by this-step route and prompt snapshot (joint evidence with the scoped-contribution line); restored sessions SHALL show no drift when official persistence succeeded, and SHALL typed-disclose the effective source (`source`/`observedAt`) when it did not.
 5. WHEN payload fidelity is verified THEN attachment-bearing input SHALL reach the durable record with mapped content blocks and reach client payloads with the same refs; the pre-delivery fail-closed behavior SHALL be replaced by this contract, and no-shrinkage SHALL be asserted (not merely absence of errors).
 6. WHEN acceptance is evaluated THEN unary-RPC-only tests or source-export presence SHALL NOT count as coverage; stream, pending-interaction, reconnect and concurrency evidence is mandatory.
 7. WHEN delivery closes THEN the guarded full test suite, `git diff --check`, registry/surface consistency, official-package zero-modification audit and the required global adversarial review SHALL pass; evidence gaps SHALL keep the affected face typed unavailable rather than declared complete.
@@ -185,10 +185,10 @@
 | 历史/搜索 | `sessions.views.events`、`sessions.deriveMessages`、durable list、`services.sessionQuery` | 复用 |
 | 打开/恢复 | `agents.resume`、`executions.recovery.checkpoints`、`sessions.activity`（live/queued 只读） | 复用 |
 | 发送/取消 | 已交付 `sessions.request`/`cancel` authority + operation status/observe wire（M9） | 复用 + 本线扩展（attachmentRefs、delivery 词表） |
-| 排队/steer | 官方 inbox（durable `agent/inbox/*` 类型与 inserted/claimed/discarded 事实）+ M9 attempt followUp 事实 | 复用官方状态，本线只加交付词表 |
+| 排队/steer | 官方 inbox（durable 类型 `agent/inbox/spliced`，discard 以 `outcome: 'canceled'` 记录；inserted/claimed/discarded 为派发通知，claimed 非 durable）+ M9 attempt followUp 事实 | 复用官方状态，本线只加交付词表 |
 | 候选模型查询 | `services.llm.listProviders/listModels`、`llm.routing.candidates`、client `services.modelDirectories`、`services.agentPresets` | 复用 |
-| 模型/effort 变更 | 官方 model-selection 路径（prompt assembly 捕获、本步 route 消费） | 复用落点 + 本线新增受控 mutation 面 |
-| pending 交互视图/应答 | 官方 approval / userQuestions authority + `services.apiProxy.respond`（底层） | 复用 authority + 新增受限视图/类型化 respond 面 |
+| 模型/effort 变更 | 官方 selection 事实源与唯一提交入口（`@deepseek-ai/dsh-host-apiproxy` 的 `session.selectModel`/`session.models`）经 `services.apiProxy` 审计白名单扩展承接 | 复用 seam（白名单扩展）+ 本线新增受控 mutation 面 |
+| pending 交互视图/应答 | 官方 approval / userQuestions authority + `services.apiProxy.respond`（底层） | 复用 authority + 新增受限视图/类型化 respond 面（approval 侧经 `approval/request`/`approval/decided` 事件完整可用；question 视图来源见 R-Point 1 条件探针，seam 未证实前该侧 typed unavailable） |
 | 事件基线/增量/重连 | `sessions.channels`（open/acquire/observe/fetchEvents/ack/resume/revoke/auth/redaction）+ `sessions.activity` | 复用（消费合同） |
 | 通知/attention 呈现 | `attention`（host+client） | 复用、不吞并 |
 | 客户端传输 | connection、api-remotes、client-runtime carriers（均已交付 client 半面） | 复用 |
@@ -199,7 +199,7 @@
 - 本线消费而非重建：request authority（acceptance/dedupe/cancel/terminal 裁决、audit）、operation handle/status/observe（含 wire 承载）、activity correlation（confidence 三态不互代）、waiting 相位（approval 等待证据同源）全部按已交付合同消费。
 - 本线的显式扩展点（由 Goal 授权）：`message.attachmentRefs` durable content block 映射（兑现已登记缺口）；`delivery`（steer/queue）交付词表（扩展同 session 冲突的已交付 `already-running` 默认行为，缺省行为不变）；`sessions.interactions` 与选择 mutation 两个新 facade 面。
 - 已交付合同的接线与自描述修复属其自身维护范围；本线不重复该修复，其修复后的基线（诚实 availability、stale 世代守卫、host 侧脱敏先行）是本线 client 面的既有前提。
-- 与 scoped-agent-contributions 的共同验收点（Requirement 3 AC3）：同一步 route 与 prompt snapshot 消费同一选择值；该线贡献/决策消费侧的验收由其自身 spec 承载，本线只保证选择提交侧的单一快照。
+- 与 scoped-agent-contributions 的共同验收点（Requirement 3 AC3）：同一步 route 与 prompt snapshot 消费同一选择值；该线贡献/决策消费侧的验收由其自身 spec 承载，本线只保证选择提交侧的单一写点与单一事实源。
 
 ## Standards Applicability And Alignment
 
