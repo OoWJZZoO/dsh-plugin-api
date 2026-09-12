@@ -15,7 +15,7 @@ Stage 2 Design（2026-09-12 交付，Stage 0–2 已交付）。本文与已交�
 
 - **写**：`select(agent, active)` —— 包装官方 `planMode.set(agent, active)`，补 owner 归因、审计与官方结果码如实映射；不恢复裸 singleton setter（`services.planMode` 白名单不回流写成员）。
 - **读**：`get(agent)` —— 官方 authority 之上的冻结视图（含 pending 选择）。
-- **观察**：`observe()` —— 官方事实流（session 日志 `plan/mode` 经 `session/event` firehose）之上的 projection-observe 面；官方路径（官方 TUI、`/plan` 命令、`exit_plan_mode` 工具）引发的变更同样可达。
+- **观察**：`observe(agent)` —— 官方事实流（session 日志 `plan/mode` 经 `session/event` firehose）之上的 projection-observe 面，target 绑定的 per-target handle；官方路径（官方 TUI、`/plan` 命令、`exit_plan_mode` 工具）引发的变更同样可达。
 - **自描述**：`availability()`。
 
 不新建与官方模式无关的状态机：门面不自维护第二份 mode 状态，一切读/观/写均以官方服务与 session 日志为唯一事实源。
@@ -26,7 +26,7 @@ Stage 2 Design（2026-09-12 交付，Stage 0–2 已交付）。本文与已交�
 third-party plugin ──▶ pluginApi.sessions.planMode
                         ├── get(agent) ───────────▶ official planMode.get(agent)          [A]
                         ├── select(agent, active) ─▶ official planMode.set(agent, active) [A] + owner/audit
-                        ├── observe() ──┐
+                        ├── observe(agent) ──┐
                         │               ├── ctx.on('session/event') firehose  [A，官方派发点直绑]
                         │               └── 变更判定：official planMode.get(agent) 重读核验
                         └── availability() ──▶ official service presence + feature state
@@ -117,11 +117,12 @@ third-party plugin ──▶ pluginApi.sessions.planMode
 
 统一词汇对齐：`ok/code/reason` 按 `api-idioms.md` §2；`commitState` 只在发生官方日志提交的 `committed` 上携带、取统一终态词 `success`（`identity-and-lifecycle.md` §3，不新造终态词）；`cancelled`/`noop`/`queued` 是领域结果码，不是新终态。owner 不可归因（caller fiber 无 loader entry）→ typed `denied`（fail-closed，三线 mutation 面统一规则；普通第三方插件恒有可归因 fiber，root 回退仅用于只读/归因面）。
 
-### C4. 观察面 `observe()`（Req 3）
+### C4. 观察面 `observe(agent)`（Req 3）
 
+- **目标绑定（api-idioms §3.1 合规声明）**：观察入口为 **`observe(agent)`**——target（agent handle，与 `get`/`select` 同一目标语义）是入口的显式领域参数（§2 允许领域参数在显式领域字段中变化），返回 **target 绑定的** observe handle `{ current(), subscribe(listener), dispose(), epoch }`（§3.1 固定签名不变，**无 idiom 例外**）；handle 的 `current()` 返回**该 handle 目标**的最新投递视图，`subscribe(listener)` 只接收监听函数。无全局多目标混杂：一个 handle 只服务一个目标，跨目标订阅各自建 handle。
 - 形状：projection-observe `{ current(), subscribe(listener), dispose(), epoch }`（`api-idioms.md` §3.1）；observe handle 另登记 `sessions.planMode.observe.handle`。
-- 机制（A 类）：feature 挂载时建立**单条** `ctx.on('session/event')` firehose 订阅；对每个订阅目标（agent handle），凡该目标 session 的日志事件到达，即重读官方 `get(agent)` 得到组合视图 `{active, pending?}`，与上次投递视图不同才投递 `{ target, view, observedAt }`。事实全部来自官方派发点与官方读，不猜测（Req 3.3 的"官方状态核验"）。
-- **queued 结算可观察性**（Req 6.2）：结算为 `committed` 时官方落 `plan/mode` 事件 → firehose 直达；结算为 `cancelled`（`onBoundary` 静默清除 pending，无日志事件）时，同一被接受 pre-step 之后必有后续 session 日志活动（如 `request/header`）触发重读 → pending 消失被投递。先前 `queued` 结果不被改写（Req 6.2）。
+- 机制（A 类）：feature 挂载时建立**单条** `ctx.on('session/event')` firehose 订阅（facade 级共享）；firehose 事件按 session 匹配到已订阅目标后，重读官方 `get(agent)` 得到组合视图 `{active, pending?}`，与该 handle 上次投递视图不同才投递 `{ target, view, observedAt }`。事实全部来自官方派发点与官方读，不猜测（Req 3.3 的"官方状态核验"）。
+- **queued 结算可观察性**（Req 6.2）：结算为 `committed` 时官方落 `plan/mode` 事件 → firehose 直达投递，此为机制性保证。结算为 `cancelled`（`onBoundary` 静默清除 pending，无日志事件）时，投递依赖「被接受 pre-step 之后该 session 随后有日志事件」这一官方 loop 行为——官方文档仅保证 `onBoundary` 在下次 request assembly 前由 plan-mode 服务自身的 `agent/pre-step` handler 调用，**未显式保证后续必有日志事件**；本设计将其列为**待核实项，不作机制性断言**：Stage 4 须在冻结 runtime 上运行验证（accepted pre-step 后 firehose 是否出现可触发重读的事件）。若实测存在「静默清除后无日志活动」的窗口，该分支诚实降级：结算不推送，pending 消失经读面（`get` 的 `pending` 字段）可见，observe 面以 typed 方式记录该降级，不伪造投递。两种结算下，先前 `queued` 结果都不被改写（Req 6.2）。
 - 官方路径变更（官方 TUI、`/plan`、`exit_plan_mode`、官方内部）同样经 firehose 可达（Req 3.1）。
 - 订阅者回调 throw/rejection 只降级该监听者（containment）；dispose 幂等、stale disposer 不影响其他订阅者（Req 3.2）；目标 session 关闭（`session/disposed`）后投递停止，`current()` 返回带 reason 的 degraded 视图。
 - feature 卸载时销毁 firehose 订阅（cleanup owner = feature disposer）；stale 回调（dispose 后到达）失去投递资格（concurrency-and-cancellation §4/§5）。
@@ -140,6 +141,7 @@ third-party plugin ──▶ pluginApi.sessions.planMode
 select 结果    { ok, code, reason?, commitState?, mode?, pending?, appliedAt? }   // 冻结
 get 视图       { target, active, pending?, observedAt, source: 'official' }       // 冻结
 observe 投递   { target, view: { active, pending? }, observedAt }                 // 冻结
+observe 入口    observe(agent) → target 绑定的 observe handle                    // 领域参数在入口，handle 形状固定（§3.1）
 observe handle { current(), subscribe(listener), dispose(), epoch }
 audit 记录     { seq, at, ownerId, action, target, requested, outcome }           // bounded，冻结出环
 availability   { status: 'active'|'degraded'|'unavailable', reason? }             // 冻结
@@ -147,6 +149,7 @@ availability   { status: 'active'|'degraded'|'unavailable', reason? }           
 
 ## Concurrency And Conflict Rules（concurrency-and-cancellation §6 声明）
 
+- **外层合同（三线一致）**：乐观比较点与提交不可被并发交错。本线官方 `set` 为同步，单同步提交跨度即满足该规则（异步官方 seam 线的达成方式见 `credential-mutation-contract` design）。
 - **并发策略**：官方仲裁保留（`compare-and-swap` 型官方比较——官方 `set` 先比较请求与 pending/日志态再决定 `noop`/`queued`/`cancelled`/`committed`）。门面不发明 silent latest-wins，不覆盖官方仲裁（Req 6.1）。
 - **scope 与冲突判定**：scope = 目标 agent 的 plan 状态；冲突判定 = 官方 `set` 的比较结果（唯一裁决）。官方 `set` 与门面包装同为单同步跨度，多个 caller 的并发提交由 host 线程序列化，各自得到官方仲裁码，不存在交错窗口。
 - **取消行为**：`select` 为同步短事务，无 signal 参数（官方 seam 无取消点）；本册 §3 取消传播不适用，§1"取消是信号、终态是裁决"由官方结果码承载（`cancelled` 即官方裁决）。
@@ -193,7 +196,7 @@ capability ID：`sessions.planMode`；`eventCatalog` 无新增事件（复用已
 ## Testing Strategy（对应 Req 10）
 
 1. **结果映射**：committed/queued/cancelled/noop 四码逐一断言（含 `cancelled`/`noop` 的 ok:false、`queued` 的 pending 标记与无 commitState）、前置拒绝（无效目标/关闭目标/不可归因）、官方未知码 → `internal`。
-2. **官方读回**：committed 后官方 `get` 与门面读面一致；开 turn 中 select → queued → 模拟接受 pre-step 落日志 → 观察面收到结算投递；静默清除路径（pending 被反向落日志覆盖/清除）经后续 firehose 活动触发投递。
+2. **官方读回**：committed 后官方 `get` 与门面读面一致；开 turn 中 select → queued → 模拟接受 pre-step 落日志 → 观察面收到结算投递；静默清除路径的投递依赖按 §C4 待核实项在冻结 runtime 上运行验证，实测存在无日志活动窗口时断言诚实降级呈现（读面可见、observe 不伪造投递）。
 3. **观察**：官方路径（直调官方 set）引发的变更到达订阅者；回调 throw 隔离；stale disposer 隔离；session 关闭降级。
 4. **组合**：两个 synthetic plugin 反向注册顺序、并发 select 确定性（官方仲裁码）、owner 派生（含不可归因 → denied）、重复选择幂等（noop 不计第二次 committed、审计只记 attempt）。
 5. **降级**：官方服务缺席 → typed unavailable、availability 诚实、无关能力不受牵连；审计写失败 gap 标记。
