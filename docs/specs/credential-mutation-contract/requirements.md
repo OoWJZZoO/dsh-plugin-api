@@ -2,12 +2,14 @@
 
 > feature_name: `credential-mutation-contract`
 > milestone: M10
-> status: SPEC1 Stage 1 v1（2026-09-11 提交 M10 批量确认门，待人类批准）；Stage 0 Goal 已确认（2026-09-11）；Design 未开始。
+> status: Stage 0–2 已交付（2026-09-12）。Goal 于 2026-09-11 获批；Requirements 2026-09-11 初稿、2026-09-12 与 Design 同批收敛交付（修订记录见下）。
 > 上游输入：`docs/specs/credential-mutation-contract/goal.md`（已批准）；M10 工作纲领 §3.6（OBS-06）；观察报告 §5 OBS-06；M7 deletion report B4-5 批准记录与「后续 B 类接口义务」；canonical registry `services.credentials` 现状与 `credentials/updated` 事件登记。
 
 ## Status
 
-SPEC1 Stage 1 v1（M10 mutation-control 三线批量交付的第三份；2026-09-11 提交批量确认门）。本文件依据已批准的 Stage 0 Goal 与本仓库 `docs/standards/` 各分册编写。每条需求标注 A/B/C 实现通道分类。
+Stage 1 Requirements（2026-09-12 与 Design 同批收敛交付，Stage 0–2 已交付；Goal 于 2026-09-11 获批）。本文件依据已批准的 Stage 0 Goal 与本仓库 `docs/standards/` 各分册编写。每条需求标注 A/B/C 实现通道分类。
+
+**修订记录（2026-09-12，与 Design 收敛时的就地修订）**：Requirement 1 AC1/AC2 的提交前校验边界由「ref 与其当前配置关联」改为「ref 与官方 backend 对该 ref 的当前状态（模式、可写性、环境影子）」——官方 provider 接受任意模式合法的 ref 建立存储值（写入先于配置引用是官方正常顺序，冻结 runtime 实测），caller 配置对 ref 的业务关联校验属插件自身业务契约（真实消费者先例 `dsh-vision-toolkit` 在自身 settings 描述符上校验后再调用）；门面不建立 ref 关联注册表。该修订不改变「校验先于副作用」的验收实质。
 
 ## Introduction
 
@@ -25,8 +27,8 @@ secret 的输入、存储、输出三个方向分开设计：录入方向（clie
 
 ### Acceptance Criteria
 
-1. WHEN an authorized caller sets a value for a valid ref THEN the system SHALL validate the ref and its current configuration association before any side effect, invoke the official write seam, and return a frozen discriminated result `{ ok, code, reason?, ... }` per the mutation idiom; success SHALL mean real persistence by the official credentials provider.
-2. WHEN the ref is malformed, unknown to the current configuration, or otherwise invalid THEN the system SHALL return a typed rejected result before invoking the write seam, and SHALL NOT create partial state.
+1. WHEN an authorized caller sets a value for a valid ref THEN the system SHALL validate the ref and the official backend state for it (ref pattern, writability, environment shadowing) before any side effect, invoke the official write seam, and return a frozen discriminated result `{ ok, code, reason?, ... }` per the mutation idiom; success SHALL mean real persistence by the official credentials provider.
+2. WHEN the ref is malformed per the official ref pattern, the value is empty, or the official backend refuses the write (read-only or environment-shadowed) THEN the system SHALL return a typed rejected result before invoking the write seam, SHALL NOT create partial state, and SHALL NOT reject a well-formed ref solely because no current configuration references it (establishing a stored value ahead of configuration reference is the official provider's normal order; caller-side configuration-to-ref association remains the caller's declared business contract).
 3. WHEN the write fails (backend error, read-only backend, unavailable provider) THEN the result SHALL report the typed error/unavailable, the previous value SHALL remain in effect, subsequent resolution SHALL return the previous value, and no half-committed state SHALL be visible.
 
 **Classification:** A（官方写入 seam 存在，受控稳定化 + 包装）；mutation idiom per `api-idioms.md` §3.3; ref/config semantics follow the official service as verified in the design.
