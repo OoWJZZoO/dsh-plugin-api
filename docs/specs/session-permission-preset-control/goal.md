@@ -2,7 +2,7 @@
 
 > feature_name: `session-permission-preset-control`
 > milestone: M10
-> status: Goal approved（2026-09-11，M10 批量确认门）；Requirements 提交确认中（2026-09-11）；Design 未开始
+> status: Stage 0–2 已交付（2026-09-12）。Goal 于 2026-09-11 获批（M10 批量确认门）；Requirements 与 Design 2026-09-12 同批交付。
 > 输入溯源：M10 工作纲领 §3.5（OBS-05）；观察报告 §5 OBS-05；M7 deletion report B4-4 批准记录与「后续 B 类接口义务」；canonical registry `services.permissionPresets` 现状（仅 current/resolve/optionOf）。
 
 ## Goal

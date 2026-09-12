@@ -2,12 +2,12 @@
 
 > feature_name: `session-permission-preset-control`
 > milestone: M10
-> status: SPEC1 Stage 1 v1（2026-09-11 提交 M10 批量确认门，待人类批准）；Stage 0 Goal 已确认（2026-09-11）；Design 未开始。
+> status: Stage 0–2 已交付（2026-09-12）。Goal 于 2026-09-11 获批；Requirements 与 Design 同批交付（2026-09-12）。
 > 上游输入：`docs/specs/session-permission-preset-control/goal.md`（已批准）；M10 工作纲领 §3.5（OBS-05）；观察报告 §5 OBS-05；M7 deletion report B4-4 批准记录与「后续 B 类接口义务」。
 
 ## Status
 
-SPEC1 Stage 1 v1（M10 mutation-control 三线批量交付的第二份；2026-09-11 提交批量确认门）。本文件依据已批准的 Stage 0 Goal 与本仓库 `docs/standards/` 各分册编写。每条需求标注 A/B/C 实现通道分类。
+Stage 1 Requirements（2026-09-12 与 Design 同批交付，Stage 0–2 已交付；Goal 于 2026-09-11 获批）。本文件依据已批准的 Stage 0 Goal 与本仓库 `docs/standards/` 各分册编写。每条需求标注 A/B/C 实现通道分类。
 
 ## Introduction
 
