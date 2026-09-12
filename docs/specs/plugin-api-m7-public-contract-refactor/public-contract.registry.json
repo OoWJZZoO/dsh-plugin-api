@@ -6369,7 +6369,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "tool definition registration",
+      "currentShape": "tool definition registration; optional opts.scope installs the definition through the target agent context (scoped layer, target-only visibility) with (owner, scope, key) conflict keys",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -14877,7 +14877,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": "official restriction registration disposer",
+      "currentShape": "official restriction registration disposer; optional opts.scope installs the restriction through the target agent context (official restrict requires a scoped context)",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -15075,7 +15075,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "deduplicate",
       "reducer": "none",
-      "currentShape": "merged contribution entry with seq handle",
+      "currentShape": "merged contribution entry with seq handle; scope-bearing specs (spec.scope bound to an agents.scopes.handle) install into the target agent scoped layer with (owner, target, id) conflict keys and never degrade to a global installation",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -16744,6 +16744,114 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "unified model-catalog projection: frozen read-time merge of official adapter-route catalogs, facade-registered declared capability fields, and dormant directory entries; per-entry honest unavailable marking; decorations never feed the view",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "agents.scopes.register",
+      "targetPath": "agents.scopes.register",
+      "capability": "agents.scopes",
+      "kind": "leaf",
+      "idiom": "resourceRegistry",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "register",
+      "composition": "additive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "agents domain authority",
+      "scope": "facade",
+      "resourceKey": "scope handle id",
+      "identitySource": "caller plugin context",
+      "conflictRule": "not-applicable",
+      "lifecycle": "handle lifetime ends at dispose or owner unload; scoped records follow the target identity",
+      "failureSemantics": "typed-throw",
+      "idempotency": "content-idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "latest-wins",
+      "reducer": "none",
+      "currentShape": "scope-bound handle registration: resolves the target through the official agents registry; unresolvable targets are typed unavailable without global fallback",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "agents.scopes.register.handle",
+      "targetPath": "agents.scopes.register.handle",
+      "capability": "agents.scopes",
+      "kind": "handle",
+      "idiom": "resourceRegistry",
+      "idiomExceptions": [
+        {
+          "memberPath": "agents.scopes.register.handle",
+          "baseContract": "resourceRegistry",
+          "exception": "scope-bound handle extension members target / status()",
+          "reason": "target is the identity projection of the scoped resource (scope binding requires it) and status() is the read-only usability member of the bound agent (typed refusal of unusable targets depends on it); neither introduces write authority or lease semantics",
+          "replacementShape": "{ id, ownerId, generation, target, status(), dispose() }",
+          "verification": "handle member registry assertions plus stale no-op and identity-bound disposal assertions"
+        }
+      ],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "register",
+      "composition": "additive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "agents domain authority",
+      "scope": "facade",
+      "resourceKey": "scope handle id",
+      "identitySource": "caller plugin context",
+      "conflictRule": "not-applicable",
+      "lifecycle": "handle lifetime ends at dispose or owner unload; stale usage is a typed no-op",
+      "failureSemantics": "typed-throw",
+      "idempotency": "content-idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "latest-wins",
+      "reducer": "none",
+      "currentShape": "scope-bound handle { id, ownerId, generation, target, status(), dispose() } (idiom exception recorded)",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "agents.scopes.snapshotOf",
+      "targetPath": "agents.scopes.snapshotOf",
+      "capability": "agents.scopes",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "agents domain authority",
+      "scope": "facade",
+      "resourceKey": "scope handle id",
+      "identitySource": "caller plugin context",
+      "conflictRule": "not-applicable",
+      "lifecycle": "read-time cell view; valid for the read only",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "per-step model-selection snapshot consumption cell for the bound target: current (writer latest) and assembled (step-captured); stale or foreign handles are typed unavailable",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -23209,6 +23317,28 @@
       "verification": [
         "member-inventory",
         "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "agents.scopes",
+      "currentPaths": [
+        "agents.scopes.register",
+        "agents.scopes.register.handle",
+        "agents.scopes.snapshotOf"
+      ],
+      "targetPaths": [
+        "agents.scopes.register",
+        "agents.scopes.register.handle",
+        "agents.scopes.snapshotOf"
+      ],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [],
+      "verification": [
+        "member-inventory",
+        "registry-validation"
       ]
     }
   ]

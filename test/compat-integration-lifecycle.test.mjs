@@ -81,6 +81,7 @@ test('combined host publishes additive immutable compat shapes once without synt
   assert.deepEqual(state.listeners.map(({ name }) => name).sort(), [
     'agent-loop/assembled-context', 'agent/attempt/end', 'agent/attempt/end', 'agent/attempt/end',
     'agent/attempt/start', 'agent/attempt/start', 'agent/attempt/start',
+    'agent/created', 'agent/disposed',
     'agent/error', 'agent/error', 'agent/inbox/claimed', 'agent/inbox/discarded',
     'agent/inbox/inserted', 'agent/request', 'agent/status', 'approval/request',
     'compaction/completed', 'fs/edit-intent', 'fs/write-intent',
