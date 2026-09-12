@@ -2,7 +2,7 @@
 
 > feature_name: `decision-participation-contract`
 > milestone: M10
-> status: Stage 3 已交付（2026-09-12）：Tasks 经两轮阻塞对抗性审查通过（第一轮修订 compaction/title 词汇等六处；第二轮无阻塞，两条单点建议已落实），进入 Stage 4
+> status: Stage 4 已交付（2026-09-12）：实现/测试/登记全部完成，`npm test` 3109 全绿；阻塞式全局终审通过（意见均为非阻塞且已当场收口，见文末执行注）
 > 上游：goal.md / requirements.md / design.md（Stage 0–2 已交付）；本清单与 requirements 逐条对应。
 > 版本冻结：全部任务在 runtime `0.1.0-rc.6`、包版本 `0.1.0-rc.6-0.1.0`、`dsh.api: 0.1` 冻结基线内完成，不得步进任何版本字段。
 
