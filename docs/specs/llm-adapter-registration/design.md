@@ -30,10 +30,12 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定现行 `llm.adapt
 |---|---|---|
 | `llm.registerAdapter` → `llm.adapters.register` | rename；currentShape「adapter registration」 | **rename 记录保留并变为真实**：`llm.adapters.register` 的实现由 decoration 改为绑定官方 registerAdapter 的真实登记；currentShape 更新为 real adapter route registration（含普通对象 spec 合同）。旧 facade 调用点（装饰语义）全部迁至新装饰入口。 |
 | `llm.adapters.decorate` → `llm.adapters.register` | split | **split 目标修正**为 `llm.adapters.decorations.register`；currentShape 更新为 decoration registration（语义不变，仅归属换位）。 |
-| `llm.adapters.register.handle` | retain（decoration facet handle） | 拆分为两行：真实登记 handle（resourceRegistry idiom）与 `llm.adapters.decorations.register.handle`（decoration facet handle，机制不变）。 |
+| `llm.adapters.register.handle` | retain（decoration facet handle） | 拆分为两行：真实登记 handle（resourceRegistry idiom 固定形状 `{ id, ownerId, generation, dispose() }`）与 `llm.adapters.decorations.register.handle`（既有 caller-bound facet handle，实际形状 `{ dispose(), snapshot() }`——owner/generation 由 decoration registry 内部记账、不暴露在 handle 上；该形状偏差按 `api-idioms.md` §1 六项例外登记，机制不变，见下注）。 |
 | `llm.adapters.list` | retain（装饰快照） | 语义拆分：`llm.adapters.list` → 真实 adapter 登记查询；装饰快照查询迁 `llm.adapters.decorations.list`。 |
 | `llm.models.list`（新增行） | — | 统一只读模型目录 projection：官方目录 + discovery + 已登记 adapter routes 的冻结合并视图。 |
 | 本地开发期无 alias | — | 不加长期 alias 掩盖错误抽象；全部调用点与测试随本 feature 迁移（本地开发阶段 API 重构窗口，AGENTS §3.0.1）。 |
+
+装饰 handle 形状例外（六项登记，随集成波入 registry）——`llm.adapters.decorations.register.handle` 不符合 `api-idioms.md` §3.6 固定 handle 形状，按 §1 登记例外而非改形（改形会触碰已交付 decoration 机制，违反本线「机制与独立身份不变」边界）：`memberPath: llm.adapters.decorations.register.handle`；`baseContract: resourceRegistry`；`exception: caller-bound facet handle（{ dispose(), snapshot() }）`；`reason: 保留已交付 decoration registry 的机制与独立身份（goal 边界）；caller fiber owner 派生与 registry 内部 generation 记账已提供等价的 identity-bound disposal 与 stale 语义，handle 面不重复暴露`；`replacementShape: { dispose(), snapshot() }`（snapshot 为该登记项的只读投影，非 mutation 面）；`verification: 既有 decoration 套件全绿 + stale disposer / identity-bound disposal 断言`。
 
 修正执行面：canonical registry 与 surface snapshot 由本 feature 的 Stage 4 / 集成波（含总契约线的 registry 修正义务）统一落盘；本节是修正方案的设计陈述与验收对照。
 
@@ -109,7 +111,7 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定现行 `llm.adapt
 |---|---|
 | capability-strategy | **适用**：A 类直绑官方 registerAdapter；复用唯一 llm replacement owner；R 扩展仅作条件陈述（§4.1）；host-only 六问已记录；无新 `services.*` 成员。 |
 | api-shape | **适用**：登记 = resourceRegistry 面；目录 = 独立 projection 面（只读、无注册写权）；装饰保留独立面；三面不共享状态空间；错误抽象以换位修复而非加 alias。 |
-| api-idioms | **适用**：resourceRegistry 形状（register/get、handle 同构、幂等/冲突规则）；`llm.models.list` 为 projection 形状；四动作语义分开、同名不同义消除。 |
+| api-idioms | **适用**：resourceRegistry 形状（register/get、幂等/冲突规则）；真实登记 handle 为 §3.6 固定形状 `{ id, ownerId, generation, dispose() }`；装饰 handle 保留既有 `{ dispose(), snapshot() }` 形状并按 §1 六项例外登记（见「registry 拆分与 rename/split 记录修正」节注），不声称 handle 同构；`llm.models.list` 为 projection 形状；四动作语义分开、同名不同义消除。 |
 | public-api-shape | **适用**：全部归属既有 `llm` 域；`decorations` 第三层为强领域关系例外；无治理名泄漏；registry 修正随集成波同步（单一事实源）。 |
 | composition-and-authority | **适用**：additive/resourceRegistry composition + CAS 替换的 coordinated 最小机制；owner 派生与冲突规则；authority closure——真实登记与装饰两 authority 互斥可辨、互不越权处置。 |
 | domain-composition | **适用**：`llm.adapters` 行（owner/id/generation 隔离、稳定链序、卸载与 reconcile 不影响其他 owner）对齐并扩展到真实登记侧。 |
