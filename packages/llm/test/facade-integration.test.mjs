@@ -64,7 +64,7 @@ function callerCtx(name = 'my-plugin') {
 
 /** Decorate through a caller-bound surface so owner derivation resolves. */
 function decorateViaCaller(service, definition, name = 'my-plugin') {
-  return service._llmAdaptersForCaller(callerCtx(name)).register(definition)
+  return service._llmAdaptersForCaller(callerCtx(name)).decorations.register(definition)
 }
 
 const validDefinition = {
@@ -148,7 +148,7 @@ test('register without a resolvable caller owner throws typed unavailable (never
   // facade must not invent an owner.
   const anonymousCtx = { effect() {} }
   assert.throws(
-    () => service._llmAdaptersForCaller(anonymousCtx).register(validDefinition),
+    () => service._llmAdaptersForCaller(anonymousCtx).decorations.register(validDefinition),
     (error) => {
       assert.ok(error instanceof LlmAdaptersUnavailableError)
       return true
@@ -184,7 +184,7 @@ test('a caller-owned decoration succeeds, returns a handle, and is reflected in 
     effect() {},
   }
   const surface = service._llmAdaptersForCaller(callerCtx)
-  const decoHandle = surface.register({
+  const decoHandle = surface.decorations.register({
     id: 'metrics',
     match: () => true,
     capabilities: { execution: { phases: ['stream'], retry: 'none' } },
@@ -248,7 +248,7 @@ test('a caller whose loader entry resolves to the facade itself is rejected as u
   // access through a caller context that resolves to the facade's own row
   const facadeCtx = callerCtx('@deepseek-ai/dsh-plugin-api-main')
   assert.throws(
-    () => service._llmAdaptersForCaller(facadeCtx).register({
+    () => service._llmAdaptersForCaller(facadeCtx).decorations.register({
       id: 'metrics',
       match: () => true,
       capabilities: { execution: { phases: ['stream'], retry: 'none' } },

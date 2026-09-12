@@ -98,6 +98,7 @@ test('subtraction: renamed/merged/split/migrated old paths are absent while thei
   const present = {
     'llm.adapters.register': 'function', 'llm.providers.register': 'function', 'llm.models.register': 'function',
     'llm.requestTransforms.register': 'function', 'llm.adapters.list': 'function',
+    'llm.adapters.decorations.register': 'function', 'llm.adapters.decorations.list': 'function',
     'llm.routing.observe': 'function', 'llm.routing.circuit.inspect': 'function',
     'llm.routing.health.circuitPolicy.register': 'function', 'llm.routing.health.probe.register': 'function',
     'agents.providers.register': 'function', 'executions.recovery.capability.register': 'function',
