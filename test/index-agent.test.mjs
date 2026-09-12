@@ -122,7 +122,7 @@ test('apply mounts agent after events and exposes a working registry read API', 
   assert.deepEqual(agents.getCalls, ['agent-1'])
 
   const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
-assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel', 'sessionActivity', 'sessionInteraction', 'attention', 'checkpoints'])
+assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel', 'sessionActivity', 'sessionInteraction', 'attention', 'checkpoints', 'decisionParticipation'])
   assert.ok(features.slice(0, 15).every((f) => f.name === 'sessionBranch' || f.isActive), 'foundation-to-compat features remain active; the absent auxiliary branch add-on is the only inactive member')
 
   assert.equal(features[16].isActive, false)
@@ -957,8 +957,9 @@ test('agent guard failure disables only agent and keeps facade active', () => {
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   // 31 established features plus the four integration-wave features
-  // (sessionActivity, sessionInteraction, attention, checkpoints).
-  assert.equal(features.length, 35)
+  // (sessionActivity, sessionInteraction, attention, checkpoints) plus
+  // decision participation.
+  assert.equal(features.length, 36)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
@@ -1017,8 +1018,9 @@ test('events guard failure does not block the agent registry read API', () => {
   assert.equal(state.pluginApi.isActive, true)
   const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   // 31 established features plus the four integration-wave features
-  // (sessionActivity, sessionInteraction, attention, checkpoints).
-  assert.equal(features.length, 35)
+  // (sessionActivity, sessionInteraction, attention, checkpoints) plus
+  // decision participation.
+  assert.equal(features.length, 36)
 
   assert.equal(features[0].name, 'tools')
   assert.equal(features[0].isActive, true)

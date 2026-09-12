@@ -71,26 +71,28 @@ test('the FEATURE_MOUNTERS tail order pins stay intact (remote..profile at the e
   // llmAdapters appends another between profile and sessionChannel (final
   // batch integration); the integration wave appends four domain entries
   // after sessionChannel (session activity projection, session interaction
-  // operation, attention, checkpoints). The remote..profile relative order
-  // pins shift by exactly those six entries.
-  assert.equal(names[names.length - 18], 'remote', 'remote stays directly before execution')
-  assert.equal(names[names.length - 17], 'execution', 'execution stays directly before recovery')
-  assert.equal(names[names.length - 16], 'recovery', 'recovery stays directly before coordination')
-  assert.equal(names[names.length - 15], 'coordination', 'coordination stays directly before workspaceTransactions')
-  assert.equal(names[names.length - 14], 'storage', 'storage mounts directly before workspaceTransactions')
-  assert.equal(names[names.length - 13], 'workspaceTransactions', 'workspaceTransactions stays directly before diagnostics')
-  assert.equal(names[names.length - 12], 'diagnostics', 'diagnostics stays directly before tasks')
-  assert.equal(names[names.length - 11], 'tasks', 'tasks stays directly before toolDiscovery')
-  assert.equal(names[names.length - 10], 'toolDiscovery', 'tool discovery mounts directly before skillsActivation')
-  assert.equal(names[names.length - 9], 'skillsActivation', 'skills activation mounts directly before context')
-  assert.equal(names[names.length - 8], 'context', 'context mounts directly before profile')
-  assert.equal(names[names.length - 7], 'profile', 'profile stays directly before llmAdapters')
-  assert.equal(names[names.length - 6], 'llmAdapters', 'adapter decoration mounts directly before sessionChannel')
-  assert.equal(names[names.length - 5], 'sessionChannel', 'sessionChannel stays directly before sessionActivity')
-  assert.equal(names[names.length - 4], 'sessionActivity', 'session activity projection appends first in the integration wave tail')
-  assert.equal(names[names.length - 3], 'sessionInteraction', 'session interaction operation appends after sessionActivity')
-  assert.equal(names[names.length - 2], 'attention', 'attention appends after sessionInteraction')
-  assert.equal(names[names.length - 1], 'checkpoints', 'checkpoints is the last FEATURE_MOUNTERS entry')
+  // operation, attention, checkpoints); decision participation appends the
+  // final entry after checkpoints. The remote..profile relative order
+  // pins shift by exactly those seven entries.
+  assert.equal(names[names.length - 19], 'remote', 'remote stays directly before execution')
+  assert.equal(names[names.length - 18], 'execution', 'execution stays directly before recovery')
+  assert.equal(names[names.length - 17], 'recovery', 'recovery stays directly before coordination')
+  assert.equal(names[names.length - 16], 'coordination', 'coordination stays directly before workspaceTransactions')
+  assert.equal(names[names.length - 15], 'storage', 'storage mounts directly before workspaceTransactions')
+  assert.equal(names[names.length - 14], 'workspaceTransactions', 'workspaceTransactions stays directly before diagnostics')
+  assert.equal(names[names.length - 13], 'diagnostics', 'diagnostics stays directly before tasks')
+  assert.equal(names[names.length - 12], 'tasks', 'tasks stays directly before toolDiscovery')
+  assert.equal(names[names.length - 11], 'toolDiscovery', 'tool discovery mounts directly before skillsActivation')
+  assert.equal(names[names.length - 10], 'skillsActivation', 'skills activation mounts directly before context')
+  assert.equal(names[names.length - 9], 'context', 'context mounts directly before profile')
+  assert.equal(names[names.length - 8], 'profile', 'profile stays directly before llmAdapters')
+  assert.equal(names[names.length - 7], 'llmAdapters', 'adapter decoration mounts directly before sessionChannel')
+  assert.equal(names[names.length - 6], 'sessionChannel', 'sessionChannel stays directly before sessionActivity')
+  assert.equal(names[names.length - 5], 'sessionActivity', 'session activity projection appends first in the integration wave tail')
+  assert.equal(names[names.length - 4], 'sessionInteraction', 'session interaction operation appends after sessionActivity')
+  assert.equal(names[names.length - 3], 'attention', 'attention appends after sessionInteraction')
+  assert.equal(names[names.length - 2], 'checkpoints', 'checkpoints stays directly before decision participation')
+  assert.equal(names[names.length - 1], 'decisionParticipation', 'decision participation is the last FEATURE_MOUNTERS entry')
   // security mounts in the middle (after llm/admission, before session)
   assert.ok(names.indexOf('security') > names.indexOf('llm/admission'))
   assert.ok(names.indexOf('security') < names.indexOf('session'))

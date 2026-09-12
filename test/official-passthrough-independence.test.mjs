@@ -270,7 +270,7 @@ test('host regression: the boundary-era and current hosts agree on every pre-exi
     // excluded from the pre-existing-face equality check.
     const helperMembers = ['renderContextSnapshot', 'joinContextSections']
     const LATER_ADDED_MEMBERS = ['assemble', 'defineTool', 'executionMode', 'discovery', 'availability', 'capabilityMatrix', 'list', 'presentation', 'contribute']
-const BRANCH_ADDED_FEATURES = ['security', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'tasks', 'diagnostics', 'toolDiscovery', 'skillsActivation', 'sessionBranch', 'context', 'profile', 'llmAdapters', 'sessionChannel', 'sessionActivity', 'sessionInteraction', 'attention', 'checkpoints']
+const BRANCH_ADDED_FEATURES = ['security', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'tasks', 'diagnostics', 'toolDiscovery', 'skillsActivation', 'sessionBranch', 'context', 'profile', 'llmAdapters', 'sessionChannel', 'sessionActivity', 'sessionInteraction', 'attention', 'checkpoints', 'decisionParticipation']
     // The host cutover removed the public features snapshot (registry snapshot
     // is an internal state), removed routeOf delegates, and added the prompts
     // provenance face; both eras keep the same internal feature keys, so only
@@ -285,7 +285,7 @@ const BRANCH_ADDED_FEATURES = ['security', 'execution', 'recovery', 'coordinatio
     // The migrate rows moved official members under services.<key>; the
     // boundary-era services namespace predates those keys.
     const MIGRATE_SERVICES_KEYS = ['llm', 'agents', 'sessions', 'settings', 'prompts', 'tools', 'recovery']
-    const ADDED_PROMPTS_MEMBERS = ['provenance']
+    const ADDED_PROMPTS_MEMBERS = ['provenance', 'assemblyPolicies']
     // The branch-aligned runtime identity audits let sessionDurable and
     // sessionRoute mount in this harness where the boundary-era host kept
     // them inactive; their activity delta is a mount-alignment fact, not a
@@ -304,7 +304,10 @@ const BRANCH_ADDED_FEATURES = ['security', 'execution', 'recovery', 'coordinatio
       promptsMembers: current.face.promptsMembers.filter((name) =>
         !helperMembers.includes(name) && !LATER_ADDED_MEMBERS.includes(name) && !ADDED_PROMPTS_MEMBERS.includes(name)),
       toolsMembers: current.face.toolsMembers.filter((name) =>
-        !LATER_ADDED_MEMBERS.includes(name) && !REMOVED_TOOLS_MEMBERS.includes(name)),
+        !LATER_ADDED_MEMBERS.includes(name) && !REMOVED_TOOLS_MEMBERS.includes(name)
+        // decision participation appends the execution-policies member to the
+        // composed tools face.
+        && name !== 'executionPolicies'),
       servicesNames: current.face.servicesNames.filter((name) => !MIGRATE_SERVICES_KEYS.includes(name)),
     }
     // The boundary-era host still exposes the pre-cutover surface: the cutover removed

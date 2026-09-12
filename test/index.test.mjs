@@ -150,6 +150,11 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     { name: 'sessionInteraction', isActive: true },
     { name: 'attention', isActive: true },
     { name: 'checkpoints', isActive: true },
+
+    // Decision participation appends the final integration entry: the
+    // participation substrate is present in this healthy fixture, so the
+    // domain registries mount active.
+    { name: 'decisionParticipation', isActive: true },
   ])
   assert.equal(state.pluginApi.llm.availability().status, 'active')
   assert.equal(typeof state.pluginApi.llm.requestTransforms.register, 'function')
@@ -215,7 +220,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 // 31 established features plus the four integration-wave features
   // (sessionActivity, sessionInteraction, attention, checkpoints).
-  assert.equal(features.length, 35)
+  assert.equal(features.length, 36)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
