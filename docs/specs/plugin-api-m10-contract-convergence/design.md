@@ -40,7 +40,7 @@ pluginApi
 ├── isActive / apiVersion / assertCompatible / capabilities          [不变]
 ├── events
 │   ├── catalog / observe / define / emit / serial / parallel / bail / waterfall / availability  [不变]
-│   └── decisions.register                                           [+decision 线；准入集枚举（fs/write-intent、fs/edit-intent、compaction/request、session-title/candidate）；OM-6]
+│   └── decisions.register                                           [+decision 线；准入集枚举（fs/write-intent、fs/edit-intent、compaction/request、session-title/candidate）]
 ├── llm
 │   ├── modelInfo / prepareCall / stream                             [不变]
 │   ├── requestTransforms.register / admissionPolicies.register      [不变]
@@ -54,7 +54,7 @@ pluginApi
 ├── agents
 │   ├── get / list / roots / create / resume / register / providers / availability  [不变]
 │   ├── scopes.acquire                                               [+scoped 线：scope-bound handle {id, ownerId, generation, target, status(), dispose()}；OM-2]
-│   └── decisions.register                                           [+decision 线：point ∈ agent/pre-step | agent/request | agent/request-error；OM-1]
+│   └── decisions.register                                           [+decision 线：point ∈ agent/pre-step | agent/request | agent/request-error | agent/turn-stopping（turn-stopping 为 R 点位：agent-loop owner 切片，2026-09-12 人类裁决）；OM-1]
 ├── executions.*（observe/get/history/visibility/recovery/availability）  [不变]
 ├── sessions
 │   ├── 既有查询/分支/通道/活动/持久子树                              [不变（逐成员以 registry 为准）]
@@ -100,7 +100,7 @@ Client 半面判定汇总：九线中 plan-mode、preset、credential、compacti
 | OM-3 | llm 线条件 R 扩展（官方 `registerAdapter` 合同若缺必需字段） | llm 线 Stage 4 probe；触发时走 capability-strategy R1–R8 与独立 spec 流程，树上 path 不变 |
 | OM-4 | interactive 线两条条件 R 点位与 wire 细节 | 该线 Tasks/Stage 4（其 design §R-Point Design Statements、§Protocol Determination）；path 不变 |
 | OM-5 | launch environment 层值是否全部可经 credentials authority 解析 | 本线 Stage 4 probe（§5.2）；发现真实缺口时升级 seam 提案或 C 类登记 |
-| OM-6 | `agent/turn-stopping` 参与化 | C 类通道（catalog 修订 / upstream proposal），本线登记提案（§2.4）；树上不新增成员 |
+| OM-6 | ~~`agent/turn-stopping` 参与化~~（**已闭合**，2026-09-12 人类裁决） | R 点位（decision 线，agent-loop owner 切片）：公共登记为 `agents.decisions` 的 `turn-stopping` 点位，backing 为既有 `plugin-api-agent-loop` 替代行内的能力切片（不新增被禁用官方行、不新增替代行）；R1–R8 对照、同包切片共存与登记义务清单见 decision 线 design「R slice 设计」 |
 | OM-7 | compaction 线 operation 子面的登记执行 | 该线 Stage 4 落盘（registry 行、capability-strategy §5 装配表注、feature-list §3.1、U-series 退役条件）；本线负责对账其一致性 |
 
 ### 1.5 领域根与 services 分层的一致依据
@@ -154,7 +154,7 @@ B4-1/2/6（approval.setPolicy、agentDefaultModel.saveSelection、sessionProject
 | 模式 / 权限 | 均曾为裸 `services.*` setter（B4-3/B4-4） | `sessions.planMode.select` 与 `sessions.permissionPresets.select` 正交、各归唯一 owner、互不引用对方状态机（两线 Orthogonality 章节） |
 | 操作 / 事实 | `events.emit('compaction/...')` 可被误当执行（纲领 §3.7 边界） | 操作 = `sessions.compaction.run` / `workflows.start` / `sessions.request` / `sessions.interactions.respond`；事实 = `compaction/*`、`workflow/*`、`session/*`、`credentials/updated`（producer authority 保留在引擎/官方/官方组件，第三方经参与面参与、经 observe 消费） |
 
-C 类登记项：`agent/turn-stopping` 保持 fact（OM-6）；`approval/request`、`session-telemetry/record`、`tools/code-dispatch-log` 不进 `events.decisions` 初始准入集（decision 线 design §公共面与 path 决定），后续按增量准入。
+`agent/turn-stopping` 已按 2026-09-12 人类裁决定为 **R 点位（decision 线，agent-loop owner 切片）**（OM-6 闭合；R1–R8 对照与登记义务见 decision 线 design「R slice 设计」），不再是 C 类登记项。C 类/受限登记项余项：`approval/request`、`session-telemetry/record`、`tools/code-dispatch-log` 不进 `events.decisions` 初始准入集（decision 线 design §公共面与 path 决定），后续按增量准入。
 
 ## 3. idiom 归类初版与例外清单
 
@@ -205,7 +205,7 @@ C 类登记项：`agent/turn-stopping` 保持 fact（OM-6）；`approval/request
 | 会话发送/取消/排队 | `sessions.request`（含 steer/queue）/`sessions.cancel` | `services.sessions`（官方 store leaf，advanced） | 官方 agent-loop attempt 事实、官方 inbox | 统一 authority = 已交付 request authority；M9 边界沿用（interactive 线 Face 1） |
 | 待处理交互 | `sessions.interactions.list/.get/.respond` | `services.apiProxy.respond`（底层应答承载）、`services.approval`/`services.userQuestions`（官方 passthrough） | 官方 approval/userQuestions 事件与判定 | 决策权归官方 authority；facade 只做受限投影与匹配应答（interactive 线 Face 2） |
 | 只读事件流 | `sessions.channels.*` + `sessions.activity`（消费合同，不新增面） | — | 官方 session 事件顺序 | 载体 = 已交付 connection/gateway 替代行 owners；cursor/resume 语义沿用（interactive 线 Face 3） |
-| 事件参与（决策点） | 四个 decisions registry | — | 官方 waterfall 派发点（A 类）；compaction/title 由已交付 replacement 承载 producer | 参与条目经 bus substrate 安装为官方 ctx 钩子；observe 面保持只读（decision 线机制设计） |
+| 事件参与（决策点） | 四个 decisions registry | — | 官方 waterfall 派发点（A 类）；`agent/turn-stopping` 为 R 点位（agent-loop owner 切片，替代行路由进参与链）；compaction/title 由已交付 replacement 承载 producer | 参与条目经 bus substrate 安装为官方 ctx 钩子（turn-stopping 经 R 切片路由，横切语义仍在门面 registry）；observe 面保持只读（decision 线机制设计） |
 | 事件生产 | `events.define`（owner-scoped 受限 publisher） | — | canonical 事件 producer 各归官方/替代行 | 订阅权 ≠ 生产权；扩决策参与不扩 fact 伪造权（goal Scope direction 4） |
 | 进程退出（OBS-14.1） | —（提案：`services.appExit`，§5.1） | 提案成员本体 | launcher `ctx.provide("appExit", host.exit)` | authority = 官方 launcher 进程生命周期；exclusive 本性，不进 Composable Profile |
 | 启动环境值（OBS-14.2） | —（等价路径判定，§5.2） | `services.credentials.resolve`（层模型同源） | `@deepseek-ai/dsh-launch-environment` 包 import（escape hatch 现状） | 统一 authority = 官方 credentials provider 层模型 |
@@ -254,7 +254,7 @@ C 类登记项：`agent/turn-stopping` 保持 fact（OM-6）；`approval/request
 | L7 | workflow | admission rationale 与退役条件随 registry 登记记录（design §3.7） | 保留（该线 Stage 4）；收敛线对账 |
 | L8 | workflow | run handle 三附加成员例外六元组登记（design §3.3） | 吸收（本设计 §3.2 E1 已收录；registry 落盘时按行登记） |
 | L9 | decision | `agent/request`、`agent/request-error` 决策词汇 probe 固化（design §迁移证据义务） | 保留（该线 Stage 4）；收敛树保留 OM-1 |
-| L10 | decision | `agent/turn-stopping` 参与化 C 类登记（design §横切派发语义） | 吸收（收敛线 C 类提案登记，§2.4 OM-6） |
+| L10 | decision | `agent/turn-stopping` 参与化（2026-09-12 人类裁决改为 R 点位：agent-loop owner 切片；decision 线 design「R slice 设计」） | 吸收（收敛树登记为 R 点位；OM-6 闭合；R1–R8 核对与登记义务清单随 decision 线 Stage 4 落盘，收敛线对账） |
 | L11 | decision | 若 probe 证实某决策点 producer 结构不可达 → 转 C 类 upstream proposal（design §通道判定） | 吸收（登记规则预告：出现即入收敛线 C 类登记；触发本身归该线 probe） |
 | L12 | llm | registry rename/split 修正统一落盘（design §registry 拆分节） | **吸收**（本线明确承担，§2.2；与该线 Stage 4 协同执行） |
 | L13 | llm | 条件 R 扩展点位（官方 registerAdapter 合同 probe） | 保留（该线 Stage 4）；收敛树 OM-3 |
@@ -320,7 +320,7 @@ C 类登记项：`agent/turn-stopping` 保持 fact（OM-6）；`approval/request
 
 | 分册 | 结论 |
 |---|---|
-| capability-strategy | **适用**（核心）。全树 A/B/C/R 判定复核（§2.2/§2.3 通道列）；R 类仅两处已知点位（compaction operation 子面 = 已批扩展、llm/interactive 条件点位 = OM-3/OM-4），R1–R8 与 feature-list §3.1 一致性是验收项；横切派发语义永不 R；`services.*` 分级与白名单变更判据（§6）；§7 admission/retirement 用于 OBS-14 判定；§10 六问汇总（八线 host-only + interactive 既有 carriers）。 |
+| capability-strategy | **适用**（核心）。全树 A/B/C/R 判定复核（§2.2/§2.3 通道列）；R 类已知点位：`agent/turn-stopping` 参与切片（decision 线，agent-loop owner，2026-09-12 人类裁决，OM-6 已闭合）、compaction operation 子面 = 已批扩展、llm/interactive 条件点位 = OM-3/OM-4；R1–R8 与 feature-list §3.1 一致性是验收项；横切派发语义永不 R；`services.*` 分级与白名单变更判据（§6）；§7 admission/retirement 用于 OBS-14 判定；§10 六问汇总（八线 host-only + interactive 既有 carriers）。 |
 | api-shape | **适用**。五组判别（§2.4）是一面原则的整树核对：每面单 owner、投影无副作用、策略/操作/事实不混装；九线新增面的 smell 检查（interactive 四面拆线、llm 三面分离是正例）。 |
 | api-idioms | **适用**（核心）。§3 归类初版 + 例外清单（E1–E5）按其 §1 六项机制；§2 统一词汇一致性是 Req 7.2 验收基础；§5 机械校验纳入验证入口。 |
 | public-api-shape | **适用**（核心）。§1 树按其 §1/§3 规则组织（挂最近领域、一等领域判据、三层例外、无治理名泄漏）；§9 registry 唯一事实源是 Req 12.1 依据；其 §2/§7 的现状刷新列为 S2（待人类确认）。 |
