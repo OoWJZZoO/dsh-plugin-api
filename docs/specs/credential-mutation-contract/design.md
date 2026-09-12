@@ -123,11 +123,13 @@ authorized user (client)
 
 - **标记来源（唯一事实）**：官方 `credentials/updated` 事件（官方只在真实提交/热发布后派发，payload 仅 ref）。门面为每个 ref 维护单调递增的不透明整数标记：首次观察到该 ref 的事件即 `known`，每事件 +1。标记是**资源状态 revision**（跨 caller 可比，同 settings 文档 revision 先例），不是 owner generation（`identity-and-lifecycle.md` §2 的 owner-specific generation 不适用于共享资源状态——标记全部派生自同一官方事实流）。
 - **暴露位置**：只出现在本面结果（committed/unchanged/conflict 的 `revision` 字段）与 conflict 上下文中；不新增公共读成员、不进入 `services.credentials` 契约（Req 10.1）、不跨 wire（in-process API 字段；client 经插件 remote 获得的是插件自有契约）。
-- **比较规则（Req 3.1 的"caller 上次观察状态"载体）**：caller 从上一次本面结果取得 `revision`，作为 `options.expectedRevision` 回传；提交时与门面当前标记比较：
+- **比较规则（Req 3.1 的"caller 上次观察状态"载体）**：caller 从上一次本面结果取得 `revision`，作为 `options.expectedRevision` 回传；提交时与门面当前标记比较（比较与 in-flight 登记在同一门面同步段内原子执行——串行化机制见下"比较点串行化"）：
   - 匹配 → 提交（官方独占写链仍为最终裁决，官方层并发由官方队列/文件锁串行化）。
   - 不匹配（已知标记）→ `{ ok:false, code:'conflict', ref, expectedRevision, currentRevision }`（bounded 上下文，无值；Req 3.4 的重读重试指引字段）。
   - 无标记证据（facade 挂载后未观察到该 ref 的任何事件——外部编辑先于挂载、或观察桥降级）→ fail-closed：**提供 expectedRevision 的提交被拒** `{ ok:false, code:'revision-unknown' }`；不提供 expectedRevision 的提交放行（官方独占写链保证持久化原子性）——这是声明的 bootstrap 规则：首次写入建立标记基线，此后可用 optimistic CAS（Req 3.2 的"typed rejection or the design-declared fallback"选定后者并显式声明）。
-- **并发提交裁决（Req 3.3）**：两个受权 writer 并发提交不同值：官方 provider 的独占操作链把它们串行化，逐个原子提交——最终存储值是官方串行序的最后一个提交（官方仲裁）；两个 caller 各自在自己的提交完成点取得真实结果（都 `committed` 不是伪成功——各自确实先后持久化）。门面不制造第二个赢家裁决；`conflict` 只由 expectedRevision 检测产生（caller 显式声明了乐观前提）。"at most one claims success"在声明乐观前提的同一提交窗口内成立：同一 expectedRevision 的两个并发提交，只有一个能与当时标记匹配通过比较点（比较点在门面同步段内执行），后到者得 `conflict`。
+- **比较点串行化（外层合同；Req 3.3 的机制基础）**：乐观比较点与提交不可被并发交错。本线官方 seam 为异步（`Promise`），标记又只在提交结算后才由官方 `credentials/updated` 推进——若比较点裸露在各自调用的同步段，两个携带相同 `expectedRevision` 的并发提交会在任一提交落地前双双通过比较并双双 committed，违反 Req 3.3。因此声明 **per-ref in-flight 单飞锁**：每次提交在门面同步段内原子完成「expectedRevision 比较 + 登记 in-flight」，锁持有至该次官方写结算后释放——**成功路径**的锁释发生在提交后事实（`credentials/updated`、标记推进）被观察到之后（与下"提交条件"条对齐，不存在「锁已释放、标记未推进」的窗口）；**失败路径**的锁释于 Promise rejection。**锁被持有时的新到提交立即得 typed `conflict`（reason 'racing write unsettled'），不入队、不执行、不触官方 seam**。同一时刻每 ref 至多一个未结算提交。
+- **并发提交裁决（Req 3.3）**：两个并发提交（无论值是否相同、是否携带 expectedRevision）：先到者获锁、通过比较并提交；后到者因持锁即得 `conflict`——**至多一个 claims success**，败方为 typed conflict，最终存储值为先到提交的值（官方串行序下的合法解）。先到提交失败（无 `credentials/updated` 事实、标记不变）时锁照常释放，败方调用方可重读后重试（乐观前提未被破坏，行为诚实）。结果确定，与 host 单线程到达序一致。`conflict` 败方携带 bounded 上下文（ref、expected/current revision 可得时）供重读重试（Req 3.4）。
+- **外层合同三线兼容说明**：姊妹两线（planMode/permissionPresets）官方 seam 为同步，其「单同步提交跨度」即同一外层规则（比较点与提交不可交错）的退化满足；本线以 in-flight 锁达成。该锁/串行化机制是本线（异步 seam）专属达成方式，不推广到姊妹线。
 - **取消**：写操作是短事务，无 signal 参数（官方 seam 无取消点；Requirements concurrency 分册结论"无取消面（写操作短事务）"）；Promise rejection 即失败终态，无在途补写（官方快照更新只在成功后）。
 
 ### C5. 事件复用与可见状态（Req 4）
@@ -176,8 +178,10 @@ availability     { status, reason? }                           // 冻结
 
 ## Concurrency And Conflict Rules（concurrency-and-cancellation §6 声明）
 
-- **并发策略**：`compare-and-swap`（门面 revision 标记 optimistic compare，B 类声明）叠加**官方独占写链**（provider 单文档串行 + 文件锁 + 原子替换）作为最终 mutation owner——每份共享状态只有一个并发语义 owner（官方 provider），门面标记不构成第二仲裁（§1.4）。
-- **scope 与冲突判定**：scope = 单个 ref 的存储状态；判定 = expectedRevision 比较（乐观前提由 caller 显式给出）+ 官方串行提交。
+- **外层合同（三线一致）**：乐观比较点与提交不可被并发交错；本线以 per-ref in-flight 单飞锁达成（§C4），姊妹同步 seam 线以单同步提交跨度达成。
+- **并发策略**：`compare-and-swap`（门面 revision 标记 optimistic compare，B 类声明）叠加**官方独占写链**（provider 单文档串行 + 文件锁 + 原子替换）作为最终 mutation owner——每份共享状态只有一个并发语义 owner（官方 provider），门面标记与 in-flight 锁均不构成第二仲裁（§1.4；锁只拒绝并发交错，不改写官方提交结果）。
+- **per-ref 串行化与 liveness**：同一 ref 的提交在锁内串行；持锁期间新到提交 typed conflict（不排队、不执行）；锁释分两路——成功路径于提交后事实（标记推进）被观察到之后释放（与"提交条件"条对齐），失败路径于 Promise rejection 释放。后端挂起时该 ref 后续提交持续 typed conflict——与官方 provider 独占操作链相同的 liveness 包络，如实声明，不虚构超时/取消（本线无取消面）。
+- **scope 与冲突判定**：scope = 单个 ref 的存储状态；判定 = per-ref in-flight 门（并发交错即 typed conflict，见 §C4）+ expectedRevision 比较（乐观前提由 caller 显式给出）+ 官方串行提交（最终裁决）。
 - **取消行为**：无取消面（短事务）；失败 = typed 终态，原值保持（官方保证）。
 - **提交条件**：官方写 Promise 完成 + 官方提交后事实（notifyUpdated）；无官方提交即无成功（门面不预发成功）。
 - **cleanup owner**：feature disposer（revision 标记表、事件桥订阅、审计环）；标记随进程生命周期，不跨重启承诺（非 durable，诚实标注）。

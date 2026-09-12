@@ -161,7 +161,7 @@ secret 的输入、存储、输出三个方向分开设计：录入方向（clie
 - `docs/standards/capability-strategy.md`: applicable。A 类受控包装（官方 seam 存在）+ 局部 B 类冲突检测（如设计核实官方无 CAS）；`services.credentials` 白名单写路径不回流；冻结基线内交付。
 - `docs/standards/api-shape.md`: applicable。主面 mutation；describe/availability 为只读成员；无策略注册、无汇总投影；一面原则满足。
 - `docs/standards/api-idioms.md`: applicable。mutation 判别式结果、幂等/冲突语义按 §3.3；事件面按 §4（fact 归官方 authority，本面不自造事件体系）。
-- `docs/standards/public-api-shape.md`: applicable。挂靠最近既有领域，最终 path 由 Design 依总树一致性确定；不引入 package/row 身份。
+- `docs/standards/public-api-shape.md`: applicable。namespace 放置（含新增顶层一等领域判据）由 Design 按 `public-api-shape.md` §1 定稿；不引入 package/row 身份。
 - `docs/standards/composition-and-authority.md`: applicable。owner 派生不可伪造；authority closure（Req8）；并发 CAS/冲突规则在 Design 声明；共享凭据 authority 不被私有 storage 旁路。
 - `docs/standards/domain-composition.md`: applicable。credentials/settings/storage 各归其主；本面不吸收 settings 或 storage 职责。
 - `docs/standards/ordering.md`: not applicable。无多 owner 顺序决策、无事件排序语义。
