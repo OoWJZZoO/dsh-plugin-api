@@ -117,7 +117,7 @@ Stage 1 Requirements（2026-09-12 交付）。本文是 M10 整树收敛 feature
 
 - **Req 12.1** WHEN 收敛交付落盘 THEN canonical registry SHALL 是唯一事实源：九线拟新增行与本线修正行在集成波一次落盘，surface snapshot 与 registry 一致；SHALL NOT 在多个构造器、测试与文档中各自维护一份公共结构（public-api-shape §9）。【治理 + 验收】
 - **Req 12.2** WHEN 历史制品（M7/M8/M9 spec、feature-list 历史行、本文件之外的旧 path 表述）与现状冲突 THEN SHALL 以文首现状注方式追加映射/修正；SHALL NOT 改写历史制品已获批的验收边界。【治理】
-- **Req 12.3** WHEN M7 deletion report 的五项 B4 后续义务对账 THEN SHALL 逐项登记兑现路径（B4-3 → `sessions.planMode.select`；B4-4 → `sessions.permissionPresets.select`；B4-5 → `credentials.set`/`unset`；B4-7 → `sessions.compaction.run`；B4-8 → `workflows.start`），并核对 B4-1/2/6 删除项无回流；feature-list 文首「已删除写路径的现状注」中「替代能力尚未兑现」表述 SHALL 随交付按提交事实更新。【治理】
+- **Req 12.3** WHEN M7 deletion report 的五项 B4 后续义务对账 THEN SHALL 逐项登记兑现路径（B4-3 → `sessions.planMode.select`；B4-4 → `sessions.permissionPresets.select`；B4-5 → `credentials.set`/`unset`；B4-7 → `sessions.compaction.run`；B4-8 → `workflows.start`），并核对 B4-1/6 删除项无回流、B4-2 保留现状无回归（`services.agentDefaultModel.saveSelection`/`currentSelection` 的批准裁决为「驳回删除、保留」，非删除项，不适用无回流核对）；feature-list 文首「已删除写路径的现状注」中「替代能力尚未兑现」表述 SHALL 随交付按提交事实更新。【治理】
 - **Req 12.4** WHEN M9 制品状态行与临时链接漂移 THEN SHALL 按提交事实更新：状态行与现状注一致、对已删除临时契约文档（`temp/m9-parallel-development-contract.md` 等）的引用以提交事实注替换；历史批准记录 SHALL NOT 改写。【治理】
 - **Req 12.5** WHEN 历史制品状态行中出现工作流编排代号 THEN 其清理 SHALL 归入登记义务（现状注/登记表统一说明）；SHALL NOT 逐文件改写历史制品；新制品 SHALL NOT 引入此类代号。【治理】
 - **Req 12.6** WHEN registry、standards 分册、feature-list、README 相互引用 THEN SHALL 保持一致（registry 为现状事实、分册为设计判据）；standards 实质修订按 design §7 清单经人类确认后同步，SHALL NOT 在实现或维护中擅自改写治理文本。【治理】
