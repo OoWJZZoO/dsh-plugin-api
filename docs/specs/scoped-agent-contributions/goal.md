@@ -2,7 +2,7 @@
 
 > feature_name: `scoped-agent-contributions`
 > milestone: M10
-> status: Stage 0 Goal 提交用户批量确认（2026-09-12）；Requirements / Design 未开始
+> status: Stage 0–2 已交付（2026-09-12）；Requirements / Design 同批交付于本目录（requirements.md / design.md）
 > 输入溯源：M10 工作纲领 §3.3（OBS-03）；观察报告 §5 OBS-03（消费源码锚点与 caller-bound 现状）；M8 migration ledger 8.3(b)（read-image 每 agent 工具/提示词保留官方作用域表面的契约外精度登记）；canonical registry `prompts.contribute` 现行登记（无目标 agent 绑定维度）。
 
 ## Goal
