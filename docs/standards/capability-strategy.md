@@ -88,7 +88,7 @@ R8. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 | `plugin-api-agent-loop` | `@deepseek-ai/dsh-plugin-api-agent-loop` | `agent-loop` | `@deepseek-ai/dsh-agent-loop` | 无（host-only）。能力切片：route policy、共享 loop boundary interaction、assembled-context evidence、automatic recovery、turn-stopping decision participation（经主包门面契约符号） |
 | `plugin-api-session-branch` | `@deepseek-ai/dsh-plugin-api-session-branch` | `session` | `@deepseek-ai/dsh-session` | 无（host-only） |
 | `plugin-api-tool-skill` | `@deepseek-ai/dsh-plugin-api-tool-skill` | `tool-skill` | `@deepseek-ai/dsh-tool-skill` | 无（host-only） |
-| `plugin-api-llm` | `@deepseek-ai/dsh-plugin-api-llm` | `llm` | `@deepseek-ai/dsh-llm` | 无（host-only） |
+| `plugin-api-llm` | `@deepseek-ai/dsh-plugin-api-llm` | `llm` | `@deepseek-ai/dsh-llm` | 无（host-only）。能力切片：adapter decoration registry（decoration facet 条件投影）。真实 adapter 路由登记为 A 类稳定化（门面直绑官方 `registerAdapter` 动作 + delegation wrapper 实现门面级 CAS 替换），不需要 R 扩展 |
 | `plugin-api-session-channel-connection` | `@deepseek-ai/dsh-plugin-api-session-channel-connection` | `connection` | `@deepseek-ai/dsh-client-connection` | 有（`dsh.client` manifest） |
 | `plugin-api-session-channel-gateway` | `@deepseek-ai/dsh-plugin-api-session-channel-gateway` | `typert-gateway` | `@deepseek-ai/dsh-api-gateway` | 有（`dsh.client` manifest） |
 | `plugin-api-workspace` | `@deepseek-ai/dsh-plugin-api-workspace` | `workspace` | `@deepseek-ai/dsh-workspace` | 无（host-only；六问全否） |
