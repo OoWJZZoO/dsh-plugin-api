@@ -19,13 +19,13 @@ Stage 1 与 Stage 2 同批交付（2026-09-12）。本文把目标选择、贡�
 
 ### Acceptance Criteria
 
-1. WHEN a plugin calls `pluginApi.agents.scopes.acquire({ agent })` with a resolvable target agent reference THEN the system SHALL return a frozen scope-bound handle `{ id, ownerId, generation, target, status(), dispose() }` where `ownerId` is the caller-derived contributor identity and `target` identifies the bound agent (owner 与 target 分开表达).
+1. WHEN a plugin calls `pluginApi.agents.scopes.register({ agent })` with a resolvable target agent reference THEN the system SHALL return a frozen scope-bound handle `{ id, ownerId, generation, target, status(), dispose() }` where `ownerId` is the caller-derived contributor identity and `target` identifies the bound agent (owner 与 target 分开表达).
 2. WHEN the target reference cannot be resolved (nonexistent agent, disposed agent, or unavailable agents backing) THEN the system SHALL return a typed `unavailable` result and SHALL NOT silently fall back to a global/unscoped surface (不可用 target 不静默回退全局).
 3. WHEN the handle's target agent is alive THEN `status()` SHALL report the target's usability state; WHEN the target is destroyed THEN `status()` SHALL report the destroyed state without resurrecting it.
 4. WHEN a plugin uses the handle as the scope dimension of a contribution call THEN the facade SHALL NOT require the plugin to hold the target agent's official ctx, official tools service, or official systemPrompt service directly.
 5. WHEN the handle is disposed THEN it SHALL release the handle's own bookkeeping per Requirement 6, and stale handle usage SHALL return typed no-op results.
 
-**Classification:** A/B 类门面化（官方 agent registry / setup 面之上的门面表达）；无 R 点位（判定见 Design 通道表）。
+**Classification:** A/B 类门面化（官方 agent registry / setup 面之上的门面表达）；无 R 点位（判定见 Design 通道表）。入口动词用 `register`（resourceRegistry，`api-idioms.md` §3.6），不用 coordination 词表的 `acquire`（本 handle 无 lease/fencing/heartbeat 语义）；handle 的 `target` / `status()` 扩展成员按 §1 六项例外登记（见 Design「scope 表达」）。
 
 ## Requirement 2: 作用域化 prompt 贡献
 
@@ -75,8 +75,8 @@ Stage 1 与 Stage 2 同批交付（2026-09-12）。本文把目标选择、贡�
 
 ### Acceptance Criteria
 
-1. WHEN a plugin acquires a scope handle after creating an agent (including via `agents.create`) and installs contributions THEN the contributions SHALL be effective for the agent's subsequent assemblies.
-2. WHEN an agent is resumed (including cold resume from persisted state) THEN contributions previously installed for that target identity SHALL remain installed and effective for the resumed agent without requiring re-registration by the plugin, provided the contributor owner is still active.
+1. WHEN a plugin registers a scope handle via `agents.scopes.register` after creating an agent (including via `agents.create`) and installs contributions THEN the contributions SHALL be effective for the agent's subsequent assemblies.
+2. WHEN an agent is resumed within the same host process (含官方 in-process 恢复路径) and the target identity stability of criterion 4 is proven THEN contributions previously installed for that target identity SHALL remain installed and effective for the resumed agent without requiring re-registration by the plugin, provided the contributor owner is still active; WHEN the resume crosses a host process or plugin restart THEN the scoped registry state is runtime state per Requirement 8 and the contributor SHALL re-install after restart (本 feature 不跨重启保持 scoped 贡献).
 3. WHEN a contribution is provider-based (variable/tool provider) THEN it SHALL be evaluated per assembly of the target, so that a resumed agent observes current provider results rather than stale snapshots.
 4. WHEN the stability of target identity across cold resume cannot be established from the official surface THEN the implementation SHALL be treated as unresolved (probe 义务，见 Design)；this feature SHALL NOT claim cold-resume coverage without the probe evidence.
 5. WHEN an agent's own lifecycle (turn/step) advances THEN scoped contributions SHALL persist across steps for the target's lifetime; per-step participation semantics remain owned by the decision-participation feature.
@@ -142,7 +142,7 @@ Stage 1 与 Stage 2 同批交付（2026-09-12）。本文把目标选择、贡�
 
 ### Acceptance Criteria
 
-1. WHEN the agents backing or the prompts/tools backing is unavailable THEN `agents.scopes.acquire` and scoped contribution calls SHALL return typed `unavailable` results and the capability SHALL report degraded/unavailable without affecting unrelated capabilities.
+1. WHEN the agents backing or the prompts/tools backing is unavailable THEN `agents.scopes.register` and scoped contribution calls SHALL return typed `unavailable` results and the capability SHALL report degraded/unavailable without affecting unrelated capabilities.
 2. WHEN any scoped operation would otherwise throw through the caller's apply THEN the system SHALL convert it to the idiom's typed result/error; scoped contribution SHALL never break harness boot.
 3. WHEN capability status is queried THEN it SHALL reflect real backing state (official agents/prompts/tools seams), not object presence.
 

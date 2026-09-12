@@ -14,7 +14,7 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定 scope 表达与 
 
 设计：**贡献面加 target 维度 + 显式 scope-bound handle**，全部走既有 contribution / resourceRegistry idiom 与既有 owner，不重写 agent service：
 
-1. `agents.scopes.acquire({ agent })` → scope-bound handle（目标校验、状态查询、identity-bound 释放）。
+1. `agents.scopes.register({ agent })` → scope-bound handle（目标校验、状态查询、identity-bound 释放；入口动词对齐 resourceRegistry，handle 扩展成员见「scope 表达」的例外登记）。
 2. `prompts.contribute(spec)` 增加 `spec.scope`（handle 引用）→ 单一 contribution owner 上的 target 维度。
 3. `tools.register(definition, { scope })` / `tools.restrict.register(policy, { scope })` → resourceRegistry/policy 契约上的 target 维度。
 4. 清理绑定官方 `agent/disposed` 事实 + owner 卸载 identity-bound 撤除；持久 scope 三档不变。
@@ -29,8 +29,8 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定 scope 表达与 
 
 ## scope 表达与 scope-bound handle
 
-- **获取**：`pluginApi.agents.scopes.acquire({ agent })`。`agent` 接受门面已知的 target 引用（agents 域查询/创建返回的 agent 身份）；acquire 经官方 agents 面解析目标，解析失败/目标已销毁 → typed `unavailable`（不回退全局，需求 1.2）。owner 从 caller fiber 派生（现行 `resolveOwnerId` 机制）。
-- **handle 形状**：`{ id, ownerId, generation, target, status(), dispose() }`——`target` 为冻结的目标身份快照（agent 身份 + 解析时间），`status()` 反映目标可用性，`dispose()` 释放该 handle 名下 bookkeeping（identity-bound、幂等、stale no-op）。handle 不挂 contribute 方法：贡献调用仍走各自领域入口，`scope` 以 handle（opaque token）传入——避免 handle 变成第二贡献入口、保持「工具按键注册仍归 tools 面」的边界。
+- **获取**：`pluginApi.agents.scopes.register({ agent })`。`agent` 接受门面已知的 target 引用（agents 域查询/创建返回的 agent 身份）；register 经官方 agents 面解析目标，解析失败/目标已销毁 → typed `unavailable`（不回退全局，需求 1.2）。owner 从 caller fiber 派生（现行 `resolveOwnerId` 机制）。入口动词用 `register` 而非 `acquire`：本 handle 无 lease/fencing/heartbeat 语义，`acquire` 属 coordination 固定动词集（`api-idioms.md` §3.7），会误导 idiom 归类；`register` 对齐 resourceRegistry（§3.6）。
+- **handle 形状**：`{ id, ownerId, generation, target, status(), dispose() }`——`target` 为冻结的目标身份快照（agent 身份 + 解析时间），`status()` 反映目标可用性，`dispose()` 释放该 handle 名下 bookkeeping（identity-bound、幂等、stale no-op）。handle 在 §3.6 固定形状 `{ id, ownerId, generation, dispose() }` 之上的 `target` / `status()` 扩展成员按 `api-idioms.md` §1 六项例外登记：`memberPath: agents.scopes.register.handle`；`baseContract: resourceRegistry`；`exception: scope-bound handle 扩展成员 target / status()`；`reason: target 是作用域资源的身份投影（scope 绑定语义必需），status() 是目标可用性的只读成员（不可用 target 的 typed 拒绝依赖它）；两者不引入写权或 lease 语义`；`replacementShape: { id, ownerId, generation, target, status(), dispose() }`；`verification: handle 成员 registry 断言 + stale no-op / identity-bound disposal 断言`。handle 不挂 contribute 方法：贡献调用仍走各自领域入口，`scope` 以 handle（opaque token）传入——避免 handle 变成第二贡献入口、保持「工具按键注册仍归 tools 面」的边界。
 - **身份稳定性**：scoped 贡献 registry 以**稳定 target 身份**（agent 身份，非 handle 实例）为键；同目标的多个 handle 共享目标键。cold resume 覆盖以 Stage 4 probe 证实目标身份跨恢复稳定为前提（需求 5.4 显式义务；不证实则该覆盖不宣称）。
 
 ## tools caller-bound 解析的复用判定与真实 fiber probe（验证义务）
@@ -41,7 +41,7 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定 scope 表达与 
   1. 在 agent-A 的执行 fiber 内（例如 A 的工具执行回调中）经门面调用 `tools.register` / `prompts.contribute`，验证 caller-bound 解析是否落在 A 的官方 tools/systemPrompt 服务面（假设 P1：fiber 绑定足够）。
   2. 在插件根 context（agent-B 创建者）中持有 B 的 scope handle 安装贡献，验证安装是否可达 B 的服务面（假设 P2：setup 场景需要显式 target 通道）——agent-teams 成员 setup 正是此形态。
   3. 反向装配顺序 + 两个 agent 同时运行的隔离断言；cold resume 后重复 1–2。
-- **判定规则（写入 tasks/验收）**：P1 通过 → per-execution 安装直接复用 caller-bound 解析（复用既有机制，不新建路径）；P2 通过 → acquire 时经官方 agent 实例面捕获目标服务解析闭包（acquire 是唯一新增解析点）；P1/P2 都不通 → 该缺口升级为人类裁决点（可能触及官方组件边界，再评估通道），**不得无证据重写整个 agent service**（goal 硬约束）。
+- **判定规则（写入 tasks/验收）**：P1 通过 → per-execution 安装直接复用 caller-bound 解析（复用既有机制，不新建路径）；P2 通过 → register 时经官方 agent 实例面捕获目标服务解析闭包（register 是唯一新增解析点）；P1/P2 都不通 → 该缺口升级为人类裁决点（可能触及官方组件边界，再评估通道），**不得无证据重写整个 agent service**（goal 硬约束）。
 - probe 结论与实际接线在 Stage 4 记录；若与本文档假设冲突，按 spec 修订流程同步本文档对应条目。
 
 ## 与 prompts / tools 既有面的分工矩阵
@@ -53,7 +53,7 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定 scope 表达与 
 | 全局工具注册 / 可用性 | `tools.register` / `tools.restrict.register`（既有） | 不变 |
 | 目标 agent 的工具注册/限制 | `tools.register(definition, { scope })` / `tools.restrict.register(policy, { scope })`（本线扩展维度） | **同 owner 扩展**：resourceRegistry/policy 外层合同不变，target 维度只作用于解析/可见性 |
 | 整体 sections 替换 / 汇编筛选 | `prompts.assemblyPolicies.register`（decision-participation-contract 线） | **不在本线**：本线贡献恒为追加型；target 维度的整体替换走 decision 线的 scope binding（交叉条文见下） |
-| 目标身份解析 / 生命周期锚点 | `agents.scopes`（本线新增） | acquire/status/dispose；agents 域既有 owner 之上增加贡献 target 维度，不夺 agents 领域既有 owner 权 |
+| 目标身份解析 / 生命周期锚点 | `agents.scopes`（本线新增） | register/status/dispose；agents 域既有 owner 之上增加贡献 target 维度，不夺 agents 领域既有 owner 权 |
 
 ## 生命周期与清理责任
 
@@ -62,7 +62,7 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定 scope 表达与 
 | target agent 销毁 | 门面订阅官方 `agent/disposed`（catalog fact，observe 路径即可）→ 按 target 身份 purge 该目标全部 scoped 贡献（跨 owner）；purge 只清 scoped registry 状态，不触碰官方 agent 遗留状态。销毁信号生产权归官方/agent authority，本线只消费。 |
 | 贡献者插件卸载/重载 | owner identity-bound 撤除该 owner 全部 scoped 贡献（跨目标）；其他 owner 贡献存活；旧 generation handle 一律 typed no-op（不撤新贡献）。 |
 | scope handle dispose | 释放 handle 名下 bookkeeping；其名下已安装贡献按 (owner, target, contribution id) identity-bound 撤除——handle dispose 撤「自己装的」，不撤别的 owner 对同一目标的贡献。 |
-| cold resume | 目标身份稳定（probe 证实）→ scoped 贡献按 target 键存活，恢复后继续生效；贡献者已卸载的贡献不复活。 |
+| cold resume（同进程恢复） | 同进程恢复且目标身份稳定（probe 证实）→ scoped 贡献按 target 键存活，恢复后继续生效；贡献者已卸载的贡献不复活。跨宿主/插件重启属运行时状态边界（需求 8）：scoped registry 不跨重启，由插件按需求 8.2/8.3 重装。 |
 | 安装与销毁竞争 | 目标销毁后到达的安装 → typed unavailable/destroyed，不安装孤儿状态。 |
 
 贡献本身为运行时 registry 状态（非 durable）；持久化需求走既有 session/workspace/profile 三档，由插件自行 re-install（需求 8）。
@@ -83,7 +83,7 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定 scope 表达与 
 
 | 失败 | guard |
 |---|---|
-| 目标不可解析 / 已销毁 / backing 不可用 | typed `unavailable`（acquire 与安装皆然）；**不静默回退全局** |
+| 目标不可解析 / 已销毁 / backing 不可用 | typed `unavailable`（register 与安装皆然）；**不静默回退全局** |
 | 同 owner 同 id 同目标重复贡献 | typed `conflict`（既有 prompts/tools conflict 语义，键位扩展） |
 | stale handle / 旧 generation | typed no-op；identity-bound，不撤新贡献/他人贡献 |
 | 贡献 provider 回调异常 | 按 assembly/tool 解析点的 containment 规则降级该贡献（不破坏汇编与其他 owner）；诊断有界 |
@@ -113,7 +113,7 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定 scope 表达与 
 |---|---|
 | capability-strategy | **适用**：官方 agent scope/setup 的 A/B 门面化为主；无预批 R 点位（probe 不通时才升级人类裁决/通道评估）；host-only 六问已记录；无新 `services.*` 成员。 |
 | api-shape | **适用**：主面 = contribution（追加、可撤销、不产生领域事实）；scoped tools = resourceRegistry 面；target 维度不改变各面边界；不把替换伪装成贡献。 |
-| api-idioms | **适用**：contribution 形状（contribute/handle `{id, ownerId, seq, dispose}`、同 owner 同 id conflict、pending 不适用——安装为同步语义）；resourceRegistry/policy 形状在 scoped 变体上保持外层合同；`agents.scopes.acquire` 为登记型 handle（resourceRegistry 同构），status 为 projection 只读。 |
+| api-idioms | **适用**：contribution 形状（contribute/handle `{id, ownerId, seq, dispose}`、同 owner 同 id conflict、pending 不适用——安装为同步语义）；resourceRegistry/policy 形状在 scoped 变体上保持外层合同；`agents.scopes.register` 入口动词对齐 resourceRegistry §3.6（弃用 acquire 以免误读 coordination 词表），handle 的 `target`/`status()` 扩展成员按 §1 六项例外登记（见「scope 表达」）。 |
 | public-api-shape | **适用**：`agents.scopes` 挂既有 agents 域；`prompts.contribute` / `tools.register` / `tools.restrict.register` 原地扩展维度；无顶层新域、无治理名泄漏。 |
 | composition-and-authority | **适用**：additive composition + (owner, target) 键位冲突规则；owner 派生不可伪造；authority closure——scoped 贡献不旁路 prompts/tools 既有 authority，全部写路径经既有入口的 scope 维度。 |
 | domain-composition | **适用**：`prompts` 行（加性注册 + assemble 决策点可写范围明确——追加归贡献、替换归 policy）与 `tools` 行（注册 owner 化、restrict 固定代数）对齐并扩展 target 维度。 |
