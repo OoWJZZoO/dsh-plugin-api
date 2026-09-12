@@ -2,7 +2,7 @@
 
 > feature_name: `plugin-api-m10-contract-convergence`
 > milestone: M10
-> status: Stage 0 Goal 提交用户批量确认（2026-09-12）；Requirements / Design 未开始
+> status: Stage 0–2 已交付（2026-09-12）。Goal 于 2026-09-11 获批（M10 批量确认门）；requirements.md 与 design.md 同日交付于本目录。
 > 输入溯源：M10 工作纲领 §3.10（OBS-01–14）、§7 统一验收矩阵；观察报告 §5 OBS-13/OBS-14、§6 纠正表、§7 闭合判据；M7 deletion report 批准记录与五项「后续 B 类接口义务」；M8 migration ledger（第 30 行决策参与处置与 AGENTS.md §4 第 3 条的治理表述张力）；M9 已交付登记、feature-list 历史行现状注；canonical registry。
 
 ## Goal
