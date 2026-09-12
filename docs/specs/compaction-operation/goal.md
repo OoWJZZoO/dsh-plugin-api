@@ -2,7 +2,7 @@
 
 > feature_name: `compaction-operation`
 > milestone: M10
-> status: Stage 0 Goal 提交用户批量确认（2026-09-11）；Requirements / Design 未开始
+> status: Stage 0–2 已交付（2026-09-12）
 > 输入溯源：M10 工作纲领 §3.7（OBS-07）；观察报告 §5 OBS-07；M7 deletion report B4-7 批准记录与「后续 B 类接口义务」；canonical registry eventCatalog `compaction/*` 现状与官方 `dsh-compaction-basic` 类型。
 
 ## Goal
