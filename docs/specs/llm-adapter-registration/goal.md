@@ -2,7 +2,7 @@
 
 > feature_name: `llm-adapter-registration`
 > milestone: M10
-> status: Stage 0 Goal 提交用户批量确认（2026-09-12）；Requirements / Design 未开始
+> status: Stage 0–2 已交付（2026-09-12）；Requirements / Design 同批交付于本目录（requirements.md / design.md）
 > 输入溯源：M10 工作纲领 §3.2（OBS-02）；观察报告 §5 OBS-02；M8 migration ledger 第 41–43 行（`registerAdapter`→`llm.adapters.register` rename、`registerConfigurableProviders`/`registerModelDiscovery` 两条线）；canonical registry `llm.adapters.register` 现行登记（currentShape 为 decoration registration）与 `llm.providers.register` / `llm.models.register` 现状；`packages/llm` replacement owner 现状。
 
 ## Goal
