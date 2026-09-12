@@ -47,9 +47,9 @@ path 理由：
 
 | 点位 | 输入（catalog payloadShape） | 可改范围 | 决定词汇 | next/续延所有权 | await | 取消 | scope | 失败默认 | 排序 | 通道判定 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `agent/pre-step` | `{agent, messages, turn, step, signal}`，freeze `deep:['messages']` | 决策对象 + 返回的 messages | `{kind:'enter', messages?}` \| `{kind:'reject', reason?}` | 策略可 `await next()` 取链末决策再改写；不调 `next` 则自身决策预占 | 保留（dispatch 待策略 promise 结算） | `signal` 贯通；abort 后按默认决策收口 | scope-filtered（agent） | contain + 沿用当前链决策 | priority + 注册顺序；last-decision-wins | A 类稳定化；无 R |
-| `agent/request` | `{agent, turn, step, signal}` | 决策对象 | 官方 producer 消费语义（Stage 4 probe 固化到 registry） | 同上 | 同上 | 同上 | 同上 | 同上 | 同上 | A 类稳定化；无 R |
-| `agent/request-error` | `{agent, turn, step, provider, failure, retryPolicy, signal}`，freeze `deep:['failure']` | 决策对象（retry/failover/abort 尝试） | 同上；route/health 决策归 `llm.routing.*` | 同上 | 同上 | 同上 | 同上 | 同上 | 同上 | A 类稳定化；无 R |
+| `agent/pre-step` | `{agent, messages, turn, step, signal}`，freeze `deep:['messages']` | 决策对象 + 返回的 messages | `{kind:'enter', messages}`（官方消费必带 messages，循环解引用 `decision.messages`）\| `{kind:'reject', reason?}` | 策略可 `await next()` 取链末决策再改写；返回 typed 决定而不调 `next` 则该决策预占（veto） | 保留（dispatch 待策略 promise 结算） | `signal` 贯通；abort 后按默认决策收口 | scope-filtered（agent） | contain + 沿用当前链决策 | priority + 注册顺序；last-decision-wins | A 类稳定化；无 R |
+| `agent/request` | `{agent, turn, step, signal}` | 决策对象 | 官方 producer 消费语义（官方消费 config 对象；词汇含无决定表达形式，Stage 4 probe 固化到 registry，不预置） | 同上 | 同上 | 同上 | 同上 | 同上 | 同上 | A 类稳定化；无 R |
+| `agent/request-error` | `{agent, turn, step, provider, failure, retryPolicy, signal}`，freeze `deep:['failure']` | 决策对象 | 官方 producer 消费语义（retry vs 放弃等以官方消费为准；词汇含无决定表达形式，Stage 4 probe 固化，不预置）；route/health 决策归 `llm.routing.*` | 同上 | 同上 | 同上 | 同上 | 同上 | 同上 | A 类稳定化；无 R |
 | `agent/turn-stopping` | `{agent, turn, signal}`（agent 由官方 fused dispatcher 注入），freeze `deep:[]` | 决策对象 | proceed（无决定/\`{kind:'proceed'}\`）\| \`{kind:'continue', message}\`（经官方 next-step inbox 通道续延） | 官方 serial fact 派发原样保留；切片在派发结算后、循环停止复查前调用参与链并应用决定 | 循环 await 官方派发；参与链结算先于停止复查 | 载荷 `signal` 贯通；派发后官方 `throwIfAborted` 照常 | scope-filtered（agent） | contain + proceed（停止照官方判定）；畸形决定按未决定处理 | priority + 注册顺序；链上 last-decision-wins | **R 类**（2026-09-12 人类裁决，agent-loop owner 切片；见「R slice 设计」） |
 | `system-prompt/assemble` | assembly `{sections, contexts, tools, variables}` + `{scope?, signal?}` | 整体 sections 替换 / 删除、tools 筛选、contexts/variables 值 | 返回改写后 assembly（waterfall 收敛） | 同 waterfall 续延 | 保留 | context signal | scope-filtered | contain + assembly 原样继续 | 同上；`prompts.contribute` 追加先合成，策略见合并后 assembly | A 类稳定化；无 R（追加语义已在 prompts 域） |
 | `tools/pre-execute` | `exec` | —（既有面承载） | `tools.guard`：`{allow}` \| `{deny, reason}` \| `{ask, reason?}` | — | guard 既有语义 | exec.signal | scope-filtered | guard 既有 | guard 既有 | **既有面**：`tools.guard.register` 等价承载；需求 7.5 只做 algebra 覆盖核对，不建第二入口 |
@@ -57,8 +57,8 @@ path 理由：
 | `tools/post-execute` | `{exec, result}`（result 只读） | 决策对象（accept + content/value 改写、block + feedback） | `{kind:'accept', content?\|value?}` \| `{kind:'block', feedback}` | waterfall（无执行续延） | 保留 | exec.signal | scope-filtered | contain + accept 现结果 | 同上；内容脱敏归 `security.redaction` | A 类稳定化；无 R |
 | `llm/stream` | GenerateOptions；`next(): AsyncIterable<StreamChunk>` | —（既有面承载） | — | decoration 链 | decoration 既有 | decoration 既有 | binding match | — | decoration 链序 | **既有面**：`llm.adapters` decoration（binding 匹配的 request/chunk 变换）+ `llm.requestTransforms`；不开放裸 `llm/stream` 参与条目 |
 | `fs/write-intent` / `fs/edit-intent` | `{target:{targetKey, displayPath}, exec}`，freeze `all` | 决策对象（放行 / 拒绝） | proceed（无决定/undefined）\| deny（携带 reason） | 屏障式：异步捕获完成后才 `next()` 放行 | **副作用前完成**（写入等全部策略结算） | exec/signal 贯通 | facade | contain + 放行 | priority + 注册顺序 | A 类稳定化（producer 为 filesystem authority）；无 R |
-| `compaction/request` | `{agent, session, trigger, range, sourceCommandId?}` | 决策对象 | proceed \| `{kind:'reject', reason?}` \| `{kind:'replace-range', range}` | waterfall | 保留 | 载荷 signal | facade | contain + proceed | 同上 | A 类稳定化（producer 为已交付 compaction replacement）；触发操作归 compaction-operation 线，本线只承载参与 |
-| `session-title/candidate` | `{agent, session, message:{seq,text,source}}` | 决策对象 | proceed \| exclude(reason?) \| replace(`{seq}`) | waterfall | 保留 | —（catalog 无 signal） | facade | contain + proceed | 同上 | A 类稳定化（producer 为已交付 session-title replacement）；title provider authority 不变 |
+| `compaction/request` | `{agent, session, trigger, range, sourceCommandId?}` | 决策对象 | proceed（无决定，以 undefined 表达）\| `{kind:'reject', reason?}` \| `{kind:'replace-range', range}` | waterfall | 保留 | 载荷 signal | facade | contain + proceed | 同上 | A 类稳定化（producer 为已交付 compaction replacement）；触发操作归 compaction-operation 线，本线只承载参与 |
+| `session-title/candidate` | `{agent, session, message:{seq,text,source}}` | 决策对象 | proceed（无决定，以 undefined 表达）\| exclude(reason?) \| replace(`{seq}`) | waterfall | 保留 | —（catalog 无 signal） | facade | contain + proceed | 同上 | A 类稳定化（producer 为已交付 session-title replacement）；title provider authority 不变 |
 
 ## 机制设计
 
@@ -66,14 +66,14 @@ path 理由：
 
 - **安装**：`registerParticipation(name, entry)`（bus substrate 内部）：校验 catalog 条目 `eventSemantics === 'decision'` 且 `dispatch === 'waterfall'`；创建与现行内部订阅同构的条目（priority、scope、order），经 `reconcile` 安装为官方 ctx 钩子。官方 dispatch 模式与 payload 冻结策略（`freezeByPolicy`）原样保留——**不新增派发内核，不改变 deepFreeze 语义**。
 - **串行 R 切片变体（仅 turn-stopping）**：该点位不走 ctx 监听安装（串行派发的返回值契约不属于公共面，且官方 fact 派发必须逐位保留）；替代行经契约符号探测调用门面 `agents.decisions` 的参与链，priority/冻结/containment/收敛仍在门面 registry（见「R slice 设计」）。
-- **返回值保真**：策略 `decide(context)` 的 `context` 含 `{ ...payload, next, signal }`；策略同步返回决策或返回 promise（await 保留，waterfall dispatch 等待结算）；`next` 由守卫续延（`guardedNext`）提供，不调 `next` 时链以其输入继续（`continueIfNeeded`）——现行 `runWaterfallListener` 的续延语义原样复用。
+- **返回值保真（值感知续延包装）**：策略 `decide(context)` 的 `context` 含 `{ ...payload, next, signal }`；策略同步返回决策或返回 promise（await 保留，waterfall dispatch 等待结算）。参与包装的成功路径是**值感知**的，不是官方 listener 续延语义的原样复用：返回 `undefined`（无决定，proceed 类词汇）→ 经 `next()` 续链（链以其输入继续）；返回 typed 决定值 → 该值成为链结果（预占，`next` 不被调用——对齐官方 cordis「不调 next 即 veto 整链」语义，保证 reject/deny 不被下游覆盖）；畸形返回 → 按未决定处理（续链 + 有界诊断）。失败路径沿用 containment：throw/rejection/迟到 promise → contain + 续链（点位默认决定生效），`continueIfNeeded` 仅用于失败/monitor 路径。据此，现行 `runWaterfallListener` 的条目安装、优先级排序、scope 门控与冻结机制照常复用；其成功路径的「直接返回返回值」语义仅为非参与条目保留，参与条目一律走上述值感知包装（否则返回 undefined 的 proceed 型策略会以 undefined veto 整链、破坏 producer）。
 - **containment 包装**：参与条目不使用 `fault: 'propagate'` 原样透传第三方异常；每个策略 slot 的 throw/rejection 被 containment（对齐 catalog `listenerFailureDefault`），该 slot 以「未决定」参与收敛，producer 按点位默认决定继续。理由：官方 propagate 语义保护的是官方 listener 契约；第三方策略的缺陷 containment 是 `composition-and-authority.md` §10 的门面义务。官方自身的 listener（若有）不经此包装。
 - **排序**：`sortEntries`（priority index + order）原样；`monitor` 不接受为参与优先级（保留给 observe feed）。
 - **scope 门控**：catalog `scopeFiltered` 条目按 `scopeKey` 解析主题；绑定 scope 的条目不匹配即跳过（waterfall 下静默续延 `next()`）。
 
 ### 领域 registry 记录
 
-- 每个 registry 维护 owner/id/generation 记录（policy idiom handle：`{ id, ownerId, generation, dispose() }`）；owner 由 caller fiber 派生（现行 `resolveOwnerId` 机制）；同 owner 同 id 冲突 typed conflict，跨 owner 不静默覆盖；dispose 幂等、stale no-op、只撤自身。
+- 每个 registry 维护 owner/id/generation 记录（policy idiom handle：`{ id, ownerId, generation, dispose() }`）；owner 由 caller fiber 派生（现行 `resolveOwnerId` 机制）；同 owner 同 id 按 policy idiom 外层合同 **latest-wins**（新条目替换仍在生效的旧条目并返回新 generation handle，旧 handle 成为 typed stale no-op），跨 owner 同 id typed `owner-conflict` error（`api-idioms.md` §3.2 外层合同：注册错误以 typed error 表达、不返回 ok:false，不登记例外）；dispose 幂等、stale no-op、只撤自身。
 - `events.decisions` 的准入集为显式枚举（初始四点位），新增点位 = 显式增量（catalog 校验 + 领域归属核对），不自动吸收 catalog 新 decision 条目。
 - capability / availability：各 registry 提供 `availability()`；backing（官方 dispatch 或 replacement producer）不可用时 typed `unavailable`，不影响无关能力。
 
@@ -118,7 +118,20 @@ path 理由：
 ### 裁决与替代单位
 
 - **替代单位 = turn-stopping 派发行**：该派发点位于官方 `dsh-agent-loop` 行的循环驱动内（已核实锚点：官方 `dsh-agent-loop/lib/index.js` 循环内 `await this.dispatch.serial("agent/turn-stopping", { turn, signal })`，其后 `signal.throwIfAborted()` 与停止复查 `if (turnEnds && this.inbox.nextStep.length === 0) break;`）。该行**已被既有 R 装配替代**（官方行 `agent-loop` `disabled: true` + 替代行 `plugin-api-agent-loop`，见 `packages/agent-loop/cordis.patch.yml` 与 capability-strategy §5 装配表）——本切片**不新增被禁用官方行、不新增替代行**，是在既有替代行内新增一个能力切片。
-- **owner = 既有组件唯一 owner**：`@deepseek-ai/dsh-plugin-api-agent-loop`（唯一官方组件包 `@deepseek-ai/dsh-agent-loop`）。不为本点位新建第二个 llm/agent-loop owner，也不在别处复制派发语义。
+- **owner = 既有组件唯一 owner**：`@deepseek-ai/dsh-plugin-api-agent-loop`（唯一官方组件包 `@deepseek-ai/dsh-agent-loop`）。不为本点位新建第二个 owner，也不在别处复制派发语义。
+
+### R1–R8 逐条对照
+
+| 规则 | 对照 |
+|---|---|
+| R1 | 只走官方 patch 机制：替代单位是已被替代的官方行 `agent-loop`（`disabled: true` + 替代行 `plugin-api-agent-loop`，既有 patch）；不修改 `/usr/lib/node_modules/@deepseek-ai/dsh/**` 任何官方包文件 |
+| R2 | 替代行完整复刻被替代行的 ctx 服务面与事件面契约；turn-stopping 派发点的官方等价基线（serial fact 派发、payload、时序、停止复查）逐位保留后才叠加参与切片（见下「官方契约基线」） |
+| R3 | **不覆盖 import 面**：第三方 `import '@deepseek-ai/dsh-agent-loop'`（及其余 `@deepseek-ai/dsh-*`）仍解析官方原包；本切片只作用于该行的 ctx 服务/事件行为，门面参与链经契约符号协作，不改变任何包的模块解析 |
+| R4 | boot 自检：apply 既有自检矩阵追加本切片加性检查项（官方行已 disabled、替代行已 active、主门面版本一致、参与链契约符号可达）；失败 = 仅本切片 fail-safe 停用 + 有界诊断，绝不静默双跑 |
+| R5 | 版本锁定：复用该包 identity 矩阵（runtime `0.1.0-rc.6` 全量 identity、官方组件包 identity、主包 `A.B.C` 一致）；失配仅停用本切片 |
+| R6 | 组件唯一 owner：`@deepseek-ai/dsh-agent-loop` 的 replacement owner 仍为 `@deepseek-ai/dsh-plugin-api-agent-loop`；本切片是该 owner 管理的又一能力，不新建 owner，并复用其组件级冲突/双跑检测 |
+| R7 | client 面自建构建：不适用——本切片 host-only（§10 六问全否，见下），无 client 半面需要构建 |
+| R8 | 不覆盖 boot 胶水与框架级语义：turn-stopping 的 priority/冻结/containment/收敛全部留在门面 registry；替代行不触碰 Cordis 派发机制与 `dsh-app-boot`（见「参与链与横切语义归属」边界条款） |
 
 ### 官方契约基线（R2 完整复刻）
 
@@ -181,7 +194,7 @@ fork 现行实现（`packages/agent-loop/lib/forked-loop.js`）已逐位复刻�
 | 策略 throw / rejection / 迟到 promise | slot containment + 点位默认决定 + 有界诊断；不抛穿 dispatch / apply |
 | dispatch abort（signal） | 策略收口为默认决定；迟到结算按提交资格检查丢弃（不补写决策） |
 | stale disposer / owner reload | typed no-op；只撤自身 generation 条目 |
-| 同 owner 重复 id / 跨 owner 冲突 | typed `conflict`；跨 owner 不静默覆盖 |
+| 同 owner 同 id 重复登记 / 跨 owner 冲突 | 同 owner **latest-wins**（新 generation handle，旧 handle stale no-op）；跨 owner typed `owner-conflict` error（policy idiom 外层合同，`api-idioms.md` §3.2：注册错误抛 typed error，不用 ok:false） |
 | backing 不可用 / 版本错配 | `unavailable` typed 结果 + capability degraded；不影响无关点位 |
 | 恶意/畸形决策对象（不满足点位词汇） | 按未决定处理（对齐 session-title 包既有 `malformed` 语义），不抛穿 |
 | turn-stopping 切片：门面缺位 / 契约符号缺失 / 参与链失败 | 替代行回退官方等价 serial 派发（默认行为）；绝不双跑、绝不静默（有界诊断）；参与登记 typed `unavailable`（见「R slice 设计」） |

@@ -53,7 +53,7 @@ Stage 1 与 Stage 2 同批交付（2026-09-12）。本文承接已确认 Stage 0
 ### Acceptance Criteria
 
 1. WHEN the official agent runtime dispatches the `agent/request` decision THEN each registered policy SHALL be invoked with `{ agent, turn, step, signal }` and `next`, frozen per the catalog freeze policy.
-2. WHEN a policy returns a decision THEN the producer SHALL consume the converged decision of the waterfall for this request (last decision wins along the waterfall per the catalog `conflictConvergence`), and a deny-shaped decision SHALL NOT be silently overwritten by a later default.
+2. WHEN a policy returns a decision THEN the producer SHALL consume the converged decision of the waterfall for this request (last decision wins along the waterfall per the catalog `conflictConvergence`), and a decided (non-pass-through) outcome SHALL NOT be silently overwritten by a later default; the concrete decision vocabulary SHALL follow the official request consumption semantics and SHALL be fixed by the Stage 4 contract probe (词汇不以本需求预置).
 3. WHEN a policy needs the chain's outcome THEN it MAY await `next()` under the same await/containment rules as Requirement 2.3.
 4. WHEN the policy fails or the dispatch is aborted THEN the default decision per Requirement 11 SHALL apply and other owners SHALL NOT be affected.
 5. WHERE a policy carries a scope binding THEN it SHALL only be invoked for matching agents.
@@ -67,7 +67,7 @@ Stage 1 与 Stage 2 同批交付（2026-09-12）。本文承接已确认 Stage 0
 ### Acceptance Criteria
 
 1. WHEN the official agent runtime dispatches `agent/request-error` THEN each registered policy SHALL be invoked with `{ agent, turn, step, provider, failure, retryPolicy, signal }` and `next`, frozen per the catalog freeze policy (`deep: ['failure']`).
-2. WHEN a policy returns a decision (retry, fail over, or abort the attempt per the official consumption semantics) THEN the producer SHALL consume the converged decision for this error handling pass.
+2. WHEN a policy returns a decision THEN the producer SHALL consume the converged decision for this error handling pass per the official request-error consumption semantics; the concrete decision vocabulary (retry vs 放弃等) SHALL be fixed by the Stage 4 contract probe against the official producer source and SHALL NOT be pre-set by this requirement.
 3. WHEN the participation need is provider route/health policy (circuit, probe, failover candidate selection) THEN the system SHALL present `llm.routing.policies.register` / `llm.routing.health.circuitPolicy.register` / `llm.routing.health.probe.register` as the supported faces, and `agents.decisions('request-error')` SHALL NOT duplicate those route-domain decisions.
 4. WHEN a policy fails or is stale THEN containment per Requirement 11 applies and other owners are unaffected.
 
@@ -154,9 +154,9 @@ Stage 1 与 Stage 2 同批交付（2026-09-12）。本文承接已确认 Stage 0
 
 ### Acceptance Criteria
 
-1. GIVEN the admitted point set of the unified registry is enumerated as `fs/write-intent`, `fs/edit-intent`, `compaction/request`, `session-title/candidate` WHEN `events.decisions.register` is called THEN the system SHALL accept exactly those catalog names (plus additive future catalog decision points that no domain face owns) and SHALL validate each registration against the catalog entry's decision semantics before installing.
+1. GIVEN the admitted point set of the unified registry is enumerated as `fs/write-intent`, `fs/edit-intent`, `compaction/request`, `session-title/candidate` WHEN `events.decisions.register` is called THEN the system SHALL accept exactly those catalog names and SHALL validate each registration against the catalog entry's decision semantics before installing; additional catalog decision points SHALL be admitted only through explicit incremental admission of the enumerated set (显式增量准入), and SHALL NOT be auto-absorbed when new catalog decision entries appear.
 2. WHEN a caller passes a non-catalog name, a fact/observation/notification event name, or a decision point owned by a domain face THEN the system SHALL return the typed `unsupported`/`conflict` result of Requirement 1.7 and SHALL NOT install any listener.
-3. WHEN a policy at a unified-registry point returns a decision THEN the decision SHALL conform to that point's typed vocabulary (compaction/request: proceed | `{ kind: 'reject', reason? }` | `{ kind: 'replace-range', range }`; session-title/candidate: proceed | exclude with optional reason | replace referencing `{ seq }`), and a malformed decision SHALL be treated as no decision per the owning producer's contract.
+3. WHEN a policy at a unified-registry point returns a decision THEN the decision SHALL conform to that point's typed vocabulary (compaction/request: proceed（无决定，以 undefined 表达） | `{ kind: 'reject', reason? }` | `{ kind: 'replace-range', range }`; session-title/candidate: proceed（无决定，以 undefined 表达） | exclude with optional reason | replace referencing `{ seq }`), and a malformed decision SHALL be treated as no decision per the owning producer's contract.
 4. WHEN the compaction/request participation interacts with an explicit compaction operation THEN the operation authority (compaction-operation feature) SHALL own triggering and results, and the decision registry SHALL only carry participation at the request decision point (策略 registry 不是主动触发器).
 5. WHEN the session-title/candidate participation is exercised THEN the title replacement authority SHALL remain the decision's producer and consumer of record, and participation SHALL NOT create a second title provider authority.
 
@@ -172,7 +172,7 @@ Stage 1 与 Stage 2 同批交付（2026-09-12）。本文承接已确认 Stage 0
 2. WHEN two policies produce competing decisions THEN convergence SHALL follow the catalog `conflictConvergence` (last decision wins along the waterfall) for the points where that rule is declared, and the convergence rule SHALL be part of each point's public contract rather than an emergent property of registration order.
 3. WHEN any policy's callback throws, rejects, or settles late THEN the failure SHALL be contained at the participation boundary: the point's documented default decision SHALL apply for that policy's slot, a bounded diagnostic SHALL be recorded, and no other owner's policy, the official producer, or the harness apply SHALL be broken.
 4. WHEN a policy's disposer is stale (after owner reload, dispose, or generation replacement) THEN invoking it SHALL be a typed no-op that neither revokes a newer generation's participation nor touches another owner's entries.
-5. WHEN a policy registration conflicts (same owner, same id, still active) THEN the system SHALL return a typed conflict result; cross-owner same-id registrations SHALL NOT silently overwrite.
+5. WHEN the same owner re-registers the same id at the same point THEN the system SHALL apply the policy idiom's latest-wins rule: the new entry SHALL replace the still-active one, a fresh generation handle SHALL be returned, and the old handle SHALL become a typed stale no-op; WHEN a different owner registers the same id THEN the system SHALL raise a typed owner-conflict error and SHALL NOT silently overwrite (对齐 `api-idioms.md` §3.2 外层合同：注册错误以 typed error 表达，不返回 ok:false 判别结果).
 
 **Classification:** 门面承载的横切语义（永不转 R）；遵循 `ordering.md` / `composition-and-authority.md` §10。
 

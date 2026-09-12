@@ -24,7 +24,7 @@ OBS-01 已证实（含最小运行复现）：公共 events bus 的 `observe` �
 - 决策回调真实影响 producer 本次操作：reject/deny 不被下游误覆盖；transform 产出进入下一阶段而非旁边另存一份；支持整体 sections 替换、既有 tools 筛选等已证实行为，不只支持追加。
 - 有副作用的执行前工作（如执行前快照）用正确的生命周期/operation 合同承载（snapshot 执行归 checkpoint owner），不以「策略必须纯」删除功能；纯 decision 不夹带副作用。
 - 合理保留 scope、priority、注册顺序与失败隔离；observer 的返回值始终不参与决定；callback throw/rejection、abort、stale disposer 不破坏其他 owner。
-- 通道方向：官方已 dispatch 的决策点按 A/B 稳定化；框架横切派发语义（priority / deepFreeze / fault containment）永不 R；仅当证实某官方组件确实缺少必要业务边界时，单独评估该组件的 R slice，Goal 阶段不预批。
+- 通道方向：官方已 dispatch 的决策点按 A/B 稳定化；框架横切派发语义（priority / deepFreeze / fault containment）永不 R；仅当证实某官方组件确实缺少必要业务边界时，单独评估该组件的 R slice，Goal 阶段不预批（2026-09-12 裁决更新：`agent/turn-stopping` 参与已定走 R 类，agent-loop owner 切片——见文首裁决注；「不预批」自裁决起仅适用于其余点位）。
 - 点位归属与 scoped-agent-contributions、compaction-operation、interactive-session-access 及总契约线共同确定；公共事件生产权收敛归总契约线；不建全局 before/after DAG。
 
 ## Boundaries
