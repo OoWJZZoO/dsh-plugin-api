@@ -98,7 +98,7 @@
 - WHEN the parent reference cannot be resolved to the same live Agent (missing, stale, or fabricated reference) THEN the operation SHALL reject with a determinate no-run outcome carrying a stable code, no run identity SHALL be minted, and no engine call SHALL be made.
 - WHERE parent attribution is concerned IF the engine starts children THEN the facade SHALL NOT pass any parent object other than the verified live Agent.
 
-### R8 tasks 关联（消费既有面，不扩权）
+### R8 tasks 关联（A 类消费——既有 tasks 面与 workflow source adapter，不扩权）
 
 **User story**: As a task-observing plugin, I want business tasks to reference real workflow runs, so that task/agent/run linkage is closed without a second executor.
 
@@ -114,7 +114,7 @@
 - WHEN the workflow engine seam is absent or unusable THEN the namespace SHALL remain present with availability reporting unavailable and invocation SHALL fail with the standard typed feature-disabled / capability-unavailable error, and unrelated capabilities SHALL be unaffected.
 - WHEN the engine becomes available or unavailable at runtime THEN `availability()` SHALL reflect the actual seam state (not mere object presence), consistent with the capability self-description rules.
 
-### R10 host-only 客户端半面（§3 六问记录的结论条目）
+### R10 host-only 客户端半面（§3 六问记录的结论条目；元约束类——无独立实现通道，A/B/C/R 标注不适用）
 
 - WHERE the client half is concerned IF any client surface is evaluated THEN the facade SHALL NOT expose the workflow operation, run handles, their result shapes, or any workflow client member on the client half (per §3 six-question record: all answers negative).
 
@@ -123,4 +123,4 @@
 - 版本冻结：不步进 runtime identity、`dsh.api` 或任何包版本字段；能力在冻结基线内交付。
 - 「拓展能力」边界：本 feature 只落实生命周期 / 审计（owner 归因与终态证据）/ 取消 / 关联；不解释为新的 DAG language、工作流定义市场或分布式调度平台（goal Boundary）。
 - R 点位判定：Goal 阶段不预批；本阶段 design 给出判定（§design），若执行中证实必须扩组件能力，须回到规格流程明确点位与最小证明，不得在实现中夹带。
-- 公共 path、handle 形状与结果码集合由 Design 确定（Goal 阶段边界）；registry / capability 登记在执行阶段同步，本阶段不修改 canonical registry。
+- 公共 path、handle 形状与结果码集合由 Design 确定（Goal 阶段边界）；执行阶段同步义务：canonical registry（成员与 capability 登记）、`public-api-shape.md` §2 host 领域树（新增 `workflows`）、`domain-composition.md` §2 新增 `workflows` 领域行、feature-list §7 交付登记；本阶段不修改任何登记文件。

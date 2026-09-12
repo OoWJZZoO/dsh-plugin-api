@@ -55,9 +55,9 @@ flowchart TB
 
 - **一等领域论证**（`public-api-shape.md` §1）：workflow run 拥有独立资源身份（官方 `WorkflowRunId`）、独立词汇（meta 身份块、phases、agentsStarted、stopReason）与独立使用场景（编排执行），与 `tasks`（业务任务关系）、`executions`（执行观测/recovery）、`sessions`（对话内容）互不重叠；事件族 `workflow/*` 已独立成 vocabulary。故新增顶层 host namespace `workflows`。
 - 成员（两个）：
-  - `start(request): Promise/同步判别式结果` — operation idiom 入口（形状见 §3.3/§4）。
+  - `start(request): WorkflowStartOutcome` — operation idiom 入口，**同步**判别式结果（与官方 seam 一致：`start` 同步返回 run、cannot-begin 同步拒绝；形状见 §3.3/§4）。
   - `availability(): { status: 'active'|'degraded'|'unavailable', reason? }` — selfDescription；探测 `ctx.get('workflowEngine')` 是否为可用引擎 provider（`typeof start === 'function'` 且非 thenable），按实际 seam 状态报告，不用对象存在性冒充（R9）。
-- capability path：`workflows`。执行阶段登记进 canonical registry（本阶段不改 registry）。
+- capability path：`workflows`。执行阶段同步义务：canonical registry（成员与 capability 登记）、`public-api-shape.md` §2 host 领域树（新增 `workflows`）、`domain-composition.md` §2 新增 `workflows` 领域行、feature-list §7 交付登记（本阶段不改任何登记文件）。
 
 ### 3.2 workflowEngine seam 受控包装（goal 待定项 ①）
 
@@ -72,7 +72,7 @@ flowchart TB
 
 ### 3.3 start 结果与 run handle 形状（goal 待定项：handle 形状）
 
-`start` 返回判别式结果（operation idiom 外层合同）：
+`start` 返回**同步**判别式结果（operation idiom 外层合同；`terminal` 成员的偏差登记见本节末）：
 
 ```text
 // ok:true —— 已创建 run
@@ -83,7 +83,7 @@ flowchart TB
 { ok: false, code: 'parent-unresolved' | 'invalid-request', reason }
 ```
 
-- 官方 `WorkflowError` 的 machine-routable code **原样保留**（如实映射原则：官方码是冻结 runtime 的稳定 taxonomy，门面不改名转译；门面自有拒绝才用门面码，且集中于 `parent-unresolved` / `invalid-request` 两类）。
+- 官方 `WorkflowError` 的 machine-routable code **原样保留（开映射）**：上块四值闭集是当前默认引擎（`dsh-workflow-worker-thread`）`start()` 的同步抛错集；seam 契约并不限定同步码集（官方 `WorkflowErrorCode` 共 11 值），任何引擎实现同步抛出的官方 `WorkflowError.code` 一律原样透传进 `code`，门面不改名转译；门面自有拒绝才用门面码，且集中于 `parent-unresolved` / `invalid-request` 两类。
 - no-run 结果不铸造 run identity、不产生任何 `workflow/*` 事件（官方 `start` 在发布前同步抛错，事件本就未发）。
 
 `WorkflowRunHandle`（holder-owned；idiom 固定成员 + 有理由的领域附加成员）：
@@ -102,6 +102,7 @@ flowchart TB
 ```
 
 - idiom 对齐说明：`operation` 长操作 handle 固定集为 `{id, ownerId, status(), observe(), dispose()}`；本 handle 附加 `meta` / `result` / `cancel(reason?)` 三个领域成员，理由：官方 holder-owned 契约的如实映射（identity 与 terminal 不可转译、cancel 是 seam 的第一类动作），registry 登记时按 idiom 例外六元组记录。
+- start 结果本身的偏差（登记义务）：外层合同的 `terminal` 成员不在 start 判别式结果上——cannot-begin / no-run 拒绝没有可携带终态的 operation 实例（不铸造 run/operation 身份），真正的 operation 终态由 holder-owned run 经 `handle.result` 恰好一次交付；该偏离按 api-idioms §1 例外六元组单独登记（memberPath `workflows.start`），handle 三个附加成员（`meta` / `result` / `cancel`）各自按 handle 实际 dot path 单列六元组，不与本条合并登记。
 - `observe()` 是对既有事件 feed 的过滤订阅（projection），不建第二状态机；`status()` 由 result settlement 派生。二者均无写权。
 
 ### 3.4 parent/scope 检查机制（goal 待定项 ④）
@@ -197,9 +198,9 @@ flowchart TB
 |---|---|
 | capability-strategy | **适用**。B 类受控包装判定（§3.7：无 R 点位）；§10 六问 host-only；不新增 `services.*` passthrough；§7 retirement：官方等价公开 seam 出现时包装面退役 |
 | api-shape | **适用**。一面原则：主面 operation；进度观测走既有事件 projection，不在 operation 内夹带第二投影 owner；引擎是唯一 mutation owner（执行 authority），门面零 mutation |
-| api-idioms | **适用**。operation 外层合同 `{ok, code, terminal}`；handle 固定成员集 + 三个有理由的领域附加成员（registry 登记例外六元组）；统一终态词汇；id/ownerId 不混用 |
+| api-idioms | **适用**（含两处登记例外）。operation 外层合同 `{ok, code, terminal}`：start 结果省略 `terminal` 成员（cannot-begin 拒绝不铸造 operation 实例，终态由 `handle.result` 一次交付）与 handle 三个领域附加成员，均按 §1 例外六元组登记；统一终态词汇；id/ownerId 不混用 |
 | public-api-shape | **适用**。顶层 `workflows` 一等领域论证（§3.1）；无治理代号进入公开 path；capability path `workflows`；registry 同步在执行阶段 |
-| composition-and-authority | **适用**。holder-owned handle、owner 从 fiber 派生、stale guard、副作用前 parent 检查；authority closure：workflow 执行写路径只有引擎一条，门面包装不构成第二 authority；composition mode `parallel` |
+| composition-and-authority | **适用**。holder-owned handle、owner 从 fiber 派生、stale guard、副作用前 parent 检查；authority closure：workflow 执行写路径只有引擎一条，门面包装不构成第二 authority；composition mode `additive`（§2 词表：多 owner 各自创建相互隔离的 run，owner 归因 + 身份隔离；无共享逻辑资源，故非 coordinated。并发策略 `parallel` 按 concurrency-and-cancellation §6 单独声明于 §3.8） |
 | domain-composition | **适用**。领域分工守恒：engine 执行 / tasks 关系 / executions 观测；本 feature 不吞并任何领域、不改 tasks/executions 成员；不建跨域状态机 |
 | ordering | **不适用**。本 feature 无多插件顺序语义：无策略/transform/决策点；事件监听排序沿用既有总线规则（priority + 注册顺序），不新增排序基础设施 |
 | identity-and-lifecycle | **适用**。官方 WorkflowRunId 是资源身份（不造第二套）；外部重发 = 新 run、身份不合并；无内部 retry/attempt 层；终态唯一且 final（统一词汇：success/aborted/error；本域无 denied/superseded） |
