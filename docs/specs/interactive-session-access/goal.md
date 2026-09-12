@@ -2,7 +2,7 @@
 
 > feature_name: `interactive-session-access`
 > milestone: M10
-> status: Stage 0 Goal 提交用户批量确认（2026-09-12）；Requirements / Design 未开始
+> status: Stage 0–2 已交付（2026-09-12）；Requirements / Design 见本目录（与 Goal 同批产出）
 > 输入溯源：M10 工作纲领 §3.9（OBS-09、OBS-12）；观察报告 §5 OBS-09/OBS-12 与 §3 样本导航（remote-web-ui mobile channel、auto-continue、chat-recovery、TUI、notification）；canonical registry `services.apiProxy`、`sessions.channels.*`、`sessions.activity.*`、`attention.*`、client `sessions.request/cancel` 现状；M9 已交付合同与 ANY-MAINT-01/02 接线修复记录（纲领 §5）。
 
 ## Goal
