@@ -196,7 +196,7 @@ test('events guard failure disables only events and keeps facade active', () => 
 
 // 31 established features plus the four integration-wave features
   // (sessionActivity, sessionInteraction, attention, checkpoints).
-  assert.equal(features.length, 37)
+  assert.equal(features.length, 38)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.equal(features[1].name, 'events')
@@ -264,7 +264,7 @@ test('web service absence keeps the services feature active while disabling only
 
 // 31 established features plus the four integration-wave features
   // (sessionActivity, sessionInteraction, attention, checkpoints).
-  assert.equal(features.length, 37)
+  assert.equal(features.length, 38)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })

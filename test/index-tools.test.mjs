@@ -141,7 +141,7 @@ test('tools active: apply mounts pluginApi.tools and extends the events catalog 
   const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
 // 31 established features plus the four integration-wave features
   // (sessionActivity, sessionInteraction, attention, checkpoints).
-  assert.equal(features.length, 37)
+  assert.equal(features.length, 38)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })
@@ -188,7 +188,7 @@ test('tools guard failure disables only tools and keeps the events catalog at ba
 // 31 established features plus the five integration-wave features
   // (sessionActivity, sessionInteraction, attention, checkpoints,
   // decisionParticipation... plus scoped contributions).
-  assert.equal(features.length, 37)
+  assert.equal(features.length, 38)
   assert.equal(features[0].name, 'tools')
   assert.equal(features[0].isActive, false)
   assert.match(features[0].reason, /tools service/)

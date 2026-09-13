@@ -147,6 +147,7 @@ test('apply mounts sessionDurable immediately after session without extending th
     'sessionChannel',
 
     'sessionActivity',
+    'sessionPlanMode',
     'sessionInteraction',
     'attention',
     'checkpoints',

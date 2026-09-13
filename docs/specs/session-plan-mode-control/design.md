@@ -121,10 +121,11 @@ third-party plugin ──▶ pluginApi.sessions.planMode
 
 ### C4. 观察面 `observe(agent)`（Req 3）
 
-- **目标绑定（api-idioms §3.1 合规声明）**：观察入口为 **`observe(agent)`**——target（agent handle，与 `get`/`select` 同一目标语义）是入口的显式领域参数（§2 允许领域参数在显式领域字段中变化），返回 **target 绑定的** observe handle `{ current(), subscribe(listener), dispose(), epoch }`（§3.1 固定签名不变，**无 idiom 例外**）；handle 的 `current()` 返回**该 handle 目标**的最新投递视图，`subscribe(listener)` 只接收监听函数。无全局多目标混杂：一个 handle 只服务一个目标，跨目标订阅各自建 handle。
+- **目标绑定（api-idioms §3.1 合规声明）**：观察入口为 **`observe(agent)`**——target（agent handle，与 `get`/`select` 同一目标语义）是入口的显式领域参数（§2 允许领域参数在显式领域字段中变化），返回 **target 绑定的** observe handle `{ current(), subscribe(listener), dispose(), epoch }`（§3.1 固定签名不变，**无 idiom 例外**）；handle 的 `current()` 返回**该 handle 目标**的读视图（与 `get` 同形，每次调用经官方重读核验、`source` 区分 official/degraded/unavailable；Stage 4 修订：对齐 `attention.observe.handle.current()` 与 `sessions.activity.observe.handle.current()` 的同域先例——变更流由 `subscribe` 承载，两条形状各自独立不混用），`subscribe(listener)` 只接收监听函数。无全局多目标混杂：一个 handle 只服务一个目标，跨目标订阅各自建 handle。
 - 形状：projection-observe `{ current(), subscribe(listener), dispose(), epoch }`（`api-idioms.md` §3.1）；observe handle 另登记 `sessions.planMode.observe.handle`。
 - 机制（A 类）：feature 挂载时建立**单条** `ctx.on('session/event')` firehose 订阅（facade 级共享）；firehose 事件按 session 匹配到已订阅目标后，重读官方 `get(agent)` 得到组合视图 `{active, pending?}`，与该 handle 上次投递视图不同才投递 `{ target, view, observedAt }`。事实全部来自官方派发点与官方读，不猜测（Req 3.3 的"官方状态核验"）。
 - **queued 结算可观察性**（Req 6.2）：结算为 `committed` 时官方落 `plan/mode` 事件 → firehose 直达投递，此为机制性保证。结算为 `cancelled`（`onBoundary` 静默清除 pending，无日志事件）时，投递依赖「被接受 pre-step 之后该 session 随后有日志事件」这一官方 loop 行为——官方文档仅保证 `onBoundary` 在下次 request assembly 前由 plan-mode 服务自身的 `agent/pre-step` handler 调用，**未显式保证后续必有日志事件**；本设计将其列为**待核实项，不作机制性断言**：Stage 4 须在冻结 runtime 上运行验证（accepted pre-step 后 firehose 是否出现可触发重读的事件）。若实测存在「静默清除后无日志活动」的窗口，该分支诚实降级：结算不推送，pending 消失经读面（`get` 的 `pending` 字段）可见，observe 面以 typed 方式记录该降级，不伪造投递。两种结算下，先前 `queued` 结果都不被改写（Req 6.2）。
+  - **Stage 4 结论（2026-09-13，冻结 runtime 源码级核实，无偏差）**：`@deepseek-ai/dsh-plan-mode` 的 `agent/pre-step` handler 仅在 `decision.kind !== 'reject'` 且未 abort 时调用 `onBoundary`；`@deepseek-ai/dsh-agent-loop` 的 `turn()` 在 `finally` 中**无条件** `session.append('turn/end', …)`（Stage 4 复核修正：`step/start` 在两条提前退出分支——`turnEnds && messages.length === 0` 的 break 与 `step === 0 && messages.length === 0` 的 return——不会 append，因此机制性保证来自 `finally` 中的 `turn/end` 而非 `step/start`），而 `session.append` 即 `session/event` 的派发点（`@deepseek-ai/dsh-session`）。因此 accepted pre-step 之后必有一条可触发重读的官方事实，**不存在「静默清除后无日志活动」窗口**；实现据此按机制性路径交付（结算经随后的事实重读投递），并有条件断言（`test/sessions-plan-mode-e2e.test.mjs` 的 reverse-pending 用例）与源码证据双重背书。同时对 P1/P2 复核无偏差：narration 仅在官方 `narration()` 返回非 undefined 时注入；`exit_plan_mode` 无条件下常驻注册（plan 模式切换只改变 prompt section，不改变工具目录）。
 - 官方路径变更（官方 TUI、`/plan`、`exit_plan_mode`、官方内部）同样经 firehose 可达（Req 3.1）。
 - 订阅者回调 throw/rejection 只降级该监听者（containment）；dispose 幂等、stale disposer 不影响其他订阅者（Req 3.2）；目标 session 关闭后投递停止，`current()` 返回带 reason 的 degraded 视图——feature 自建 `ctx.on('session/disposed', …)` 订阅（与 `session/event` 并列，cleanup owner = feature disposer）及时通知，`sessions.get(sessionId)` 在场性为关闭判定的事实源（无关闭事件时在下一次 `session/event` 重读时判定）。
 - feature 卸载时销毁 firehose 订阅（cleanup owner = feature disposer）；stale 回调（dispose 后到达）失去投递资格（concurrency-and-cancellation §4/§5）。
@@ -132,7 +133,7 @@ third-party plugin ──▶ pluginApi.sessions.planMode
 ### C5. 审计与可追溯（Req 5）
 
 - 载体判定：**v1 审计 = feature-authority 内部有界内存环**，进程（profile 生命周期）作用域、非 durable、不新增存储档位、不跨档（`durable-state-and-scope.md` §1–2；Requirements Req 5.1 的非 durable 分支）。先例：`lib/security-audit.js`（容量 512、truncated 标记、gapSince 缺口标记、深冻结脱敏视图）与 `adapter-decoration` design 的 bounded non-durable audit。**不声明 durable 档位**；未来 durable 审计必须是独立 feature（显式 scope + commit 契约）。
-- 记录字段（bounded）：`{ seq, at, ownerId, action: 'plan-mode.select', target: '<agentId>', requested: 'enter'|'exit', outcome: <结果码> }`；不含 prompt 内容、消息 payload、owner 私有状态（Req 5.4）。
+- 记录字段（bounded）：`{ seq, at, ownerId, action: 'plan-mode.select', target: '<agentId>', requested: 'enter'|'exit'|'unknown', outcome: <结果码>, reason? }`（`reason` 为 bounded 拒绝/失败原因，≤240 字符；Stage 4 按 Task 4.4「含 reason 截断」补齐声明）；不含 prompt 内容、消息 payload、owner 私有状态（Req 5.4）。**Stage 4 修订**：原表未列 `reason`，而 Task 4.4 已按「reason 截断」要求其存在；现以本行为准。拒绝路径（`unavailable`/`invalid-target`/`invalid-input`/`denied`）与提交尝试同环记录，owner 派生在拒绝前先行（仅用于归因，不构成授权）。
 - owner 派生：caller fiber loader entry（既有 `callerIdentityOf` 机制，先例 `lib/index.js:662`、`lib/plugin-api-service.js:717`）；不接受 caller 自报 owner（Req 5.3）；不可归因 → typed `denied`（见 C3），不产生未归因审计提交记录。
 - 写失败：切换保留已声明效果（官方提交不因审计失败回滚），bounded diagnostics 暴露 gap 标记（环内 `gapSince` + bounded 日志），不伪造记录（Req 5.2）。
 - v1 无公共审计查询成员（无已证实消费者需求，克制设计）；Stage 4 验证证据经 feature 内部测试缝访问环内容（非公共 `pluginApi` 面）。
@@ -145,7 +146,7 @@ get 视图       { target, active, pending?, observedAt, source: 'official' }   
 observe 投递   { target, view: { active, pending? }, observedAt }                 // 冻结
 observe 入口    observe(agent) → target 绑定的 observe handle                    // 领域参数在入口，handle 形状固定（§3.1）
 observe handle { current(), subscribe(listener), dispose(), epoch }
-audit 记录     { seq, at, ownerId, action, target, requested, outcome }           // bounded，冻结出环
+audit 记录     { seq, at, ownerId, action, target, requested, outcome, reason? }   // bounded，冻结出环
 availability   { status: 'active'|'degraded'|'unavailable', reason? }             // 冻结
 ```
 
@@ -191,7 +192,7 @@ availability   { status: 'active'|'degraded'|'unavailable', reason? }           
 | `sessions.planMode.select` | mutation | mutate | coordinated | compare-and-swap | session | official plan-mode authority | host |
 | `sessions.planMode.observe` | projection | subscribe | additive | not-applicable | session | official plan-mode authority | host |
 | `sessions.planMode.observe.handle` | projection | read | additive | not-applicable | session | official plan-mode authority | host |
-| `sessions.planMode.availability` | selfDescription | read | pure | not-applicable | session | facade | host |
+| `sessions.planMode.availability` | selfDescription | read | pure | not-applicable | facade | official plan-mode authority | host |
 
 capability ID：`sessions.planMode`；`eventCatalog` 无新增事件（复用已登记的 `session/event`）。事件语义：本面不自产事实，`plan/mode` 事实的 producer authority 保留在官方 plan-mode 服务。
 

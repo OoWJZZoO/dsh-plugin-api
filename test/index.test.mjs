@@ -46,6 +46,7 @@ function createMockCtx(options = {}) {
       presentAs() {},
     },
     sessions: { get() {}, list() {}, fork() {} },
+    planMode: { get() {}, set() {} },
     settings: { register() {}, describe() { return [] }, get() {}, mutate() {} },
     typert: createTypertRegistry(),
     web: { registerSearchProvider() {}, registerFetchProvider() {}, search() {}, fetch() {} },
@@ -147,6 +148,7 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     // Integration wave: the four session/executions/attention domain faces
     // mount through the real _assignFeature path in the established tail.
     { name: 'sessionActivity', isActive: true },
+    { name: 'sessionPlanMode', isActive: true },
     { name: 'sessionInteraction', isActive: true },
     { name: 'attention', isActive: true },
     { name: 'checkpoints', isActive: true },
@@ -219,9 +221,9 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-// 31 established features plus the four integration-wave features
-  // (sessionActivity, sessionInteraction, attention, checkpoints).
-  assert.equal(features.length, 37)
+// 31 established features plus the integration-wave features
+  // (sessionActivity, sessionPlanMode, sessionInteraction, attention, checkpoints).
+  assert.equal(features.length, 38)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })

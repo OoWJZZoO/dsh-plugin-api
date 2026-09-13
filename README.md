@@ -118,6 +118,10 @@ pluginApi.llm.routing.availability // { status: 'active' | 'degraded' | 'unavail
 
 每个命名空间提供无副作用 `availability()`（`{status: 'active' | 'degraded' | 'unavailable', reason?}`）。
 
+### M10 域
+
+- `pluginApi.sessions.planMode`：受控的计划模式切换面（`get/select/observe/availability`）。`select(agent, active)` 在单同步跨度内完成目标校验、owner 派生与官方 `set`，把官方仲裁词（`committed/queued/cancelled/noop`）映射为冻结判别式结果；`queued` 的结算经官方 `plan/mode` 事实在观察面呈现，门面不改写先前结果、也不自维护第二份模式状态。`observe(agent)` 返回 target 绑定的句柄（`current/subscribe/dispose/epoch`），投递前重读官方状态核验；官方路径（官方 TUI、`/plan`、`exit_plan_mode`）的变更同样可达。写路径不回流 `services.planMode`（其白名单成员仍只有只读 `get`）。
+
 ## 逃生舱（unsupported escape hatch）
 
 第三方插件**可以**绕过门面直接 `import` / `inject` `@deepseek-ai/dsh-*` 内部包。门面不拦截、不 patch、不 block 这种直连。
