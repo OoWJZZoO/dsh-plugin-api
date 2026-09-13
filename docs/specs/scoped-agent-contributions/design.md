@@ -8,6 +8,8 @@
 
 Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定 scope 表达与 scope-bound handle、与 `prompts.contribute` / tools 既有面的分工矩阵、tools caller-bound 解析的复用判定与真实 fiber probe 方案（验证义务，不预下结论）、生命周期清理责任、与 decision-participation-contract 的组合边界、本步模型选择快照的消费侧机制、失败/guard 与 standards 逐分册结论。
 
+**Stage 4 修订（2026-09-13，probe 驱动，已登记）**：fiber probe 结论（P1 否定 / P2 通过）已按「fiber probe」条回写；「生命周期与清理责任」表的销毁行按官方恢复路径 probe 修订为 eviction 语义（与 requirements Req 6.1/6.6 一致）；「scope 表达」补 `agents.scopes.snapshotOf` 消费侧只读成员与 handle 的 owner fiber 绑定；内部订阅通道按实现落点写明（官方 `agent/created` / `agent/disposed` 事实经 `ctx.on` 订阅，宿主根上下文经 Cordis 向上传播接收，官方依据：`dsh-agent-loop` 与 `dsh-session-title` 在 owner/root 上下文订阅同类 scope-filtered 事实）。
+
 ## Overview
 
 现状（已证实）：`prompts.contribute` 的 kind 面只有 section/context/variable/tools/suppressRuntimeContext，ownerId 只承担归因/冲突，没有目标 agent 维度；门面 `prompts` 面是对官方 systemPrompt 服务的闭包转发（host 级，非 per-agent）。tools getter 已按 caller context 在调用时解析官方 tools（`this.ctx.get('tools')`）——部分 scoped tools 可能已经可用，但**未经真实双 agent/fiber probe 证实**。M8 8.3(b) 登记 read-image 的每 agent 工具/提示词只能保留官方 agent 作用域表面（契约外精度）。
@@ -30,6 +32,8 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定 scope 表达与 
 ## scope 表达与 scope-bound handle
 
 - **获取**：`pluginApi.agents.scopes.register({ agent })`。`agent` 接受门面已知的 target 引用（agents 域查询/创建返回的 agent 身份）；register 经官方 agents 面解析目标，解析失败/目标已销毁 → typed `unavailable`（不回退全局，需求 1.2）。owner 从 caller fiber 派生（现行 `resolveOwnerId` 机制）。入口动词用 `register` 而非 `acquire`：本 handle 无 lease/fencing/heartbeat 语义，`acquire` 属 coordination 固定动词集（`api-idioms.md` §3.7），会误导 idiom 归类；`register` 对齐 resourceRegistry（§3.6）。
+- **消费侧只读成员**：`agents.scopes.snapshotOf(scopeHandle)` → `{ ok, code, snapshot: { current(), assembled() } }`（projection idiom：只读、pure、stale/foreign handle 返回 typed `unavailable`）。它是本步模型选择快照的**读取契约**（Req 9.3）：scoped variable 贡献与路由消费读同一 cell，不维护平行选择状态；外部选择**写入方**归 interactive-session-access（本线只提供消费侧 cell 与读取契约，写入面的非公共 seam 不进入 registry 登记）。同目标多个 handle 共享同一 cell；该 cell 随最后一个绑定该目标的 live scope handle 释放。
+- **handle 的 owner 绑定**：「生命周期与清理责任」表中 owner 卸载一行同时覆盖 scope handle 本身——handle record 绑定 contributor 的 `callerCtx.effect`，owner 卸载（含插件漏 dispose handle）即释放该 handle 及其名下贡献与快照 cell（Req 6.6 的有界性来源）。effect 通道不可用时降级为 dispose 驱动的生命周期，不因此拒绝 register。
 - **handle 形状**：`{ id, ownerId, generation, target, status(), dispose() }`——`target` 为冻结的目标身份快照（agent 身份 + 解析时间），`status()` 反映目标可用性，`dispose()` 释放该 handle 名下 bookkeeping（identity-bound、幂等、stale no-op）。handle 在 §3.6 固定形状 `{ id, ownerId, generation, dispose() }` 之上的 `target` / `status()` 扩展成员按 `api-idioms.md` §1 六项例外登记：`memberPath: agents.scopes.register.handle`；`baseContract: resourceRegistry`；`exception: scope-bound handle 扩展成员 target / status()`；`reason: target 是作用域资源的身份投影（scope 绑定语义必需），status() 是目标可用性的只读成员（不可用 target 的 typed 拒绝依赖它）；两者不引入写权或 lease 语义`；`replacementShape: { id, ownerId, generation, target, status(), dispose() }`；`verification: handle 成员 registry 断言 + stale no-op / identity-bound disposal 断言`。handle 不挂 contribute 方法：贡献调用仍走各自领域入口，`scope` 以 handle（opaque token）传入——避免 handle 变成第二贡献入口、保持「工具按键注册仍归 tools 面」的边界。
 - **身份稳定性**：scoped 贡献 registry 以**稳定 target 身份**（agent 身份，非 handle 实例）为键；同目标的多个 handle 共享目标键。cold resume 覆盖以 Stage 4 probe 证实目标身份跨恢复稳定为前提（需求 5.4 显式义务；不证实则该覆盖不宣称）。
 
@@ -44,6 +48,13 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定 scope 表达与 
 - **判定规则（写入 tasks/验收）**：P1 通过 → per-execution 安装直接复用 caller-bound 解析（复用既有机制，不新建路径）；P2 通过 → register 时经官方 agent 实例面捕获目标服务解析闭包（register 是唯一新增解析点）；P1/P2 都不通 → 该缺口升级为人类裁决点（可能触及官方组件边界，再评估通道），**不得无证据重写整个 agent service**（goal 硬约束）。
 - probe 结论与实际接线在 Stage 4 记录；若与本文档假设冲突，按 spec 修订流程同步本文档对应条目。
 
+**Stage 4 probe 结论（2026-09-13，源码级）**：
+
+1. **P1 否定**：cordis 的 `get`/属性解析按**访问 ctx 对象/shadow** 沿 fiber 链找最近 provide，不按 AsyncLocalStorage（ALS 只承载 initiator 归因）。在目标 agent 的执行 fiber 内经门面调用，访问 ctx 仍是插件的 shadow，落到全局层——行为回归测试 `test/scoped-agent-contributions-e2e.test.mjs`「fiber-bound install without a scope stays global」固化该结论（泄漏证明 scope 通道必需）。
+2. **P2 通过（采用）**：官方 AgentRegistry `get(id)` 返回 Agent 本体，`agent.ctx` = 独立 fiber + `extend({agent})`；经目标 ctx 调用官方 systemPrompt/tools 成员即落 agent scoped 层，官方 disposer 由 agent scope fiber 所有权兜底（agent 销毁自动撤销）。因此 register 时捕获目标解析闭包、每次安装/重装 lazy 重解析（`lib/scoped-agent-contributions.js` 的 `liveTargetCtx`）——register 是唯一新增解析点，未重写 agent service。
+3. **订阅通道落点**：`agent/created` / `agent/disposed` 在 catalog 中均为 `scopeFiltered: true`（`scopeKey: args[0].agent`），官方以 agent scope carrier 派发；宿主根上下文的 `ctx.on` 订阅经 Cordis 向上传播接收（官方同型依据：`dsh-agent-loop` 的 `waitForDrainingConfiguredIdentity` 与 `dsh-session-title` 均在 owner/root 上下文订阅同类事实）。实现经 `ctx.on` 直接订阅官方事实，不依赖 `pluginApi.events` feature 激活、不新建事件事实、不伪造 producer。
+4. **冲突键位**：prompts 面冲突键 = `(owner, target, id)`（与全局 `prompts.contribute` 同构：一个 owner 的 id 命名空间不按 kind 拆分，kind 不进键位）；tools 面按键位 `(owner, scope, key)`，register/restrict 各自独立的按键空间（两者是 tools 面的不同成员）。
+
 ## 与 prompts / tools 既有面的分工矩阵
 
 | 能力 | 承载面 | 处置 |
@@ -53,14 +64,14 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定 scope 表达与 
 | 全局工具注册 / 可用性 | `tools.register` / `tools.restrict.register`（既有） | 不变 |
 | 目标 agent 的工具注册/限制 | `tools.register(definition, { scope })` / `tools.restrict.register(policy, { scope })`（本线扩展维度） | **同 owner 扩展**：resourceRegistry/policy 外层合同不变，target 维度只作用于解析/可见性 |
 | 整体 sections 替换 / 汇编筛选 | `prompts.assemblyPolicies.register`（decision-participation-contract 线） | **不在本线**：本线贡献恒为追加型；target 维度的整体替换走 decision 线的 scope binding（交叉条文见下） |
-| 目标身份解析 / 生命周期锚点 | `agents.scopes`（本线新增） | register/status/dispose；agents 域既有 owner 之上增加贡献 target 维度，不夺 agents 领域既有 owner 权 |
+| 目标身份解析 / 生命周期锚点 | `agents.scopes`（本线新增） | `register`（resourceRegistry + 六字段例外登记）/ handle 的 `status()`、`dispose()`；另有消费侧只读成员 `snapshotOf`（projection，见「scope 表达」）；agents 域既有 owner 之上增加贡献 target 维度，不夺 agents 领域既有 owner 权 |
 
 ## 生命周期与清理责任
 
 | 事件 | 清理责任与动作 |
 |---|---|
-| target agent 销毁 | 门面订阅官方 `agent/disposed`（catalog fact，observe 路径即可）→ 按 target 身份 purge 该目标全部 scoped 贡献（跨 owner）；purge 只清 scoped registry 状态，不触碰官方 agent 遗留状态。销毁信号生产权归官方/agent authority，本线只消费。 |
-| 贡献者插件卸载/重载 | owner identity-bound 撤除该 owner 全部 scoped 贡献（跨目标）；其他 owner 贡献存活；旧 generation handle 一律 typed no-op（不撤新贡献）。 |
+| target agent 销毁 | 门面经 `ctx.on` 订阅官方 `agent/created` / `agent/disposed` facts（宿主根上下文经 Cordis 向上传播接收；`session/disposed` 仅作为同一排空过程的官方事实被 S5 probe 引用，**实现不订阅它**——`agent/disposed` 在恢复排空与最终销毁两种路径上均已发出，单一订阅覆盖两种语义）→ 按 target 身份 **evict** 该目标全部 scoped 贡献（跨 owner）：官方层注册随 agent fiber 自然消亡，门面记录转 dormant（**零汇编效果**，不触碰官方 agent 遗留状态）并保留为同身份重装源（Req 5.2）。销毁信号生产权归官方/agent authority，本线只消费、不伪造。**Stage 4 修订**：官方同进程恢复路径在重新 announce 同一 id 前会先排空旧身份（`agent/disposed` + `session/disposed`），probe 结论为「销毁与恢复排水不可区分」，故不做销毁时物理 purge（否则 Req 5.2 不可达），改为 eviction 语义（requirements Req 6.1 同批修订）。 |
+| 贡献者插件卸载/重载 | owner identity-bound 撤除该 owner 全部 scoped 贡献（跨目标）；**scope handle 本身同样绑定 owner fiber**，漏 dispose 亦随卸载释放（Req 6.6 的有界性来源）；其他 owner 贡献存活；旧 generation handle 一律 typed no-op（不撤新贡献）。 |
 | scope handle dispose | 释放 handle 名下 bookkeeping；其名下已安装贡献按 (owner, target, contribution id) identity-bound 撤除——handle dispose 撤「自己装的」，不撤别的 owner 对同一目标的贡献。 |
 | cold resume（同进程恢复） | 同进程恢复且目标身份稳定（probe 证实）→ scoped 贡献按 target 键存活，恢复后继续生效；贡献者已卸载的贡献不复活。跨宿主/插件重启属运行时状态边界（需求 8）：scoped registry 不跨重启，由插件按需求 8.2/8.3 重装。 |
 | 安装与销毁竞争 | 目标销毁后到达的安装 → typed unavailable/destroyed，不安装孤儿状态。 |
@@ -84,6 +95,8 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定 scope 表达与 
 | 失败 | guard |
 |---|---|
 | 目标不可解析 / 已销毁 / backing 不可用 | typed `unavailable`（register 与安装皆然）；**不静默回退全局** |
+| scoped feature 未挂载 / 被守卫停用 | `agents.scopes` 成员**仍然存在**，调用抛 `PluginApiFeatureDisabledError('agents.scopes')`（核心不活跃时为 `PluginApiInactiveError`）；不由「成员缺席导致 TypeError」表达降级。capability 侧 `agents.scopes` 的 availability 输入 = `agent` + `scopedAgentContributions` 两个真实 feature 状态（任一不活跃即 `degraded`/`unavailable`），不以对象存在性代替真实 backing 状态（Req 10.3）。 |
+| tools 面同键重复登记 | 同 `(owner, scope, key)` 的第二笔登记在触达官方 backing **之前**即抛 typed conflict（门面级守卫），因此 scoped 重复登记一律 conflict，不按内容比较、不做 content-idempotent；官方 backing 对**全局**登记的 content-idempotent/content-conflict 语义不变（登记字段仍归该成员共享 idiom）。 |
 | 同 owner 同 id 同目标重复贡献 | typed `conflict`（既有 prompts/tools conflict 语义，键位扩展） |
 | stale handle / 旧 generation | typed no-op；identity-bound，不撤新贡献/他人贡献 |
 | 贡献 provider 回调异常 | 按 assembly/tool 解析点的 containment 规则降级该贡献（不破坏汇编与其他 owner）；诊断有界 |
@@ -92,8 +105,8 @@ Stage 2 与 Stage 1 同批交付（2026-09-12）。本文确定 scope 表达与 
 
 ## 并发与取消
 
-- scoped registry 变更（install/dispose/purge）以门面记录层串行化；同 (owner, target, id) 互斥。
-- agent 销毁与安装竞争按「销毁优先」收口（安装得到 typed 结果）；`agent/disposed` 到 purge 之间新装配不读到已销毁目标的贡献（purge 先于下一次汇编读取，或在读取处按目标存活状态过滤——以 probe 后实现为准，验收以需求 4/6 断言为准）。
+- scoped registry 变更（install / dispose / evict）以门面记录层串行化；同 (owner, target, id) 互斥。
+- agent 销毁与安装竞争按「销毁优先」收口（安装得到 typed 结果）：`agent/disposed` 到达后官方 scoped 注册随旧 fiber 消亡、门面记录转 dormant（零汇编效果），因此下一次汇编天然不读到已销毁目标的贡献——**不存在物理 purge 窗口**（Stage 4 修订：eviction 语义，与「生命周期与清理责任」表、requirements Req 6.1 一致）；物理清除只由贡献 handle dispose / scope handle dispose / owner 卸载触发（Req 6.6）。验收以需求 4/6 断言为准。
 - 无重试语义；abort 场景由上游 dispatch 的既有取消语义承载，本线不新增 signal 面。
 
 ## client 半面（capability-strategy §10 六问）

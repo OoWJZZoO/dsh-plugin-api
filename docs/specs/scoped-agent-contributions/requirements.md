@@ -9,6 +9,8 @@
 
 Stage 1 与 Stage 2 同批交付（2026-09-12）。本文把目标选择、贡献种类、生命周期、组合优先级与泄漏防护写成 EARS；scope 表达形状与 fiber probe 结论见 Design（probe 为 Stage 4 验证义务，本文不预下结论）。版本冻结：不步进 runtime identity、`dsh.api` 或任何包版本字段。
 
+**Stage 4 修订（2026-09-13，probe 驱动，已登记）**：Req 6.1 原写「目标销毁时从 scoped registry purge 该目标全部贡献」；官方源码 probe 证实**同进程恢复路径在重新 announce 同一 id 之前会先排空旧身份**（`agent/disposed` 与 `session/disposed` 均会发出，官方 `dsh-agent-loop` 的 `restoreOrCreateConfigured`/`waitForDrainingConfiguredIdentity` 为依据），因此销毁时物理 purge 会让 Req 5.2 不可达。Req 6.1 修订为**eviction 语义**（死目标零汇编效果 + 门面簿记保留为同身份重装源），并新增 Req 6.6 约束簿记有界（owner 绑定的 scope handle + owner 卸载全量释放）。Design 生命周期表同步修订。
+
 ## Introduction
 
 本 feature 让插件为**具体 agent/session** 创建、查询作用域并安装可撤销贡献：prompt section/context/variable/tool provider 与必要的工具注册/限制。owner（贡献者插件）与 target（被贡献 agent）分开表达；贡献只影响目标，不泄漏到其他 agent/session；覆盖新建与恢复（cold resume）安装，生命周期随目标清理。主公开面是 contribution（含明确 target scope 维度）；工具按键注册仍归 resourceRegistry（tools 面），两者不共享含混状态机。持久 scope 仍只有 session/workspace/profile 三档，不引入第四档 agent durable scope。
@@ -89,13 +91,14 @@ Stage 1 与 Stage 2 同批交付（2026-09-12）。本文把目标选择、贡�
 
 ### Acceptance Criteria
 
-1. WHEN a target agent is destroyed THEN the system SHALL purge all contributions installed for that target (across all owners) from the scoped registry, and the official agent lifecycle fact (`agent/disposed`) SHALL remain the producer of the destruction signal.
+1. WHEN a target agent is destroyed THEN the system SHALL evict all contributions installed for that target (across all owners) from participation — the official scoped registrations die with the agent fiber, and the facade records SHALL have zero assembly effect for the destroyed target; the facade bookkeeping SHALL remain the same-identity resume re-installation source of Requirement 5.2 and SHALL be physically removed by the contribution handle disposal, the scope handle disposal, or the owner unload. The official agent lifecycle facts (`agent/disposed` / `session/disposed`) SHALL remain the only destruction signals; the facade SHALL NOT fabricate them. (Stage 4 revision, probe-driven: the official in-process resume path drains the old identity — `agent/disposed` AND `session/disposed` — before it re-announces the same id, so a disposal-time physical purge would make Requirement 5.2 unreachable.)
 2. WHEN a contributor plugin is unloaded or reloaded THEN only that owner's contributions (across all its targets) SHALL be removed; other owners' contributions to the same targets SHALL survive.
 3. WHEN an owner reloads and re-installs contributions THEN the previous generation's stale handles/disposers SHALL be typed no-ops and SHALL NOT revoke the new generation's contributions (旧 generation 不撤新贡献).
 4. WHEN a scope handle or contribution handle is disposed explicitly THEN the removal SHALL be identity-bound (owner + target + contribution id), idempotent, and SHALL NOT affect other owners or other targets.
 5. WHEN the agent is destroyed while a contributor is mid-installation THEN the installation SHALL resolve to a typed unavailable/destroyed result without installing orphaned state.
+6. WHEN evicted bookkeeping is retained for a destroyed target THEN it SHALL be bounded by the contributor's live scope handles, and the contributor's owner unload SHALL release it in full — including the case where the contributor never disposed its scope handles (the handle is owner-bound).
 
-**Classification:** A/B 类门面化；对齐 `concurrency-and-cancellation.md` §5 disposer 所有权。
+**Classification:** A/B 类门面化；对齐 `concurrency-and-cancellation.md` §5 disposer 所有权与 `composition-and-authority.md` §9（漏 dispose 与共享集合无界增长）。
 
 ## Requirement 7: 组合边界与替换语义归属
 

@@ -363,3 +363,57 @@ test('stale scope handles cannot reach the snapshot cell', () => {
   assert.equal(cell.ok, false)
   assert.equal(cell.code, 'unavailable')
 })
+
+test('scope handles are owner-bound: caller teardown disposes the handle, its records, and the cell', () => {
+  const { registry, callerCtx } = createHarness()
+  const caller = callerCtx('plugin-a')
+  const handle = registry.registerScope({ agent: 'agent-a' }, caller).handle
+  registry.installScoped({
+    ownerId: 'plugin-a', targetId: 'agent-a', handleId: handle.id,
+    kind: 'prompts.contribute', contributionId: 'guide', install: () => () => {},
+  }, caller)
+  assert.equal(registry.snapshotCellOf(handle).ok, true)
+  assert.equal(registry.inspection().records, 1)
+  assert.equal(registry.inspection().snapshotCells, 1)
+
+  // owner unload: a plugin that forgets to dispose its handle still releases
+  // all of its per-owner bookkeeping
+  caller.teardown()
+  const after = registry.inspection()
+  assert.equal(after.records, 0)
+  assert.equal(after.scopes, 0)
+  assert.equal(after.snapshotCells, 0, 'the per-target cell is released with its last handle')
+  assert.equal(handle.status().status, 'usable', 'status reports official target liveness, not handle liveness')
+  assert.equal(handle.dispose().status, 'stale', 'the handle left with its owner')
+})
+
+test('target destruction evicts records to dormant bookkeeping; handle dispose clears it', () => {
+  const { registry, callerCtx, mock, makeAgent } = createHarness()
+  const handle = registry.registerScope({ agent: 'agent-a' }, callerCtx()).handle
+  registry.installScoped({
+    ownerId: 'plugin-a', targetId: 'agent-a', handleId: handle.id,
+    kind: 'prompts.contribute', contributionId: 'guide', install: () => () => {},
+  }, callerCtx())
+  registry.attachLifecycle((onCreated) => {
+    mock.registry.__createdListener = onCreated
+    return () => {}
+  }, (onDisposed) => {
+    mock.registry.__disposedListener = onDisposed
+    return () => {}
+  })
+  mock.registry.__disposedListener(null, 'agent/disposed', { agent: { id: 'agent-a' } })
+  const evicted = registry.inspection()
+  assert.equal(evicted.records, 1, 'bookkeeping stays as the same-identity resume source')
+  assert.equal(evicted.dormant, 1, 'the evicted record is honestly reported as dormant')
+
+  // a same-identity re-announcement re-activates the record
+  const resumed = makeAgent('agent-a')
+  mock.registry.__createdListener(null, 'agent/created', { agent: resumed.agent })
+  assert.equal(registry.inspection().dormant, 0, 'the record is live again after the re-installation')
+
+  // disposing the live handle physically clears the evicted bookkeeping
+  assert.equal(handle.dispose().status, 'ok')
+  const cleared = registry.inspection()
+  assert.equal(cleared.records, 0)
+  assert.equal(cleared.dormant, 0)
+})
