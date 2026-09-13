@@ -148,6 +148,7 @@ test('apply mounts sessionDurable immediately after session without extending th
 
     'sessionActivity',
     'sessionPlanMode',
+    'sessionPermissionPresets',
     'sessionInteraction',
     'attention',
     'checkpoints',

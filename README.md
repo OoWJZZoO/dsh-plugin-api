@@ -120,6 +120,7 @@ pluginApi.llm.routing.availability // { status: 'active' | 'degraded' | 'unavail
 
 ### M10 域
 
+- `pluginApi.sessions.permissionPresets`：受控的权限预设选择面（`current/options/select/observe/availability`）。`options` 渲染官方选项表（含派生的 `custom` 态，永不作为切换目标），`select(session, name)` 在单同步跨度内完成参数/可用性/owner/目标/预设名的前置检查与官方 `set`，再用官方读回证实变更（`committed` / `unchanged` / `not-applied` 三类诚实结果），门面不自维护第二份预设状态。预设包改变**真实审批判定**（官方 `ApprovalService` 的 `never` 直接拒绝、`ask` 派发审批瀑布），官方 `/permission` 与 knob 直写同样经观察面可达；`services.permissionPresets` 白名单不回流 `set`/`selectFor`。
 - `pluginApi.sessions.planMode`：受控的计划模式切换面（`get/select/observe/availability`）。`select(agent, active)` 在单同步跨度内完成目标校验、owner 派生与官方 `set`，把官方仲裁词（`committed/queued/cancelled/noop`）映射为冻结判别式结果；`queued` 的结算经官方 `plan/mode` 事实在观察面呈现，门面不改写先前结果、也不自维护第二份模式状态。`observe(agent)` 返回 target 绑定的句柄（`current/subscribe/dispose/epoch`），投递前重读官方状态核验；官方路径（官方 TUI、`/plan`、`exit_plan_mode`）的变更同样可达。写路径不回流 `services.planMode`（其白名单成员仍只有只读 `get`）。
 
 ## 逃生舱（unsupported escape hatch）

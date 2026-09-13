@@ -48,7 +48,7 @@ authorized caller ──▶ pluginApi.sessions.permissionPresets
 | `apply`：`resolve(name)` 对未知名抛错；`current(events) !== name` 时 append `permission/preset`；随后按需 `setSandboxMode` / `setApprovalPolicy`（各自仅在值变化时 append `sandbox/mode` / `approval/policy`） | `apply`（271–278）+ `resolve`（235–239） |
 | `current(events)`：从 knob 事件 fold 派生预设名或 `custom`（派生态，永不为切换目标、不出现在事件 payload） | `current`/`derive`（201–215）+ 模块文档（8–15、19–23） |
 | 选项表：`names` getter（声明序）；`optionOf(name)` → `{ value, name, description? }`；`selectFor(state)` → `{ options, currentValue }`（即 `permissions` projection 视图） | 183–228 |
-| 官方读取载体：`permissions` session projection（key `permissions`，view `{options, currentValue}`），经官方 `sessionProjections.snapshot(session)` 可读 | 143–152 + `dsh-session-projection/lib/index.js` `snapshot`（105–109） |
+| 官方读取载体：`permissions` session projection（key `permissions`，view `{options, currentValue}`），经官方 `sessionProjections.snapshot(session)` 可读 | 143–152 + `dsh-session-projection/lib/index.js` `snapshot`（105–115） |
 | 状态唯一事实源 = session 日志（`permission/preset`、`sandbox/mode`、`approval/policy` 事件，last wins） | `effectivePermissionPreset`（32–37）+ `foldKnobs`/`applyKnobEvent`（51–73） |
 | 相邻但不同 authority：`permission.defaultPreset` settings namespace 只承载未来 session 默认值（`installSettingsSection`） | 24–26、117–130 |
 | 官方写路径：`/permission` command handler 直调 `this.apply(...)`；`dsh-client-ui-permission-presets` 是**独立官方 client 插件**（消费投影与 settings），不属于本服务行 | 153–177；官方包清单 |
@@ -93,12 +93,12 @@ authorized caller ──▶ pluginApi.sessions.permissionPresets
 
 ### C1. Feature mount 与 availability guard
 
-与 plan-mode 线同构（fail-safe 挂载、namespace 常在、成员 typed unavailable 不抛穿、`availability()` 冻结三态）。availability 反映官方 `permissionPresets` 服务与 `sessionProjections` 读载体的可达性：读载体缺失记 `degraded`（select 仍可用），服务缺失记 `unavailable`。
+与 plan-mode 线同构（fail-safe 挂载、namespace 常在、成员 typed unavailable 不抛穿、`availability()` 冻结三态）。availability 反映官方 `permissionPresets` 服务与 `sessionProjections` 读载体的可达性：读载体缺失记 `degraded`（select 仍可用），服务缺失记 `unavailable`。**Stage 4 修订（登记）**：`degraded` 的成因扩展为穷尽的两条——(i) 投影读载体缺失（`options` 降级，`select`/`current` 可用）；(ii) 观察通道不可用（`session/event` 订阅建立失败或事实流缺失，`select`/`current`/`options` 仍可用）；与 plan-mode 线 C1 的「服务在场但观察通道降级」口径对齐。
 
 ### C2. 查询面（Req 1）
 
 - `current(session)` → 冻结 `{ target, preset, observedAt, source: 'official' }`；`preset` 为官方派生名（含官方 `custom` 派生态——如实透传，`custom` 永不接受为 `select` 目标）。官方语义下不存在"无选择"态（空日志由官方 `pinInitialPermission` 落初始事实）；若官方返回异常缺失 → typed degraded 视图（Req 1.2 的 typed absence 分支仅覆盖该降级路径）。
-- `options(session)` → 冻结 `{ target, options: [{value, name, description?}...], currentValue, observedAt }`，来自官方 `permissions` projection 视图（官方声明的选项集合与描述字段；门面不增删改名——Req 1.1）。描述字段为官方配置的 bounded 非敏感文案（Req 1.1；门面再做 bounded/脱敏防御，见 Standards）。
+- `options(session)` → 冻结 `{ target, options: [{value, name, description?}...], currentValue, observedAt, source }`（**Stage 4 修订（登记）**：`source` 与降级 `reason` 是 C2「typed degraded」的机器可读承载；降级/不可用时 `options` 为空数组、`currentValue` 为 `null`，`target` 恒在场），来自官方 `permissions` projection 视图（官方声明的选项集合与描述字段；门面不增删改名——Req 1.1）。描述字段为官方配置的 bounded 非敏感文案（Req 1.1；门面再做 bounded/脱敏防御，见 Standards）。
 - 继承/覆盖语义**以官方为准**（goal Scope direction）：一次 `select` 的效果 = 官方 `apply` 的官方语义——当前生效选择已在目标名上时不再 append 事件；knob 值与目标预设 spec 不一致时分别落 `sandbox/mode`/`approval/policy`；跨目标的"继承"仅存在于官方 `pinInitialPermission` 对新建 session 落默认预设（settings `defaultPreset` authority），门面不另造继承规则。
 
 ### C3. 写面 `select(session, name)`（Req 2、3、6）
@@ -121,7 +121,7 @@ authorized caller ──▶ pluginApi.sessions.permissionPresets
 
 ### C4. 观察面 `observe(session)`（Req 4、5）
 
-- **目标绑定（api-idioms §3.1 合规声明）**：观察入口为 **`observe(session)`**——target（session handle，与 `current`/`options`/`select` 同一目标语义）是入口的显式领域参数（§2 允许领域参数在显式领域字段中变化），返回 **target 绑定的** observe handle `{ current(), subscribe(listener), dispose(), epoch }`（§3.1 固定签名不变，**无 idiom 例外**）；handle 的 `current()` 返回**该 handle 目标**的最新投递视图。无全局多目标混杂：一个 handle 只服务一个目标。
+- **目标绑定（api-idioms §3.1 合规声明）**：观察入口为 **`observe(session)`**——target（session handle，与 `current`/`options`/`select` 同一目标语义）是入口的显式领域参数（§2 允许领域参数在显式领域字段中变化），返回 **target 绑定的** observe handle `{ current(), subscribe(listener), dispose(), epoch }`（§3.1 固定签名不变，**无 idiom 例外**）；handle 的 `current()` 返回**该 handle 目标**的读视图（与 `current` 同形，每次调用经官方重读核验、`source` 区分 official/degraded/unavailable；**Stage 4 修订（登记）**：对齐 `attention`/`sessions.activity`/`sessions.planMode` 的 handle 先例——变更流由 `subscribe` 承载，两条形状各自独立不混用）。无全局多目标混杂：一个 handle 只服务一个目标。
 - 形状与句柄：`{ current(), subscribe(listener), dispose(), epoch }` + `sessions.permissionPresets.observe.handle` 登记行。
 - 机制（A 类）：单条 firehose 订阅（facade 级共享），过滤 `permission/preset`、`sandbox/mode`、`approval/policy` 三种事件（官方投影的完整折叠输入）；firehose 事件按 session 匹配到已订阅目标后，重读官方 `current` + `options`，组合视图变化才投递 `{ target, preset, options, currentValue, observedAt }`。事实全部来自官方派发与官方读（Req 5.3 的核验义务）。
 - 任何官方路径（官方 `/permission` 命令、官方内部、knob 直写）引发的变更同样可达（Req 4.2）——门面观察不限于门面发起的变更。
@@ -141,7 +141,7 @@ authorized caller ──▶ pluginApi.sessions.permissionPresets
 
 ### C6. 审计与可追溯（Req 7）
 
-三线统一 v1 载体（同 plan-mode 线 C5）：feature-authority 内部有界内存环（容量 512、`truncated`/`gapSince` 标记、深冻结脱敏视图、进程作用域、**非 durable、不新增存储档位**）。记录字段：`{ seq, at, ownerId, action: 'permission-preset.select', target: '<sessionId>', preset, outcome }`。写失败保留效果 + gap 标记；v1 无公共审计查询成员（Stage 4 经内部测试缝取证）。owner 派生与不可归因拒绝同 C5。
+三线统一 v1 载体（同 plan-mode 线 C5）：feature-authority 内部有界内存环（容量 512、`truncated`/`gapSince` 标记、深冻结脱敏视图、进程作用域、**非 durable、不新增存储档位**）。记录字段：`{ seq, at, ownerId, action: 'permission-preset.select', target: '<sessionId>', preset, outcome, reason? }`（**Stage 4 修订（登记）**：`reason` 为 bounded ≤240 的拒绝/失败原因，与 plan-mode 线口径一致）。写失败保留效果 + gap 标记；v1 无公共审计查询成员（Stage 4 经内部测试缝取证）。owner 派生与不可归因拒绝同 C5。
 
 ## Data Models
 
@@ -150,11 +150,11 @@ select 结果    { ok, code, reason?, commitState?, preset?, appliedAt? }   // �
 结果码全集     committed / unchanged / not-applied / unknown-preset / invalid-preset /
                invalid-target / invalid-input / denied / unavailable / internal
 current 视图   { target, preset, observedAt, source: 'official' }          // 冻结
-options 视图   { target, options, currentValue, observedAt }               // 冻结
+options 视图   { target, options, currentValue, observedAt, source }       // 冻结
 observe 投递   { target, preset, options, currentValue, observedAt }       // 冻结
 observe 入口   observe(session) → target 绑定的 observe handle             // 领域参数在入口，handle 形状固定（§3.1）
 observe handle { current(), subscribe(listener), dispose(), epoch }
-audit 记录     { seq, at, ownerId, action, target, preset, outcome }       // bounded，冻结出环
+audit 记录     { seq, at, ownerId, action, target, preset, outcome, reason? } // bounded，冻结出环
 availability   { status, reason? }                                          // 冻结
 ```
 
@@ -199,8 +199,8 @@ availability   { status, reason? }                                          // �
 | `sessions.permissionPresets.options` | projection | read | pure | not-applicable | session | official permission-presets authority（官方投影载体） | host |
 | `sessions.permissionPresets.select` | mutation | mutate | coordinated | compare-and-swap | session | official permission-presets authority | host |
 | `sessions.permissionPresets.observe` | projection | subscribe | additive | not-applicable | session | official permission-presets authority | host |
-| `sessions.permissionPresets.observe.handle` | projection | read | pure | not-applicable | session | official permission-presets authority | host |
-| `sessions.permissionPresets.availability` | selfDescription | read | pure | not-applicable | session | facade | host |
+| `sessions.permissionPresets.observe.handle` | projection | read | **additive** | not-applicable | session | official permission-presets authority | host |
+| `sessions.permissionPresets.availability` | selfDescription | read | pure | not-applicable | **facade** | **official permission-presets authority** | host |
 
 capability ID：`sessions.permissionPresets`；`eventCatalog` 无新增事件（复用 `session/event`）。`conflictRule` 取 registry 现行词汇 `compare-and-swap`（官方"当前选择比较 + 读回证实"），日志 fold 的 latest-wins 语义在本表与 design 文字中声明。
 
@@ -227,6 +227,15 @@ capability ID：`sessions.permissionPresets`；`eventCatalog` 无新增事件（
 - `concurrency-and-cancellation.md`：适用。§6 声明见上（race window 声明、官方 fold winner、无取消面短事务）。
 - `versioning-and-protocols.md`：适用。冻结基线内交付；无新 wire/durable 协议。
 
+## Stage 4 运行结论（2026-09-13；P1–P4 回写）
+
+P1–P4 的源码级探针在 Stage 4 由真实组件链复核（e2e 基座：真实 `@deepseek-ai/cordis` 树 + 真实 `@deepseek-ai/dsh-user-approval` 的 `ApprovalService`；preset 组件与投影载体为按 P1/P2 语义构造的替身），逐条结论：
+
+- **P1 写入 seam**：`set(session, name)` 的三段语义（`current !== name` 才 append `permission/preset`；sandbox/approval 各自仅在值变化时写 knob）在行为上被复现并通过用例固化——重复选择同一预设只得到 `unchanged` 且官方日志不新增 `permission/preset`；`resolve(name)` 对未知名抛错被用作 `unknown-preset` 的唯一判定源（前置于官方读/写）。
+- **P2 读取载体**：`sessionProjections.snapshot(session)` 返回 `{ asOfSeq, values: { permissions } }`，`permissions` 缺席（载体未注册）时按 `degraded` 呈现且不伪造选项；`services.sessionProjections` 白名单 `snapshot` 成员原样保留。
+- **P3 事实流**：状态唯一事实源 = session 日志的三种 knob 事件（last wins），`session.append` 即 `session/event` 派发点；观察面按 design C4 过滤这三类事件并在每次投递前重读核验，非 knob 事实零重读零投递。
+- **P4 真实审批判定**：`ApprovalService.decide(req, session)` 在 `never` 下直接返回 `'rejected'` 且不派发 `approval/request`，在 `ask` 下派发瀑布并按官方 `OUTCOMES`（`allowed-once`/`rejected`/`cancelled`/`unavailable`）取值；`effectivePolicy(session)` = 日志 fold 覆盖值，随本研究面的选择即时变化——「至少一个真实审批判定随所选预设变化」由官方判定链自身承载，门面不模拟。官方 `/permission` 路径（`apply` + `approval.setPolicy`）与 `set()` 落同一组 durable knob 事件，两条路径的变更在观察面一致可达。
+
 ## Requirements Traceability
 
 | Requirement | 设计承载 |
@@ -242,3 +251,5 @@ capability ID：`sessions.permissionPresets`；`eventCatalog` 无新增事件（
 | Req 9 正交与领域边界 | Orthogonality And Three-Verb Distinction |
 | Req 10 authority closure | Authority Closure 表（统一 + 互斥） |
 | Req 11 验证与交付门 | Testing Strategy |
+
+> **Stage 4 修订登记（2026-09-13）**：上表 `observe.handle` 的 composition 由 `pure` 改为 `additive`（handle 承载 `subscribe(listener)`，`composition-and-authority.md` §4 的 `pure` 强定义禁止注册 listener；先例 `sessions.activity.observe.handle`/`sessions.planMode.observe.handle`）；`availability` 行的 scope/authority 由 `session`/`facade` 改为 `facade`/`official permission-presets authority`（与仓库 39 条 `*.availability` 行主流惯例一致）。C1 的 availability 成因、C2 的 `options` 视图 `source`、C4 的 `current()` 语义、C6 的 `reason?` 字段同批修订，均不改写任何已交付的验收边界。
