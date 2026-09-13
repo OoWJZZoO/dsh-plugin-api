@@ -81,7 +81,7 @@ R8. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 
 | 替代行 id | replacement 包 | 被禁用官方行 id | 目标官方组件包 | client 半面 |
 |---|---|---|---|---|
-| `plugin-api-compaction-events` | `@deepseek-ai/dsh-plugin-api-compaction-events` | `compaction-basic` | `@deepseek-ai/dsh-compaction-basic` | 无（host-only） |
+| `plugin-api-compaction-events` | `@deepseek-ai/dsh-plugin-api-compaction-events` | `compaction-basic` | `@deepseek-ai/dsh-compaction-basic` | 无（host-only）；替代 provider 另带 operation 子面（`sessions.compaction.run` 的受控触发入口，additive 扩展，退役条件见本行 R 登记） |
 | `plugin-api-session-title` | `@deepseek-ai/dsh-plugin-api-session-title` | `session-title` | `@deepseek-ai/dsh-session-title` | 无（host-only） |
 | `plugin-api-mcp` | `@deepseek-ai/dsh-plugin-api-mcp` | `mcp-client` | `@deepseek-ai/dsh-mcp-client` | 无（host-only） |
 | `plugin-api-attachments` | `@deepseek-ai/dsh-plugin-api-attachments` | `attachment-local` | `@deepseek-ai/dsh-attachment-local` | 无（host-only） |
@@ -208,3 +208,10 @@ Retirement 规则：
 ## 11. 当前阶段的版本与运维边界
 
 本仓库仍处于纯本地开发阶段。版本协商、runtime identity 和 replacement 自检用于尽早发现本地错配、并行开发混装和契约漂移；它们不构成社区兼容承诺，也不代表已经定义生产升级、降级、迁移窗口、长期支持或 profile 修复政策。进入社区运维阶段后，再单独补齐这些规则。
+
+## 已登记 R 类扩展：compaction operation 子面
+
+- **组件归属**：`compaction-basic`（唯一 owner：`@deepseek-ai/dsh-plugin-api-compaction-events`）。
+- **扩展内容**：替代 provider 上的 operation 子面（additive；公开四方法与 `compaction/*` 事件面逐成员不变），把内部判别通道（否决 reason、no-candidate、typed 失败码与 stage）以 `Symbol.for('dsh-plugin-api.compaction-events.operation')` 暴露给主门面的 `sessions.compaction` 受控投影。
+- **upstream 提案**：官方提供等价的公开触发 seam（例如带判别式结果的 `ctx.compaction` 触发方法）时，本 operation 面退役为官方直通。
+- **退役条件**：官方 seam 覆盖 `now`/`range` 两种公共触发语义并保留 provenance 词汇（`manual`/`direct`）之日，本子面与 `sessions.compaction` 的受控投影一并退役；退役前不得新增第二个触发 owner。

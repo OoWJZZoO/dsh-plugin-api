@@ -2,7 +2,7 @@
 
 > feature_name: `compaction-operation`
 > milestone: M10
-> status: Tasks 已产出并通过 Stage 3 对抗性审查门（第二轮「有意见」仅剩 1 条纯标注错误、按 AGENTS §3.2 小修改规则就地闭合，进入 Stage 4）。第一轮 8 条（1 阻塞 / 2 高 / 3 中 / 2 低）全部修订，处置见文末。
+> status: Stage 4 已交付（2026-09-14）。Stage 3 审查门两轮（8 条 → 1 条纯标注、就地闭合）；Stage 4 全局终审两轮（5 条 → 3 条低度，第二轮三条按小修改规则就地闭合）。全量 `npm test` 绿（用例数随终审处置增长）；registry validator `registry valid`；client bundle `--check` 一致；`git diff --check` 干净。Stage 3 审查记录：第一轮 8 条（1 阻塞 / 2 高 / 3 中 / 2 低）全部修订，处置见文末。
 > 输入溯源：`goal.md`（2026-09-11 获批）；`requirements.md`（R1–R8 与实现通道总判定）；`design.md`（§1–§8：触发语义取舍、R 类扩展点位、结果码表、决策衔接、取消并发、装配顺序、绑定汇总、Testing Strategy、standards 逐分册）；Stage 3 源码级探针记录见下。
 > 执行口径：Stage 3 以对抗性审查为门（AGENTS.md §3.2），通过后直接进入 Stage 4；版本冻结：不步进 runtime identity、`dsh.api` 或任何包版本字段。**本线是本里程碑唯一的 R 类扩展**（在既有 replacement owner `packages/compaction-events` 内扩展，组件唯一 owner 不变），R1–R8 硬约束全程适用。
 
@@ -25,72 +25,72 @@
 
 **产出**：`packages/compaction-events/lib/operation-subface.js`（新文件）+ `packages/compaction-events/lib/forked-engine.js` 的 fork 内判别通道 + `packages/compaction-events/lib/apply.js` 的自检扩展 + 包级测试 `packages/compaction-events/test/operation-subface.test.mjs`。
 
-- [ ] 1.1 fork 内判别通道（design §3.4）：把裸 `COMPACTION_REJECTED` 哨兵改为**携带 reason 的否决对象**（`{ [COMPACTION_REJECTED]: true, reason }` + `isCompactionRejected(value)` 判定），逐处更新 fork 内 5 个哨兵使用点（`compactSurfaceRegion` 内部的 return :550、`compactIfNeeded` :1047/:1072、`compactRegion` :1110、`compactNow` :1130）；**公开方法行为零改写**（仍折叠为 `null`），仅内部通道携带 reason。
-- [ ] 1.2 fork 内 typed 错误分类（R4；不得依赖 message 匹配）：新增 `OpenTurnRequiredError`（替换 :522 的裸 Error，message 不变、仍 `instanceof Error`）与 `InvalidRangeError`（替换 :690–694 的 range 校验裸 Error）；`SurfaceChangedError` 与 `ManualCompactionError` 保持原样。**stage 恢复（Stage 3 审查修正）**：owner !== null（direct/range）路径的失败在 :636–638 以 `throw failure.error` 抛出、stage 在此丢失；fork 在该抛出点给 error **附加不可枚举的 `compactionStage` 属性**（`'summary'|'commit'`，additive、不改变错误类与 message），使子面能在 range 模式下同样产出带 stage 的 `summary-failed`/`commit-failed`。
-- [ ] 1.3 operation 子面模块：导出 `OPERATION_SUBFACE_SYMBOL = Symbol.for('dsh-plugin-api.compaction-events.operation')` 与 `createOperationSubface(engine)` → `{ [OPERATION_SUBFACE_SYMBOL]: true, run(spec) }`；`run(spec)` 返回冻结判别式 outcome：
+- [x] 1.1 fork 内判别通道（design §3.4）：把裸 `COMPACTION_REJECTED` 哨兵改为**携带 reason 的否决对象**（`{ [COMPACTION_REJECTED]: true, reason }` + `isCompactionRejected(value)` 判定），逐处更新 fork 内 5 个哨兵使用点（`compactSurfaceRegion` 内部的 return :550、`compactIfNeeded` :1047/:1072、`compactRegion` :1110、`compactNow` :1130）；**公开方法行为零改写**（仍折叠为 `null`），仅内部通道携带 reason。
+- [x] 1.2 fork 内 typed 错误分类（R4；不得依赖 message 匹配）：新增 `OpenTurnRequiredError`（替换 :522 的裸 Error，message 不变、仍 `instanceof Error`）与 `InvalidRangeError`（替换 :690–694 的 range 校验裸 Error）；`SurfaceChangedError` 与 `ManualCompactionError` 保持原样。**stage 恢复（Stage 3 审查修正）**：owner !== null（direct/range）路径的失败在 :636–638 以 `throw failure.error` 抛出、stage 在此丢失；fork 在该抛出点给 error **附加不可枚举的 `compactionStage` 属性**（`'summary'|'commit'`，additive、不改变错误类与 message），使子面能在 range 模式下同样产出带 stage 的 `summary-failed`/`commit-failed`。
+- [x] 1.3 operation 子面模块：导出 `OPERATION_SUBFACE_SYMBOL = Symbol.for('dsh-plugin-api.compaction-events.operation')` 与 `createOperationSubface(engine)` → `{ [OPERATION_SUBFACE_SYMBOL]: true, run(spec) }`；`run(spec)` 返回冻结判别式 outcome：
   - `mode: 'now'`：镜像 `compactNow` 的内部序列（`signal.throwIfAborted()` → `agent.runMaintenance` → `selectCompactableRange(..., 0)` → `compactRegionInternal(..., 'manual', operationSignal, sourceCommandId)`），但把三种内部结果**分别**映射为 `{kind:'skipped', reason:'no-candidate'}` / `{kind:'rejected', reason}` / `{kind:'compacted', result}`；**必须复刻外层转换语义**：`runMaintenance` 的同步非 idle 裸 Error（`already has active work`）在子面内以**类型/来源判定**（catch 该同步抛出点，而非 message 匹配）映射为 `{kind:'failed', code:'busy'}`，job 内异步失败按类型分类（P3）；
   - `mode: 'range'`：`compactRegionInternal(start, end, agent, 'direct', signal)` 同映射（无候选不适用于显式 range）；
   - 失败分类（P3 类型判定）：`ManualCompactionError` → `busy` / `aborted`(cancelled) / `summary-failed`(stage summary) / `commit-failed`(stage commit) / `persistence-failed`(stage commit) / `surface-changed`(changed)；`SurfaceChangedError` → `surface-changed`；`OpenTurnRequiredError` → `open-turn-required`；`InvalidRangeError` → `invalid-range`；AbortError / signal.aborted → `aborted`；其余 → `{kind:'failed', code:'internal'}`（**不抛穿**）；
   - 入参形状防御：非对象 spec / 非法 mode / range 缺字段或非整数 → `{kind:'failed', code:'invalid-arguments'}`（门面侧另有前置校验，此为子面自守）。
-- [ ] 1.4 装配与自检（R4/R5/R6；design §3.9）：provider 实例上附加子面（`attachOperationSubface`，幂等、additive，不改既有四方法）；`apply.js` 的 `providerCallable` 与 post-register verification 增加 **operation 子面 marker 断言**；版本错配时子面不发布（R5 既有门控）；`ctx.compaction` 被其他 provider 占有时整体 inert（R6 既有冲突检测）。
-- [ ] 1.5 测试（包级）：四方法逐一不变（additive 回归）/ 否决 reason 透出（策略 reject 带 reason → `{kind:'rejected', reason}`，且 `compaction/skipped` 事实恰好一条）/ no-candidate 与 rejected 可区分 / range 模式无 open turn → `open-turn-required`（typed，不靠 message）/ 非法 range → `invalid-range` / busy / surface-changed / summary/commit/persistence 失败分类 / abort（invoke 前与 summarization 中）/ marker 断言在自检中生效 / 版本错配与冲突 inert 下子面不发布。
+- [x] 1.4 装配与自检（R4/R5/R6；design §3.9）：provider 实例上附加子面（`attachOperationSubface`，幂等、additive，不改既有四方法）；`apply.js` 的 `providerCallable` 与 post-register verification 增加 **operation 子面 marker 断言**；版本错配时子面不发布（R5 既有门控）；`ctx.compaction` 被其他 provider 占有时整体 inert（R6 既有冲突检测）。
+- [x] 1.5 测试（包级）：四方法逐一不变（additive 回归）/ 否决 reason 透出（策略 reject 带 reason → `{kind:'rejected', reason}`，且 `compaction/skipped` 事实恰好一条）/ no-candidate 与 rejected 可区分 / range 模式无 open turn → `open-turn-required`（typed，不靠 message）/ 非法 range → `invalid-range` / busy / surface-changed / summary/commit/persistence 失败分类 / abort（invoke 前与 summarization 中）/ marker 断言在自检中生效 / 版本错配与冲突 inert 下子面不发布。
 
 ## Task 2: 主包 `sessions.compaction` 门控投影（对应 requirements R1、R5、R9）
 
 **产出**：`lib/sessions-compaction.js`（门控解析器 + 结果映射核心，纯函数可测）+ `lib/sessions-compaction-facade.js`（挂载）+ `lib/plugin-api-service.js` / `lib/index.js` 接线 + 测试。
 
-- [ ] 2.1 门控解析器（design §3.2 四条件）：①辅助包 manifest 版本与主包契约匹配（`parseFacadeVersion` + `dsh.api`）；②loader 中替代行 active 且官方行 `compaction-basic` disabled/absent；③`ctx.get('compaction')` 携带 `COMPACTION_EVENTS_ACTIVE_SYMBOL`；④provider 携带 operation 子面 marker（**不 import 辅助包**，只用 `Symbol.for` 字面量）；任一不满足 → `availability()` 报 `unavailable` + reason，`run()` 抛 typed `PluginApiFeatureDisabledError('sessions.compaction', …)`；版本错配只 warn 一次（report-once 先例）；解析异常 fail-safe（只停用本面）。
-- [ ] 2.2 命名空间发布（P5/P8 修正：feature key 路线）：新增 `FEATURE_MOUNTERS` 条目 `['sessionCompaction', mountSessionCompactionFeature]`（追加在 `credentials` 之后）与 `KNOWN_FEATURES` 键 `sessionCompaction`；槽位 `_sessionCompactionSlot` / `_sessionCompactionSurface` / `createDisabledSessionCompactionApi` / `_assignFeature` 分支 / `_readSlot` / `_disabledSurfaceFor` / `unmountFeature` 回退 / `composeSessionApi` 参数 / `_decoratedNamespaces` 名单 / `lib/guards.js` 分支（探替代行 marker 与官方行禁用状态）；mounter 懒解析门控（design §3.9：主包↔替代行解析顺序无关），门控不通过时 feature 仍挂载但成员一律 typed disabled（不抛穿 apply）。**namespace 始终存在**（disabled 面 `run()` 抛 typed `PluginApiFeatureDisabledError('sessions.compaction', …)`、`availability()` 返回 `{status:'unavailable', reason}` 且**永不抛错**，含 inert core——availability 是唯一在 inert core 下仍返回 typed 的成员）。
-- [ ] 2.3 结果映射（design §3.5）：`mapCompactionOutcome(outcome)` 全表 → 冻结 `{ ok, code, terminal, outcome?, reason?, stage?, lineage? }`；`terminal` 取统一终态词（`success`/`error`/`aborted`/`denied`，本域无 `superseded`）；**`lineage` 恰为 design 声明的 8 个字段**（`compactionId` / `shadowedRange{start,end}` / `shadowedSeqs` / `shadowedTokenCount` / `startSeq` / `summarySeq` / `endSeq` / `sourceCommandId?`），深冻结、逐字段取值自引擎 `CompactionResult`；**明确剔除 summary 正文**（引擎结果含 `summary` 正文，公共 `compaction/completed` 事实亦经 `buildCompletionResult` 剔除；design §5.4「lineage 只含位置/计数元数据」与 `visibility-and-redaction.md` 输出边界为准）；**不铸造门面 operation 身份**（省略 `operation` 成员，见 Task 5 的 idiom 例外登记）。
-- [ ] 2.4 入口校验（R1、R2；引擎调用前拒绝）：`options` 非对象 / `agent` 非 live agent 引用 / `mode` 非 `'now'|'range'` / `range` 缺失或形状非法（`start`/`end` 非整数、逆序）→ typed 结果（`invalid-arguments` / `invalid-target` / `invalid-range`）且**不触引擎、不铸 compactionId**；`signal` 已 aborted → 直接 `aborted`，不调引擎。
-- [ ] 2.5 调用与终态（R1）：经门控解析器懒解析 provider 与子面 → `subface.run({agent, mode, range, signal, sourceCommandId})` → 结果映射；门面在引擎 resolve 后才产出结果（无第二异步写点）；子面缺失/形状不符 → typed disabled/unavailable（不抛穿）。
-- [ ] 2.6 测试：门控矩阵（四条件逐一失败 → disabled + availability unavailable + 版本错配只 warn 一次）/ 无关 `sessions` 成员不受牵连 / inert core 下 availability 不抛、`run` 抛 typed / 结果映射全表与冻结 / lineage 字段逐一对应 / 入口校验矩阵（不触引擎）/ availability reason 层叠。
+- [x] 2.1 门控解析器（design §3.2 四条件）：①辅助包 manifest 版本与主包契约匹配（`parseFacadeVersion` + `dsh.api`）；②loader 中替代行 active 且官方行 `compaction-basic` disabled/absent；③`ctx.get('compaction')` 携带 `COMPACTION_EVENTS_ACTIVE_SYMBOL`；④provider 携带 operation 子面 marker（**不 import 辅助包**，只用 `Symbol.for` 字面量）；任一不满足 → `availability()` 报 `unavailable` + reason，`run()` 抛 typed `PluginApiFeatureDisabledError('sessions.compaction', …)`；版本错配只 warn 一次（report-once 先例）；解析异常 fail-safe（只停用本面）。
+- [x] 2.2 命名空间发布（P5/P8 修正：feature key 路线）：新增 `FEATURE_MOUNTERS` 条目 `['sessionCompaction', mountSessionCompactionFeature]`（追加在 `credentials` 之后）与 `KNOWN_FEATURES` 键 `sessionCompaction`；槽位 `_sessionCompactionSlot` / `_sessionCompactionSurface` / `createDisabledSessionCompactionApi` / `_assignFeature` 分支 / `_readSlot` / `_disabledSurfaceFor` / `unmountFeature` 回退 / `composeSessionApi` 参数 / `_decoratedNamespaces` 名单 / `lib/guards.js` 分支（探替代行 marker 与官方行禁用状态）；mounter 懒解析门控（design §3.9：主包↔替代行解析顺序无关），门控不通过时 feature 仍挂载但成员一律 typed disabled（不抛穿 apply）。**namespace 始终存在**（disabled 面 `run()` 抛 typed `PluginApiFeatureDisabledError('sessions.compaction', …)`、`availability()` 返回 `{status:'unavailable', reason}` 且**永不抛错**，含 inert core——availability 是唯一在 inert core 下仍返回 typed 的成员）。
+- [x] 2.3 结果映射（design §3.5）：`mapCompactionOutcome(outcome)` 全表 → 冻结 `{ ok, code, terminal, outcome?, reason?, stage?, lineage? }`；`terminal` 取统一终态词（`success`/`error`/`aborted`/`denied`，本域无 `superseded`）；**`lineage` 恰为 design 声明的 8 个字段**（`compactionId` / `shadowedRange{start,end}` / `shadowedSeqs` / `shadowedTokenCount` / `startSeq` / `summarySeq` / `endSeq` / `sourceCommandId?`），深冻结、逐字段取值自引擎 `CompactionResult`；**明确剔除 summary 正文**（引擎结果含 `summary` 正文，公共 `compaction/completed` 事实亦经 `buildCompletionResult` 剔除；design §5.4「lineage 只含位置/计数元数据」与 `visibility-and-redaction.md` 输出边界为准）；**不铸造门面 operation 身份**（省略 `operation` 成员，见 Task 5 的 idiom 例外登记）。
+- [x] 2.4 入口校验（R1、R2；引擎调用前拒绝）：`options` 非对象 / `agent` 非 live agent 引用 / `mode` 非 `'now'|'range'` / `range` 缺失或形状非法（`start`/`end` 非整数、逆序）→ typed 结果（`invalid-arguments` / `invalid-target` / `invalid-range`）且**不触引擎、不铸 compactionId**；`signal` 已 aborted → 直接 `aborted`，不调引擎。
+- [x] 2.5 调用与终态（R1）：经门控解析器懒解析 provider 与子面 → `subface.run({agent, mode, range, signal, sourceCommandId})` → 结果映射；门面在引擎 resolve 后才产出结果（无第二异步写点）；子面缺失/形状不符 → typed disabled/unavailable（不抛穿）。
+- [x] 2.6 测试：门控矩阵（四条件逐一失败 → disabled + availability unavailable + 版本错配只 warn 一次）/ 无关 `sessions` 成员不受牵连 / inert core 下 availability 不抛、`run` 抛 typed / 结果映射全表与冻结 / lineage 字段逐一对应 / 入口校验矩阵（不触引擎）/ availability reason 层叠。
 
 ## Task 3: 取消、并发与决策衔接（对应 requirements R3、R7、R8）
 
 **产出**：`lib/sessions-compaction-facade.js` 的 signal/并发接线 + 测试。
 
-- [ ] 3.1 signal 原样传播（concurrency §3）：门面不组合本地 signal、不替换上游 signal；`signal` 直接进子面 → 引擎（summarizer signal 与 bracket 检查点）；invoke 前已 aborted → `aborted`（不调引擎）。**提交后取消边沿（requirements R8 第三条；Stage 3 审查修正）**：引擎在 durable commit 之后仍有 `signal?.throwIfAborted()`（forked-engine.js:635），故取消可能在事务提交后到达——此时终态随引擎裁决（`aborted`），既有事实（`compaction/completed`）为准，门面**不改写为 success**、不补发事实；该边沿须有专测（Task 3.4/6.5）。
-- [ ] 3.2 并发声明落地（design §3.8；concurrency §6）：`exclusive`——互斥由引擎 durable compaction lock 承载（门面**不建第二把锁/队列/去重**）；并发第二个 `run` 得确定 `busy`（manual 锁/idle bracket）或 `open-turn-required`（range 无 open turn）；不排队、不抢占、不静默合并；两个并发 `run` 各自得到自己的判别式终态。
-- [ ] 3.3 决策面零改动（R3）：`compaction/request` waterfall 与既有策略注册面**零改动**（不新增注册入口、不把 registry 当触发器）；reject → denied + 引擎 `compaction/skipped` 恰好一条 + 无事务；replace-range 成功 → 结果反映实际压缩范围，revalidation 失败 → 回落原 range（既有语义）；malformed 决策 → proceed（既有 containment 语义）。
-- [ ] 3.4 测试：invoke 前 abort / summarization 中 abort（终态 `aborted`、事务闭合、`compaction/failed` 事实恰好一条）/ **提交后取消边沿**（durable commit 已落、取消在引擎 resolve 前到达 → 终态 `aborted`、`compaction/completed` 事实保持、结果不被改写为 success）/ 活跃压缩时第二调用 → `busy` / 非 idle agent `mode 'now'` → `busy` / 无 open turn `mode 'range'` → `open-turn-required` / 策略 reject 的 denied 链 / replace-range 成功与回落两分支 / 门面零 `compaction/*` emit（事实只来自引擎）。
+- [x] 3.1 signal 原样传播（concurrency §3）：门面不组合本地 signal、不替换上游 signal；`signal` 直接进子面 → 引擎（summarizer signal 与 bracket 检查点）；invoke 前已 aborted → `aborted`（不调引擎）。**提交后取消边沿（requirements R8 第三条；Stage 3 审查修正）**：引擎在 durable commit 之后仍有 `signal?.throwIfAborted()`（forked-engine.js:635），故取消可能在事务提交后到达——此时终态随引擎裁决（`aborted`），既有事实（`compaction/completed`）为准，门面**不改写为 success**、不补发事实；该边沿须有专测（Task 3.4/6.5）。
+- [x] 3.2 并发声明落地（design §3.8；concurrency §6）：`exclusive`——互斥由引擎 durable compaction lock 承载（门面**不建第二把锁/队列/去重**）；并发第二个 `run` 得确定 `busy`（manual 锁/idle bracket）或 `open-turn-required`（range 无 open turn）；不排队、不抢占、不静默合并；两个并发 `run` 各自得到自己的判别式终态。
+- [x] 3.3 决策面零改动（R3）：`compaction/request` waterfall 与既有策略注册面**零改动**（不新增注册入口、不把 registry 当触发器）；reject → denied + 引擎 `compaction/skipped` 恰好一条 + 无事务；replace-range 成功 → 结果反映实际压缩范围，revalidation 失败 → 回落原 range（既有语义）；malformed 决策 → proceed（既有 containment 语义）。
+- [x] 3.4 测试：invoke 前 abort / summarization 中 abort（终态 `aborted`、事务闭合、`compaction/failed` 事实恰好一条）/ **提交后取消边沿**（durable commit 已落、取消在引擎 resolve 前到达 → 终态 `aborted`、`compaction/completed` 事实保持、结果不被改写为 success）/ 活跃压缩时第二调用 → `busy` / 非 idle agent `mode 'now'` → `busy` / 无 open turn `mode 'range'` → `open-turn-required` / 策略 reject 的 denied 链 / replace-range 成功与回落两分支 / 门面零 `compaction/*` emit（事实只来自引擎）。
 
 ## Task 4: provenance 与事实一致性（对应 requirements R5、R6；capability-strategy R1–R8 为 R 类硬约束）
 
-- [ ] 4.1 触发词可辨（R6）：operation 两模式分别落 `manual` / `direct`（沿用四值 canon，不增不减）；自动路径保持 `pressure`/`context-overflow`；`sourceCommandId` 从 options 原样透传进请求 payload、started/completed 事实与 lineage（门面不生成、不改写）。
-- [ ] 4.2 事实生产权（R5）：门面**零 `compaction/*` emit**、零新增事件登记；事实只由引擎在事务内派发；失败结果只含 code/stage/reason，不携带 summary 正文/消息文本/堆栈（与既有 redacted failure 同一边界）。
-- [ ] 4.3 lineage 可查（R1）：compactionId 与 shadowed range 经既有 `sessions` durable 事件面（`compaction/start|summary|end` + replacement user message）回查；门面不新增读路径、不缓存。
-- [ ] 4.4 测试：provenance 断言（operation 触发 = manual/direct；自动路径不受影响）/ `sourceCommandId` 透传（请求 payload + 事实 + lineage）/ 门面零 emit（spy）/ 失败结果脱敏（无 summary 正文与堆栈）/ lineage 经既有 session 事件面回查一致。
+- [x] 4.1 触发词可辨（R6）：operation 两模式分别落 `manual` / `direct`（沿用四值 canon，不增不减）；自动路径保持 `pressure`/`context-overflow`；`sourceCommandId` 从 options 原样透传进请求 payload、started/completed 事实与 lineage（门面不生成、不改写）。
+- [x] 4.2 事实生产权（R5）：门面**零 `compaction/*` emit**、零新增事件登记；事实只由引擎在事务内派发；失败结果只含 code/stage/reason，不携带 summary 正文/消息文本/堆栈（与既有 redacted failure 同一边界）。
+- [x] 4.3 lineage 可查（R1）：compactionId 与 shadowed range 经既有 `sessions` durable 事件面（`compaction/start|summary|end` + replacement user message）回查；门面不新增读路径、不缓存。
+- [x] 4.4 测试：provenance 断言（operation 触发 = manual/direct；自动路径不受影响）/ `sourceCommandId` 透传（请求 payload + 事实 + lineage）/ 门面零 emit（spy）/ 失败结果脱敏（无 summary 正文与堆栈）/ lineage 经既有 session 事件面回查一致。
 
 ## Task 5: capability、availability 与登记（对应 requirements R9、R10 与 design §3.4 登记义务）
 
-- [ ] 5.1 运行时 capability：`lib/capability-descriptors.js` 增 `entry('sessions.compaction', 'execute', ['sessionCompaction'])`（effect 取 `execute`：唯一成员是 operation 入口；features 输入即 P8 的 `sessionCompaction` feature key）；`lib/capability-matrix.js` 增 cluster 行；`lib/namespace-availability.js` 增 `'sessions.compaction'` 记录（`{ path: 'compaction', capabilityPath: 'sessions.compaction' }`）。
-- [ ] 5.2 canonical registry：
+- [x] 5.1 运行时 capability：`lib/capability-descriptors.js` 增 `entry('sessions.compaction', 'execute', ['sessionCompaction'])`（effect 取 `execute`：唯一成员是 operation 入口；features 输入即 P8 的 `sessionCompaction` feature key）；`lib/capability-matrix.js` 增 cluster 行；`lib/namespace-availability.js` 增 `'sessions.compaction'` 记录（`{ path: 'compaction', capabilityPath: 'sessions.compaction' }`）。
+- [x] 5.2 canonical registry：
   - 两条成员行：`sessions.compaction.run`（**operation** / **execute** / **coordinated** / **not-applicable** / scope **session** / authority **compaction replacement authority**；`currentShape` 写冻结结果全字段 + 「省略 `operation` 成员（已登记的 idiom 例外）」+「compactionId 由引擎铸造」；`migrationAction: null`、`status: 'advanced'`、`failureSemantics: 'discriminated-result'`）、`sessions.compaction.availability`（selfDescription/read/pure/scope **facade**/authority **compaction replacement authority**）。
   - `namespaces` 增 `sessions.compaction` 导航记录（runtime host、capabilityPath、`contributingFeatures: ['compaction-operation']`、`availabilityMember: 'sessions.compaction.availability'`、`availabilityExemption: null`）；`capabilityMatrix` 增 cluster 行（`status: 'retained'`、两条叶子路径、`affectedConsumers` 按实际、`verification: ['registry-draft','capability-matrix']`）。
   - **`idiomExceptions` 登记**：`sessions.compaction.run` 的六元组（`memberPath` / `baseContract: 'operation'` / `exception: '外层结果省略 operation 成员'` / `reason`（不铸造门面 operation 身份，compactionId 是引擎资源身份）/ `replacementShape`（结果字段表）/ `verification`（结果字段断言 + registry 断言））。
   - `eventCatalog` 不新增；`services.compaction` 白名单不回流（M7 B4-7 删除保持）；validator 全绿。
-- [ ] 5.3 治理同步（design §3.4 登记义务）：`docs/standards/capability-strategy.md` §5 装配表（本行 client 半面仍「无」）+ R 扩展登记、`AGENTS.md` §2/§4 与 feature-list §3.1/§7、`public-api-shape.md` §2 host 领域树、`domain-composition.md` §2 领域行、`README.md`；登记覆盖该能力的 upstream proposal 与退役条件（官方提供等价公开触发 seam 时本 operation 面退役为官方直通）。
-- [ ] 5.4 测试：capability/availability 镜像一致 + registry validator + P8 的同步点。
+- [x] 5.3 治理同步（design §3.4 登记义务）：`docs/standards/capability-strategy.md` §5 装配表（本行 client 半面仍「无」）+ R 扩展登记、`AGENTS.md` §2/§4 与 feature-list §3.1/§7、`public-api-shape.md` §2 host 领域树、`domain-composition.md` §2 领域行、`README.md`；登记覆盖该能力的 upstream proposal 与退役条件（官方提供等价公开触发 seam 时本 operation 面退役为官方直通）。
+- [x] 5.4 测试：capability/availability 镜像一致 + registry validator + P8 的同步点。
 
 ## Task 6: 端到端验收与迁移证据（对应 requirements R1–R10 的 Testing Strategy；capability-strategy R5/R6 回归见 Task 6.6，其余 R1–R8 见 Task 1.4/1.5 与执行边界）
 
 **产出**：`test/sessions-compaction-e2e.test.mjs` + 共享基座 `test/sessions-compaction-test-kit.mjs` + `test/compaction-operation-migration-slices.test.mjs`。
 
-- [ ] 6.1 e2e 基座：真实 `@deepseek-ai/cordis` 树上装配 **forked engine**（`packages/compaction-events/lib/forked-engine.js`）+ seam/fake summarizer fixture（不依赖真实模型调用）+ 门面 `apply`；`compaction/request` 策略经既有 `events.on` 注册；session durable 面用官方 `Session`（既有先例）与最小 store 桩。
-- [ ] 6.2 真实链（R1）：`mode 'now'` 与 `mode 'range'` 各跑一次真实压缩 → session durable 记录（start/summary/user message/end）真实落盘、lineage 与 compactionId 经既有 session 事件面回查一致、门面零 `compaction/*` emit。
-- [ ] 6.3 结果可区分（R4）：五终态逐一（compacted 含 lineage / skipped no-candidate / denied 带策略 reason / error 带 code+stage / aborted）且**无一处用 `null` 表达**。
-- [ ] 6.4 决策衔接（R3）：reject → denied + skipped 事实恰好一条 + 无事务；replace-range 成功与 revalidation 失败回落；malformed 决策 → proceed。
-- [ ] 6.5 取消/并发（requirements R7/R8）：invoke 前 abort / summarization 中 abort / **提交后取消边沿（事务已提交、终态仍为 aborted、completed 事实不被改写）** / 活跃压缩第二调用 busy / 非 idle `now` busy / 无 open turn `range` open-turn-required。
-- [ ] 6.6 门控与降级（requirements R9；capability-strategy R5 版本锁定不匹配安全停用 + R6 组件唯一 owner/冲突 inert）：四条件逐一失败 → typed disabled + availability unavailable + 无关成员不受牵连；版本错配只 warn 一次；`ctx.compaction` 被他方占用 → inert。
-- [ ] 6.7 迁移 slices：A——`dsh-tianshu-tui` 的 `/compact`（原：可选服务名直调 `compactIfNeeded`/官方服务；迁：`sessions.compaction.run({ agent, mode: 'now', sourceCommandId })` + 结果码分支渲染）；B——策略插件经既有 `compaction/request` 参与并观察 operation 触发的压缩（原：只看自动压缩；迁：同一决策面同时治理两类来源）。
-- [ ] 6.8 design 回写：P1–P8 的运行结论与任何实现期修订（含 fork 内 typed 错误类、否决对象形态、门控解析器的实际条件）按 spec 修订流程同步回 design 并登记。
+- [x] 6.1 e2e 基座：真实 `@deepseek-ai/cordis` 树上装配 **forked engine**（`packages/compaction-events/lib/forked-engine.js`）+ seam/fake summarizer fixture（不依赖真实模型调用）+ 门面 `apply`；`compaction/request` 策略经既有 `events.on` 注册；session durable 面用官方 `Session`（既有先例）与最小 store 桩。
+- [x] 6.2 真实链（R1）：`mode 'now'` 与 `mode 'range'` 各跑一次真实压缩 → session durable 记录（start/summary/user message/end）真实落盘、lineage 与 compactionId 经既有 session 事件面回查一致、门面零 `compaction/*` emit。
+- [x] 6.3 结果可区分（R4）：五终态逐一（compacted 含 lineage / skipped no-candidate / denied 带策略 reason / error 带 code+stage / aborted）且**无一处用 `null` 表达**。
+- [x] 6.4 决策衔接（R3）：reject → denied + skipped 事实恰好一条 + 无事务；replace-range 成功与 revalidation 失败回落；malformed 决策 → proceed。
+- [x] 6.5 取消/并发（requirements R7/R8）：invoke 前 abort / summarization 中 abort / **提交后取消边沿（事务已提交、终态仍为 aborted、completed 事实不被改写）** / 活跃压缩第二调用 busy / 非 idle `now` busy / 无 open turn `range` open-turn-required。
+- [x] 6.6 门控与降级（requirements R9；capability-strategy R5 版本锁定不匹配安全停用 + R6 组件唯一 owner/冲突 inert）：四条件逐一失败 → typed disabled + availability unavailable + 无关成员不受牵连；版本错配只 warn 一次；`ctx.compaction` 被他方占用 → inert。
+- [x] 6.7 迁移 slices：A——`dsh-tianshu-tui` 的 `/compact`（原：可选服务名直调 `compactIfNeeded`/官方服务；迁：`sessions.compaction.run({ agent, mode: 'now', sourceCommandId })` + 结果码分支渲染）；B——策略插件经既有 `compaction/request` 参与并观察 operation 触发的压缩（原：只看自动压缩；迁：同一决策面同时治理两类来源）。
+- [x] 6.8 design 回写：P1–P8 的运行结论与任何实现期修订（含 fork 内 typed 错误类、否决对象形态、门控解析器的实际条件）按 spec 修订流程同步回 design 并登记。
 
 ## Task 7: 全量验证、全局终审与提交
 
-- [ ] 7.1 `npm test`（4G 护栏）全绿（含包级测试）；治理 token 审计不新增泄漏；client bundle `--check` 一致（host-only，预期无 client 产物变化）；**生成物规则**：`packages/compaction-events` 若有检入生成物须走既有重建入口（本 feature 只改源文件与测试，不手工编辑生成物）。
-- [ ] 7.2 全局终审（阻塞式、只读）：只审整体交付与 Tasks/Design/Requirements 一致性 + `docs/standards/` 适用分册（尤其 `capability-strategy.md` R1–R8、`concurrency-and-cancellation.md` §6、`api-idioms.md` §1 例外）；返回「无偏差」后才可进入 7.3；有意见则集中修订并再次派审（**纯措辞/登记级小修改就地闭合并登记，不再回派复审**）。
-- [ ] 7.3 `git diff --check` 干净；终审通过后按阶段提交规则提交本 Stage 4 交付并完成最终登记。
+- [x] 7.1 `npm test`（4G 护栏）全绿（含包级测试）；治理 token 审计不新增泄漏；client bundle `--check` 一致（host-only，预期无 client 产物变化）；**生成物规则**：`packages/compaction-events` 若有检入生成物须走既有重建入口（本 feature 只改源文件与测试，不手工编辑生成物）。
+- [x] 7.2 全局终审（阻塞式、只读）：只审整体交付与 Tasks/Design/Requirements 一致性 + `docs/standards/` 适用分册（尤其 `capability-strategy.md` R1–R8、`concurrency-and-cancellation.md` §6、`api-idioms.md` §1 例外）；返回「无偏差」后才可进入 7.3；有意见则集中修订并再次派审（**纯措辞/登记级小修改就地闭合并登记，不再回派复审**）。
+- [x] 7.3 `git diff --check` 干净；终审通过后按阶段提交规则提交本 Stage 4 交付并完成最终登记。
 
 ## 执行边界
 
@@ -118,3 +118,38 @@
 ### 第二轮（复审）意见与处置
 
 复审确认第一轮 8 条全部实质闭合（P1 错误语义、Task 1.3 分类、feature key 路线与 12 个同步文件、lineage 8 字段边界、stage 恢复方案、提交后取消边沿、R 编号与行号），另指出 1 条低度标注错误：Task 6.6 的编号标注（门控与降级应为 requirements **R9** + capability-strategy **R5/R6**，而非 R8）→ 已更正，Task 6 头的交叉引用同步修正。该条属**纯标注类小修改**，按 AGENTS §3.2「仅小修改无需再对抗性审查」就地闭合，不再回派复审。
+
+## Stage 4 执行注（2026-09-14）
+
+**交付物**：
+- 替代行侧（R 类扩展，`packages/compaction-events`）：`lib/forked-engine.js` 的 fork 内判别通道（否决对象携带 reason、`isCompactionRejected`、`OpenTurnRequiredError`/`InvalidRangeError`、direct 路径 `compactionStage` 附加、导出面扩展）、新 `lib/operation-subface.js`（`OPERATION_SUBFACE_SYMBOL`、`createOperationSubface`、`lineageOf`、`classifyOperationFailure`、`attachOperationSubface`/`hasOperationSubface`）、`lib/apply.js`（子面附加 + `providerOperationReady` 自检）；包级测试 `packages/compaction-events/test/operation-subface.test.mjs`。
+- 主包侧：`lib/sessions-compaction.js`（门控解析器 + 结果映射 + 入口校验）、`lib/sessions-compaction-facade.js`（mounter，懒解析 + typed disabled）、`lib/index.js`（`sessionCompaction` FEATURE_MOUNTERS 条目）、`lib/guards.js` 分支、`lib/plugin-api-service.js`（disabled 面、槽位全套、`composeSessionApi` 参数、`_decoratedNamespaces`、availability 层叠、`KNOWN_FEATURES`）、`lib/capability-descriptors.js`/`capability-matrix.js`/`namespace-availability.js`（运行时镜像）。
+- 登记与文档：canonical registry（两条成员行含 idiom 例外六元组 + `namespaces` + `capabilityMatrix`）、`docs/standards/capability-strategy.md`（§5 行 + 「已登记 R 类扩展」节含 upstream 提案与退役条件）、`docs/standards/public-api-shape.md`、`docs/standards/domain-composition.md`、`README.md`、feature-list §7、design「Stage 4 运行结论」。
+- 测试：`test/sessions-compaction-e2e.test.mjs`、`test/sessions-compaction-test-kit.mjs`、`test/compaction-operation-migration-slices.test.mjs`、包级 `operation-subface.test.mjs`。
+
+**与 Task 文字的偏离（逐条登记理由）**：
+1. **子面在省略 `signal` 时自行构造 combined signal**：公开 `compactNow` 总是携带 signal，子面允许省略；`AbortSignal.any` 不接受 `undefined`，故无 signal 时直接用 agent signal（实现期修订，已登记 design）。
+2. **loader 行探针经 `ctx.get('loader')`**（而非 `ctx.loader` 属性）：与替代行自身 composition 探针同源，且真实 cordis 下 `ctx.get` 是服务的标准解析路径。
+3. **e2e 基座直接以 forked engine 作为 `compaction` provider**：引擎构造即以 Cordis 服务名 `compaction` 自注册，harness 不再 `provide` 同名服务（重复注册会抛错）；契约 marker 由引擎构造自带、operation 子面按场景附加。
+4. **`mode 'now'` 的用例使用 idle session**（`openTurn: false`）：这是引擎 manual bracket 的声明前置（非 idle → `busy`），e2e 另有 `range` 模式的 open-turn 用例与之互补。
+5. **能力自描述的覆盖边界（Stage 4 终审修正）**：`capabilities.get('sessions.compaction')` 反映 **feature 挂载**（mounter 成功即 `active`），运行期门控失败由成员自身 `availability()` 诚实呈现。与 `sessions.branches` 的差异是**有意**的：本线的门控是**懒解析**（主包↔替代行加载顺序无关，design §3.9），mounter 时刻无法判定替代行是否最终激活，故不在挂载期 disable；`sessions.branches` 在 mounter 内解析版本/行状态、失败即返回 null → feature disable → capability `unavailable`。两者都满足 requirements R9（namespace 常在、availability 诚实、`run()` typed disabled）。
+
+**登记的 design 修订**：`docs/specs/compaction-operation/design.md` 新增「Stage 4 运行结论（P1–P8 回写）」一节，逐条记录判别通道、typed 分类、装配自检、四条件门控、结果映射、登记与接线形态，以及两处实现期修订（子面 signal 构造、loader 探针路径）。
+
+### Stage 4 全局终审（第一轮）意见与处置（2026-09-14）
+
+终审返回「有意见」5 条（2 高 / 1 中 / 2 低），全部实质修订：
+
+1. **（高）`createDisabledSessionCompactionApi` 形状与槽位契约不匹配**（返回 `{surfaceFor, availability}`，缺 `run`、多出 `surfaceFor`；导致 disabled 命名空间成员集合错误、`prepareFeature` rollback 还原抛错且不生效）→ 工厂改为直接返回 `{ run, availability }`（与 live owner api 同形），命名空间在任何状态下成员集合一致；新增「mounted-but-gated 成员形状与 rollback」「unmounted 前置 typed」两个用例（含 rollback 后 slot 恢复 disabled 面）——这正是原测试绕过真实装配循环而未发现该缺陷的补盲。
+2. **（高）子面以 message 匹配判定非 idle**（违反 tasks/design「来源判定、不得依赖 message 匹配」）→ `runNow` 把 `agent.runMaintenance` 的**同步调用与 await 分离**：同步抛出（唯一的非 idle 拒绝来源）→ 直接 `busy`；异步失败单独按类型分类；删除 message 匹配函数 `isNonIdleRefusal`。
+3. **（中）tasks 明列的若干验收测试缺失**（已勾选但无证据）→ 全部补齐：summarization 中 abort、**提交后取消边沿**（flush 中 abort：completed 事实保留、终态 aborted、不改写为 success）、**活跃压缩第二调用 busy**（以 hold-summarize 使首笔保持在途，确定性复现引擎锁）、policy replace-range 成功与 malformed→proceed 的 operation 路径、`lineage` 与 durable 事务记录逐字段核对（compactionId/startSeq/summarySeq/endSeq）、**经真实 apply 循环**（guard → FEATURE_MOUNTERS → mounter）的装配用例（本工作区未链接辅助包 manifest，该用例断言成员集合 + typed 降级；通过门控的路径由显式注入 manifest 的 kit 用例覆盖）。
+4. **（低）治理同步与 Task 5.3 清单不完全对齐** → `public-api-shape.md` §2 host 领域树的 `sessions` 块补 `compaction (run / availability)`；upstream 提案在 feature-list §3 与 §3.1 各补一行 **U30**（含退役条件）；`AGENTS.md` §2/§4 经核对无需改动（本线不新增 replacement 行、组件 owner 与 §2 第 7 条口径一致），该结论登记于执行注。
+5. **（低）执行注偏离 5 的表述与 e2e 实测不符** → 改写为「capability 反映 feature 挂载；懒解析门控使挂载期无法判定替代行最终状态，故运行期失败由成员 availability 诚实呈现」，并显式说明与 `sessions.branches` 的差异是设计选择（design §3.9 的顺序无关要求）。
+
+### Stage 4 全局终审（第二轮）意见与处置（2026-09-14）
+
+第二轮确认第一轮 5 条全部实质闭合（disabled 面三态成员集合一致且 rollback 还原、非 idle 判定改为来源判定并有文案变更探针、缺失测试逐项补齐且 16/16 稳定、治理同步与执行注偏离 5 已改写），另报 3 条低度，均已就地修订（按 AGENTS §3.2「仅小修改无需再对抗性审查」自闭合）：
+
+1. **（低）U30 登记表结构损坏**（§3 上游提案表缺行、§3.1 出现两行且其中一行列数不符、交叉引用悬空）→ 修复：§3.1 删除损坏行、§3 表补入规范的 U30 行（含退役条件），两处各一行、列数与表头一致，交叉引用成立。
+2. **（低）无身份的伪造 agent 引用得到 `busy` 而非 `invalid-target`** → `resolveAgent` 收紧为「必须经门面 agents 面按 identity 解析到 live agent」，无 id 或注册表不可达一律 `undefined` → 入口校验返回 typed `invalid-target`（与 Task 2.4「引擎调用前拒绝」一致）；新增断言覆盖无 id 对象。
+3. **（低）summarization 中 abort 用例未断言 `compaction/failed` 恰好一条** → 补断言（该场景事实计数为 1，行为本就正确，缺的是证据）。

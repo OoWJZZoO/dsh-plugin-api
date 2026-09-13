@@ -23,6 +23,7 @@
 import { createRequire } from 'node:module'
 import { BasicCompactionEngine as OfficialBasicCompactionEngine } from '@deepseek-ai/dsh-compaction-basic'
 import { BasicCompactionEngine as ForkedEngine, COMPACTION_EVENTS_ACTIVE_SYMBOL } from './forked-engine.js'
+import { attachOperationSubface, hasOperationSubface } from './operation-subface.js'
 
 export const name = 'dsh-plugin-api-compaction-events'
 export const inject = ['loader']
@@ -119,6 +120,15 @@ function providerCallable(service) {
 }
 
 /**
+ * The operation sub-face assertion of the post-register self-check: the
+ * provider must carry the sub-face marker before the facade's operation
+ * projection may become active.
+ */
+function providerOperationReady(service) {
+  return providerCallable(service) && hasOperationSubface(service)
+}
+
+/**
  * Build the plugin `apply` function with optional test seams.
  *
  * @param {{
@@ -182,7 +192,11 @@ export function createCompactionEventsApply(overrides = {}) {
         }
         let verify
         try {
-          verify = providerCallable(ctx.get('compaction'))
+          const provider = ctx.get('compaction')
+          // Attach the operation sub-face to the just-registered provider
+          // (additive: the four public methods and every fact are untouched).
+          attachOperationSubface(provider)
+          verify = providerOperationReady(provider)
         } catch {
           verify = false
         }

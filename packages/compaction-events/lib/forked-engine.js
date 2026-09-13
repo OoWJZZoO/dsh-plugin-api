@@ -435,6 +435,20 @@ function selectCompactableRange(session, measurement, retainTokens) {
 // replacement patch: sentinel returned when a compaction/request listener vetoes
 // the transaction.
 const COMPACTION_REJECTED = Symbol("dsh-plugin-api.compaction-events.rejected");
+// replacement patch (operation sub-face): the veto sentinel carries the decision
+// reason so the internal channel can report it without message matching. The
+// public methods keep collapsing it to `null`.
+function compactionRejected(reason) {
+	return { [COMPACTION_REJECTED]: true, reason: typeof reason === "string" && reason.length > 0 ? reason : "rejected" };
+}
+function isCompactionRejected(value) {
+	return value !== null && typeof value === "object" && value[COMPACTION_REJECTED] === true;
+}
+// replacement patch (operation sub-face): typed boundary errors for the range
+// path so the sub-face can classify without message matching. Both remain
+// `instanceof Error` with unchanged messages.
+class OpenTurnRequiredError extends Error {}
+class InvalidRangeError extends Error {}
 
 // replacement patch: the sole contract symbol between this auxiliary package and
 // the main facade. Registered on every forked provider instance so
@@ -519,7 +533,7 @@ async function compactSurfaceRegion(dependencies, session, start, end, agent, tr
 		if (entryState.openTurn !== null) throw new ManualCompactionError("busy", "manual compaction: the session already has an open turn");
 		owner = null;
 	} else {
-		if (entryState.openTurn === null) throw new Error("compactRegion: no open turn — automatic compaction events must be enclosed in a turn");
+		if (entryState.openTurn === null) throw new OpenTurnRequiredError("compactRegion: no open turn — automatic compaction events must be enclosed in a turn");
 		owner = entryState.openTurn;
 	}
 	const compactionId = CompactionId(randomUUID());
@@ -547,7 +561,7 @@ async function compactSurfaceRegion(dependencies, session, start, end, agent, tr
 			reason: decision.reason ?? "rejected"
 		}, ["range"]);
 		emitSafe(dependencies.ctx, "compaction/skipped", skippedPayload);
-		return COMPACTION_REJECTED;
+		return compactionRejected(decision.reason);
 	}
 	if (decision.kind === DECISION.replaceRange) {
 		const revalidated = revalidateReplacementRange(session, decision.start, decision.end, owner);
@@ -635,6 +649,13 @@ async function compactSurfaceRegion(dependencies, session, start, end, agent, tr
 	if (options.owner === null) signal?.throwIfAborted();
 	if (failure !== void 0) {
 		if (options.owner === null) throwManualFailure(failure);
+		// replacement patch (operation sub-face): the direct/range path keeps the
+		// failure stage on the thrown error (non-enumerable, additive: the error
+		// class and message are unchanged) so the sub-face can report
+		// summary-failed / commit-failed without message matching.
+		if (failure.stage !== void 0 && !("compactionStage" in failure.error)) {
+			Object.defineProperty(failure.error, "compactionStage", { value: failure.stage, enumerable: false, configurable: true });
+		}
 		throw failure.error;
 	}
 	// replacement patch: flush/durability-checkpoint failure after a successful
@@ -687,11 +708,11 @@ function validateSurfaceRegion(session, start, end) {
 	const nodes = session.surface.nodes;
 	const startIdx = nodes.indexOf(start);
 	const endIdx = nodes.indexOf(end);
-	if (startIdx === -1) throw new Error(`compactRegion: start seq ${start} not found in surface`);
-	if (endIdx === -1) throw new Error(`compactRegion: end seq ${end} not found in surface`);
-	if (startIdx > endIdx) throw new Error(`compactRegion: start seq ${start} (position ${startIdx}) is after end seq ${end} (position ${endIdx}) on the surface`);
-	if (!toolPairingBalancedBefore(session, nodes[startIdx])) throw new Error(`compactRegion: start seq ${start} is not a balanced boundary (would split a step's tool-call/result pair)`);
-	if (!toolPairingBalancedAfter(session, nodes[endIdx])) throw new Error(`compactRegion: end seq ${end} is not a balanced boundary (would split a step, or the step is still open)`);
+	if (startIdx === -1) throw new InvalidRangeError(`compactRegion: start seq ${start} not found in surface`);
+	if (endIdx === -1) throw new InvalidRangeError(`compactRegion: end seq ${end} not found in surface`);
+	if (startIdx > endIdx) throw new InvalidRangeError(`compactRegion: start seq ${start} (position ${startIdx}) is after end seq ${end} (position ${endIdx}) on the surface`);
+	if (!toolPairingBalancedBefore(session, nodes[startIdx])) throw new InvalidRangeError(`compactRegion: start seq ${start} is not a balanced boundary (would split a step's tool-call/result pair)`);
+	if (!toolPairingBalancedAfter(session, nodes[endIdx])) throw new InvalidRangeError(`compactRegion: end seq ${end} is not a balanced boundary (would split a step, or the step is still open)`);
 	return {
 		start,
 		end,
@@ -1044,7 +1065,7 @@ var BasicCompactionEngine = class extends CompactionEngine {
 			const range = selectCompactableRange(agent.session, measurement, 0);
 			if (range === null) return null;
 			const overflowResult = await this.compactRegionInternal(range.start, range.end, agent, trigger, signal);
-			return overflowResult === COMPACTION_REJECTED ? null : overflowResult;
+			return isCompactionRejected(overflowResult) ? null : overflowResult;
 		}
 		const context = (await this.ctx.llm.resolveModelInfo(target.provider, target.model, signal)).context;
 		assertNoActiveCompaction(agent.session, "automatic pressure compaction");
@@ -1069,7 +1090,7 @@ var BasicCompactionEngine = class extends CompactionEngine {
 			result = await this.compactRegionInternal(range.start, range.end, agent, trigger, signal);
 			// replacement patch: a veto cancels the pressure loop immediately (5.4);
 			// the official retry loop must not re-dispatch the same range.
-			if (result === COMPACTION_REJECTED) return null;
+			if (isCompactionRejected(result)) return null;
 			measurement = meter.measure(agent.session);
 			if (measurement.totalTokens < spec.thresholdTokens) return result;
 		}
@@ -1107,7 +1128,7 @@ var BasicCompactionEngine = class extends CompactionEngine {
 	}
 	async compactRegion(start, end, agent, signal) {
 		const result = await this.compactRegionInternal(start, end, agent, COMPACTION_TRIGGERS.direct, signal);
-		return result === COMPACTION_REJECTED ? null : result;
+		return isCompactionRejected(result) ? null : result;
 	}
 	/**
 	* Force one useful idle-session compaction below the pressure threshold, and
@@ -1127,7 +1148,7 @@ var BasicCompactionEngine = class extends CompactionEngine {
 					const range = selectCompactableRange(agent.session, this.ctx.tokenMeter.measure(agent.session), 0);
 					if (range === null) return null;
 					const manualResult = await this.compactRegionInternal(range.start, range.end, agent, COMPACTION_TRIGGERS.manual, operationSignal, sourceCommandId);
-					return manualResult === COMPACTION_REJECTED ? null : manualResult;
+					return isCompactionRejected(manualResult) ? null : manualResult;
 				} catch (error) {
 					if (agentSignal.aborted && operationSignal.reason === agentSignal.reason) throw new ManualCompactionError("cancelled", "manual compaction was cancelled", { cause: error });
 					operationSignal.throwIfAborted();
@@ -1148,4 +1169,12 @@ var BasicCompactionEngine = class extends CompactionEngine {
 	}
 };
 //#endregion
-export { BasicCompactionEngine, BasicCompactionEngine as default };
+export {
+	BasicCompactionEngine,
+	BasicCompactionEngine as default,
+	OpenTurnRequiredError,
+	InvalidRangeError,
+	SurfaceChangedError,
+	isCompactionRejected,
+	selectCompactableRange,
+};

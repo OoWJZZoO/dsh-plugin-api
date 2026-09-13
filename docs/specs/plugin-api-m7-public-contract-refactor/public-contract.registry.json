@@ -16075,6 +16075,81 @@
       ]
     },
     {
+      "publicPath": "sessions.compaction.run",
+      "targetPath": "sessions.compaction.run",
+      "capability": "sessions.compaction",
+      "kind": "leaf",
+      "idiom": "operation",
+      "idiomExceptions": [
+        {
+          "memberPath": "sessions.compaction.run",
+          "baseContract": "operation",
+          "exception": "the outer result omits the operation identity member",
+          "reason": "the facade mints no operation identity of its own: the engine-minted compactionId is the resource identity, and the result reports it in the lineage instead of an operation handle",
+          "replacementShape": "frozen { ok, code, terminal: success|error|aborted|denied, outcome?: compacted|skipped, reason?, stage?: summary|commit, lineage?: { compactionId, shadowedRange, shadowedSeqs, shadowedTokenCount, startSeq, summarySeq, endSeq, sourceCommandId? } }",
+          "verification": "result field assertions plus the registry idiom-exception validation"
+        }
+      ],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "coordinated",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "compaction replacement authority",
+      "scope": "session",
+      "resourceKey": "compactionId",
+      "identitySource": "engine-minted compaction identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "the engine adjudicates the terminal (including the aborted-after-commit edge); the facade never rewrites it",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not-idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.compaction",
+      "concurrency": "exclusive",
+      "reducer": "none",
+      "currentShape": "frozen discriminated result: compacted (lineage, no summary body) / skipped (no-candidate) / rejected (policy reason) / aborted / failed (stable code and stage) | the gate failure is the typed feature-disabled error and the engine stays the only executor",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.compaction.availability",
+      "targetPath": "sessions.compaction.availability",
+      "capability": "sessions.compaction",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "compaction replacement authority",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "leaf",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { status: active|degraded|unavailable, reason?: string } resolved from the marker/version gate on every read; never throws",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
       "publicPath": "sessions.request",
       "targetPath": "sessions.request",
       "capability": "sessions.request",
@@ -21643,6 +21718,16 @@
       "availabilityExemption": null
     },
     {
+      "namespace": "sessions.compaction",
+      "runtime": "host",
+      "capabilityPath": "sessions.compaction",
+      "contributingFeatures": [
+        "compaction-operation"
+      ],
+      "availabilityMember": "sessions.compaction.availability",
+      "availabilityExemption": null
+    },
+    {
       "namespace": "credentials",
       "runtime": "host",
       "capabilityPath": "credentials",
@@ -23681,6 +23766,28 @@
         "credentials.availability",
         "credentials.set",
         "credentials.unset"
+      ],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "interactive-session-access"
+      ],
+      "verification": [
+        "registry-draft",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "sessions.compaction",
+      "currentPaths": [
+        "sessions.compaction.availability",
+        "sessions.compaction.run"
+      ],
+      "targetPaths": [
+        "sessions.compaction.availability",
+        "sessions.compaction.run"
       ],
       "status": "retained",
       "qualifiers": [],

@@ -227,3 +227,17 @@ provider.operation = {
 ## 8. 两线一致性声明
 
 本 feature 与 `workflow-execution-contract` 无共享 owner（本线 R 扩展 owner 为 compaction-events 替代行；workflow 线为门面主包 owner）、无共享 namespace（`sessions.compaction` vs `workflows`）、无共享状态。两线仅在 operation idiom 的**标准外层合同**（`{ok, code, terminal}`、统一终态词汇、availability）上遵循同一份 `api-idioms.md`，不共享领域词汇（compacted/skipped/rejected ≠ started/settled）。
+
+## Stage 4 运行结论（2026-09-14；P1–P8 回写）
+
+Stage 4 在真实 forked engine 上复核探针并落地 R 类扩展（e2e 基座 = 真实 `@deepseek-ai/cordis` 树 + 替代行 forked engine 作为 `compaction` provider + 门面）：
+
+- **P1/P2 判别通道**：否决哨兵改为携带 decision reason 的对象（`isCompactionRejected` 判定），公开四方法仍折叠为 `null`（additive）；`compaction/request` reject → 子面 `{kind:'rejected', reason}`，`compaction/skipped` 事实恰好一条、无事务；no-candidate 在否决之前由引擎自身选择器产生、与 veto 可区分。
+- **P3 typed 分类**：`ManualCompactionError` 码值（busy/cancelled/changed/summary/commit/persistence）逐一映射；range 路径的 "no open turn" 与 range 校验改为 fork 本地 typed 错误（`OpenTurnRequiredError`/`InvalidRangeError`）；direct 路径的失败在抛出点附加不可枚举 `compactionStage`，使 `summary-failed`/`commit-failed` 在 range 模式同样带 stage。
+- **P4 装配与自检**：operation 子面在 provider 注册后附加，post-register verification 增加 `providerOperationReady`（四方法 + 契约 marker + 子面 marker）；既有四方法与事件面逐成员不变（包级 46/46 回归 + additive 用例）。
+- **P5 门控**：四条件按 design §3.2 落地（辅助包版本 / loader 中替代行 active 且官方行 disabled-or-absent / 契约 marker / operation 子面 marker），懒解析、每次调用重探；任一失败 → `run()` 抛 typed disabled、`availability()` `unavailable`；版本错配只 warn 一次；`sessions.availability()` 的 reason 层叠含本面降级。
+- **P6 结果映射**：五终态与码表逐行落地；`lineage` 恰为 design 声明的 8 字段、**剔除 summary 正文**；结果省略 `operation` 成员（idiom 例外已登记 registry）。
+- **P7 登记**：registry 两条成员行（`sessions.compaction.run` 含 idiom 例外六元组、`sessions.compaction.availability`）+ `namespaces` 记录 + `capabilityMatrix` 行；`eventCatalog` 零新增；`services.compaction` 白名单不回流；治理同步（capability-strategy §5 行与 R 登记、public-api-shape、domain-composition、README、feature-list）已落盘。
+- **P8 接线**：`sessionCompaction` feature key（`sessionBranch` 同款槽位机制），feature 总数 40 → 41 的全部列表/尾部断言已同步。
+
+**实现期修订（已登记）**：operation 子面在省略 `signal` 时自行构造 combined signal（公开方法总是携带 signal）；loader 行探针经 `ctx.get('loader')` 解析（与替代行自身 composition 探针同源）。两处均不改任何已交付验收边界。

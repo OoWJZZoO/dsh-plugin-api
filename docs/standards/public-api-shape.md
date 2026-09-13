@@ -45,7 +45,8 @@ pluginApi
 │   ├── durableEventTypes / durableEventDescriptors / isDurableEventType
 │   ├── onDurable / onceDurable / appendMessage
 │   ├── branches
-│   └── channels
+│   ├── channels
+│   └── compaction (run / availability)
 ├── tools
 │   ├── register / restrict / guard / get / schemas / execute /
 │   ├── presentAs / executionMode / defineTool / toolAbortedError
@@ -81,7 +82,7 @@ pluginApi
 
 - `routing` 与 `routePolicy` 合并为 `llm.routing`；公开语义是 provider/model 路由，不由当前官方组件落点决定。
 - `execution` 使用资源集合名 `executions`，`recovery` 归入 `executions.recovery`。
-- `sessionChannel` 归入 `sessions.channels`，branch 能力为 `sessions.branches`。
+- `sessionChannel` 归入 `sessions.channels`，branch 能力为 `sessions.branches`，受控压缩操作为 `sessions.compaction`（operation idiom，门控投影）。
 - `workspaceTransactions` 归入 `workspaces.transactions`，通用 `coordination` 保持一等领域。
 - `systemPrompt` 与 context provenance 归入 `prompts`，后者位于 `prompts.provenance` 且保持独立 owner。
 - `tools.discovery`、`skills.activation`、`llm.adapters` 保持在各自领域内。

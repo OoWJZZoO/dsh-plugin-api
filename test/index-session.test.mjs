@@ -117,7 +117,7 @@ test('apply mounts session after events with a composed events catalog', () => {
   assert.equal(state.pluginApi.sessions.availability().status, 'active')
   assert.deepEqual(
     state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').map((feature) => feature.name),
-    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel', 'sessionActivity', 'sessionPlanMode', 'sessionPermissionPresets', 'sessionInteraction', 'attention', 'checkpoints', 'decisionParticipation', 'scopedAgentContributions', 'credentials'],
+    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel', 'sessionActivity', 'sessionPlanMode', 'sessionPermissionPresets', 'sessionInteraction', 'attention', 'checkpoints', 'decisionParticipation', 'scopedAgentContributions', 'credentials', 'sessionCompaction'],
   )
   assert.ok(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').slice(0, 15).every((feature) => feature.name === 'sessionBranch' || feature.isActive))
   assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')[15].isActive, false)
@@ -167,7 +167,7 @@ test('apply completes every guard pass before pass-2 publication and an early fe
   const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   assert.deepEqual(
     features.map((feature) => feature.name),
-    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel', 'sessionActivity', 'sessionPlanMode', 'sessionPermissionPresets', 'sessionInteraction', 'attention', 'checkpoints', 'decisionParticipation', 'scopedAgentContributions', 'credentials'],
+    ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel', 'sessionActivity', 'sessionPlanMode', 'sessionPermissionPresets', 'sessionInteraction', 'attention', 'checkpoints', 'decisionParticipation', 'scopedAgentContributions', 'credentials', 'sessionCompaction'],
   )
   assert.equal(features.find((feature) => feature.name === 'tools')?.isActive, false)
   assert.equal(features.find((feature) => feature.name === 'execRoute')?.isActive, false)
@@ -190,8 +190,8 @@ test('session guard failure disables only session and keeps the facade active', 
   const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
 // 31 established features plus the four integration-wave features
   // (sessionActivity, sessionInteraction, attention, checkpoints).
-  assert.equal(features.length, 40)
-  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel', 'sessionActivity', 'sessionPlanMode', 'sessionPermissionPresets', 'sessionInteraction', 'attention', 'checkpoints', 'decisionParticipation', 'scopedAgentContributions', 'credentials'])
+  assert.equal(features.length, 41)
+  assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm', 'llm/request', 'llm/admission', 'security', 'session', 'sessionBranch', 'sessionDurable', 'execRoute', 'sessionRoute', 'settings', 'systemPrompt', 'services', 'typert', 'settingsRemote', 'remote', 'execution', 'recovery', 'coordination', 'storage', 'workspaceTransactions', 'diagnostics', 'tasks', 'toolDiscovery', 'skillsActivation', 'context', 'profile', 'llmAdapters', 'sessionChannel', 'sessionActivity', 'sessionPlanMode', 'sessionPermissionPresets', 'sessionInteraction', 'attention', 'checkpoints', 'decisionParticipation', 'scopedAgentContributions', 'credentials', 'sessionCompaction'])
   assert.equal(features[0].isActive, true)
   assert.equal(features[1].isActive, true)
   assert.equal(features[2].isActive, true)

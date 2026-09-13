@@ -24,6 +24,7 @@
 | `executions` | projection 只读；execution identity 独立；recovery policy 由单一 authority 自动消费，合作型调用使用独立的 recovery operation |
 | `sessions.branches` | branch/plan/commit identity、generation 和 CAS 明确；直接 session mutation 不得静默破坏 branch 保证 |
 | `sessions.channels` | channel/device/session scope、generation possession 和认证 owner 清晰；注册链遵守声明的固定顺序 |
+| `sessions.compaction` | 压缩引擎是唯一执行者与事实 producer；门面只做受控触发与终态映射，不新增 mutation authority、不铸造 operation 身份、不新建 durable scope |
 | `tools` | tool 名称/key 冲突显式；注册 owner 化；restrict/guard 使用固定组合代数；执行使用 scope 和 execution identity |
 | `tools.discovery` | descriptor 与 activation owner 化；latest-wins 只发生在同 owner；跨 owner catalog 冲突显式 |
 | `skills.activation` | skill descriptor/activation owner 化；静态 registry 与 session activation 的 authority 边界固定 |
