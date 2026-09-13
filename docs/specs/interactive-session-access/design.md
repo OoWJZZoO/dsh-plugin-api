@@ -2,7 +2,7 @@
 
 > feature_name: `interactive-session-access`
 > milestone: M10
-> status: Stage 2 已交付（2026-09-12，与 Stage 1 Requirements 同批产出）；Stage 3（Tasks）未开始
+> status: Stage 2 已交付（2026-09-12，与 Stage 1 Requirements 同批产出）；Stage 3（Tasks）产出中（2026-09-14），正文已按 Stage 3 探针结论修订 Face 1/2/4 与 R-Point 1（见文末「Stage 3 探针修订」）
 > 输入溯源：已确认 Goal（`goal.md`）与本线 Requirements；M10 观察报告 OBS-09/OBS-12；M10 工作纲领 §3.9/§4/§5；已交付 `session-interaction-operation` requirements/design（M9）及其 2026-09-11 维护现状注；canonical registry `sessions.request/cancel`、`sessions.channels.*`、`sessions.activity.*`、`attention.*`、`services.apiProxy`、client 根 `sessions`/`attention` 现状；`docs/standards/` 全部 12 分册。
 
 ## Status
@@ -26,7 +26,7 @@
 
 - 已交付基础（M9 及其维护后基线）：`sessions.request`/`cancel`（host+client 同形 operation，exclusive+deduplicate，terminal 唯一裁决）、operation status/observe wire（`/plugin-api/sessions` 路由、value-only 投影、client 重建）、activity correlation（`observed`/`reconstructed`/`unknown`/`unavailable` 不互代）、waiting 相位（与 activity 等待证据同源）、诚实 availability 与 stale 世代守卫。
 - 已登记缺口（本线兑现）：`message.attachmentRefs` 无 durable content block 映射，当前 fail-closed（带附件请求 typed unavailable 且不写入）。
-- 官方可达 seams 与官方事实（审查更正后）：`services.apiProxy` 白名单仅 `downloads` getter 与 `respond` method（respond 是既有回答入口）；**per-session 当前选择是 `@deepseek-ai/dsh-host-apiproxy`（ApiProxyService）的私有状态（selections Map + `selectionFor(agent).current`），唯一官方提交/读取入口是 mux unary `session.selectModel`/`session.models`（官方 UI 经 connection client 调用）**；`services.agentDefaultModel` 只是部署默认值，`ctx.llm.resolveCallConfig` 仅校验，两者都不是选择状态来源。answer entry（respond、pending approval/question registry、/api/respond 路由）同属 dsh-host-apiproxy。官方 `ctx.userQuestions` 仅 `registerProvider`/`ask` 且单 provider（web profile 下已被 apiproxy 占用），pending question 集位于 apiproxy 内部（mux 帧）。官方 inbox durable 类型为 `agent/inbox/spliced`（discard 以 `outcome: 'canceled'` 记录），`inserted`/`claimed`/`discarded` 是 dispatch 通知（claimed 非 durable）。官方 selectModel 持久化为尽力而为（`agentDefaultModel.saveSelection`；存储失败仅记日志；无 settings provider 时仅 session-local），运行时回退链为内存值 → 会话最近一次已记录请求的 header config（dsh-session `requestHeader()` fold 至最后一条 request/header，非创建时值）→ 部署默认。`approval.request`/`overrideOf` 为官方 passthrough，approval 侧 pending 集可经 `approval/request`、`approval/decided` 事件投影。
+- 官方可达 seams 与官方事实（审查更正后）：`services.apiProxy` 白名单仅 `downloads` getter 与 `respond` method（respond 是既有回答入口）；**per-session 当前选择是 `@deepseek-ai/dsh-host-apiproxy`（ApiProxyService）的私有状态（selections Map + `selectionFor(agent).current`），唯一官方提交/读取入口是 mux unary `session.selectModel`/`session.models`（官方 UI 经 connection client 调用）**；`services.agentDefaultModel` 只是部署默认值，`ctx.llm.resolveCallConfig` 仅校验，两者都不是选择状态来源。answer entry（respond、pending approval/question registry、/api/respond 路由）同属 dsh-host-apiproxy。官方 `ctx.userQuestions` 仅 `registerProvider`/`ask` 且单 provider（web profile 下已被 apiproxy 占用），pending question 集位于 apiproxy 内部（mux 帧）。官方 inbox durable 类型为 `agent/inbox/spliced`（discard 以 `outcome: 'canceled'` 记录），`inserted`/`claimed`/`discarded` 是 dispatch 通知（claimed 非 durable）。官方 selectModel 持久化为尽力而为（`agentDefaultModel.saveSelection`；存储失败仅记日志；无 settings provider 时仅 session-local），运行时回退链为内存值 → 会话最近一次已记录请求的 header config（dsh-session `requestHeader()` fold 至最后一条 request/header，非创建时值）→ 部署默认。`approval.request`/`overrideOf` 为官方 passthrough，approval 侧 pending 集由 **durable 对** `approval/asked`/`approval/decided` 折叠得到（`approval/request` 是 answerer waterfall，不是 durable 事件；Stage 3 探针更正）。
 - 既有 carriers：`sessions.channels`（open/acquire/heartbeat/revoke/observe/fetchEvents/list/ack/resume + auth verifier/pairing/authorizer + redaction profile，typed 码含 `device-denied`/`session-denied`/`pairing-required`/`cursor-gap`/`resync-required`）已由 connection/gateway 两个 replacement owner 交付并各带完整 client 半面；client 根 `sessions` 已有 request/cancel/availability；client 根 `attention` 已交付。
 - OBS-09 锚点事实：mobile channel 直接用 `apiProxy.events.mux` 并调用 sessions/workspace/agentPresets 多操作；门面不复制 mux，改以类型化公共面承载同等消费者行为。
 
@@ -45,8 +45,8 @@
  │  attachmentRefs 映射          (受限视图+类型化应答)           ack/resume + correlation       │
  │            │                          │                            ▲                        │
  │            │ 官方 inbox(steer/queue)  │ 官方 approval/userQuestions│ 官方 session 事件        │
- │            ▼                          ▼ + services.apiProxy.respond│                        │
- │  agent-loop 既有切片(attempt 事实)   官方 answer entry             sessions.channels 载体    │
+ │            ▼                          ▼ 官方 approval waterfall     │                        │
+ │  agent-loop 既有切片(attempt 事实)   (兜底 answerer, append 注册)    sessions.channels 载体    │
  │                                                                            │               │
  │  Face 4 选择提交面（owner: selection authority，新增 facade）                │               │
  │  selection.get/set（值级 CAS；经 services.apiProxy 白名单扩展承接官方 seam）  │               │
@@ -58,7 +58,7 @@
 
 | 成员 | runtime | idiom | 说明 |
 |---|---|---|---|
-| `sessions.request` | host+client | operation | 既有成员扩展 spec：`message.attachmentRefs`（新映射）、`delivery?: 'steer' | 'queue'`（缺省 = 已交付 `already-running` 行为不变） |
+| `sessions.request` | host+client | operation | 既有成员扩展 spec：`message.attachmentRefs: ImageAttachmentRef[]`（官方 durable 图像引用对象数组，新映射）、`delivery?: 'steer' | 'queue'`（缺省 = 已交付 `already-running` 行为不变）；`delivery` 经官方 `agent.steer`/`agent.followup` 交付，排队引用即 durable inbox 项身份 |
 | `sessions.cancel` | host+client | operation | 既有成员；接受 queued reference（未认领排队项的取消） |
 | operation handle/status/observe | host+client | operation | M9 既有 wire 不变；steer 并入活 attempt 时不产生第二个 operation |
 
@@ -70,14 +70,16 @@
 
 | 成员 | runtime | idiom | 形状 |
 |---|---|---|---|
-| `sessions.interactions.list({ sessionId?, cursor? })` | host+client | projection | 冻结 `{ items, nextCursor } \| availability view` |
+| `sessions.interactions.list({ sessionId?, cursor? })` | host+client | projection | 冻结 `{ items, nextCursor, sources } \| availability view`（`sources` 逐 kind 报 `active/degraded/unavailable`） |
 | `sessions.interactions.get({ id })` | host+client | projection | 冻结单视图 \| typed `missing/unavailable` |
-| `sessions.interactions.respond({ id, action, answer?, reason?, signal? })` | host+client | operation | typed `{ accepted \| stale \| rejected \| denied \| unavailable }` |
+| `sessions.interactions.respond({ id, action, answer?, reason?, signal? })` | host+client | operation | typed `{ accepted \| stale \| rejected \| denied \| unavailable }`；approval 的 `action` 闭集 `approve/reject/cancel` → 官方 outcome 闭集 |
 | `sessions.interactions.availability()` | host+client | selfDescription | 冻结状态，永不抛错 |
 
 受限视图成员：`{ id, kind: 'approval' | 'question', sessionId, summary, createdAt, answerShape }`。`id` 为 facade 铸造公共身份；`summary`/`answerShape` 有界脱敏。内部只保存 id↔官方 pending item 映射（有界、内存、不 durable）；生命周期由官方事件驱动，映射随官方 resolution 清除。不旁路 approval/userQuestions authority，不暴露官方 registry 内部 id/形状。
 
-**视图来源分侧（审查更正）**：approval 侧 pending 集经官方 `approval/request`、`approval/decided` 事件可达，投影无障碍。question 侧 pending 集位于官方 apiproxy 内部（mux 帧；官方 `ctx.userQuestions` 仅 `registerProvider`/`ask` 且单 provider，web profile 下已被 apiproxy 占用）——其视图 seam 与应答 seam 同归一个 probe/条件 R 范围（见 R-Point 1）；seam 未证实前，question 视图诚实 typed unavailable，不伪造列表。
+**视图来源分侧（Stage 3 探针修订）**：approval 侧 pending 集由**会话日志的 durable 对** `approval/asked`（`{id, toolName, callId?, reason?}`）减 `approval/decided`（`{id, outcome}`）折叠得到——官方 apiproxy 的 answerer 用同一算法（尾部回扫、按 `callId` 匹配），投影无障碍；`approval/request` 是 **answerer waterfall**，不是 durable 事件。question 侧无 durable 痕迹，且 `ctx.userQuestions` 单 provider 槽位在 web profile 已被 apiproxy 占用（第二 provider 会 `DUPLICATE_PROVIDER` 并让官方行 boot 失败）——**question 视图与应答在本 runtime 诚实 typed unavailable**，不伪造列表、不抢槽位。
+
+**应答来源（Stage 3 探针修订）**：官方 mux 答案入口 `apiProxy.respond({rpcId, result})` 需要 apiproxy 广播时才铸造的 `rpcId`（`pendingApprovals` 的键），门面不可达；可达的官方 answer entry 是 `approval/request` waterfall 本身。门面以 **append 方式**（`ctx.on`，绝不 `prepend`；Cordis 无 priority 机制，顺序=注册顺序）注册兜底 answerer：只有没有更早 answerer 认领（即官方 mux answerer 缺席）的部署里才会收到请求——**不遮蔽**官方 answerer（前提是受支持安装路径下 plugin-api 行排在官方 api-proxy 行之后：bundle patch 与 `dsh plugin add` 均追加到行表尾）；收到即持有该请求并把显式调用方的选择换算成官方 outcome 闭集（`approve→allowed-once`、`reject→rejected`、`cancel→cancelled`）交回官方 authority 记账（`approval/decided` 仍由官方 append）。持有以**活跃 watch 租约**为前提（见 Failure Paths），无客户端的部署行为不变（仍走官方默认 `'unavailable'`）。
 
 ### Face 3: 只读流面（owner = 已交付 channel authority + activity projection 只读消费）
 
@@ -109,7 +111,7 @@
 | `sessions.activity` 投影 owner | 复用（只读消费） | live/queued/waiting 证据与 followUp 事实的唯一来源；confidence 词汇沿用，不建第二套 activity 状态机 |
 | `attention`（host+client） | 复用 | 通知/attention 呈现边界不动；interactions 受限视图与 attention item 语义分立（可应答资源 ≠ 通知呈现），互不吞并 |
 | `approval` / `userQuestions` 官方 passthrough | 复用 | 决策权与提问权归官方 authority；Face 2 只做受限投影与应答转发 |
-| `services.apiProxy`（现有 downloads/respond 成员） | 复用 | respond 为 Face 2 应答底层；现有成员集不变；不要求插件接触官方私有 registry |
+| `services.apiProxy`（现有 downloads/respond 成员） | 复用 | 现有成员集与语义不变（新增的两条 selection 成员为 `optional`，缺成员不连带停用既有成员）；Face 2 不经 mux answer 入口（`rpcId` 不可达），不要求插件接触官方私有 registry |
 | `services.apiProxy` selection read/submit 成员 | 复用 + **审计白名单扩展**（本线新增成员） | Face 4 唯一官方 seam（官方事实源在 dsh-host-apiproxy ApiProxyService）；§6 分级 + bypass 登记；成员探针不可服务 ⇒ 条件 R/C 回退（见 R-Point 2） |
 | api-remotes 替代行 | 复用 | host→client 事件受限通道与 codec 校验沿用；本线不扩其转发白名单 |
 | client-runtime 替代行 | 复用 | client 能力自描述（诚实 availability）与生命周期沿用；本线新 client 成员随其登记 |
@@ -140,8 +142,8 @@
 
 兑现已登记缺口（M9 durable 适配层当前 fail-closed），本合同为唯一定义：
 
-1. **输入**：`message.attachmentRefs: string[]`——元素是可经既有 attachments authority 解析的附件引用 id（与 `attachments.projection` 同一引用词表）；顺序即呈现顺序。
-2. **映射**：durable 适配层经 `services.attachments` 将每个 ref 解析为其当前 content block 形态，产出一条完整 durable user message：文本为 text block，每个 ref 恰好一个对应 media kind 的 content block（一一对应、不合并、不重排）；source provenance 按既有 source-audited durable 契约记录（含 refs 清单）。
+1. **输入**：`message.attachmentRefs: ImageAttachmentRef[]`（Stage 3 探针修订）——元素是官方 durable 图像引用对象 `{ attachmentId, mediaType, bytes, width, height, name? }`（与 `attachments.readImage()`/官方 durable 块同一引用词表）；顺序即呈现顺序；裸 id 字符串属形状违规（`invalid-input`）。
+2. **映射**：durable 适配层经 `services.attachments.readImage(ref)` 验证每个 ref 仍可解析，并以**返回的 canonical ref** 产出块 `{ type:'image', attachment: <canonical ref> }`（与官方 `durablePromptContent()`/`imageBlockIn()` 同形），产出一条完整 durable user message：文本为 text block，每个 ref 恰好一个图像块（一一对应、不合并、不重排）；source provenance 按既有 source-audited durable 契约记录（`user/message` 无 `sourceEventSeqs`）。
 3. **保真**：映射产出的 blocks 与 attachments pipeline 投影给模型的 blocks 同源；client payload 携带同一 refs——附件以附件形态同时到达模型与 UI，不缩水为纯文本、不伪造占位 block。
 4. **fail-closed**：任一 ref 无法解析（缺失/过期/不支持）⇒ 整条请求 typed rejected/unavailable（携带逐 ref 有界原因），不追加部分消息、不静默丢弃、不以纯文本降级。
 5. **词表边界**：请求侧 `user-message` 仍是 v1 唯一请求 kind（附件承载版由本合同正式定义）；其余 kind 保持 typed rejected；公共词表与 durable surface 词表互不泄漏（沿用 M9 适配层先例）。
@@ -150,7 +152,9 @@
 
 ## Model Selection Snapshot Contract（与 scoped 线共同验收）
 
-- **seam 选型（审查更正后定稿）**：per-session 当前选择的官方事实源是 `@deepseek-ai/dsh-host-apiproxy`（ApiProxyService）的私有状态（selections Map + `selectionFor(agent).current`），唯一官方提交/读取入口是 mux unary `session.selectModel`/`session.models`；`services.agentDefaultModel` 只是部署默认值、`ctx.llm.resolveCallConfig` 仅校验，均非选择状态来源。本线选定 **A 类通路：扩 `services.apiProxy` 审计白名单**，承接 selection read/submit 两个成员（§6 分级：read=pure passthrough；submit=advanced supported passthrough，不入 Composable Profile，`bypasses` 声明 Face 4 为其上的替代协调写路径），Face 4 在其上加 owner 派生、值级 CAS、bounded audit 与 typed outcome。论证：这是唯一可达且不要求插件理解 mux 帧的官方入口；白名单扩展保持基线无 R；submit 的共享 mutation 风险由 §6 分级与 authority closure（声明 bypass + Face 4 协调面）闭合；明确第三方用例即本线交互客户端（mobile channel 的模型列举/选择）。诚实降级：若 probe 证明 submit 成员在当前 runtime 不能作为 service 方法服务（仅 mux 帧可达），回退为条件 R（dsh-host-apiproxy 的 apiProxy 行，见 R-Point 2）或 C 类诚实 unavailable 基线（候选查询不受影响），收敛线回合同步。
+- **seam 选型（Stage 3 探针修订）**：per-session 当前选择的官方事实源是 `@deepseek-ai/dsh-host-apiproxy`（ApiProxyService）的私有状态（selections Map + `selectionFor(agent).current`），唯一官方提交/读取入口是 mux unary `session.selectModel`/`session.models`；`services.agentDefaultModel` 只是部署默认值、`ctx.llm.resolveCallConfig` 仅校验，均非选择状态来源。本线选定 **A 类通路：扩 `services.apiProxy` 审计白名单**，承接 selection read/submit 两个成员（§6 分级：read=pure passthrough；submit=advanced supported passthrough，不入 Composable Profile，`bypasses` 声明 Face 4 为其上的替代协调写路径），Face 4 在其上加 owner 派生、值级 CAS、bounded audit 与 typed outcome。论证：这是唯一可达且不要求插件理解 mux 帧的官方入口；白名单扩展保持基线无 R；submit 的共享 mutation 风险由 §6 分级与 authority closure（声明 bypass + Face 4 协调面）闭合；明确第三方用例即本线交互客户端（mobile channel 的模型列举/选择）。诚实降级：若 probe 证明 submit 成员在当前 runtime 不能作为 service 方法服务（仅 mux 帧可达），回退为条件 R（dsh-host-apiproxy 的 apiProxy 行，见 R-Point 2）或 C 类诚实 unavailable 基线（候选查询不受影响），收敛线回合同步。
+- **seam 可达性（Stage 3 探针事实）**：`ApiProxyService` 实例上 `sessions` 是公开成员，`sessions.models(request)`/`sessions.selectModel(request)` 是 **mux 形状**（入参 `{rpcId, payload}`，返回 `{rpcId, result:{ok,value|error}}`），因此可在进程内经 `services.apiProxy` 白名单的**两条窄成员**（`sessionsModels`/`sessionsSelectModel`，按路径声明）承接，无需理解 mux 帧语义；白名单**不暴露 `apiProxy.sessions` 整对象**。
+- **读取与 source 推断（Stage 3 探针事实）**：`session.models` 只返回有效值 `current`，不返回它来自哪一层；可观察的兜底层为部署默认（`agentDefaultModel.currentSelection()`）与会话最近一条已记录请求头（`session.requestHeader()?.config`）。`source` 因此按证据分级推断：与 logged header config 相同 ⇒ `fallback-logged-request-config`；否则与部署默认相同 ⇒ `fallback-deployment-default`；否则 ⇒ `committed`（内存层是唯一剩余来源）；两者都取不到 ⇒ `unknown`。取值与兜底层重合时归因偏保守，登记为残余歧义。
 - **单一写点**：set 经该 seam 一次提交；facade 不持有第二份选择值。route 侧由官方在构建本步请求时消费同一状态；prompt 侧消费点由 scoped-agent-contributions 线的贡献承载同一事实源——本步 route 与 prompt 快照读同一值，以联合验收证据断言（一条测试同断言两侧）。facade 不做旁路路由改写（route policy 仍归 `llm.routing` 域）；若 probe 显示某一消费点缺位，按 typed 结果上报并进收敛线同步，本线不伪造第二个写入点。
 - **恢复（尽力而为持久化，审查更正后）**：官方 selectModel 持久化为部署默认的尽力而为（`agentDefaultModel.saveSelection`；存储失败仅记日志；无 settings provider 时仅 session-local），运行时回退链为内存值 → 会话最近一次已记录请求的 header config（dsh-session `requestHeader()` fold 至最后一条 request/header，非创建时值）→ 部署默认。因此**无漂移仅在官方持久化成功时成立**；选择视图以 `source`（`committed` | `fallback-deployment-default` | `fallback-logged-request-config` | `unknown`）与 `observedAt` typed 披露有效值来源与降级，不把最后提交值冒充为恢复后的权威值。
 - **并发（值级 CAS + 残余竞态声明，审查更正后）**：提交时以 `expected`（get 观察的选择快照）与官方当前值做值级比对，不匹配 ⇒ typed conflict——该比对覆盖经官方路径（如官方 browser 插件 selectModel）的并发写；facade owner-local `revision` 仅用于 facade 介入写者的变更观察。官方 seam 本身 last-write-wins、无原子 CAS：比对与官方提交之间窗口内的竞态按官方语义生效，此残余竞态如实声明，不宣称线性化；set 可携带 signal（取消提交尝试，不伪造终态）。
@@ -175,7 +179,7 @@
 
 ## R-Point Design Statements（仅设计陈述，本线基线无 R）
 
-1. **待处理交互应答与 question 视图 seam**：基线判定 approval 侧经 `services.apiProxy.respond` + 官方 `approval/request`/`approval/decided` 事件足以承载视图与应答（B facade wrap）。question 侧 pending 集位于官方 apiproxy 内部（mux 帧）——若 Tasks 阶段 probe 证明 question 视图或应答必须管理官方私有 mux registry（即无安全 wrap 路径），条件 R 点位是 **`@deepseek-ai/dsh-host-apiproxy` 的 apiProxy 行**（answer entry、pending approval/question registry 与 /api/respond 路由均归属该组件；user-questions 保留为第二候选）的唯一 replacement owner 切片：须完整复刻该行契约、boot 自检、版本锁定、退役条件登记；因官方行行使 client-facing service（§10 Q6 命中）必须提供完整 client 半面。基线交付：approval 侧完整可用；question 视图在 seam 未证实前诚实 typed unavailable。
+1. **待处理交互应答与 question 视图 seam（Stage 3 探针收敛）**：approval 侧的**视图**经 durable 对完整可达；**应答**经门面以 append 方式注册（绝不 `prepend`；Cordis 无 priority 机制）的兜底 `approval/request` answerer 承载（官方 mux answerer 在场时不进入；见 Face 2 应答来源与探针修订第 6 条）。question 侧的视图与应答在本 runtime 均无可用 seam（无 durable 痕迹 + 单 provider 槽位被占用），**基线交付为诚实 typed unavailable**。因此本线**不落地 R 点位**：question 侧要变成可用，需要官方提供 question 的 pending/answer seam（或放开 provider 槽位），届时应按 `capability-strategy.md` §2/§4 以新 feature 评估条件 R（`@deepseek-ai/dsh-host-apiproxy` 的 apiProxy 行或 `dsh-user-questions`）——本线只登记该评估入口与触发条件，不预先批准也不替换任何官方行。
 2. **selection submit seam**：基线为 `services.apiProxy` 审计白名单扩展（A 类，论证见 Model Selection Snapshot Contract）。若 probe 证明 submit 成员在当前 runtime 仅 mux 帧可达（不可作为 service 方法服务），条件 R 点位同为 dsh-host-apiproxy 的 apiProxy 行（唯一 owner、完整契约复刻、完整 client 半面），或退为 C 类诚实 unavailable 基线。
 3. **session 生命周期 seam**：create/history/search 均有可达官方 seams（passthrough/projections/sessionQuery）。若 probe 证明某具体行为缺 dispatch 点，条件 R 点位是该行为所属官方组件行的唯一 owner 切片，同样受上述全套规则约束。
 4. 既有 agent-loop 切片（M9）仍是 Face 1 唯一 R 消费面，本线不扩展其边界。横切派发语义（priority/deepFreeze/fault containment）永不进任何切片。
@@ -187,10 +191,12 @@
 - **apply 安全**：两个新 authority 均为纯 facade，挂主包 ctx 生命周期；初始化失败 ⇒ 有界诊断 + 该面 typed unavailable，绝不抛穿 apply；无新 replacement 行 ⇒ 无新 patch 自检义务，既有 carriers 自检沿用。
 - **失败呈现分层**：P1/P2 统一错误沿用；面级 degraded/unavailable view；业务冲突（conflict/stale/rejected/denied/duplicate/already-running）一律 typed result，不伪装 boot 失败。
 - **授权失败**：typed denied + 有界原因；不泄露其他 session/interaction 存在性。
-- **逐动作授权**：request（含 steer/queue）、respond、selection.set 均在各自 authority 入口按目标 session grant 校验（复用已交付 channel auth 的 verifier/authorizer/pairing 判定结果，device/session/owner 三检分立）；连接可达本身不构成任何动作授权，pairing 凭据只建立 device 身份；loopback/trusted-host 边界由 connection owner 原样维持，本线不改写。
+- **逐动作授权（Stage 3 探针修订）**：request（含 steer/queue）、respond、selection.set 的授权沿各自**实际穿越的边界**记账：host 调用方按已交付 owner 归属（caller fiber）；运输层动作沿与 M9 `sessions.request`/`cancel` **同一条已交付 carrier 边界**（同路由、同 transport 信任分类），本线**不新增凭据系统、不接受调用方自报 grant**。已交付 channel auth 的 verifier/authorizer/pairing 只作用于 channel 自身受控方法（其注册表与受控分发不对外暴露），**不能**被本线新面复用；因此 **per-session grant 的缺席如实登记为能力缺口**（与 question 侧缺口**并列登记、互不指代**；触发条件见 requirements R8 同步注与本文 Stage 3 探针修订第 8 条），连接可达不写成「已按 session 授权」，pairing 凭据只建立 device 身份；loopback/trusted-host 边界由 connection owner 原样维持，本线不改写。
 - **stale 纪律**：旧 generation/epoch 的 handle、observer、respond、queued-reference 取消全部 typed stale/no-op；不写入新代。
 - **脱敏**：受限视图 summary/answerShape、respond audit、client 负载逐出口脱敏；secret/owner-private/diagnostic 不出任何出口；host 脱敏失败 ⇒ fail-closed 不发未脱敏负载。
 - **可用性诚实**：官方 pending source / selection seam / inbox 边界 / channel 不可达 ⇒ 对应面 typed degraded/unavailable；空列表不冒充健康"无待办"；无关面隔离不受连带。
+- **watch 租约与结算闭集（Stage 3 探针修订 + 审查更正）**：兜底 answerer 只在目标 session 有活跃 watch 租约时持有请求；租约由 `interactions.list`/`get` 刷新（默认 60s 有界，注入 now/timer 可测）。持有的 pending **只允许三类且仅三类结算**：显式 `respond`（→ 官方 outcome 闭集）、`req.signal` abort（→ `'cancelled'`）、租约到期（→ `'unavailable'`，等于官方「无 answerer」时的 fail-closed 默认值，随后由官方 authority 自行 append `approval/decided`）。**不产生任何 approve/reject 类答复**，无重试、无默认答案。无客户端部署不因本线改变官方默认 `'unavailable'` 行为。
+- **共享 id 注册表（审查更正）**：`(sessionId, officialApprovalId) → facade id` 的有界内存映射由视图与持有两侧共用，保证同一 approval 在 `list`/`get` 与 `respond` 中得到同一公共 id；`approval/decided` 出现或持有结算即清除；不 durable、有容量上界。持有项的 `approvalId` 由与官方 answerer 同一算法的日志回扫（按 `callId`）推导，推导不出则不持有。
 - **selection seam 降级阶梯**：`services.apiProxy` 白名单扩展成员不可服务 ⇒ Face 4 get/set typed unavailable（availability 如实报告），按 R-Point 2 走条件 R（apiProxy 行）或 C 类诚实 unavailable 基线；候选查询与无关面隔离不受连带。
 - **audit**：respond/request 侧 bounded 内存诊断（owner、id、action、时间、outcome），无 payload、无 secret；写失败 ⇒ gap marker，不伪造记录（沿用 M9 Req10 形状）。
 
@@ -199,7 +205,7 @@
 | 面 | 策略 | scope | 提交资格 | 取消 |
 |---|---|---|---|---|
 | Face 1 | exclusive per session（缺省）+ 声明式 steer/queue 交付（官方 inbox 承载） | session | authority 提交点原子裁决（M9 不变） | signal ≠ terminal；queued 项官方 discard，认领后走活 operation cancel |
-| Face 2 respond | coordinated per interaction id（第一提交者获胜） | interaction | pending 且官方未决 + 会话授权 | signal 取消在途提交；已接受不可撤回（官方裁决） |
+| Face 2 respond | coordinated per interaction id（第一提交者获胜） | interaction | pending 且官方未决（授权按「逐动作授权」条的实际边界记账） | signal 取消在途提交；已接受不可撤回（官方裁决） |
 | Face 3 | 只读消费；channel lease/fencing 按既有合同 | session | 不适用（无共享写入） | dispose/ack 按合同；旧 epoch 回调 stale |
 | Face 4 | 值级 compare-and-set（`expected` 快照）+ owner-local revision（仅 facade 介入写者） | session | `expected` 与官方当前值匹配 + 官方 seam 接受；官方 seam 为 last-write-wins，比对与提交窗口内的竞态按官方语义（残余竞态已声明） | signal 取消提交尝试，不伪造终态 |
 
@@ -207,13 +213,14 @@
 
 ```js
 // 请求 spec 扩展（Face 1；未列字段沿用 M9）
-message: { kind: 'user-message', text, attachmentRefs?: string[] }
-delivery?: 'steer' | 'queue'          // 缺省 = M9 already-running 行为
+message: { kind: 'user-message', text, attachmentRefs?: ImageAttachmentRef[] }
+delivery?: 'steer' | 'queue'          // 缺省 = M9 already-running 行为；经 agent.steer / agent.followup 交付
 
-// steer/queue 受理结果（accepted outcome 扩展）
-{ ok: true, code: 'accepted', delivery: 'steer' | 'queue',
-  operationRef?: { id },               // steer：并入的活 operation
-  queuedRef?: { id } }                 // queue：可经 sessions.cancel 取消的排队引用
+// steer/queue 受理结果（accepted outcome 扩展；steer 沿用 M9 的 operation 字段）
+{ ok: true, code: 'accepted', delivery: 'steer',
+  operation: { id } }                  // steer：并入的活 operation（M9 既有字段形状）
+{ ok: true, code: 'accepted', delivery: 'queue',
+  queuedRef: { id, operationId } }     // queue：message id + 交付时活 operation 身份（可为 null）
 
 // 待处理交互受限视图（Face 2）
 { id, kind: 'approval' | 'question', sessionId, summary, createdAt, answerShape }
@@ -239,7 +246,7 @@ delivery?: 'steer' | 'queue'          // 缺省 = M9 already-running 行为
 | 候选模型查询 | A | `services.llm`/`llm.routing.candidates`/client `modelDirectories`/`agentPresets` | 缺 service ⇒ typed unavailable |
 | 模型/effort 变更 | A+B | selection authority wrap 官方 selection seam（经 `services.apiProxy` 审计白名单扩展成员，§6 分级 + bypass 登记） | 成员不可服务 ⇒ typed unavailable（条件 R/C 回退）；值级 CAS 冲突 typed conflict |
 | pending 交互视图 | B | interactions authority 投影官方 approval 事件与状态；question 侧来源见 R-Point 1 条件探针 | 官方源降级 ⇒ typed degraded/unavailable，空 ≠ 健康；question seam 未证实 ⇒ 该侧 typed unavailable |
-| 应答/拒绝/取消 | B | respond operation 转发 `services.apiProxy.respond` / 官方 admission | seam 不可用 ⇒ typed unavailable；不代答、无重试 |
+| 应答/拒绝/取消 | B | respond operation 经**兜底 `approval/request` answerer**（append 注册；官方 mux answerer 在场时不进入）把显式调用方的选择交回官方 outcome 闭集 | 未持有/不可达 ⇒ typed unavailable；不代答、无重试、无默认答案 |
 | 事件基线/增量/重连 | A | 已交付 channels owners（消费合同） | gap ⇒ typed resync；capability 失配 ⇒ degraded/isolated |
 | attention 呈现 | A | 既有 attention hub 原样 | 不动 |
 
@@ -251,7 +258,7 @@ delivery?: 'steer' | 'queue'          // 缺省 = M9 already-running 行为
 4. 选择快照：committed 选择被本步 route 与 prompt 快照同值消费（与 scoped 线共同证据）；`expected` 值级 CAS 冲突（含模拟经官方路径的外部写）；官方持久化成功分支恢复无漂移、失败分支视图 `source`/`observedAt` 降级披露；白名单成员可服务性双态（可服务 → committed 路径；不可服务 → typed unavailable）（Requirement 3）。
 5. 受限视图与应答：approval/question 视图形状与脱敏断言；匹配应答第一提交者获胜、第二 stale；形状不匹配 rejected；官方源降级视图；不代答（无任何自动应答路径）（Requirement 4/5）。
 6. 流与重连：基线→增量→断线 resume→gap resync 全链；事件身份关联来自共享事实；两客户端并发/旧答复/旧 owner/旧 epoch（Requirement 6/10 AC2）。
-7. 授权分立：device/session/owner 逐项拒绝；可达 ≠ 授权；pairing 不成全局授权；denied 不泄露存在性（Requirement 8）。
+7. 授权分立：断言**可产出**的 device/session 拒绝码（channel 受控面）与「可达 ≠ 授权」的记账纪律（新面沿实际边界、不宣称 per-session grant、不泄漏存在性）；pairing 不成全局授权；`pairing-required` 与 per-session grant 的缺席按能力缺口登记（Requirement 8）。
 8. client 半面：同形 typed 结果、offline/rebind unavailable、stale 守卫、host 脱敏先行；availability 对空对象/缺失 carrier 如实报告（Requirement 9）。
 9. 互操作：官方 browser 插件与独立客户端同 session pending 集与状态一致（脱敏包络内）（Requirement 10 AC3）。
 10. 终验：受护 `npm test`、`git diff --check`、registry/surface 一致性、官方包零修改审计、全局对抗性终审；证据不足即保持 typed unavailable。
@@ -284,3 +291,16 @@ delivery?: 'steer' | 'queue'          // 缺省 = M9 already-running 行为
 ## Design Completion Condition
 
 本设计覆盖 Requirements 全部条目（Requirement 1–10 与 client 半面判定节）：四面 owner 划分与成员形状、复用矩阵逐项判定、协议等价判据、attachmentRefs 映射合同、选择快照合同、M9 扩展消费方式、R 点位陈述、失败/guard、并发声明与 standards 逐分册结论成文。Tasks 经对抗性审查后进入实现；用户侧修订就地更新本文与 requirements 对应条目。
+
+## Stage 3 探针修订（2026-09-14）
+
+Tasks 阶段的源码级探针（P1–P15）与本设计成文时的事实有 8 处差异，正文已就地修订，此处汇总登记：
+
+1. **R-Point 1 收敛（Face 2 视图/应答来源）**：`approval/request` 不是 durable 事件而是 answerer waterfall；durable 对为 `approval/asked`/`approval/decided`。approval 视图经 durable 折叠可达；应答经门面 **append 注册的兜底 answerer**（绝不 `prepend`；官方 mux answerer 在场时不进入，且以 watch 租约为前提）承载；question 侧无 durable 痕迹且单 provider 槽位被官方占用 ⇒ 本 runtime 诚实 typed unavailable。本线不落地 R 点位，只登记 question 侧的评估入口与触发条件。
+2. **Face 1 的 attachmentRefs 形状**：由 `string[]` 改为官方 durable 图像引用对象数组 `ImageAttachmentRef[]`（`{attachmentId, mediaType, bytes, width, height, name?}`）；裸 id 字符串属形状违规。durable 块形状固定为 `{type:'image', attachment:<canonical ref>}`（与官方 `durablePromptContent()`/`imageBlockIn()` 同形），验证经 `attachments.readImage()`，任一 ref 不可解析即整条 fail-closed。
+3. **Face 1 的 delivery 落点**：`steer` 经官方 `agent.steer(message)` 并入最近 step，`queue` 经官方 `agent.followup(message)` 入 `next-turn`；queuedRef 的 `id` 即 durable inbox 项身份，取消经官方公开 `agent.inbox.remove(messageId)`（返回是否仍在 pending）；**已认领时仅当 queuedRef 记录的 `operationId` 仍等于当前 live operation 才转既有活取消路径，否则 typed `stale`**（避免按 sessionId 误取消后续无关 operation）。
+4. **Face 2 视图形状**：冻结视图增加逐 kind `sources`（`active|degraded|unavailable`），使 R4 AC3「空列表不冒充健康」可判定；受限视图 `answerShape` 为公共可回答形状（approval：`{actions:['approve','reject','cancel']}`）。
+5. **Face 4 白名单成员形状与 source 推断**：白名单承接方式由「扩 selection read/submit 两个成员」细化为**两条按路径声明的窄成员**（`apiProxy.sessionsModels`/`sessionsSelectModel`），**两条均为 `optional`**（缺成员不得连带停用既有 `downloads`/`respond`），不暴露 `sessions` 整对象；`source` 由可观察兜底层分级推断（见 Model Selection Snapshot Contract），取值重合时的保守归因登记为残余歧义；`committedAt` 只在门面确有提交证据时给出，否则 `null`。
+6. **兜底 answerer 的注册顺序前提（审查更正）**：Cordis `ctx.on` **没有 priority 机制**（只有 `prepend`/`global`，顺序=注册顺序），故「最低优先级」的表述不成立；机制实为 **append 注册 + row 顺序前提**（受支持安装路径下 plugin-api 行排在官方 api-proxy 行之后）。同时如实披露：本线持有期间会 preempt **之后**才注册的第三方 answerer。
+7. **Face 4 读取路径的官方副作用（审查更正）**：`selection.get` 经 `session.models` 解析 session，**冷 session 会被官方 `agentFor` resume 并发布 live agent**——这是官方读取入口自身的契约（与官方 UI 同路径），不是门面发明；按 idiom 例外登记并在 availability/README 披露，测试断言该副作用来自官方载体。
+8. **逐动作授权边界与能力缺口（审查更正）**：见 Failure Paths 的「逐动作授权（Stage 3 探针修订）」条。**per-session grant 的缺席独立登记为能力缺口**（评估触发条件：官方或后续 feature 提供可达的 per-session 授权 seam；届时按新 feature 立线，不在本线内发明凭据系统，也不接受调用方自报 grant）——该缺口与 question seam（R-Point 1）是**两个独立的评估入口**，不要互相指代。

@@ -2,7 +2,7 @@
 
 > feature_name: `interactive-session-access`
 > milestone: M10
-> status: Stage 1 已交付（2026-09-12，与 Stage 2 Design 同批产出）；Stage 3（Tasks）未开始
+> status: Stage 1 已交付（2026-09-12，与 Stage 2 Design 同批产出）；Stage 3（Tasks）产出中（2026-09-14），本文件已按 Stage 3 探针结论修订 R2/R4/R5/R10 的落点（见各条修订注）
 > 输入溯源：M10 观察报告 §5 OBS-09 / OBS-12（含源码锚点）与 §3 样本导航（remote-web-ui mobile channel、auto-continue、chat-recovery、TUI、notification）；M10 工作纲领 §1/§2/§4 总览、§3.9 输入卡片与 §5 已闭合事实；canonical registry `sessions.request/cancel`、`sessions.channels.*`、`sessions.activity.*`、`attention.*`、`services.apiProxy`、client 根 `sessions`/`attention` 现状；已交付合同 `docs/specs/session-interaction-operation/requirements.md`（M9）。
 
 ## Status
@@ -39,7 +39,7 @@
 
 ### Acceptance Criteria
 
-1. WHEN a request message carries `attachmentRefs` THEN the durable adapter SHALL resolve every ref through the existing attachments authority and SHALL append one durable user message whose content blocks preserve each attachment (media kind, reference, source provenance); the system SHALL NOT shrink attachments to plain text, drop refs, or fabricate placeholder blocks.
+1. WHEN a request message carries `attachmentRefs`（元素为官方 durable 图像引用对象 `{ attachmentId, mediaType, bytes, width, height, name? }`——Stage 3 探针修订：附件 authority 是图像专用的 content-addressed store，裸 id 字符串属形状违规）THEN the durable adapter SHALL resolve every ref through the existing attachments authority and SHALL append one durable user message whose content blocks preserve each attachment (media kind, reference, source provenance) as `{ type:'image', attachment: <canonical ref> }`; the system SHALL NOT shrink attachments to plain text, drop refs, or fabricate placeholder blocks.
 2. WHEN any ref cannot be resolved (missing, expired, unsupported) THEN the request SHALL fail closed with a typed rejected/unavailable outcome carrying the per-ref reason, and SHALL NOT append a partial message.
 3. WHEN a request arrives while the target session has a live operation THEN the request authority SHALL apply the caller-declared `delivery`: `steer` (official next-step splice into the live attempt) or `queue` (official next-turn inbox), returning a typed accepted outcome that references the live operation (steer) or a cancellable queued reference (queue); WHEN `delivery` is absent THEN the delivered same-session outcome (`already-running` with the live operation reference) SHALL be preserved unchanged.
 4. WHEN a steered or queued delivery is committed THEN its pending/queued state SHALL be observable through the official inbox durable record `agent/inbox/spliced` (discard recorded as `outcome: 'canceled'`), the `inserted`/`claimed`/`discarded` dispatch notifications (`claimed` is not durable), and the shared activity projection; this feature SHALL NOT maintain a second queue or request state machine.
@@ -69,12 +69,12 @@
 
 ### Acceptance Criteria
 
-1. WHEN approvals or questions are pending on a session the caller is granted THEN the interactions view face SHALL return frozen restricted views `{ id, kind: 'approval' | 'question', sessionId, summary, createdAt, answerShape }` where `id` is a facade-minted public interaction identity and `summary`/`answerShape` are bounded and redacted — free of secrets, payload bulk, owner-private state and official registry internals.
+1. WHEN approvals or questions are pending on a session the caller is granted（Stage 3 探针注：grant 按「实际穿越的边界」记账——host 调用方按 owner 归属；运输层沿与 `sessions.request`/`cancel` 同一条已交付 carrier 边界；本线不发明 per-session 凭据，无该 seam 时不做「已按 session 授权」的宣称，缺口按 R8 注登记）THEN the interactions view face SHALL return frozen restricted views `{ id, kind: 'approval' | 'question', sessionId, summary, createdAt, answerShape }` where `id` is a facade-minted public interaction identity and `summary`/`answerShape` are bounded and redacted — free of secrets, payload bulk, owner-private state and official registry internals; the view SHALL additionally carry a per-kind source state (`sources`) so a caller can tell a healthy source from a degraded one（Stage 3 探针修订：逐 kind 来源状态使 AC3 可判定）。
 2. WHEN a pending interaction is resolved upstream (answered, expired, withdrawn) THEN the view SHALL stop reporting it as pending based on official events; the facade SHALL keep only the id-to-official-item mapping and SHALL NOT maintain its own interaction lifecycle state machine.
-3. WHEN the official pending source is unreachable or degraded THEN the view SHALL return the typed degraded/unavailable form and SHALL NOT present an empty list as a healthy "nothing pending" state.
-4. WHEN the caller lacks the session grant for a target session THEN its view SHALL NOT include that session's pending interactions.
+3. WHEN the official pending source is unreachable or degraded THEN the view SHALL return the typed degraded/unavailable form — per kind when the two kinds differ — and SHALL NOT present an empty list as a healthy "nothing pending" state. Stage 3 探针修订：approval 侧 pending 由 durable 对 `approval/asked`/`approval/decided` 折叠可达；question 侧无 durable 痕迹且 provider 槽位被官方占用，本 runtime 恒为 typed `unavailable`。
+4. WHEN the caller lacks authorization for a target session **on a boundary that actually performs the check** THEN its view SHALL NOT include that session's pending interactions；无 per-session grant seam 的边界上，本线 SHALL NOT 伪造该判定，只按实际边界记账（Stage 3 探针注，缺口按 R8 注登记）。
 
-**Classification:** B（facade projection：approval 侧经官方 `approval/request`、`approval/decided` 事件可达；question 侧 pending 集位于官方 apiproxy 内部（官方 ctx.userQuestions 仅 registerProvider/ask 且单 provider），其视图 seam 与应答 seam 同归条件 R 探针范围（见 Design）——seam 未证实前交付基线为诚实 typed unavailable，不伪造视图）。不旁路、不吞并既有 approval/userQuestions/attention authority。R 类判定：不新增 R（条件点位见 Design）。
+**Classification:** B（facade projection：approval 侧经官方 durable 对 `approval/asked`/`approval/decided` 折叠可达（Stage 3 探针更正：`approval/request` 是 answerer waterfall，非 durable 事件）；question 侧 pending 集位于官方 apiproxy 内部（官方 ctx.userQuestions 仅 registerProvider/ask 且单 provider），其视图 seam 与应答 seam 同归条件 R 探针范围（见 Design）——seam 未证实前交付基线为诚实 typed unavailable，不伪造视图）。不旁路、不吞并既有 approval/userQuestions/attention authority。R 类判定：不新增 R（条件点位见 Design）。
 
 ## Requirement 5: Matched Respond, Reject And Cancel
 
@@ -82,8 +82,8 @@
 
 ### Acceptance Criteria
 
-1. WHEN a caller submits a respond operation `{ id, action, answer?, reason?, signal? }` where `action` is `approve | reject | answer | cancel` and the action and answer match the pending interaction's kind and declared answer shape THEN the facade SHALL forward exactly one answer through the official answer entry (`services.apiProxy.respond` / official user-questions admission) and SHALL return a typed `accepted | stale | rejected | denied | unavailable` outcome.
-2. WHEN the answer shape mismatches the declared `answerShape`, the interaction is no longer pending, or the interaction belongs to a session without grant THEN the system SHALL return typed rejected/stale and SHALL NOT reinterpret or coerce the answer.
+1. WHEN a caller submits a respond operation `{ id, action, answer?, reason?, signal? }` where `action` is `approve | reject | answer | cancel` and the action and answer match the pending interaction's kind and declared answer shape THEN the facade SHALL forward exactly one answer through the official answer entry and SHALL return a typed `accepted | stale | rejected | denied | unavailable` outcome. Stage 3 探针修订：可达的官方 answer entry 是 approval 的 `approval/request` answerer 链——门面以 **append 方式**（绝不 `prepend`；Cordis 无 priority 机制，顺序=注册顺序）注册兜底 answerer，只有没有更早 answerer 认领时才会收到请求（不遮蔽官方 mux answerer），收到即把显式调用方的选择换算成官方 outcome 闭集（`allowed-once`/`rejected`/`cancelled`）交回官方 authority；mux 答案入口 `services.apiProxy.respond` 需要 apiproxy 广播时才铸造的 `rpcId`，门面不可达；question 侧 provider 槽位被官方占用（`DUPLICATE_PROVIDER`），本 runtime typed `unavailable`。
+2. WHEN the answer shape mismatches the declared `answerShape` or the interaction is no longer pending THEN the system SHALL return typed rejected/stale; WHEN authorization fails **on a boundary that actually performs the check** THEN the system SHALL return typed denied（Stage 3 探针注：无 per-session grant seam 的边界不伪造该判定，缺口按 R8 注登记）; in all cases the system SHALL NOT reinterpret or coerce the answer.
 3. WHEN two clients respond to the same interaction THEN the first accepted submission SHALL win and the second SHALL receive typed stale/conflict; the official authority SHALL remain the decision owner.
 4. WHEN a respond is accepted or refused THEN the facade SHALL record bounded audit (caller owner, interaction id, action, timestamp, outcome) without answer payload content or secrets.
 5. The system SHALL NOT auto-answer: no schedule, trigger, retry or default answer SHALL be provided by the facade; every answered interaction SHALL be exactly one explicit caller action.
@@ -125,12 +125,12 @@
 
 ### Acceptance Criteria
 
-1. WHEN a client connects THEN device identity, session grant and owner attribution SHALL be evaluated as separate checks by the delivered channel auth (verifier/authorizer/pairing), each independently refusable with its typed code (`device-denied`, `session-denied`, `pairing-required`).
-2. WHEN a connection is established (reachable) THEN that SHALL NOT imply interaction authorization; every interaction-level action (request, steer/queue, respond, selection set) SHALL be authorized per target-session grant.
+1. WHEN a client connects THEN device identity, session grant and owner attribution SHALL be evaluated as separate checks **where the delivered chain actually performs them** — the channel auth (verifier/authorizer/pairing) checks its own controlled methods with typed codes (`device-denied`, `session-denied`；`pairing-required` 属词表值，Stage 3 探针确认当前无可产出点，登记为词表空缺而非伪造用例).
+2. WHEN a connection is established (reachable) THEN that SHALL NOT imply interaction authorization; every interaction-level action (request, steer/queue, respond, selection set) SHALL be recorded at the boundary it actually crosses (host callers: owner attribution; transport callers: the delivered carrier boundary shared with `sessions.request`/`cancel`) and SHALL NOT be described as "authorized per session grant" where no per-session grant seam exists. **Stage 3 探针注**：已交付 channel auth 的注册表与受控方法分发不对外暴露，client 请求路由不提供 per-session grant 上下文；因此本线的 per-session grant 缺席**如实登记为能力缺口**（与 question 侧同型），评估触发条件=官方或后续 feature 提供可达的 per-session 授权 seam；届时按新 feature 立线，不在本线内发明凭据系统，也不接受调用方自报 grant（身份不可由调用方伪造）。
 3. WHEN a pairing cookie or device credential is presented THEN it SHALL establish device identity only and SHALL NOT automatically become a global authorization; the delivered loopback/trusted-host boundaries of the connection owner SHALL be preserved unchanged.
 4. WHEN authorization fails THEN the action SHALL return typed denied with a bounded reason, without revealing which other sessions or interactions exist.
 
-**Classification:** A（复用已交付 channel auth owners）+ 本线对逐动作授权的显式要求；不新建认证/授权平台。
+**Classification:** A（复用已交付 channel auth owners 的**既有受控面自身**）+ 本线对「可达 ≠ 授权」的显式声明；**不新建认证/授权平台，也不发明 per-session 凭据，也不宣称复用了不对外暴露的 auth 内部**——已交付 channel auth 只作用于 channel 自身的受控方法，本线新面沿各自实际穿越的边界记账（Stage 3 探针修订：per-session grant 无可达 seam，缺席如实登记为能力缺口）。
 
 ## Requirement 9: Client Half And Honest Capability Self-Description
 
@@ -166,7 +166,7 @@
 
 ### Acceptance Criteria
 
-1. WHEN the feature is verified THEN an interactive test client that imports no official business API SHALL complete: create session, query candidates and switch model/effort, send input with attachments, receive stream/operation progress, handle an approval and a question through the restricted view, cancel, disconnect and reconnect, and restore history.
+1. WHEN the feature is verified THEN an interactive test client that imports no official business API SHALL complete: create session, query candidates and switch model/effort, send input with attachments, receive stream/operation progress, handle an approval through the restricted view (observe the pending view and answer it through respond on the reachable answer entry), cancel, disconnect and reconnect, and restore history；question 段 SHALL 以 typed `unavailable` 断言收口（Stage 3 探针修订：question 侧本 runtime 无可用 seam，按 AC7 保持诚实缺口，不伪造）。
 2. WHEN concurrency is verified THEN two clients operating the same session, an old (superseded) reply, an old owner and an old epoch SHALL each produce the delivered commit-eligibility/stale-guard outcomes without cross-owner interference.
 3. WHEN interop is verified THEN the official browser plugin and an independent client SHALL observe consistent pending interactions and consistent session state for the same session, within the redaction envelope.
 4. WHEN selection is verified THEN one committed selection SHALL be observed identically by this-step route and prompt snapshot (joint evidence with the scoped-contribution line); restored sessions SHALL show no drift when official persistence succeeded, and SHALL typed-disclose the effective source (`source`/`observedAt`) when it did not.
@@ -188,7 +188,7 @@
 | 排队/steer | 官方 inbox（durable 类型 `agent/inbox/spliced`，discard 以 `outcome: 'canceled'` 记录；inserted/claimed/discarded 为派发通知，claimed 非 durable）+ M9 attempt followUp 事实 | 复用官方状态，本线只加交付词表 |
 | 候选模型查询 | `services.llm.listProviders/listModels`、`llm.routing.candidates`、client `services.modelDirectories`、`services.agentPresets` | 复用 |
 | 模型/effort 变更 | 官方 selection 事实源与唯一提交入口（`@deepseek-ai/dsh-host-apiproxy` 的 `session.selectModel`/`session.models`）经 `services.apiProxy` 审计白名单扩展承接 | 复用 seam（白名单扩展）+ 本线新增受控 mutation 面 |
-| pending 交互视图/应答 | 官方 approval / userQuestions authority + `services.apiProxy.respond`（底层） | 复用 authority + 新增受限视图/类型化 respond 面（approval 侧经 `approval/request`/`approval/decided` 事件完整可用；question 视图来源见 R-Point 1 条件探针，seam 未证实前该侧 typed unavailable） |
+| pending 交互视图/应答 | 官方 approval authority（durable 对 + `approval/request` answerer 链）；官方 userQuestions（本 runtime 不可用） | 复用 authority + 新增受限视图/类型化 respond 面（approval 视图经 `approval/asked`/`approval/decided` 折叠完整可用；应答经门面 append 注册的兜底 answerer，官方 mux answerer 在场时不进入；question 侧 seam 未证实 ⇒ typed unavailable，见 R-Point 1） |
 | 事件基线/增量/重连 | `sessions.channels`（open/acquire/observe/fetchEvents/ack/resume/revoke/auth/redaction）+ `sessions.activity` | 复用（消费合同） |
 | 通知/attention 呈现 | `attention`（host+client） | 复用、不吞并 |
 | 客户端传输 | connection、api-remotes、client-runtime carriers（均已交付 client 半面） | 复用 |
