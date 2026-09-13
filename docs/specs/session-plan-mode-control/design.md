@@ -7,7 +7,9 @@
 
 ## Status
 
-Stage 2 Design（2026-09-12 交付，Stage 0–2 已交付）。本文与已交付的 Requirements 一一对应；所有公共 path、结果码、观察机制、审计载体与并发规则在本文件定稿。实现通道为 **A 类受控包装（方案一门面转译）**：官方 `dsh-plan-mode` 组件在冻结 runtime（`@deepseek-ai/dsh-plan-mode@0.1.0-rc.6`）中保留完整写入 seam，无需 B 类模拟、无 upstream proposal、**无 R 点位**（官方 seam 存在且契约完整，R 评估不触发 `capability-strategy.md` §2 的 B→R 条件）。
+Stage 2 Design（2026-09-12 交付，Stage 0–2 已交付）。本文与已交付的 Requirements 一一对应；所有公共 path、结果码、观察机制、审计载体与并发规则在本文件定稿。
+
+**Stage 3 复审修订（2026-09-13，已登记）**：①「Registry 拟新增行」中 `sessions.planMode.observe.handle` 的 composition 由 `pure` 修订为 **`additive`**（handle 承载 `subscribe(listener)`，与 `sessions.activity.observe.handle`/`attention.observe.handle` 先例一致；api-idioms §2 与 composition-and-authority §4 的 pure 强定义要求不注册 listener）。②观察面的生命周期通知由本 feature **自建** `ctx.on('session/disposed', …)` 订阅承载（该事件与 `session/event` 并列、互不覆盖），`sessions.get(sessionId)` 在场性为关闭判定的事实源。③未挂载态的呈现按 C1 的「返回不抛」落地（`select`/`get`/`observe`/`availability` 一律返回 typed 结果，仅核心 inactive 抛 `PluginApiInactiveError`），与 `createDisabledSessionActivityApi` 的抛错先例属有意差异。实现通道为 **A 类受控包装（方案一门面转译）**：官方 `dsh-plan-mode` 组件在冻结 runtime（`@deepseek-ai/dsh-plan-mode@0.1.0-rc.6`）中保留完整写入 seam，无需 B 类模拟、无 upstream proposal、**无 R 点位**（官方 seam 存在且契约完整，R 评估不触发 `capability-strategy.md` §2 的 B→R 条件）。
 
 ## Overview
 
@@ -124,7 +126,7 @@ third-party plugin ──▶ pluginApi.sessions.planMode
 - 机制（A 类）：feature 挂载时建立**单条** `ctx.on('session/event')` firehose 订阅（facade 级共享）；firehose 事件按 session 匹配到已订阅目标后，重读官方 `get(agent)` 得到组合视图 `{active, pending?}`，与该 handle 上次投递视图不同才投递 `{ target, view, observedAt }`。事实全部来自官方派发点与官方读，不猜测（Req 3.3 的"官方状态核验"）。
 - **queued 结算可观察性**（Req 6.2）：结算为 `committed` 时官方落 `plan/mode` 事件 → firehose 直达投递，此为机制性保证。结算为 `cancelled`（`onBoundary` 静默清除 pending，无日志事件）时，投递依赖「被接受 pre-step 之后该 session 随后有日志事件」这一官方 loop 行为——官方文档仅保证 `onBoundary` 在下次 request assembly 前由 plan-mode 服务自身的 `agent/pre-step` handler 调用，**未显式保证后续必有日志事件**；本设计将其列为**待核实项，不作机制性断言**：Stage 4 须在冻结 runtime 上运行验证（accepted pre-step 后 firehose 是否出现可触发重读的事件）。若实测存在「静默清除后无日志活动」的窗口，该分支诚实降级：结算不推送，pending 消失经读面（`get` 的 `pending` 字段）可见，observe 面以 typed 方式记录该降级，不伪造投递。两种结算下，先前 `queued` 结果都不被改写（Req 6.2）。
 - 官方路径变更（官方 TUI、`/plan`、`exit_plan_mode`、官方内部）同样经 firehose 可达（Req 3.1）。
-- 订阅者回调 throw/rejection 只降级该监听者（containment）；dispose 幂等、stale disposer 不影响其他订阅者（Req 3.2）；目标 session 关闭（`session/disposed`）后投递停止，`current()` 返回带 reason 的 degraded 视图。
+- 订阅者回调 throw/rejection 只降级该监听者（containment）；dispose 幂等、stale disposer 不影响其他订阅者（Req 3.2）；目标 session 关闭后投递停止，`current()` 返回带 reason 的 degraded 视图——feature 自建 `ctx.on('session/disposed', …)` 订阅（与 `session/event` 并列，cleanup owner = feature disposer）及时通知，`sessions.get(sessionId)` 在场性为关闭判定的事实源（无关闭事件时在下一次 `session/event` 重读时判定）。
 - feature 卸载时销毁 firehose 订阅（cleanup owner = feature disposer）；stale 回调（dispose 后到达）失去投递资格（concurrency-and-cancellation §4/§5）。
 
 ### C5. 审计与可追溯（Req 5）
@@ -188,7 +190,7 @@ availability   { status: 'active'|'degraded'|'unavailable', reason? }           
 | `sessions.planMode.get` | projection | read | pure | not-applicable | session | official plan-mode authority | host |
 | `sessions.planMode.select` | mutation | mutate | coordinated | compare-and-swap | session | official plan-mode authority | host |
 | `sessions.planMode.observe` | projection | subscribe | additive | not-applicable | session | official plan-mode authority | host |
-| `sessions.planMode.observe.handle` | projection | read | pure | not-applicable | session | official plan-mode authority | host |
+| `sessions.planMode.observe.handle` | projection | read | additive | not-applicable | session | official plan-mode authority | host |
 | `sessions.planMode.availability` | selfDescription | read | pure | not-applicable | session | facade | host |
 
 capability ID：`sessions.planMode`；`eventCatalog` 无新增事件（复用已登记的 `session/event`）。事件语义：本面不自产事实，`plan/mode` 事实的 producer authority 保留在官方 plan-mode 服务。
