@@ -106,7 +106,7 @@ test('systemPrompt guard failure disables only systemPrompt and keeps the facade
   const features = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
 // 31 established features plus the four integration-wave features
   // (sessionActivity, sessionInteraction, attention, checkpoints).
-  assert.equal(features.length, 39)
+  assert.equal(features.length, 40)
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
   assert.deepEqual(features[2], { name: 'agent', isActive: true })

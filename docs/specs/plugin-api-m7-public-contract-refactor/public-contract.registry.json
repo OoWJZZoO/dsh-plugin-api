@@ -184,7 +184,8 @@
     "profiles",
     "remotes",
     "storage",
-    "services"
+    "services",
+    "credentials"
   ],
   "clientDomainTree": [
     "isActive",
@@ -15975,6 +15976,105 @@
       ]
     },
     {
+      "publicPath": "credentials.set",
+      "targetPath": "credentials.set",
+      "capability": "credentials",
+      "kind": "leaf",
+      "idiom": "mutation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "mutate",
+      "composition": "coordinated",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "official credentials provider",
+      "scope": "profile",
+      "resourceKey": "credential ref",
+      "identitySource": "the official credential ref identity",
+      "conflictRule": "compare-and-swap",
+      "lifecycle": "the official write chain commits atomically; the facade optimistic compare over the official credentials/updated facts is a declared simulation (never official arbitration) and stays fail-closed",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "content-idempotent",
+      "retryLayer": "caller",
+      "availabilityShape": "namespace availability member on credentials",
+      "concurrency": "compare-and-swap",
+      "reducer": "none",
+      "currentShape": "frozen discriminated result { ok, code: committed|unchanged|conflict|revision-unknown|read-only|invalid-input|denied|unavailable|internal, reason?, ref?, revision?, expectedRevision?, currentRevision?, persistedAt? } | never carries a credential value; success is proven against the management storage layer (source: file)",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "credentials.unset",
+      "targetPath": "credentials.unset",
+      "capability": "credentials",
+      "kind": "leaf",
+      "idiom": "mutation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "mutate",
+      "composition": "coordinated",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "official credentials provider",
+      "scope": "profile",
+      "resourceKey": "credential ref",
+      "identitySource": "the official credential ref identity",
+      "conflictRule": "compare-and-swap",
+      "lifecycle": "the official write chain commits atomically; the facade optimistic compare over the official credentials/updated facts is a declared simulation (never official arbitration) and stays fail-closed",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "content-idempotent",
+      "retryLayer": "caller",
+      "availabilityShape": "namespace availability member on credentials",
+      "concurrency": "compare-and-swap",
+      "reducer": "none",
+      "currentShape": "frozen discriminated result over the same code set; an absent managed ref is the declared idempotent unchanged result, and a rejected write is verified against the management storage layer before it is reported as committed or failed",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "credentials.availability",
+      "targetPath": "credentials.availability",
+      "capability": "credentials",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "official credentials provider",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "leaf",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { status: active|degraded|unavailable, reason?: string }; per-ref read-only backends stay a ref-level signal on the preflight, not a namespace status",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
       "publicPath": "sessions.request",
       "targetPath": "sessions.request",
       "capability": "sessions.request",
@@ -21543,6 +21643,16 @@
       "availabilityExemption": null
     },
     {
+      "namespace": "credentials",
+      "runtime": "host",
+      "capabilityPath": "credentials",
+      "contributingFeatures": [
+        "credential-mutation-contract"
+      ],
+      "availabilityMember": "credentials.availability",
+      "availabilityExemption": null
+    },
+    {
       "namespace": "sessions.request",
       "runtime": "host",
       "capabilityPath": "sessions.request",
@@ -23547,6 +23657,30 @@
         "sessions.permissionPresets.options",
         "sessions.permissionPresets.observe",
         "sessions.permissionPresets.select"
+      ],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "interactive-session-access"
+      ],
+      "verification": [
+        "registry-draft",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "credentials",
+      "currentPaths": [
+        "credentials.availability",
+        "credentials.set",
+        "credentials.unset"
+      ],
+      "targetPaths": [
+        "credentials.availability",
+        "credentials.set",
+        "credentials.unset"
       ],
       "status": "retained",
       "qualifiers": [],

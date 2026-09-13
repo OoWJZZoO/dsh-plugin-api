@@ -48,6 +48,7 @@ function createMockCtx(options = {}) {
     sessions: { get() {}, list() {}, fork() {} },
     planMode: { get() {}, set() {} },
     permissionPresets: { current() {}, set() {} },
+    credentials: { resolve() {}, describe() {}, set() {}, unset() {} },
     settings: { register() {}, describe() { return [] }, get() {}, mutate() {} },
     typert: createTypertRegistry(),
     web: { registerSearchProvider() {}, registerFetchProvider() {}, search() {}, fetch() {} },
@@ -160,6 +161,7 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     // domain registries mount active.
     { name: 'decisionParticipation', isActive: true },
     { name: 'scopedAgentContributions', isActive: true },
+    { name: 'credentials', isActive: true },
   ])
   assert.equal(state.pluginApi.llm.availability().status, 'active')
   assert.equal(typeof state.pluginApi.llm.requestTransforms.register, 'function')
@@ -225,7 +227,7 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 // 31 established features plus the integration-wave features
   // (sessionActivity, sessionPlanMode, sessionInteraction, attention, checkpoints).
-  assert.equal(features.length, 39)
+  assert.equal(features.length, 40)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })

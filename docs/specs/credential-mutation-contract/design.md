@@ -109,25 +109,26 @@ authorized user (client)
    - revision 冲突检测（B 类，见 C4）：caller 提供 `options.expectedRevision` 且与门面当前标记不匹配 → `conflict`（不匹配已知标记）或 `revision-unknown`（无标记证据）——均不提交。
 2. **幂等检查（声明式，Req 4.3）**：host 内部调用官方 `resolve(ref)`；当 `source === 'file'`（管理存储自身持有该 ref）且存储值 === 提交值 → **跳过官方写 seam**，返回 `{ ok:false, code:'unchanged', reason:'value already stored', revision: <当前标记> }`——与官方 preset `apply` 的"已生效不 append"同构，三线统一的"无操作类"呈现（ok:false）；不产生重复 `credentials/updated` 事实、不推进 revision。resolve 失败则不做跳过，走正常提交（保守方向）。
 3. **官方提交**：调用官方 `set(ref, value)`；await 完成 = 官方真实持久化（官方独占写链 + 原子替换 + 提交后 `notifyUpdated`）→ `{ ok:true, code:'committed', commitState:'success', ref, revision: <提交后标记>, persistedAt }`（Req 1.1：success = 真实持久化）。
-4. **失败映射**：官方抛错 → `{ ok:false, code: 'read-only'|'unavailable'|'internal', reason }`（按官方错误语义归类：影子/只读类 → `read-only`；disposed/后端缺失类 → `unavailable`；其余 → `internal`），reason 经 bounded 化 + secret 形状过滤（官方错误消息含 ref/路径，不含值；防御性过滤见 Error Handling）。
+4. **失败映射与提交后复核（Stage 4 修订登记）**：官方抛错 → `{ ok:false, code: 'read-only'|'unavailable'|'internal', reason }`（按官方错误语义归类：影子/只读类 → `read-only`；disposed/后端缺失类 → `unavailable`；其余 → `internal`），reason 经 bounded 化 + secret 形状过滤（官方错误消息含 ref/路径，不含值；防御性过滤见 Error Handling）。**例外**：官方 `notifyUpdated` 对同步 listener 抛 `code === 'INVARIANT'` 时会在全部 listener 跑完后 rethrow，此时**官方写入已提交但写 Promise 仍 reject**；门面因此不得把 reject 等同于「未提交」，必须以**管理存储层证据**复核——`set` 要求 `describe(ref).source === 'file'` 且 `resolve(ref)` 返回 `{ source: 'file', value === 提交值 }` 且写前不满足同条件；`unset` 以写前 `describe` 快照为基准（写前 `file` → 写后非 `file` 判已删除）；复核成立 → `committed`（附 bounded diagnostic），否则 typed 失败且原值保持生效。该限定与步骤 2 的幂等跳过同源（均以 `source === 'file'` 判定管理层）。
 
 **ref/当前配置关联的校验边界（goal"ref 与当前配置关联的校验先于副作用"的落地声明）**：门面能校验的"当前配置关联"= 官方 backend 对该 ref 的当前状态（模式合法性、可写性、影子/只读——即 C2 步骤 1）。**caller 配置对 ref 的业务关联**（如"该 ref 是我 provider 配置引用的那个 key"）属于插件业务语义——官方模型下配置面只持有 ref 字符串，门面没有、也不应建立"哪个插件配置引用哪个 ref"的注册表（那会变成第二套配置 authority）。真实消费者先例（`dsh-vision-toolkit/src/web.ts` `saveCredential`）正是插件在自身 settings 描述符上校验 ref 关联与 revision 后才调用凭据写入；本面为该模式提供受支持的底层动作。设计不把插件业务关联检查收编进门面（克制设计；跨线归 `interactive-session-access`/各插件自身 remote 契约）。
 
 ### C3. 写面 `unset(ref, options?)`（Req 2）
 
 1. 前置校验同 C2（ref 模式、owner、availability、revision 检测；无值检查）。
-2. 官方 `unset(ref)`；官方对缺席 ref 是静默无操作提交（实测）→ 声明的 typed 结果：**`{ ok:false, code:'unchanged', reason:'ref absent; nothing to remove' }`**（幂等呈现，与三线"无操作类"一致；Req 2.2 的 declare 分支选定）。存在则移除 → `{ ok:true, code:'committed', commitState:'success', ref, revision }`；此后官方 `resolve` 按官方层级回退（env > 无 > `.env` 回退）（Req 2.1）。
+2. 官方 `unset(ref)`；官方对缺席 ref 是静默无操作提交（实测）→ 声明的 typed 结果：**`{ ok:false, code:'unchanged', reason:'ref absent from managed storage; nothing to remove' }`**（Stage 4 字面同步登记）（幂等呈现，与三线"无操作类"一致；Req 2.2 的 declare 分支选定）。存在则移除 → `{ ok:true, code:'committed', commitState:'success', ref, revision }`；此后官方 `resolve` 按官方层级回退（env > 无 > `.env` 回退）（Req 2.1）。
 3. 失败映射同 C2 步骤 4；官方保证失败时原值保持生效（Req 2.3）。
 
 ### C4. Revision 标记与并发冲突（Req 3；声明的 B 类模拟规则）
 
 - **标记来源（唯一事实）**：官方 `credentials/updated` 事件（官方只在真实提交/热发布后派发，payload 仅 ref）。门面为每个 ref 维护单调递增的不透明整数标记：首次观察到该 ref 的事件即 `known`，每事件 +1。标记是**资源状态 revision**（跨 caller 可比，同 settings 文档 revision 先例），不是 owner generation（`identity-and-lifecycle.md` §2 的 owner-specific generation 不适用于共享资源状态——标记全部派生自同一官方事实流）。
+- **标记推进失败的故障策略（Stage 4 修订登记）**：listener 必须同步且内部 containment；推进失败时**把该 ref 的标记置为「未知/失效」**而非保留陈旧已知值——保留陈旧值会让持有该旧 revision 的后续提交「匹配」通过并静默覆盖（fail-open，违反 Req 3.1）；标记失效后携带 `expectedRevision` 的提交一律 `revision-unknown`，不带者按 bootstrap 规则放行并以本次事实重建基线。
 - **暴露位置**：只出现在本面结果（committed/unchanged/conflict 的 `revision` 字段）与 conflict 上下文中；不新增公共读成员、不进入 `services.credentials` 契约（Req 10.1）、不跨 wire（in-process API 字段；client 经插件 remote 获得的是插件自有契约）。
 - **比较规则（Req 3.1 的"caller 上次观察状态"载体）**：caller 从上一次本面结果取得 `revision`，作为 `options.expectedRevision` 回传；提交时与门面当前标记比较（比较与 in-flight 登记在同一门面同步段内原子执行——串行化机制见下"比较点串行化"）：
   - 匹配 → 提交（官方独占写链仍为最终裁决，官方层并发由官方队列/文件锁串行化）。
   - 不匹配（已知标记）→ `{ ok:false, code:'conflict', ref, expectedRevision, currentRevision }`（bounded 上下文，无值；Req 3.4 的重读重试指引字段）。
   - 无标记证据（facade 挂载后未观察到该 ref 的任何事件——外部编辑先于挂载、或观察桥降级）→ fail-closed：**提供 expectedRevision 的提交被拒** `{ ok:false, code:'revision-unknown' }`；不提供 expectedRevision 的提交放行（官方独占写链保证持久化原子性）——这是声明的 bootstrap 规则：首次写入建立标记基线，此后可用 optimistic CAS（Req 3.2 的"typed rejection or the design-declared fallback"选定后者并显式声明）。
-- **比较点串行化（外层合同；Req 3.3 的机制基础）**：乐观比较点与提交不可被并发交错。本线官方 seam 为异步（`Promise`），标记又只在提交结算后才由官方 `credentials/updated` 推进——若比较点裸露在各自调用的同步段，两个携带相同 `expectedRevision` 的并发提交会在任一提交落地前双双通过比较并双双 committed，违反 Req 3.3。因此声明 **per-ref in-flight 单飞锁**：每次提交在门面同步段内原子完成「expectedRevision 比较 + 登记 in-flight」，锁持有至该次官方写结算后释放——**成功路径**的锁释发生在提交后事实（`credentials/updated`、标记推进）被观察到之后（与下"提交条件"条对齐，不存在「锁已释放、标记未推进」的窗口）；**失败路径**的锁释于 Promise rejection。**锁被持有时的新到提交立即得 typed `conflict`（reason 'racing write unsettled'），不入队、不执行、不触官方 seam**。同一时刻每 ref 至多一个未结算提交。
+- **比较点串行化（外层合同；Req 3.3 的机制基础）**：乐观比较点与提交不可被并发交错。本线官方 seam 为异步（`Promise`），而官方 `notifyUpdated(ref)` 在写队列操作内、**文件与内存快照更新之后同步派发**（Stage 4 探针 P2b 实测），写 Promise 在其后才 settle——若比较点裸露在各自调用的同步段，两个携带相同 `expectedRevision` 的并发提交会双双通过比较并双双 committed，违反 Req 3.3。因此声明 **per-ref in-flight 单飞锁**：每次提交在门面同步段内原子完成「expectedRevision 比较 + 登记 in-flight」，锁持有至该次官方写 Promise 结算后释放——**成功路径的锁释发生于结算时**（此时标记已由先行的同步事实派发推进，不存在「锁已释放、标记未推进」窗口；观察桥整体降级时同样在结算时释锁，标记保持未知 → 后续携带 `expectedRevision` 的提交 fail-closed，**不死锁**）；**失败路径**的锁释于 Promise rejection。**锁被持有时的新到提交立即得 typed `conflict`（reason 'racing write unsettled'），不入队、不执行、不触官方 seam**。同一时刻每 ref 至多一个未结算提交。**Stage 4 修订（登记）**：本段与下方 Concurrency 节的释放条件原写「成功路径于提交后事实被观察到之后释放」，与 P2b 的派发顺序矛盾，现按上句修订。
 - **并发提交裁决（Req 3.3）**：两个并发提交（无论值是否相同、是否携带 expectedRevision）：先到者获锁、通过比较并提交；后到者因持锁即得 `conflict`——**至多一个 claims success**，败方为 typed conflict，最终存储值为先到提交的值（官方串行序下的合法解）。先到提交失败（无 `credentials/updated` 事实、标记不变）时锁照常释放，败方调用方可重读后重试（乐观前提未被破坏，行为诚实）。结果确定，与 host 单线程到达序一致。`conflict` 败方携带 bounded 上下文（ref、expected/current revision 可得时）供重读重试（Req 3.4）。
 - **外层合同三线兼容说明**：姊妹两线（planMode/permissionPresets）官方 seam 为同步，其「单同步提交跨度」即同一外层规则（比较点与提交不可交错）的退化满足；本线以 in-flight 锁达成。该锁/串行化机制是本线（异步 seam）专属达成方式，不推广到姊妹线。
 - **取消**：写操作是短事务，无 signal 参数（官方 seam 无取消点；Requirements concurrency 分册结论"无取消面（写操作短事务）"）；Promise rejection 即失败终态，无在途补写（官方快照更新只在成功后）。
@@ -153,9 +154,9 @@ authorized user (client)
 
 ```text
 set/unset 输入   set(ref, value, { expectedRevision? }) ; unset(ref, { expectedRevision? })
-结果             { ok, code, reason?, ref?, revision?, expectedRevision?, currentRevision?, persistedAt? }  // 冻结；永不含凭据值
+结果             { ok, code, reason?, ref?, revision?, expectedRevision?, currentRevision?, persistedAt?, commitState? }  // 冻结；永不含凭据值（Stage 4 修订登记：补 commitState?，仅 committed 携带 'success'）
 revision 标记    per-ref 不透明单调整数；来源 = 官方 credentials/updated 事实；in-process only（不跨 wire、不入 durable）
-audit 记录       { seq, at, ownerId, action, ref, outcome }   // bounded、脱敏、冻结出环
+audit 记录       { seq, at, ownerId, action, ref, outcome, reason? }   // bounded、脱敏、冻结出环（Stage 4 修订登记：补 reason?）
 availability     { status, reason? }                           // 冻结
 ```
 
@@ -180,7 +181,7 @@ availability     { status, reason? }                           // 冻结
 
 - **外层合同（三线一致）**：乐观比较点与提交不可被并发交错；本线以 per-ref in-flight 单飞锁达成（§C4），姊妹同步 seam 线以单同步提交跨度达成。
 - **并发策略**：`compare-and-swap`（门面 revision 标记 optimistic compare，B 类声明）叠加**官方独占写链**（provider 单文档串行 + 文件锁 + 原子替换）作为最终 mutation owner——每份共享状态只有一个并发语义 owner（官方 provider），门面标记与 in-flight 锁均不构成第二仲裁（§1.4；锁只拒绝并发交错，不改写官方提交结果）。
-- **per-ref 串行化与 liveness**：同一 ref 的提交在锁内串行；持锁期间新到提交 typed conflict（不排队、不执行）；锁释分两路——成功路径于提交后事实（标记推进）被观察到之后释放（与"提交条件"条对齐），失败路径于 Promise rejection 释放。后端挂起时该 ref 后续提交持续 typed conflict——与官方 provider 独占操作链相同的 liveness 包络，如实声明，不虚构超时/取消（本线无取消面）。
+- **per-ref 串行化与 liveness**：同一 ref 的提交在锁内串行；持锁期间新到提交 typed conflict（不排队、不执行）；锁释分两路——**成功路径于官方写 Promise 结算时释放**（P2b：同步事实派发先于结算，标记此时已推进；观察桥降级时同样释锁，标记保持未知、不死锁——**Stage 4 修订登记**，本句原写「于提交后事实被观察到之后释放」），失败路径于 Promise rejection 释放。后端挂起时该 ref 后续提交持续 typed conflict——与官方 provider 独占操作链相同的 liveness 包络，如实声明，不虚构超时/取消（本线无取消面）。
 - **scope 与冲突判定**：scope = 单个 ref 的存储状态；判定 = per-ref in-flight 门（并发交错即 typed conflict，见 §C4）+ expectedRevision 比较（乐观前提由 caller 显式给出）+ 官方串行提交（最终裁决）。
 - **取消行为**：无取消面（短事务）；失败 = typed 终态，原值保持（官方保证）。
 - **提交条件**：官方写 Promise 完成 + 官方提交后事实（notifyUpdated）；无官方提交即无成功（门面不预发成功）。
@@ -210,7 +211,7 @@ availability     { status, reason? }                           // 冻结
 |---|---|---|---|---|---|---|---|
 | `credentials.set` | mutation | mutate | coordinated | compare-and-swap | profile | official credentials provider（唯一存储 authority） | host |
 | `credentials.unset` | mutation | mutate | coordinated | compare-and-swap | profile | official credentials provider | host |
-| `credentials.availability` | selfDescription | read | pure | not-applicable | profile | facade | host |
+| `credentials.availability` | selfDescription | read | pure | not-applicable | **facade** | **official credentials provider** | host |
 
 capability ID：`credentials`；scope 取 `profile`（凭据存储位于 harness home 的 profile 级文档，非 session/workspace）；`eventCatalog` 无新增事件（`credentials/updated` 已登记，producer authority 官方）。B 类冲突检测在本表 conflictRule 语义与 design 文字中双处标注。
 
@@ -253,3 +254,19 @@ capability ID：`credentials`；scope 取 `profile`（凭据存储位于 harness
 | Req 9 availability/降级 | C1（含 ref 级只读信号放 describe 的 granularity 论证） |
 | Req 10 读面回归守卫 | Architecture（零缓存零影子）+ Namespace 放置（services 契约原样） |
 | Req 11 验证与交付门 | Testing Strategy |
+
+> **Stage 4 修订登记（2026-09-13）**：本表 `credentials.availability` 行的 scope/authority 由 `profile`/`facade` 改为 **`facade`/`official credentials provider`**（与仓库 40 条 `*.availability` 行的主流惯例一致：scope 以 `facade` 为主、authority 取域 authority；先例 `sessions.planMode.availability`/`sessions.permissionPresets.availability`）。同批修订：C2 步骤 4 的提交后复核规则、C4 的锁释放规则与标记推进失败策略、C4/Concurrency 的论证前提、Data Models 的结果与审计字段。均不改写任何已交付的验收边界。
+
+## Stage 4 运行结论（2026-09-13；P1–P4 回写）
+
+Stage 4 在真实官方组件链上复核探针（e2e 基座 = 真实 `@deepseek-ai/cordis` 树 + 真实 `@deepseek-ai/dsh-credentials-local` 的文件后端 + 门面，临时凭据文档）：
+
+- **P1/P2 写入 seam**：`set`/`unset` 的 Promise 语义与真实持久化成立（提交后官方 `resolve` 读到新值、文档落盘、owner-only 0600 保持）；空值/非法 ref 在门面前置拒绝，官方 seam 不被触达；失败注入下原值保持生效且无半提交可见。
+- **P2b 派发顺序**：提交后 `credentials/updated` 同步派发先于写 Promise 结算——门面侧标记在结算时已推进（revision 随每次真实提交单调增长）；观察桥降级时锁仍按结算释锁、标记保持未知（fail-closed），无死锁。
+- **P3 层级与读形状**：`.env` 回退层与未配置层均 `writable: true`、env 继承层 `writable: false`；env 影子的 ref 在提交前被 `read-only` 拒绝且不触 seam；unset 后官方解析回落到回退层级。
+- **P4 无 CAS 与声明式模拟**：官方 seam 无 revision 参数，门面的乐观比较为声明的 B 类模拟；冲突三分支（匹配/不匹配/无证据）与 per-ref 单飞门在真实 provider 上行为确定；标记失效后携带 `expectedRevision` 的提交得 `revision-unknown`（不静默覆盖）。
+- **脱敏**：提交结果、unchanged、availability、capabilities、审计与 inspection 六类出口均不含值；文档是唯一持有者；超长/凭据形状输入在 reason 与诊断中经 bounded + `redactValue` 过滤；**未被前置校验通过的 ref 一律不回显**（`unavailable`/`denied` 结果不携带 `ref`），通过校验的 ref 与所有 reason 均 bounded。
+- **提交后抛错（真实链）**：注入官方 `credentials/updated` 的 INVARIANT 型同步 listener 后，`set`/`unset` 的写 Promise 在文档已提交后 reject，门面以管理存储层证据把它诚实报为 `committed`。
+- **并发（真实链）**：同一 `expectedRevision` 的两次提交在同一同步跨度内竞争时，先到者 committed、后到者 typed `conflict`（racing write），最终文档值为先到者写入。
+- **`.env` 回退反例**：仅由 `.env` 回退层持有同值的场景在单元层取证（e2e 基座未装配 `launchEnvironment` 的分层服务，该层的构造属环境限制；语义已由 `source === 'file'` 的判定规则与单测覆盖）。
+- **外部编辑**：管理层的变更经官方事实进入门面（watcher 热发布或等效事实），陈旧 `expectedRevision` 被拒且 durable 文档保持外部编辑结果。
