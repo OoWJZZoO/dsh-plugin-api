@@ -304,3 +304,11 @@ Tasks 阶段的源码级探针（P1–P15）与本设计成文时的事实有 8 
 6. **兜底 answerer 的注册顺序前提（审查更正）**：Cordis `ctx.on` **没有 priority 机制**（只有 `prepend`/`global`，顺序=注册顺序），故「最低优先级」的表述不成立；机制实为 **append 注册 + row 顺序前提**（受支持安装路径下 plugin-api 行排在官方 api-proxy 行之后）。同时如实披露：本线持有期间会 preempt **之后**才注册的第三方 answerer。
 7. **Face 4 读取路径的官方副作用（审查更正）**：`selection.get` 经 `session.models` 解析 session，**冷 session 会被官方 `agentFor` resume 并发布 live agent**——这是官方读取入口自身的契约（与官方 UI 同路径），不是门面发明；按 idiom 例外登记并在 availability/README 披露，测试断言该副作用来自官方载体。
 8. **逐动作授权边界与能力缺口（审查更正）**：见 Failure Paths 的「逐动作授权（Stage 3 探针修订）」条。**per-session grant 的缺席独立登记为能力缺口**（评估触发条件：官方或后续 feature 提供可达的 per-session 授权 seam；届时按新 feature 立线，不在本线内发明凭据系统，也不接受调用方自报 grant）——该缺口与 question seam（R-Point 1）是**两个独立的评估入口**，不要互相指代。
+
+## Stage 4 运行结论（2026-09-14）
+
+- **Face 1（扩展）**：`attachmentRefs` 为官方 durable 图像引用对象数组，逐 ref 经 `attachments.readImage()` 验证并以 canonical ref 映射为 `{type:'image', attachment}` 块（文本块在前、一对一保序）；任一 ref 不可解析 ⇒ 整条 typed unavailable 且无写入（逐 ref 有界原因）。`delivery: 'steer'|'queue'` 只在同 session 有活 operation 时生效：steer 经官方 `agent.steer` 并入活 attempt 且沿用 M9 的 `operation.id` 形状，queue 经官方 `agent.followup` 入 `next-turn` 并返回 `queuedRef:{id, operationId}`；queuedRef 取消经官方 `agent.inbox.remove(id)`，已认领且 operationId 不再匹配 ⇒ typed `stale`（不误取消后续无关 operation）。缺省 `already-running` 行为逐字不变。
+- **Face 2（视图 + 兜底应答）**：pending 集从 durable 对折叠；视图含逐 kind `sources`；`respond` 只结算**本线持有**的请求（三类结算：显式动作 / abort → `cancelled` / 租约到期 → `unavailable`），未持有的同 pending 项返回 `unavailable`（不冒充 `stale`），未知 id 返回 `stale`；`answer` 对 approval 一律 `rejected`；自由答复、重试、默认答案、定时器一律不存在。门面持有期间视图仍报告该项（客户端必须看得见才能应答），`deriveApprovalId` 用 claimed 集消歧。
+- **Face 3（消费合同）**：`test/interactive-session-consumption.test.mjs` 以已交付 channels/auth/operation 面取证（baseline 视图、typed 拒绝、device/session 拒绝码、可达 ≠ 授权、stale 纪律），零新增代码。
+- **Face 4（选择）**：读/提交经两条可选窄白名单成员；`source` 按可观察兜底层分级、`committedAt` 无证据即 `null`；值级比较换不匹配不触提交；官方 `model-unavailable` → `rejected`、`session-not-found` → `unavailable`；持久化失败不改变 commit 结果（由后续 `source` 披露）；冷 session 读取带官方 resume 副作用（availability/README 披露）。
+- **真实证据边界**：审批链在真实 `dsh-user-approval` + 真实 `dsh-session` 上取得（含真实 durable 对与 outcome 闭集）；附件映射在真实 durable append 上取得；选择在官方 mux 形状替身上取得（形状来自 P3/P4 探针）；question 侧与 per-session grant 为登记的能力缺口。

@@ -46,7 +46,9 @@ pluginApi
 │   ├── onDurable / onceDurable / appendMessage
 │   ├── branches
 │   ├── channels
-│   └── compaction (run / availability)
+│   ├── compaction (run / availability)
+│   ├── interactions (list / get / respond / availability)
+│   └── selection (get / set / availability)
 ├── workflows
 │   └── start / availability
 ├── tools

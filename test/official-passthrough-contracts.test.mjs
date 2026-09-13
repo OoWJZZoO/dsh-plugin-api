@@ -33,18 +33,28 @@ function memberCount(contracts) {
 function createCompleteService(definition, calls, values) {
   const service = {}
   for (const member of definition.members) {
+    // A deep member lives under a nested owner (e.g. `sessions.models`); the
+    // owner is built here so the receiver assertion still proves the facade
+    // invokes the member on the object that really owns it.
+    const segments = Array.isArray(member.path) ? member.path : [member.name]
+    const leaf = segments[segments.length - 1]
+    let owner = service
+    for (const segment of segments.slice(0, -1)) {
+      owner[segment] ??= {}
+      owner = owner[segment]
+    }
     if (member.kind === 'method') {
       const result = { key: definition.key, name: member.name }
       values.set(`${definition.key}.${member.name}`, result)
-      service[member.name] = function (...args) {
-        assert.equal(this, service)
+      owner[leaf] = function (...args) {
+        assert.equal(this, owner)
         calls.push({ key: definition.key, name: member.name, args })
         return result
       }
     } else if (member.kind === 'getter') {
       const result = { key: definition.key, name: member.name }
       values.set(`${definition.key}.${member.name}`, result)
-      Object.defineProperty(service, member.name, {
+      Object.defineProperty(owner, leaf, {
         enumerable: true,
         get() {
           return result

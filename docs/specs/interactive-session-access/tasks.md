@@ -2,7 +2,7 @@
 
 > feature_name: `interactive-session-access`
 > milestone: M10
-> status: Stage 3（Tasks）产出中（2026-09-14）；Stage 1/2 已交付（2026-09-12），本阶段以对抗性审查为门（AGENTS.md §3.2），通过后直接进入 Stage 4。审查记录见文末（第一轮处置 21 条，第二轮处置 6 条，第三轮处置 4 条）。
+> status: Stage 4 已交付（2026-09-14）；Stage 3 门四轮闭合（21 / 6 / 4 条处置 + 单点措辞就地闭合），实现与验证见文末执行注；Stage 1/2 已交付（2026-09-12），本阶段以对抗性审查为门（AGENTS.md §3.2），通过后直接进入 Stage 4。审查记录见文末（第一轮处置 21 条，第二轮处置 6 条，第三轮处置 4 条）。
 > 输入溯源：`goal.md`（Stage 0）、`requirements.md`（R1–R10 + client 半面判定 + 复用矩阵）、`design.md`（四面拆线、复用矩阵、协议等价判据、attachmentRefs 映射合同、选择快照合同、R-Point 陈述、失败/guard、并发声明、standards 逐分册）；Stage 3 源码级探针见下（P1–P15）。
 > 执行口径：版本冻结基线内交付（runtime `0.1.0-rc.6`、包 `0.1.0-rc.6-0.1.0`、`dsh.api: 0.1`），不步进任何版本字段。**本线基线不新增 R 包/R 行**，也不落地 design R-Point 1：question 侧无可用 seam，approval 侧由 append 注册的兜底 answerer 承载（见 P6 与探针修订 4）。
 
@@ -107,7 +107,7 @@
 - [ ] 7.1 运行时 capability（审查意见 11/第二轮 #4）：`lib/capability-descriptors.js` 按 **namespace 粒度**增两条，**backing key 必须是本线新增并登记进 `FEATURE_MOUNTERS` 的内部 mount key**（`entry('sessions.interactions', 'execute', ['sessionInteractions'])`、`entry('sessions.selection', 'mutate', ['sessionSelection'])`——`entry()` 的第三参是内部 mount key，`'sessions'` 这个 key 不存在，写错会让 capability/availability 恒为 unavailable；effect 按 idiom 取 `execute`/`mutate`，不低估 respond 与 set）；`lib/index.js` 的 `FEATURE_MOUNTERS` 追加这两个 mounter；`lib/plugin-api-service.js` 的 `_decoratedNamespaces([...])` 列表补 `sessions.interactions`/`sessions.selection`；`lib/capability-matrix.js` 增 cluster 行；`lib/namespace-availability.js` 增两条叶子（`path: 'interactions'|'selection'`）。
 - [ ] 7.2 canonical registry（审查意见 18）：新增 `sessions.interactions.{list,get,respond,availability}` 与 `sessions.selection.{get,set,availability}` 成员行（idiom：projection/operation/mutation/selfDescription；`respond` 的 `accepted` 结果按需登记 idiom 例外六元组，`committedAt`/`revision` 语义同）；**client runtime 成员行**按既有先例（`sessions.request`/`cancel` 的 `capability: client.sessions`）为新增 client 成员登记；`namespaces` 增两条记录（`contributingFeatures:['interactive-session-access']`）；**`hostDomainTree` 不动**（它是顶层根平面，`sessions` 下加叶子只写 `namespaces`，与 `sessions.planMode`/`permissionPresets`/`compaction` 先例一致）；`servicesWhitelist` 的 `apiProxy` 行更新成员描述并加**新字段**（如 `memberGrades`）承载逐成员分级（`sessionsModels` = pure/read、`sessionsSelectModel` = advanced + `bypasses` 登记 Face 4 为协调写路径，不入 Composable Profile）——**entry 级 `composition`/`status`/`channel` 三字段保持不变**（`test/registry.test.mjs` 强制 entry 级 `status==='advanced'`/`channel==='passthrough'`/`composition` 与 `SERVICE_DEFINITIONS` 一致，改 entry 级会直接红）；validator 与 `scripts/registry-snapshot.mjs` 无需改动（前者对白名单行只校验 key 唯一性与 `channel` 词表、允许新字段）。
 - [ ] 7.3 治理同步：`public-api-shape.md` §2 增 `sessions.interactions`/`sessions.selection` 块；`domain-composition.md` §2 增领域行；`README.md` 增小节（含 selection 读取的官方 resume 副作用与 `source` 残余歧义）；`docs/specs/plugin-api-features/feature-list.md` §7 登记（含 client 半面判定、R-Point 收敛结论、残余竞态、`pairing-required` 词表空缺、per-session grant 能力缺口与退役触发）。
-- [ ] 7.4 wire 与 client 半面（R9，审查意见 1/9）：固定 client 方法 token 列表（`sessions.interactions.list|get|respond`、`sessions.selection.get|set`）→ 既有 `/plugin-api/sessions` 路由 + 既有 connection rpc；**value-only 投影**（沿用 `projectWireOutcome`）；**无 wire revision**（冻结基线内、无协议族变更）；host 侧脱敏先行、client 只校验形状；offline/rebind ⇒ typed unavailable（不排队不静默丢）；旧代 handle ⇒ stale 守卫；availability 对空对象/缺失 carrier 如实报告；`lib/client-session-interaction-operation.js` 的 accepted 校验器按 Task 2.4 扩展；**client bundle 重建并 `--check` 一致**。
+- [ ] 7.4 wire 与 client 半面（R9，审查意见 1/9）：固定 client 方法 token 列表（`sessions.interactions.{list,get,respond,availability}`、`sessions.selection.{get,set,availability}`）→ 两条独立 typed 路由（`/plugin-api/sessions/interactions`、`/plugin-api/sessions/selection`）+ 既有 connection rpc；**value-only 投影**（沿用 `projectWireOutcome`）；**无 wire revision**（冻结基线内、无协议族变更）；host 侧脱敏先行、client 只校验形状；offline/rebind ⇒ typed unavailable（不排队不静默丢）；旧代 handle ⇒ stale 守卫；availability 对空对象/缺失 carrier 如实报告；`lib/client-session-interaction-operation.js` 的 accepted 校验器按 Task 2.4 扩展；**client bundle 重建并 `--check` 一致**。
 - [ ] 7.5 测试：capability/availability 镜像一致 + registry validator + feature 计数/顺序断言同步 + client bundle check + 治理 token 审计无新增泄漏（`interactive-session-access`、`R-Point`、`P1`–`P15` 等治理词不出现在实现代码）。
 
 ## Task 8: e2e 验收与迁移证据（对应 req R10 的 Testing Strategy）
@@ -190,4 +190,47 @@
 第四轮复核仅剩 1 条 `[低]` 单点交叉引用（design Failure Paths 把 per-session grant 缺口的触发条件指向 R-Point 1，与「两个独立评估入口、不互相指代」抵触）。该修正属 AGENTS §3.2「仅小修改（单点修正）」范围，审查方亦明确「修订后可视为本门通过」，故就地闭合：design Failure Paths 改为「与 question 侧缺口并列登记、互不指代；触发条件见 requirements R8 同步注与本文探针修订第 8 条」；Task 7.3 的 feature-list 登记清单补列该能力缺口（非阻塞完整性提示）。
 
 **Stage 3 门结论：通过**（第四轮判定「4 条处置均已落地，仅 1 处单点措辞残件，修订后可视为本门通过」；残件已就地闭合且无同轮实质改动）。据此进入 Stage 4。
+
+## Stage 4 执行注（2026-09-14）
+
+**交付物**：`lib/session-message-mapping.js`（公开请求消息 → durable/inbox 消息的单一映射：附件逐 ref 验证 + `{ type:'image', attachment: <canonical ref> }` 块）、`lib/sessions-interactions.js`（pending 折叠、受限视图、共享有界 id 注册表、respond 校验与结果形状）与 `lib/sessions-interactions-facade.js`（视图/应答 authority、watch 租约、兜底 answerer、mounter + typed 路由）、`lib/sessions-selection.js` 与 `lib/sessions-selection-facade.js`（`source` 推断、值级比较换、官方 mux 结果映射、mounter + typed 路由）、`lib/client-sessions-interactions.js` / `lib/client-sessions-selection.js`（client 半面）与重建后的 `lib/client.js`；`lib/session-interaction-operation{,-normalize,-authority}.js`（`attachmentRefs` 对象数组、`delivery` 词表、queuedRef 取消）、`lib/client-session-interaction-operation.js`（queue 受理形状）、`lib/client-request-bridge.js`（两条新路由 handler）、`lib/services.js` + `lib/official-service-definitions.js`（`path` 成员支持与 apiProxy 两条可选窄成员）、`lib/plugin-api-service.js`（两个槽位/disabled 面/namespace 子面/availability 细节/KNOWN_FEATURES）、`lib/index.js`（两个 mounter + 路由）、`lib/guards.js`（两个 guard 分支）、capability/availability/matrix 镜像、canonical registry（14 条成员行 + 2 条 host/client namespace + 2 条 capabilityMatrix 行）、README/feature-list/`public-api-shape.md`/`domain-composition.md`；测试 `test/session-interaction-operation-attachments.test.mjs`、`test/session-interaction-operation-delivery.test.mjs`、`test/sessions-interactions.test.mjs`、`test/sessions-selection.test.mjs`、`test/client-sessions-interactive.test.mjs`、`test/interactive-session-consumption.test.mjs`、`test/interactive-session-e2e.test.mjs`、`test/interactive-session-migration-slices.test.mjs`。
+
+**与 Task 文字的偏离（逐条登记理由）**：
+1. **`interactions.list/get` 采用判别式信封**：`list` → `{ ok:true, items, nextCursor, sources }` / `{ ok:false, code:'degraded'|'unavailable', reason, sources }`；`get` → `{ ok:true, view }` / `{ ok:false, code:'missing'|'unavailable' }`。design 写「冻结视图 | typed missing/unavailable」，本实现对成功分支也给出 `ok`/`view` 信封，与 M9 operation 的 `{ok, code}` 判别式 idiom 一致；registry `currentShape` 按实际形状登记。
+2. **`selection.set` 的字段补齐**：官方 `session.selectModel` 要求完整 provider/model 对，故部分字段的 `selection` 会先与官方当前值合并（`undefined` 字段用当前值补齐；当前值也给不出 ⇒ typed `rejected`）。design 的 `selection = {provider?, model?, effort?}` 语义不变（"变更这些字段"），补齐步骤登记在 registry `currentShape`。
+3. **client 半面走两条独立 typed 路由**：`/plugin-api/sessions/interactions` 与 `/plugin-api/sessions/selection`（host 侧 `installClientRequestRoute` + `create{Interactions,Selection}RouteHandler`），不复用 M9 的 `/plugin-api/sessions`（其 method 词表与 value-only 投影契约为 request/cancel/status 固定）。路由以 `authority:'trusted-host'` 注册，与 M9 同一 transport 信任分类（P15 边界）。
+4. **availability 的自描述口径**：client 半面经两条真实 token（`sessions.interactions.availability`、`sessions.selection.availability`）**镜像 host 自描述**（不新增探测启发式；早期草案里的 `get({sessionId: ''})` 探测与 `degraded` 死分支已删除）；host 侧 availability 按**真实 seam 成员存在性**分级（both → active；只缺 submit → degraded；read 缺失 → unavailable）。
+5. **e2e 的真实组件范围**：审批段用**真实 `dsh-user-approval` + 真实 `dsh-session`**（真实 durable 对由官方 authority 写入；为在没有 mux answerer 的部署里取证，harness 把 `ApprovalService.decide` 接线到门面兜底 answerer——即**真实 waterfall 被接线替身替代**，waterfall 的顺序语义与非遮蔽行为由 `test/sessions-interactions.test.mjs` 的瀑布模型用例与 `test/compat-integration-lifecycle.test.mjs` 的监听器登记断言覆盖）；选择段用**官方 mux 形状替身**（`{rpcId, payload}` → `{rpcId, result}`，与 P3/P4 探针一致）；附件段用**真实 durable append**（真实 `Session` + `appendMessage`）配最小 attachments store（`readImage` 返回 canonical ref、未知 ref 抛 `ATTACHMENT_NOT_FOUND`）；未使用 `dsh-attachment-local`（其 `sharp` 依赖需要真实图像与存储根，属部署细节而非契约）。
+6. **capability mount key**：`sessionInteractions` / `sessionSelection`（首轮审查意见 5 的修正），feature 总数 42 → 44。
+7. **question 侧与 per-session grant**：按 P7/P15 维持诚实缺口（typed unavailable + 能力缺口登记），不抢 `userQuestions` provider、不发明凭据系统。
+
+**登记的 design/requirements 修订**：见 design 文末「Stage 3 探针修订」8 条与 requirements 的 Stage 3 探针注（R2 AC1、R4 AC1/AC3、R5 AC1/AC2、R8 AC1/AC2、R10 AC1 与两条 Classification）。
+
+### Stage 4 验证门（本地）
+
+`npm test` 全绿（3415 → 交付后含新增用例）；`node scripts/registry-validate.mjs docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json` → `registry valid`；`npm run build:client:check` → up to date；`test/governance-token-audit.test.mjs` 通过；`git diff --check` 干净；`/usr/lib/node_modules/@deepseek-ai/dsh/**` 零修改（不 patch 官方包文件）。
+
+### Stage 4 全局终审（第一轮）意见与处置（2026-09-14）
+
+终审返回「有意见」10 条（1 阻塞 / 7 中 / 2 低），全部修订：
+
+1. **（阻塞）selection 面绑定到不存在的扁平成员**（guard/mounter 读 `apiProxy.sessionsModels`，而官方只有嵌套 `apiProxy.sessions.models`）→ guard 改探 `apiProxy.sessions?.models`；mounter 改为消费官方嵌套成员（`officialSeam('models'/'selectModel')`，以 `sessions` 为 receiver），成员缺失时**不传 seam**（交由 authority 报诚实降级）；新增两条以真实嵌套形状跑 mounter 的回归用例（含 read-only 降级分支）。
+2. **（中）selection availability 不反映真实 seam 状态** → mounter 只在成员存在时传 seam；authority 的 `available()/submittable()` 据此产出 `unavailable`/`degraded`；client 端新增 `sessions.selection.availability` / `sessions.interactions.availability` typed token，删除「用 get 探测」的启发式（`degraded` 分支不再是死代码），client bundle 重建。
+3. **（中）`servicesWhitelist` 逐成员分级未落地** → `apiProxy` 行新增 `memberGrades`（`sessionsModels` = pure/read；`sessionsSelectModel` = advanced + `composableProfile:false` + `bypasses`），entry 级三字段保持不变。
+4. **（中）被扩展的 M9 成员行未更新** → `sessions.request`/`cancel` 的 host+client 四行 `currentShape`/`lifecycle`/`idempotency` 更新（steer 的 `operation`、queue 的 `queuedRef{id,operationId}`、`scope:'queue'` 取消、`attachmentRefs: ImageAttachmentRef[]` 与逐 ref fail-closed）。
+5. **（中）idiom 六元组缺失** → 登记四条：`sessions.selection.get`（官方读取载体的 resume 副作用）、`sessions.selection.set`（部分字段按官方当前值补齐后提交）、`sessions.interactions.respond`（host + client：accepted 不带 operation handle/terminal）。
+6. **（中）watch 租约用 `Date.now()` 与注入 `now` 脱节** → 租约装载/过期统一改走注入时钟（`nowMs()`），新增「租约内续租 / 注入时钟推进后过期」语义由既有用例覆盖（timer 由注入）。
+7. **（中）R10 强制证据缺口 + 执行注表述过强** → 新增瀑布模型用例（更早的 answerer 认领 ⇒ 门面监听器零调用且零持有）、视图与官方 asked−decided 折叠的逐项 parity 用例、selection 的「单一写点被下一次读取与下一步消费同值观察」用例、respond 的 signal/owner 用例；执行注第 5 条改为如实表述（真实 durable 对；waterfall 由接线替身替代）。
+8. **（中）owner 与审计未落地** → `respond` 与 selection 的 `get`/`set` 均按 caller fiber 派生 owner 并记入各自有界审计环（`internalAudit()`，无 payload/无 secret）；selection 新增审计环与相应用例。
+9. **（低）respond 的 signal 未实现取消语义** → 入口处 `signal.aborted` 即拒绝（与 selection 对齐）；registry 行注明 `denied` 为该成员的保留码、并在 lifecycle 补「第二提交者收到 `stale`」。
+10. **（低）执行注第 2 条声称 registry 已登记补齐步骤** → registry `sessions.selection.set` 的 `currentShape` 补登该步骤（执行注与 registry 口径一致）。
+
+### Stage 4 全局终审（第二轮）意见与处置（2026-09-14）
+
+第二轮返回「有意见」2 条（1 中 / 1 低），均为登记/证据级，已就地闭合：
+
+1. **（中）两条 idiom 例外的 `verification` 指向不存在的用例** → (a) 新增冷 session 用例（`test/sessions-selection.test.mjs`「a cold-session read travels through the official carrier and the facade keeps no state」：断言 resume 副作用来自官方载体、门面不自留状态），并把 `sessions.selection.get` 例外的 verification 指向该例（兑现 Task 8.4 的冷 session 证据项）；(b) `sessions.selection.set` 的「completion refusal」分支在实现中不可达（`readCurrent` 只返回完整 provider/model 对），**删除该分支**并把 verification 改为「partial-change assertions」。
+2. **（低）Task 7.4 token 清单与执行注第 4 条未同步** → 7.4 的 token 列表补两条 `…availability` 并改述为两条独立 typed 路由；执行注第 4 条改写为「client 镜像 host 自描述（早期草案的 get 探针与 degraded 死分支已删除）；host 侧 availability 按真实 seam 成员存在性分级」。
+
+处置后正式关闭 Stage 4 全局终审门，进入完成提交。
 

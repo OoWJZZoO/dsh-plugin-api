@@ -92,6 +92,28 @@ test('malformed host payload is rejected as unavailable, never fabricated', asyn
   assert.equal(out.code, 'unavailable')
 })
 
+test('the accepted shapes cover both a live operation and a queued delivery', async () => {
+  const queued = { ok: true, code: 'accepted', delivery: 'queue', queuedRef: { id: 'msg_1', operationId: 'op_1' } }
+  const steered = { ok: true, code: 'accepted', delivery: 'steer', operation: { id: 'op_1' } }
+  for (const [payload, expected] of [[queued, 'accepted'], [steered, 'accepted']]) {
+    const client = createClientSessionInteractionOperation({ transport: { request: async () => payload } })
+    const out = await client.request({ sessionId: 's1', message: { kind: 'user-message', text: 'x' }, delivery: payload.delivery })
+    assert.equal(out.code, expected, `${payload.delivery} acceptance is a valid host shape`)
+  }
+  // A queue acceptance without its cancellable reference, or a plain
+  // acceptance without an operation, is malformed and never fabricated.
+  for (const malformed of [
+    { ok: true, code: 'accepted', delivery: 'queue' },
+    { ok: true, code: 'accepted', delivery: 'queue', queuedRef: {} },
+    { ok: true, code: 'accepted' },
+    { ok: true, code: 'accepted', delivery: 'steer' },
+  ]) {
+    const client = createClientSessionInteractionOperation({ transport: { request: async () => malformed } })
+    const out = await client.request({ sessionId: 's1' })
+    assert.equal(out.code, 'unavailable', `${JSON.stringify(malformed)} is rejected as malformed`)
+  }
+})
+
 test('rebind / generation change staleness: old cotransport callbacks never write into the new generation', async () => {
   const transport = transportFixture()
   const client = createClientSessionInteractionOperation({ transport, epoch: () => transport.currentEpoch() })

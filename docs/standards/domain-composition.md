@@ -25,6 +25,8 @@
 | `sessions.branches` | branch/plan/commit identity、generation 和 CAS 明确；直接 session mutation 不得静默破坏 branch 保证 |
 | `sessions.channels` | channel/device/session scope、generation possession 和认证 owner 清晰；注册链遵守声明的固定顺序 |
 | `sessions.compaction` | 压缩引擎是唯一执行者与事实 producer；门面只做受控触发与终态映射，不新增 mutation authority、不铸造 operation 身份、不新建 durable scope |
+| `sessions.interactions` | 待处理 approval/question 的受限视图从**官方 durable 对**（`approval/asked` 减 `approval/decided`）折叠，官方 approval authority 仍是唯一决策者；门面只在没有更早 answerer 认领时以**兜底 answerer**持有请求并把显式调用方的选择交回官方 outcome 闭集；不建第二套 pending 生命周期、不代答、不抢占 `userQuestions` provider（question 侧无 seam ⇒ 诚实 typed unavailable） |
+| `sessions.selection` | per-session 选择的唯一事实源与提交入口是官方 api-proxy 状态（经审计白名单的两条窄成员承接）；门面只读有效值、按可观察兜底层披露 `source`、以值级比较换提交，不持有第二份选择；官方 seam 为 last-write-wins，残余竞态声明而非隐藏 |
 | `workflows` | workflow 引擎是唯一执行者、校验者与终态 authority；门面只做受控启动、owner/parent 检查与终态映射，不铸造第二套 run 身份、不建全局 run 注册表、不代答终态；`tasks` 管关系、`executions` 管观测，各归其主 |
 | `tools` | tool 名称/key 冲突显式；注册 owner 化；restrict/guard 使用固定组合代数；执行使用 scope 和 execution identity |
 | `tools.discovery` | descriptor 与 activation owner 化；latest-wins 只发生在同 owner；跨 owner catalog 冲突显式 |

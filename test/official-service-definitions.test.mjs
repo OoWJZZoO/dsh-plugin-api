@@ -7,7 +7,7 @@ import { OFFICIAL_SERVICE_DEFINITIONS } from '../lib/official-service-definition
 const EXPECTED_DEFINITIONS = [
   ['agentLoop', 'agentLoop', [['config', 'getter'], ['create', 'method'], ['createAgent', 'method'], ['resume', 'method']]],
   ['agentPresets', 'agentPresets', [['list', 'method'], ['resolve', 'method'], ['mount', 'method'], ['composeFrom', 'method'], ['composedPreset', 'method'], ['read', 'method'], ['copy', 'method'], ['remove', 'method'], ['serviceFor', 'method'], ['recompose', 'method'], ['standingKeyFor', 'method']]],
-  ['apiProxy', 'apiProxy', [['downloads', 'getter'], ['respond', 'method']]],
+  ['apiProxy', 'apiProxy', [['downloads', 'getter'], ['respond', 'method'], ['sessionsModels', 'method'], ['sessionsSelectModel', 'method']]],
   ['clientModules', 'clientModules', [['graph', 'method'], ['clientPath', 'method'], ['rebuilt', 'method'], ['onRebuilt', 'method'], ['onGraphChanged', 'method']]],
   ['commands', 'commands', [['register', 'method'], ['list', 'method'], ['find', 'method'], ['execute', 'method']]],
   ['credentials', 'credentials', [['resolve', 'method'], ['describe', 'method']]],
@@ -63,8 +63,18 @@ function createService(definition, omittedName) {
     if (member.name === omittedName) continue
     const value = { service: definition.key, member: member.name }
     values.set(member.name, value)
+    // A path-addressed member lives under a nested owner (e.g.
+    // `sessions.models`); the stub builds that owner so the receiver check
+    // still proves the facade invokes the member on its real owner.
+    const segments = Array.isArray(member.path) ? member.path : [member.name]
+    const leaf = segments[segments.length - 1]
+    let owner = service
+    for (const segment of segments.slice(0, -1)) {
+      owner[segment] ??= {}
+      owner = owner[segment]
+    }
     if (member.kind === 'getter') {
-      Object.defineProperty(service, member.name, {
+      Object.defineProperty(owner, leaf, {
         enumerable: true,
         configurable: true,
         get() {
@@ -73,8 +83,8 @@ function createService(definition, omittedName) {
         },
       })
     } else {
-      service[member.name] = function (...args) {
-        assert.equal(this, service)
+      owner[leaf] = function (...args) {
+        assert.equal(this, owner)
         calls.set(member.name, args)
         return value
       }
@@ -104,16 +114,25 @@ test('the fragment has the exact static service and member contract', () => {
   assert.equal(OFFICIAL_SERVICE_DEFINITIONS.length, 28)
   assert.equal(
     OFFICIAL_SERVICE_DEFINITIONS.reduce((count, definition) => count + definition.members.length, 0),
-    107,
+    109,
   )
   assert.equal(new Set(OFFICIAL_SERVICE_DEFINITIONS.map((definition) => definition.key)).size, 28)
 
   for (const definition of OFFICIAL_SERVICE_DEFINITIONS) {
     assert.deepEqual(Object.keys(definition), ['key', 'ctxService', 'members'])
     for (const member of definition.members) {
-      assert.deepEqual(Object.keys(member), ['kind', 'name'])
+      const keys = Object.keys(member).sort().join(',')
+      assert.ok(
+        keys === 'kind,name' || keys === 'kind,name,optional' || keys === 'kind,name,optional,path',
+        `unexpected member keys: ${keys}`,
+      )
       assert.ok(member.kind === 'method' || member.kind === 'getter')
-      assert.equal('optional' in member, false)
+      if ('path' in member) {
+        assert.ok(Array.isArray(member.path) && member.path.length > 0 && member.path.every((segment) => typeof segment === 'string' && segment !== ''))
+        // A deep member is opt-in: it must not silently break the whole
+        // service face on an installation that lacks it.
+        assert.equal(member.optional, true)
+      }
     }
   }
 })

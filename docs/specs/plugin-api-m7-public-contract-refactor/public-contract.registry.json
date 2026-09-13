@@ -11778,7 +11778,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "frozen boolean state",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "recommended",
       "verification": [
         "member-inventory",
@@ -11811,7 +11811,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "frozen string",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "recommended",
       "verification": [
         "member-inventory",
@@ -11844,7 +11844,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "typed throw negotiation",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "recommended",
       "verification": [
         "member-inventory",
@@ -11877,7 +11877,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "status object per capability path",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "recommended",
       "verification": [
         "member-inventory",
@@ -11910,7 +11910,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "frozen path list",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "recommended",
       "verification": [
         "member-inventory",
@@ -11943,7 +11943,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "typed throw on missing",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "recommended",
       "verification": [
         "member-inventory",
@@ -12009,7 +12009,7 @@
       "concurrency": "exclusive",
       "reducer": "none",
       "currentShape": "rpc call",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -12075,7 +12075,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "conditional official llm accessor",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -12603,7 +12603,7 @@
       "concurrency": "deduplicate",
       "reducer": "none",
       "currentShape": "mount handles",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -12636,7 +12636,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "scope binding returning official scope",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -12933,7 +12933,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "availability query",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -13065,7 +13065,7 @@
       "concurrency": "latest-wins",
       "reducer": "none",
       "currentShape": "face registration handle",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -13131,7 +13131,7 @@
       "concurrency": "latest-wins",
       "reducer": "none",
       "currentShape": "json codec helper",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -13164,7 +13164,7 @@
       "concurrency": "latest-wins",
       "reducer": "none",
       "currentShape": "strict codec helper",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -13197,7 +13197,7 @@
       "concurrency": "latest-wins",
       "reducer": "none",
       "currentShape": "invocation codec builder",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -13263,7 +13263,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "audited official browser services namespace plus seven passthrough leaves",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -16301,14 +16301,14 @@
       "resourceKey": "sessionId",
       "identitySource": "facade-minted operation identity (accepted)",
       "conflictRule": "owner-conflict",
-      "lifecycle": "operation lifetime: pending -> accepted/running -> terminal (success|error|aborted|denied|superseded)",
+      "lifecycle": "operation lifetime: pending -> accepted/running -> terminal; a delivery beside a live operation keeps that operation identity (steer) or returns a cancellable queued reference (queue) instead of starting a second operation",
       "failureSemantics": "discriminated-result",
       "idempotency": "not idempotent",
       "retryLayer": null,
       "availabilityShape": "namespace availability() with reason layering",
       "concurrency": "deduplicate",
       "reducer": "none",
-      "currentShape": "accepted { ok:true, code:accepted, operation:{ id, ownerId, capability:{idempotent,autoRetry,failClosed}, status(), observe(), dispose() } } | typed {ok:false, code:duplicate|already-running|rejected|denied|unavailable}",
+      "currentShape": "accepted { ok:true, code:accepted, operation:{ id, ownerId, capability, status(), observe(), dispose() } } | steered { ok:true, code:accepted, delivery:'steer', operation:{ id } } | queued { ok:true, code:accepted, delivery:'queue', queuedRef:{ id, operationId } } | typed duplicate | already-running | rejected | denied | unavailable; message.attachmentRefs carries official durable image references (ImageAttachmentRef) that are verified through the attachments authority and mapped one-to-one into { type:'image', attachment:<canonical ref> } blocks — any unresolvable reference fails the whole request typed with a per-reference reason",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -16369,12 +16369,12 @@
       "conflictRule": "not-applicable",
       "lifecycle": "signal operation: cancellation is a request, never a terminal",
       "failureSemantics": "discriminated-result",
-      "idempotency": "not idempotent",
+      "idempotency": "not-idempotent",
       "retryLayer": null,
       "availabilityShape": "namespace availability() with reason layering",
       "concurrency": "deduplicate",
       "reducer": "none",
-      "currentShape": "typed {ok:true, code:accepted} | {ok:false, code:conflict|stale|invalid-input|unavailable}",
+      "currentShape": "typed {ok:true, code:accepted} | {ok:true, code:accepted, scope:'queue'} (a not-yet-claimed queued delivery was discarded) | {ok:false, code:conflict|stale|invalid-input|unavailable}; a claimed queued delivery falls through to the live-operation cancel only while its recorded operationId is still the live one",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -16441,7 +16441,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "client semantic root with same-shape request/cancel members",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -16466,15 +16466,15 @@
       "resourceKey": "sessionId",
       "identitySource": "facade-minted operation identity (accepted)",
       "conflictRule": "owner-conflict",
-      "lifecycle": "operation lifetime: pending -> accepted/running -> terminal",
+      "lifecycle": "operation lifetime: pending -> accepted/running -> terminal; a delivery beside a live operation keeps that operation identity (steer) or returns a cancellable queued reference (queue) instead of starting a second operation",
       "failureSemantics": "discriminated-result",
       "idempotency": "not idempotent",
       "retryLayer": null,
       "availabilityShape": "namespace availability() with reason layering",
       "concurrency": "deduplicate",
       "reducer": "none",
-      "currentShape": "accepted { ok:true, code:accepted, operation:{ id, ownerId, capability, status(), observe(), dispose() } } | typed failure",
-      "migrationAction": "retain",
+      "currentShape": "accepted { ok:true, code:accepted, operation:{ id, ownerId, capability, status(), observe(), dispose() } } | steered { ok:true, code:accepted, delivery:'steer', operation:{ id } } | queued { ok:true, code:accepted, delivery:'queue', queuedRef:{ id, operationId } } | typed duplicate | already-running | rejected | denied | unavailable; message.attachmentRefs carries official durable image references (ImageAttachmentRef) that are verified through the attachments authority and mapped one-to-one into { type:'image', attachment:<canonical ref> } blocks — any unresolvable reference fails the whole request typed with a per-reference reason",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -16501,13 +16501,13 @@
       "conflictRule": "not-applicable",
       "lifecycle": "signal operation: cancellation is a request, never a terminal",
       "failureSemantics": "discriminated-result",
-      "idempotency": "not idempotent",
+      "idempotency": "not-idempotent",
       "retryLayer": null,
       "availabilityShape": "namespace availability() with reason layering",
       "concurrency": "deduplicate",
       "reducer": "none",
-      "currentShape": "typed {ok:true, code:accepted} | {ok:false, code:conflict|stale|invalid-input|unavailable}",
-      "migrationAction": "retain",
+      "currentShape": "typed {ok:true, code:accepted} | {ok:true, code:accepted, scope:'queue'} (a not-yet-claimed queued delivery was discarded) | {ok:false, code:conflict|stale|invalid-input|unavailable}; a claimed queued delivery falls through to the live-operation cancel only while its recorded operationId is still the live one",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -16804,7 +16804,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "client attention projection (audience-filtered) over the browser runtime",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -16837,7 +16837,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "frozen array of audience-filtered redacted items",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -16870,7 +16870,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "frozen { items, nextCursor }",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -16903,7 +16903,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "handle { current(), subscribe(listener), dispose(), epoch }",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -16936,7 +16936,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "members: current() / subscribe(listener) / dispose() / epoch",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -16969,7 +16969,7 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "typed contribution outcome over the client-request carrier",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -17002,7 +17002,7 @@
       "concurrency": "deduplicate",
       "reducer": "none",
       "currentShape": "typed dismissal outcome",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -17035,7 +17035,7 @@
       "concurrency": "deduplicate",
       "reducer": "none",
       "currentShape": "typed invocation outcome",
-      "migrationAction": "retain",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -17530,6 +17530,570 @@
         "member-inventory",
         "registry-validation"
       ]
+    },
+    {
+      "publicPath": "sessions.interactions.list",
+      "targetPath": "sessions.interactions.list",
+      "capability": "client.sessions",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "facade client root",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "same-shape client member over the typed route; a rebind mid-call degrades to unavailable",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "the same typed shape the host face returns, projected value-only before it rides the carrier",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.interactions.get",
+      "targetPath": "sessions.interactions.get",
+      "capability": "client.sessions",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "facade client root",
+      "scope": "session",
+      "resourceKey": "interactionId",
+      "identitySource": "facade-minted public identity carried over the carrier",
+      "conflictRule": "not-applicable",
+      "lifecycle": "same-shape client member over the typed route; a rebind mid-call degrades to unavailable",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "the same typed shape the host face returns, projected value-only before it rides the carrier",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.interactions.respond",
+      "targetPath": "sessions.interactions.respond",
+      "capability": "client.sessions",
+      "kind": "leaf",
+      "idiom": "operation",
+      "idiomExceptions": [
+        {
+          "memberPath": "sessions.interactions.respond",
+          "baseContract": "operation",
+          "exception": "the accepted result carries no operation handle or terminal",
+          "reason": "same shape over the client carrier: the host answers with the discriminated result only, and the client never fabricates a handle",
+          "replacementShape": "the same typed shape, projected value-only before it rides the carrier",
+          "verification": "client respond shape assertions"
+        }
+      ],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "coordinated",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "facade client root",
+      "scope": "session",
+      "resourceKey": "interactionId",
+      "identitySource": "facade-minted public identity carried over the carrier",
+      "conflictRule": "owner-conflict",
+      "lifecycle": "same-shape client member over the typed route; a rebind mid-call degrades to unavailable",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "exclusive",
+      "reducer": "none",
+      "currentShape": "the same typed shape the host face returns, projected value-only before it rides the carrier",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.interactions.availability",
+      "targetPath": "sessions.interactions.availability",
+      "capability": "client.sessions",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "facade client root",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "same-shape client member over the typed route; a rebind mid-call degrades to unavailable",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "the same typed shape the host face returns, projected value-only before it rides the carrier",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.selection.get",
+      "targetPath": "sessions.selection.get",
+      "capability": "client.sessions",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "facade client root",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "facade-minted public identity carried over the carrier",
+      "conflictRule": "not-applicable",
+      "lifecycle": "same-shape client member over the typed route; a rebind mid-call degrades to unavailable",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "the same typed shape the host face returns, projected value-only before it rides the carrier",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.selection.set",
+      "targetPath": "sessions.selection.set",
+      "capability": "client.sessions",
+      "kind": "leaf",
+      "idiom": "mutation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "coordinated",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "facade client root",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "facade-minted public identity carried over the carrier",
+      "conflictRule": "compare-and-swap",
+      "lifecycle": "same-shape client member over the typed route; a rebind mid-call degrades to unavailable",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "compare-and-swap",
+      "reducer": "none",
+      "currentShape": "frozen { ok:true, code:'committed', revision, view } | { ok:false, code:'conflict'|'rejected'|'unavailable', reason? }; the submitted selection is completed from the official current value for fields the caller did not name",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.selection.availability",
+      "targetPath": "sessions.selection.availability",
+      "capability": "client.sessions",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "facade client root",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "same-shape client member over the typed route; a rebind mid-call degrades to unavailable",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "the same typed shape the host face returns, projected value-only before it rides the carrier",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.interactions",
+      "targetPath": "sessions.interactions",
+      "capability": "sessions.interactions",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "pending-interaction authority",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "caller-bound sub-surface whose disabled face keeps the exact member set",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.selection",
+      "targetPath": "sessions.selection",
+      "capability": "sessions.selection",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "selection authority",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "caller-bound sub-surface whose disabled face keeps the exact member set",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.interactions.list",
+      "targetPath": "sessions.interactions.list",
+      "capability": "sessions.interactions",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "pending-interaction authority",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "the official agent session identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime; the pending set is folded from the durable approval pair on every read",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.interactions (per-kind sources)",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { ok:true, items:[{ id, kind:'approval', sessionId, summary, createdAt, answerShape }], nextCursor, sources:{ approval, question } } | typed unavailable/degraded; an empty list never stands in for a healthy source",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.interactions.get",
+      "targetPath": "sessions.interactions.get",
+      "capability": "sessions.interactions",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "pending-interaction authority",
+      "scope": "session",
+      "resourceKey": "interactionId",
+      "identitySource": "facade-minted public interaction identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime; a decided or unknown interaction answers typed missing",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.interactions",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { ok:true, view } | { ok:false, code:'missing'|'unavailable' }",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.interactions.respond",
+      "targetPath": "sessions.interactions.respond",
+      "capability": "sessions.interactions",
+      "kind": "leaf",
+      "idiom": "operation",
+      "idiomExceptions": [
+        {
+          "memberPath": "sessions.interactions.respond",
+          "baseContract": "operation",
+          "exception": "the accepted result carries no operation handle or terminal",
+          "reason": "the answered interaction is not an operation the caller owns: the official approval authority adjudicates the decision and the facade only relays the caller action, so there is no operation identity or terminal to publish",
+          "replacementShape": "frozen { ok:true, code:'accepted' } | { ok:false, code:'stale'|'rejected'|'denied'|'unavailable', reason? }",
+          "verification": "respond outcome assertions plus the first-writer-wins stale case"
+        }
+      ],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "coordinated",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "official approval authority (the waterfall answerer chain)",
+      "scope": "session",
+      "resourceKey": "interactionId",
+      "identitySource": "facade-minted public interaction identity",
+      "conflictRule": "owner-conflict",
+      "lifecycle": "held request lifetime: held by the last-resort answerer, settled once by an explicit caller action, a request abort or a bounded lease expiry; a second responder receives stale (first writer wins)",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not-idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.interactions",
+      "concurrency": "exclusive",
+      "reducer": "none",
+      "currentShape": "frozen { ok:true, code:'accepted' } | { ok:false, code:'stale'|'rejected'|'denied'|'unavailable', reason? }; 'denied' is a reserved code on this member (the facade performs no authorization decision of its own)",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.interactions.availability",
+      "targetPath": "sessions.interactions.availability",
+      "capability": "sessions.interactions",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "pending-interaction authority",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime; never throws",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "leaf",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { status, reason?, sources } — degraded while the question source is unavailable on this runtime",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.selection.get",
+      "targetPath": "sessions.selection.get",
+      "capability": "sessions.selection",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [
+        {
+          "memberPath": "sessions.selection.get",
+          "baseContract": "projection",
+          "exception": "the read is not side-effect free on the official carrier",
+          "reason": "the official selection read resolves the session through the official resolver, which resumes a cold session and publishes a live agent; that is the official read entry contract (the same path the official UI uses), not a facade invention",
+          "replacementShape": "frozen { ok:true, view } | typed unavailable; the side effect belongs to the official resolver and is disclosed in availability/README",
+          "verification": "the cold-session read case asserts the read travels through the official carrier and that the facade keeps no state of its own"
+        }
+      ],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "official api-proxy selection state (read through the audited apiProxy whitelist member)",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "the official agent session identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime; the read carries the official resolver contract (a cold session may be resumed by the official read path)",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.selection",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { ok:true, view:{ sessionId, provider, model, effort, revision, source, committedAt, observedAt } } | typed unavailable; source discloses the effective tier and committedAt stays null unless this facade witnessed the commit",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.selection.set",
+      "targetPath": "sessions.selection.set",
+      "capability": "sessions.selection",
+      "kind": "leaf",
+      "idiom": "mutation",
+      "idiomExceptions": [
+        {
+          "memberPath": "sessions.selection.set",
+          "baseContract": "mutation",
+          "exception": "a partial selection is completed from the official current value before submission",
+          "reason": "the official seam requires a complete provider/model pair, so a change that names only some fields is layered over the official current value; no value is invented (a field the current value cannot supply refuses the call)",
+          "replacementShape": "frozen { ok:true, code:'committed', revision, view } | { ok:false, code:'conflict'|'rejected'|'unavailable', reason? }",
+          "verification": "partial-change assertions (the unnamed fields come from the official current value)"
+        }
+      ],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "coordinated",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "official api-proxy selection state (submitted through the audited apiProxy whitelist member)",
+      "scope": "session",
+      "resourceKey": "sessionId",
+      "identitySource": "the official agent session identity",
+      "conflictRule": "compare-and-swap",
+      "lifecycle": "facade lifetime; the official seam is last-write-wins, so the residual race between the value comparison and the submit is declared rather than hidden",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not-idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on sessions.selection",
+      "concurrency": "compare-and-swap",
+      "reducer": "none",
+      "currentShape": "frozen { ok:true, code:'committed', revision, view } | { ok:false, code:'conflict'|'rejected'|'unavailable', reason? }; the submitted selection is completed from the official current value for fields the caller did not name",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "sessions.selection.availability",
+      "targetPath": "sessions.selection.availability",
+      "capability": "sessions.selection",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "selection authority",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime; never throws",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "leaf",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { status: active|degraded|unavailable, reason? } — degraded when only the submit seam is missing",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
     }
   ],
   "servicesWhitelist": [
@@ -17704,10 +18268,28 @@
     {
       "key": "apiProxy",
       "capability": "services.apiProxy",
-      "members": "audited migrate member set (official leaf builders)",
+      "members": "audited member set: downloads (pure read) + respond (pure passthrough) + two optional deep selection operations",
       "composition": "pure",
       "channel": "passthrough",
-      "status": "advanced"
+      "status": "advanced",
+      "memberGrades": [
+        {
+          "member": "sessionsModels",
+          "grade": "pure",
+          "effect": "read",
+          "rationale": "a pure read of the official per-session selection state; no write, no bypass"
+        },
+        {
+          "member": "sessionsSelectModel",
+          "grade": "advanced",
+          "effect": "execute",
+          "composableProfile": false,
+          "bypasses": [
+            "sessions.selection.set coordinates this single official write point (value-level compare-and-set, bounded audit) and is the only supported writer on the facade side"
+          ],
+          "rationale": "the official seam is last-write-wins without an atomic CAS; the coordinated facade mutation closes the authority gap"
+        }
+      ]
     },
     {
       "key": "clientModules",
@@ -21930,6 +22512,46 @@
       ],
       "availabilityMember": null,
       "availabilityExemption": "client root availability()"
+    },
+    {
+      "namespace": "sessions.interactions",
+      "runtime": "host",
+      "capabilityPath": "sessions.interactions",
+      "contributingFeatures": [
+        "interactive-session-access"
+      ],
+      "availabilityMember": "sessions.interactions.availability",
+      "availabilityExemption": null
+    },
+    {
+      "namespace": "sessions.selection",
+      "runtime": "host",
+      "capabilityPath": "sessions.selection",
+      "contributingFeatures": [
+        "interactive-session-access"
+      ],
+      "availabilityMember": "sessions.selection.availability",
+      "availabilityExemption": null
+    },
+    {
+      "namespace": "sessions.interactions",
+      "runtime": "client",
+      "capabilityPath": "sessions.interactions",
+      "contributingFeatures": [
+        "interactive-session-access"
+      ],
+      "availabilityMember": "sessions.interactions.availability",
+      "availabilityExemption": null
+    },
+    {
+      "namespace": "sessions.selection",
+      "runtime": "client",
+      "capabilityPath": "sessions.selection",
+      "contributingFeatures": [
+        "interactive-session-access"
+      ],
+      "availabilityMember": "sessions.selection.availability",
+      "availabilityExemption": null
     }
   ],
   "capabilityMatrix": [
@@ -24186,6 +24808,60 @@
       "verification": [
         "member-inventory",
         "registry-validation"
+      ]
+    },
+    {
+      "capabilityCluster": "sessions.interactions",
+      "currentPaths": [
+        "sessions.interactions.availability",
+        "sessions.interactions.get",
+        "sessions.interactions.list",
+        "sessions.interactions.respond",
+        "sessions.interactions"
+      ],
+      "targetPaths": [
+        "sessions.interactions.availability",
+        "sessions.interactions.get",
+        "sessions.interactions.list",
+        "sessions.interactions.respond",
+        "sessions.interactions"
+      ],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "interactive-session-access"
+      ],
+      "verification": [
+        "registry-draft",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "sessions.selection",
+      "currentPaths": [
+        "sessions.selection.availability",
+        "sessions.selection.get",
+        "sessions.selection.set",
+        "sessions.selection"
+      ],
+      "targetPaths": [
+        "sessions.selection.availability",
+        "sessions.selection.get",
+        "sessions.selection.set",
+        "sessions.selection"
+      ],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "interactive-session-access"
+      ],
+      "verification": [
+        "registry-draft",
+        "capability-matrix"
       ]
     }
   ]

@@ -77,13 +77,15 @@ test('combined host publishes additive immutable compat shapes once without synt
   // The integration wave adds the shared loop boundary slice guest
   // listeners (attempt-fact probe + ingestion for the activity projection
   // and the session interaction authority) and the per-source evidence
-  // subscriptions of the session activity projection.
+  // subscriptions of the session activity projection. The second
+  // `approval/request` listener is the pending-interaction last-resort
+  // answerer (append only, so an earlier answerer always wins).
   assert.deepEqual(state.listeners.map(({ name }) => name).sort(), [
     'agent-loop/assembled-context', 'agent/attempt/end', 'agent/attempt/end', 'agent/attempt/end',
     'agent/attempt/start', 'agent/attempt/start', 'agent/attempt/start',
     'agent/created', 'agent/disposed',
     'agent/error', 'agent/error', 'agent/inbox/claimed', 'agent/inbox/discarded',
-    'agent/inbox/inserted', 'agent/request', 'agent/status', 'approval/request',
+    'agent/inbox/inserted', 'agent/request', 'agent/status', 'approval/request', 'approval/request',
     'compaction/completed', 'fs/edit-intent', 'fs/write-intent',
     'jobs/changed', 'jobs/done', 'llm/stream', 'llm/stream', 'llm/stream',
     'session/created', 'session/created', 'session/disposed', 'session/disposed',

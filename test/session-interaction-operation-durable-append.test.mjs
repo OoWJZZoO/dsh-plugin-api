@@ -21,6 +21,9 @@ import { appendMessage } from '../lib/session-durable-feature.js'
 import { createSessionInteractionOperation } from '../lib/session-interaction-operation.js'
 import { INTERACTION_BOUNDARY_SYMBOL } from '../lib/session-interaction-operation-authority.js'
 
+/** One official durable image reference (unknown to the fake store: it fails closed). */
+const IMAGE_REF = Object.freeze({ attachmentId: 'att_1', mediaType: 'image/png', bytes: 68, width: 8, height: 8 })
+
 const contracts = buildSessionDurableContracts({
   Session,
   isJsonValue,
@@ -82,12 +85,12 @@ test('a public user-message request is written through the real durable layer', 
   assert.equal(appends[0].payload.source.kind, 'user')
 })
 
-test('attachment refs are never silently dropped: the request fails typed and writes nothing', async () => {
+test('an unresolvable attachment ref fails the whole request typed and writes nothing', async () => {
   const { ctx, owner, appends } = bootHost()
   const session = ctx.sessions.create('durable-e2e-attachments')
   const outcome = await owner.request({
     sessionId: session.id ?? 'durable-e2e-attachments',
-    message: { kind: 'user-message', text: 'see image', attachmentRefs: ['att_1'] },
+    message: { kind: 'user-message', text: 'see image', attachmentRefs: [IMAGE_REF] },
   }, { owner: 'consumer-a' })
   assert.equal(outcome.ok, false)
   assert.equal(outcome.code, 'unavailable')

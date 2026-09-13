@@ -53,13 +53,23 @@ function createServiceStubs() {
     const callLog = {}
     for (const member of def.members) {
       if (member.optional) continue
+      // A path-addressed member lives under a nested owner (e.g.
+      // `apiProxy.sessions.models`); the stub builds that owner so the
+      // integration fixture exercises the same seam a plugin would reach.
+      const segments = Array.isArray(member.path) ? member.path : [member.name]
+      const leaf = segments[segments.length - 1]
+      let owner = stub
+      for (const segment of segments.slice(0, -1)) {
+        owner[segment] ??= {}
+        owner = owner[segment]
+      }
       if (member.kind === 'method') {
-        stub[member.name] = function (...args) {
+        owner[leaf] = function (...args) {
           ;(callLog[member.name] ??= []).push([this, args])
           return { member: member.name }
         }
       } else if (member.kind === 'getter') {
-        stub[member.name] = { marker: `${def.key}.${member.name}` }
+        owner[leaf] = { marker: `${def.key}.${member.name}` }
       }
       // forward members are served by the session-reference uri helpers
     }
@@ -72,7 +82,9 @@ function createServiceStubs() {
 function createHostCtx() {
   const { stubs, calls } = createServiceStubs()
   const apiProxy = stubs.apiProxy
-  apiProxy.sessions = { prompt() {}, selectModel() {} }
+  // Only the mux prompt operation is stubbed here: the optional deep selection
+  // seams stay absent, which is exactly the degradation this fixture pins.
+  apiProxy.sessions = { prompt() {} }
   // The host event slices probe provider presence for these two client-facing
   // names; plain owned-key objects satisfy the probe.
   stubs.dynamicCordisRunner = { activeRuns: { marker: 'dynamicCordisRunner.activeRuns' } }

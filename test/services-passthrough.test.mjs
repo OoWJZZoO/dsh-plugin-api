@@ -24,18 +24,28 @@ function createMockServiceAndHelpers(def) {
   const uriHelpers = {}
 
   for (const member of def.members) {
+    // A deep member lives under a nested owner (e.g. `sessions.models`); the
+    // stub builds that owner so the receiver assertion still proves the facade
+    // invokes the member on the object that really owns it.
+    const segments = Array.isArray(member.path) ? member.path : [member.name]
+    const leaf = segments[segments.length - 1]
+    let owner = service
+    for (const segment of segments.slice(0, -1)) {
+      owner[segment] ??= {}
+      owner = owner[segment]
+    }
     if (member.kind === 'method') {
       const returnValue = { service: def.key, member: member.name }
       returns.set(member.name, returnValue)
-      service[member.name] = function (...args) {
-        assert.equal(this, service, `${def.key}.${member.name} must preserve this binding`)
+      owner[leaf] = function (...args) {
+        assert.equal(this, owner, `${def.key}.${member.name} must preserve this binding`)
         calls.set(member.name, args)
         return returnValue
       }
     } else if (member.kind === 'getter') {
       const value = { service: def.key, getter: member.name }
       getterValues.set(member.name, value)
-      Object.defineProperty(service, member.name, {
+      Object.defineProperty(owner, leaf, {
         enumerable: true,
         get() {
           return value

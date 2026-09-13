@@ -22,6 +22,10 @@ import {
   validateRequestSpec,
 } from '../lib/session-interaction-operation-normalize.js'
 
+
+/** One official durable image reference (the shape the attachments store verifies). */
+const IMAGE_REF = Object.freeze({ attachmentId: 'att_1', mediaType: 'image/png', bytes: 68, width: 8, height: 8 })
+
 test('terminal and message-kind vocabularies are closed and frozen', () => {
   assert.deepEqual(TERMINAL_OUTCOMES, ['success', 'error', 'aborted', 'denied', 'superseded'])
   assert.deepEqual(REQUEST_MESSAGE_KINDS, ['user-message'])
@@ -31,7 +35,7 @@ test('terminal and message-kind vocabularies are closed and frozen', () => {
 test('request spec validation accepts the frozen contract fields', () => {
   const ok = validateRequestSpec({
     sessionId: 's1',
-    message: { kind: 'user-message', text: 'hello', attachmentRefs: ['a1'] },
+    message: { kind: 'user-message', text: 'hello', attachmentRefs: [IMAGE_REF] },
     idempotencyKey: 'k1',
     parent: 'p1',
     cause: 'retry',
@@ -40,7 +44,8 @@ test('request spec validation accepts the frozen contract fields', () => {
   assert.equal(ok.value.sessionId, 's1')
   assert.equal(ok.value.message.kind, 'user-message')
   assert.ok(Object.isFrozen(ok.value.message))
-  assert.deepEqual(ok.value.message.attachmentRefs, ['a1'])
+  assert.deepEqual(ok.value.message.attachmentRefs, [IMAGE_REF])
+  assert.ok(Object.isFrozen(ok.value.message.attachmentRefs[0]), 'the reference is copied and frozen, never borrowed')
 })
 
 test('request spec validation rejects malformed or unsupported input as invalid-input', () => {
@@ -51,6 +56,16 @@ test('request spec validation rejects malformed or unsupported input as invalid-
   assert.equal(validateRequestSpec({ sessionId: 's1', message: { kind: 'user-message' } }).code, 'invalid-input')
   assert.equal(validateRequestSpec({ sessionId: 's1', message: { kind: 'user-message', text: '' } }).code, 'invalid-input')
   assert.equal(validateRequestSpec({ sessionId: 's1', message: { kind: 'user-message', text: 'x', attachmentRefs: [1] } }).code, 'invalid-input')
+  // A bare id cannot be verified nor carried durably: it is a shape violation,
+  // not an attachment that silently degrades.
+  assert.equal(validateRequestSpec({ sessionId: 's1', message: { kind: 'user-message', text: 'x', attachmentRefs: ['att_1'] } }).code, 'invalid-input')
+  assert.equal(validateRequestSpec({ sessionId: 's1', message: { kind: 'user-message', text: 'x', attachmentRefs: [{ ...IMAGE_REF, mediaType: 'image/tiff' }] } }).code, 'invalid-input')
+  assert.equal(validateRequestSpec({ sessionId: 's1', message: { kind: 'user-message', text: 'x', attachmentRefs: [{ ...IMAGE_REF, bytes: 0 }] } }).code, 'invalid-input')
+  assert.equal(validateRequestSpec({ sessionId: 's1', message: { kind: 'user-message', text: 'x', attachmentRefs: [{ ...IMAGE_REF, name: '' }] } }).code, 'invalid-input')
+  // delivery vocabulary and its message requirement
+  assert.equal(validateRequestSpec({ sessionId: 's1', message: { kind: 'user-message', text: 'x' }, delivery: 'later' }).code, 'invalid-input')
+  assert.equal(validateRequestSpec({ sessionId: 's1', delivery: 'steer' }).code, 'invalid-input')
+  assert.equal(validateRequestSpec({ sessionId: 's1', message: { kind: 'user-message', text: 'x' }, delivery: 'steer' }).ok, true)
   assert.equal(validateRequestSpec({ sessionId: 's1', idempotencyKey: '' }).code, 'invalid-input')
   assert.equal(validateRequestSpec({ sessionId: 's1', parent: 7 }).code, 'invalid-input')
   assert.equal(validateRequestSpec({ sessionId: 's1', signal: {} }).code, 'invalid-input')

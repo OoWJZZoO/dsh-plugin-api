@@ -305,7 +305,14 @@ export const SERVICE_DEFINITION_CONTRACTS = freeze([
   {
     key: 'apiProxy',
     ctxService: 'apiProxy',
-    members: [getter('downloads'), method('respond')],
+    members: [
+      getter('downloads'),
+      method('respond'),
+      // Deep, opt-in selection seams reached through the official sessions
+      // bus; both stay optional so a missing one never disables the face.
+      { kind: 'method', name: 'sessionsModels', path: ['sessions', 'models'], optional: true },
+      { kind: 'method', name: 'sessionsSelectModel', path: ['sessions', 'selectModel'], optional: true },
+    ],
   },
   {
     key: 'clientModules',

@@ -76,28 +76,28 @@ test('the FEATURE_MOUNTERS tail order pins stay intact (remote..profile at the e
   // next entry after checkpoints, and scoped agent contributions append the
   // final entry after decision participation. The remote..profile relative
   // order pins shift by exactly those entries.
-  assert.equal(names[names.length - 25], 'remote', 'remote stays directly before execution')
-  assert.equal(names[names.length - 24], 'execution', 'execution stays directly before recovery')
-  assert.equal(names[names.length - 23], 'recovery', 'recovery stays directly before coordination')
-  assert.equal(names[names.length - 22], 'coordination', 'coordination stays directly before workspaceTransactions')
-  assert.equal(names[names.length - 21], 'storage', 'storage mounts directly before workspaceTransactions')
-  assert.equal(names[names.length - 20], 'workspaceTransactions', 'workspaceTransactions stays directly before diagnostics')
-  assert.equal(names[names.length - 19], 'diagnostics', 'diagnostics stays directly before tasks')
-  assert.equal(names[names.length - 18], 'tasks', 'tasks stays directly before toolDiscovery')
-  assert.equal(names[names.length - 17], 'toolDiscovery', 'tool discovery mounts directly before skillsActivation')
-  assert.equal(names[names.length - 16], 'skillsActivation', 'skills activation mounts directly before context')
-  assert.equal(names[names.length - 15], 'context', 'context mounts directly before profile')
-  assert.equal(names[names.length - 14], 'profile', 'profile stays directly before llmAdapters')
-  assert.equal(names[names.length - 13], 'llmAdapters', 'adapter decoration mounts directly before sessionChannel')
-  assert.equal(names[names.length - 12], 'sessionChannel', 'sessionChannel stays directly before sessionActivity')
-  assert.equal(names[names.length - 11], 'sessionActivity', 'session activity projection appends first in the integration wave tail')
-  assert.equal(names[names.length - 10], 'sessionPlanMode', 'plan mode control appends after session activity')
-  assert.equal(names[names.length - 9], 'sessionPermissionPresets', 'permission preset control appends after plan mode control')
-  assert.equal(names[names.length - 8], 'sessionInteraction', 'session interaction operation appends after plan mode control')
-  assert.equal(names[names.length - 7], 'attention', 'attention appends after sessionInteraction')
-  assert.equal(names[names.length - 6], 'checkpoints', 'checkpoints stays directly before decision participation')
-  assert.equal(names[names.length - 5], 'decisionParticipation', 'decision participation stays directly before scoped contributions')
-  assert.equal(names[names.length - 4], 'scopedAgentContributions', 'scoped agent contributions is the last FEATURE_MOUNTERS entry')
+  assert.equal(names[names.length - 27], 'remote', 'remote stays directly before execution')
+  assert.equal(names[names.length - 26], 'execution', 'execution stays directly before recovery')
+  assert.equal(names[names.length - 25], 'recovery', 'recovery stays directly before coordination')
+  assert.equal(names[names.length - 24], 'coordination', 'coordination stays directly before workspaceTransactions')
+  assert.equal(names[names.length - 23], 'storage', 'storage mounts directly before workspaceTransactions')
+  assert.equal(names[names.length - 22], 'workspaceTransactions', 'workspaceTransactions stays directly before diagnostics')
+  assert.equal(names[names.length - 21], 'diagnostics', 'diagnostics stays directly before tasks')
+  assert.equal(names[names.length - 20], 'tasks', 'tasks stays directly before toolDiscovery')
+  assert.equal(names[names.length - 19], 'toolDiscovery', 'tool discovery mounts directly before skillsActivation')
+  assert.equal(names[names.length - 18], 'skillsActivation', 'skills activation mounts directly before context')
+  assert.equal(names[names.length - 17], 'context', 'context mounts directly before profile')
+  assert.equal(names[names.length - 16], 'profile', 'profile stays directly before llmAdapters')
+  assert.equal(names[names.length - 15], 'llmAdapters', 'adapter decoration mounts directly before sessionChannel')
+  assert.equal(names[names.length - 14], 'sessionChannel', 'sessionChannel stays directly before sessionActivity')
+  assert.equal(names[names.length - 13], 'sessionActivity', 'session activity projection appends first in the integration wave tail')
+  assert.equal(names[names.length - 12], 'sessionPlanMode', 'plan mode control appends after session activity')
+  assert.equal(names[names.length - 11], 'sessionPermissionPresets', 'permission preset control appends after plan mode control')
+  assert.equal(names[names.length - 10], 'sessionInteraction', 'session interaction operation appends after plan mode control')
+  assert.equal(names[names.length - 9], 'attention', 'attention appends after sessionInteraction')
+  assert.equal(names[names.length - 8], 'checkpoints', 'checkpoints stays directly before decision participation')
+  assert.equal(names[names.length - 7], 'decisionParticipation', 'decision participation stays directly before scoped contributions')
+  assert.equal(names[names.length - 6], 'scopedAgentContributions', 'scoped agent contributions is the last FEATURE_MOUNTERS entry')
   // security mounts in the middle (after llm/admission, before session)
   assert.ok(names.indexOf('security') > names.indexOf('llm/admission'))
   assert.ok(names.indexOf('security') < names.indexOf('session'))
@@ -115,8 +115,10 @@ test('a registered policy enforces through the mounted facade and creates audite
   }))
 
   // drive the official seam as the mounted listener would be reached
+  // The pending-interaction answerer registers on the same waterfall, append
+  // only and after this policy seam, so the security listener is the first one.
   const approvalListener = state.listeners.filter((entry) => entry.name === 'approval/request').map((entry) => entry.listener)
-  assert.equal(approvalListener.length, 1)
+  assert.equal(approvalListener.length >= 1, true)
   const outcome = await approvalListener[0]({ agent: { id: 'a1' }, toolName: 'bash', reason: 'write' }, () => Promise.resolve('unavailable'))
   assert.equal(outcome, 'rejected')
 
@@ -198,8 +200,10 @@ test('re-apply is idempotent for the security feature', () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
   assert.doesNotThrow(() => apply(ctx))
-  const securityListeners = state.listeners.filter((entry) => entry.name === 'approval/request')
-  assert.equal(securityListeners.length, 1, 'no duplicate seam listeners after re-apply')
+  const afterFirst = state.listeners.filter((entry) => entry.name === 'approval/request').length
+  assert.doesNotThrow(() => apply(ctx))
+  const afterSecond = state.listeners.filter((entry) => entry.name === 'approval/request').length
+  assert.equal(afterSecond, afterFirst, 'no duplicate seam listeners after re-apply')
 })
 
 test('pluginApi service exposes the security disabled surface until mounted', () => {

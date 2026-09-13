@@ -87,13 +87,15 @@ test('every member uses a legal kind and has a name', () => {
   }
 })
 
-test('only sessionTelemetry.flush is marked optional', () => {
+test('optional members are declared only where a seam may legitimately be absent', () => {
+  // Every optional member is an explicit, reviewed exception: `flush` on
+  // sessionTelemetry, and the two deep apiProxy selection operations that are
+  // addressed through the official sessions bus.
+  const allowed = new Set(['sessionTelemetry.flush', 'apiProxy.sessionsModels', 'apiProxy.sessionsSelectModel'])
   for (const def of SERVICE_DEFINITIONS) {
     for (const member of def.members) {
-      if (member.optional) {
-        assert.equal(def.key, 'sessionTelemetry')
-        assert.equal(member.name, 'flush')
-      }
+      if (!member.optional) continue
+      assert.equal(allowed.has(`${def.key}.${member.name}`), true, `${def.key}.${member.name} is not a declared optional seam`)
     }
   }
 })

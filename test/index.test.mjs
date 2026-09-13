@@ -35,7 +35,11 @@ function createMockCtx(options = {}) {
       registerModelDiscovery() {},
     },
     agents: { get() {}, list() {}, roots() {} },
-    apiProxy: { sessions: { prompt() {}, selectModel() {} } },
+    apiProxy: {
+      sessions: { prompt() {}, selectModel() {}, models() { return { current: { provider: 'deepseek', model: 'v3' } } } },
+      sessionsModels() { return { result: { ok: true, value: { current: { provider: 'deepseek', model: 'v3' } } } } },
+      sessionsSelectModel() { return { result: { ok: true, value: { selected: { provider: 'deepseek', model: 'v4' } } } } },
+    },
     tools: {
       register() {},
       restrict() {},
@@ -165,6 +169,10 @@ test('apply with healthy ctx registers active service and mounts llm/request + l
     { name: 'credentials', isActive: true },
     { name: 'sessionCompaction', isActive: true },
     { name: 'workflows', isActive: true },
+    // interactive-session-access: the pending-interaction view + last-resort
+    // answerer and the coordinated selection mutation.
+    { name: 'sessionInteractions', isActive: true },
+    { name: 'sessionSelection', isActive: true },
   ])
   assert.equal(state.pluginApi.llm.availability().status, 'active')
   assert.equal(typeof state.pluginApi.llm.requestTransforms.register, 'function')
@@ -228,9 +236,10 @@ test('feature guard failure disables only llm/admission and keeps the facade act
 
 
 
-// 31 established features plus the integration-wave features
-  // (sessionActivity, sessionPlanMode, sessionInteraction, attention, checkpoints).
-  assert.equal(features.length, 42)
+  // 31 established features plus the integration-wave features
+  // (sessionActivity, sessionPlanMode, sessionInteraction, attention,
+  // checkpoints, and the interactive-session-access pair).
+  assert.equal(features.length, 44)
 
   assert.deepEqual(features[0], { name: 'tools', isActive: true })
   assert.deepEqual(features[1], { name: 'events', isActive: true })
