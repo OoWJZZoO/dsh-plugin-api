@@ -185,7 +185,8 @@
     "remotes",
     "storage",
     "services",
-    "credentials"
+    "credentials",
+    "workflows"
   ],
   "clientDomainTree": [
     "isActive",
@@ -16150,6 +16151,139 @@
       ]
     },
     {
+      "publicPath": "workflows.start",
+      "targetPath": "workflows.start",
+      "capability": "workflows",
+      "kind": "leaf",
+      "idiom": "operation",
+      "idiomExceptions": [
+        {
+          "memberPath": "workflows.start",
+          "baseContract": "operation",
+          "exception": "the outer result omits the terminal member",
+          "reason": "a cannot-begin refusal has no operation instance to carry a terminal (no run identity is minted); the real operation terminal is delivered exactly once by the holder-owned run through its result promise",
+          "replacementShape": "frozen { ok:true, code:'started', handle } | frozen { ok:false, code: <official WorkflowError code passed through, open mapping> | 'invalid-request' | 'parent-unresolved' | 'internal', reason }",
+          "verification": "handle/result shape assertions plus the registry idiom-exception validation"
+        }
+      ],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "additive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "workflow authority",
+      "scope": "profile",
+      "resourceKey": "workflow run id",
+      "identitySource": "the official workflow run identity",
+      "conflictRule": "not-applicable",
+      "lifecycle": "the official run is holder-owned; the engine adjudicates the single terminal and the facade never rewrites it",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not-idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability member on workflows",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen synchronous discriminated result: started with the run handle, or a no-run refusal (official codes passed through unchanged; facade codes invalid-request / parent-unresolved / internal)",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "workflows.start.handle",
+      "targetPath": "workflows.start.handle",
+      "capability": "workflows",
+      "kind": "handle",
+      "idiom": "operation",
+      "idiomExceptions": [
+        {
+          "memberPath": "workflows.start.handle.meta",
+          "baseContract": "operation",
+          "exception": "the handle carries the engine-validated meta block",
+          "reason": "the meta block is available before the script runs (official contract) and is what a holder renders or links",
+          "replacementShape": "frozen engine-validated meta block",
+          "verification": "handle/result shape assertions plus the registry idiom-exception validation"
+        },
+        {
+          "memberPath": "workflows.start.handle.result",
+          "baseContract": "operation",
+          "exception": "the handle carries the result promise",
+          "reason": "the official result promise (never rejects) is the single terminal delivery point and cannot be translated",
+          "replacementShape": "Promise resolving once to the frozen discriminated terminal { ok, terminal: success|aborted|error, stopReason, value?, error?, agentsStarted? }",
+          "verification": "handle/result shape assertions plus the registry idiom-exception validation"
+        },
+        {
+          "memberPath": "workflows.start.handle.cancel",
+          "baseContract": "operation",
+          "exception": "the handle carries the cancel action",
+          "reason": "cancel is a first-class action of the official seam (cancellation is a signal, the engine adjudicates the terminal)",
+          "replacementShape": "cancel(reason?): void, delegated verbatim; a no-op after settlement",
+          "verification": "handle/result shape assertions plus the registry idiom-exception validation"
+        }
+      ],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "additive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "workflow authority",
+      "scope": "profile",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "holder-owned: the handle is the ownership proof; operations are bound to the run identity captured at creation and stale references cannot reach another run",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "none",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "handle { id, ownerId, meta, status(), observe(listener), result, cancel(reason?), dispose() } (idiom exceptions recorded); observe is a run-scoped filter over the existing workflow/* feed",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "workflows.availability",
+      "targetPath": "workflows.availability",
+      "capability": "workflows",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "workflow authority",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "the official run is holder-owned; the engine adjudicates the single terminal and the facade never rewrites it",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not-idempotent",
+      "retryLayer": null,
+      "availabilityShape": "leaf",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { status: active|degraded|unavailable, reason?: string } probing the official engine seam on every read; never throws",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
       "publicPath": "sessions.request",
       "targetPath": "sessions.request",
       "capability": "sessions.request",
@@ -21738,6 +21872,16 @@
       "availabilityExemption": null
     },
     {
+      "namespace": "workflows",
+      "runtime": "host",
+      "capabilityPath": "workflows",
+      "contributingFeatures": [
+        "workflow-execution-contract"
+      ],
+      "availabilityMember": "workflows.availability",
+      "availabilityExemption": null
+    },
+    {
       "namespace": "sessions.request",
       "runtime": "host",
       "capabilityPath": "sessions.request",
@@ -23788,6 +23932,30 @@
       "targetPaths": [
         "sessions.compaction.availability",
         "sessions.compaction.run"
+      ],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "interactive-session-access"
+      ],
+      "verification": [
+        "registry-draft",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "workflows",
+      "currentPaths": [
+        "workflows.availability",
+        "workflows.start",
+        "workflows.start.handle"
+      ],
+      "targetPaths": [
+        "workflows.availability",
+        "workflows.start",
+        "workflows.start.handle"
       ],
       "status": "retained",
       "qualifiers": [],

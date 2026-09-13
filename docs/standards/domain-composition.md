@@ -25,6 +25,7 @@
 | `sessions.branches` | branch/plan/commit identity、generation 和 CAS 明确；直接 session mutation 不得静默破坏 branch 保证 |
 | `sessions.channels` | channel/device/session scope、generation possession 和认证 owner 清晰；注册链遵守声明的固定顺序 |
 | `sessions.compaction` | 压缩引擎是唯一执行者与事实 producer；门面只做受控触发与终态映射，不新增 mutation authority、不铸造 operation 身份、不新建 durable scope |
+| `workflows` | workflow 引擎是唯一执行者、校验者与终态 authority；门面只做受控启动、owner/parent 检查与终态映射，不铸造第二套 run 身份、不建全局 run 注册表、不代答终态；`tasks` 管关系、`executions` 管观测，各归其主 |
 | `tools` | tool 名称/key 冲突显式；注册 owner 化；restrict/guard 使用固定组合代数；执行使用 scope 和 execution identity |
 | `tools.discovery` | descriptor 与 activation owner 化；latest-wins 只发生在同 owner；跨 owner catalog 冲突显式 |
 | `skills.activation` | skill descriptor/activation owner 化；静态 registry 与 session activation 的 authority 边界固定 |

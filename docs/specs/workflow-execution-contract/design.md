@@ -212,3 +212,23 @@ flowchart TB
 ## 8. 两线一致性声明
 
 本 feature 与 `compaction-operation` 无共享 owner（本线为门面主包 owner；compaction 线的 R 扩展 owner 为 compaction-events 替代行）、无共享 namespace（`workflows` vs `sessions.compaction`）、无共享状态或词汇。两线仅在 operation idiom 的**标准外层合同**上遵循同一份 `api-idioms.md`；本线不使用 compaction 线的 outcome 词汇（compacted/skipped/rejected），compaction 线不使用本线的 run 词汇（started/settled）。
+
+> **Stage 4 修订登记（2026-09-14）**：(i) §3.3/§3.10 的门面自有码由两类（`parent-unresolved`/`invalid-request`）扩为**三类**，新增 `internal` 承载「包装层异常被 contain 为判别式失败」（§3.10 已声明该 contain 行为但未给码）；(ii) handle 的 `meta` 为**冻结副本**（引擎验证后的块，公开视图冻结，引擎自身对象不被改写）；(iii) `observe` 的事实入口是既有 `workflow/*` 订阅的 run-scoped 过滤（六个登记事件名逐一订阅、按 run identity 过滤），不建第二投影 owner。均不改写任何已交付验收边界。
+
+## Stage 4 运行结论（2026-09-14；P1–P8 回写）
+
+Stage 4 在真实官方组件链上复核探针（e2e 基座 = 真实 `@deepseek-ai/cordis` 树 + **真实 `@deepseek-ai/dsh-workflow-worker-thread` 引擎**，另以探针形状引擎替身覆盖确定性场景）：
+
+- **P1/P2 seam 与 start 序列**：真实引擎同步校验（`META_INVALID`/`SCRIPT_PARSE`/`AGENT_START`/`INVALID_ARGUMENT` 四码均在真实引擎上实测，另有一个超上限 `maxTotalAgents` 的同一码用例）成立，且拒绝时无 run、无任何 `workflow/*` 事实；成功路径 id 为官方 UUID、`workflow/start` 恰好一条、`workflow/end` 的 `stopReason` 与 handle 终态一致、事件不含脚本返回值（value 只在 holder 的 `result`）。
+- **P3 run handle**：`id`/`meta`（公开冻结副本）/`status()` 派生视图/`result`（never rejects、恰好一次）/`cancel(reason)` 委托/`dispose()` 幂等均实测；handle 操作绑定创建时的 run identity（旧 handle 触达不到他人 run）。
+- **P4 meta 校验**：引擎是唯一校验者（门面只做形状检查）；`META_INVALID` 由引擎同步给出并原样透传。
+- **P5/P7 owner 与 parent**：owner 由访问上下文 fiber 派生（root 访问得 `root`，插件访问得插件名）；parent 必须是门面 agents 面的 live 引用（**裸 id 属请求形状违规 → `invalid-request`**；自造对象/幽灵 id/agents 面缺失 → `parent-unresolved`；两类都不触引擎），verified 对象本体原样进引擎。
+- **P6 接线**：顶层 `workflows` namespace（`{start, availability}`，任何状态下成员集合一致）；feature key `workflows` 经真实 apply 循环可挂载；`workflowEngine` 缺失时 typed disabled + availability unavailable，无关能力不受连带。
+- **P8 登记**：registry 三条成员行（含四条 idiom 例外六元组）+ `hostDomainTree`/`namespaces`/`capabilityMatrix`；`eventCatalog` 零新增；`servicesWhitelist` 不变；feature 总数 41 → 42 的列表/尾部断言已同步。
+
+**实现期修订（已登记）**：
+1. handle 的 `meta` 取**冻结副本**（公开视图冻结、不改写引擎对象）；`result` 的 `value` 按 R4 做**深冻结**（JSON 数据，深度受限）。
+2. **官方结算/失败消息原样保留**（不再做 240 截断；§3.6「如实保留」为准）。
+3. **官方 `WorkflowError` 的识别按结构判定**（`name` + 字符串 `code`）而非 `instanceof`——执行边界禁止 import 官方包，`instanceof` 不可用；该等价实现登记在案（真实引擎的四码实测保证行为等价）。
+4. e2e 分层：真实引擎承载核心链（启动/真实 worker 执行/终态/四个同步拒绝码/官方 UUID 身份/**child 归因与子输出拍平**），其 worker 线程在结算后仍存活，故所有真实链用例在 `finally` 中 `dispose()`；**其余确定性场景**（终态三分支、重复启动、cancel 绑定、观察隔离、事实面）由探针形状引擎替身承载。
+5. **child 调用归因（真实链实测）**：真实 worker 的 `agent()` 桥接**在最小 fake subagent provider 下即可到达 host seam 并完成子 run**——此前一次尝试失败的真因是 harness 直接构造引擎时**未传全量 Config**（缺 `maxConcurrentAgents` 使真实子启动在并发槽等待而挂起），补齐 Config（`maxConcurrentAgents`/`maxItemsPerCall`/`syncTimeoutMs`）后链路即通。e2e 因此以真实引擎取证：子 agent 实际被调用（`childStarts === 1`）、child 归因到 **verified parent**（引擎收到的 parent 即门面校验过的 live agent）、子输出经 engine 拍平后回到脚本、`workflow/agent-start`/`agent-end` 由引擎派发、`agentsStarted` 计数一致。

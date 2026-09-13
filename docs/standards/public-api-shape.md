@@ -47,6 +47,8 @@ pluginApi
 │   ├── branches
 │   ├── channels
 │   └── compaction (run / availability)
+├── workflows
+│   └── start / availability
 ├── tools
 │   ├── register / restrict / guard / get / schemas / execute /
 │   ├── presentAs / executionMode / defineTool / toolAbortedError
