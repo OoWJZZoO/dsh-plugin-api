@@ -19,7 +19,7 @@
 | 操作控制对象 | `sessions.request`、`workflows.start`、`executions.recovery.checkpoints.restore` —— 控制对象统一在 `operation`，`dispose()` 返回 `requested`/`stale`，只读快照并入 `status()`，`observe` 返回退订函数并首投当前状态，`terminal` 仅在返回时可裁决时出现 | `lib/{session-interaction-operation-authority,workflows-operation,workflows-facade,checkpoint-restore}.js` | `tasks.start/settle/attach` 的动词串改名**未做**（见 B1） |
 | availability 归一（装饰层） | 领域 detail 保留、非标准状态映射（`unsupported`→`unavailable`、`unknown`/`inert`→`degraded`，原 token 作 `reason`）、删除「解析成功即 active」、异步领域解析**首次探针惰性启动并缓存**（该次返回 descriptor 回退，其后读缓存）使公共探针始终同步 | `lib/namespace-availability.js` | **域侧子项未做**：`coordination.availability` 的缓存化、`security.availability` 的状态化（两文件本轮零改动），见 B9 |
 | 缺位词汇（部分） | `executions.get`、`tasks.get`、`tasks.history` 按「确定不存在 ⇒ `missing` / 无法得知 ⇒ `unavailable`」 | `lib/{execution-observation,task-execution-observation}.js` | 余下点位（如 `lib/session-activity-view.js` 的 `absent`）**未做**，见 B10 |
-| registry 与机械校验 | ①**本轮形状变更**落 registry：注册/观察/操作面的成员行（`currentShape` / `lifecycle` / `identitySource` / `conflictRule`）、`events.{emit,serial,parallel,bail,waterfall}` 的判别式结果与 producer 判定、`checkpoints.restore` 与 `workflows.start` 的 `operation` 改名与快照并入、三处缺位词汇；②`scripts/registry-validate.mjs` 新增两条 entry 级校验；③差异表 `docs/specs/plugin-api-m10-contract-convergence/convergence/public-member-table.md` 随 registry 机械重建，并新增其重建入口 `scripts/convergence-table-sync.mjs` | registry + `scripts/*` | 校验面仅新增两条（见 §4）；**例外台账重分类（Task 3.3）未做**，见 B4 |
+| registry 与机械校验 | **共 57 行**随之落盘（可复核：`git diff cf2a2d1 -- <registry>` 逐行）：注册面 33 行（`tools.register`/`restrict`/`guard`/`presentation`、`llm.requestTransforms`/`admissionPolicies`/`routing` 四类、`agents.providers`、`remotes`、`tools.discovery.catalog`、`prompts.provenance.policy`、`attachments.pipeline.transforms`、`diagnostics.register` 的 leaf 与 handle 行）、观察面 9 行（`executions`/`tasks`/`llm.routing`/`mcp`/`diagnostics` 的 `observe` 及其 handle 行，并**补入缺失的 `tasks.observe.handle` 行**）、贡献面 1 行（`prompts.contribute.handle`）、操作面 6 行（`events.{emit,serial,parallel,bail,waterfall}` 的判别式结果与 producer 判定、`executions.recovery.checkpoints.restore` 及其 handle 行、`workflows.start` 及其 handle 行）、缺位词汇 3 行（`executions.get` / `tasks.get` / `tasks.history`）；`scripts/registry-validate.mjs` 新增两条 entry 级校验；差异表 `docs/specs/plugin-api-m10-contract-convergence/convergence/public-member-table.md` 随 registry 机械重建（**538 行**），并新增其重建入口 `scripts/convergence-table-sync.mjs` | registry + `scripts/*` | 校验面仅新增两条（见 §4）；**例外台账重分类（Task 3.3）未做**，见 B4；成员行数由 537 增至 538 是**补入缺失的 handle 行**，不新增公共能力（`oldToTargetMapping` 同步补行） |
 
 ## 2. 跑测与审计（本轮实际结果）
 
@@ -38,7 +38,7 @@
 
 ## 3. 阻塞项登记（Req 13.6）
 
-按 `tasks.md` 的 **Task 编号**逐条登记。每条给出：未完成子项、原因、解除所需的**具体可执行动作**、是否需要人类授权、登记日期（2026-09-14，未变更）。
+按 `tasks.md` 的 **Task 编号**逐条登记。每条给出：未完成子项、解除所需的**具体可执行动作**、是否需要人类授权。**原因**在不言自明（单一未完成子项 + 明确动作）的条目中从略，在需要解释取舍或依赖关系的条目（B6、B9、B11、B12、B13）中写出。登记日期 2026-09-14（未变更）。
 
 ### B1 Task 6.4 —— `tasks` 动词串字段改名与三个例外
 - **未完成子项**：`tasks.start` / `settle` / `attach` 的外层结果字段仍为 `operation`（承载动作名）；三条新增例外（`baseContract: operation`）六项未落 registry。
@@ -105,6 +105,21 @@
 - **解除动作**：按 `tasks.md` Task 9.1/9.2 新增测试文件，文件头写明「原行为 → 现行公共调用 → 运行结果」矩阵，证据须来自真实公共入口执行（不得以 import 扫描、路径计数或测试总数充当）。
 - **人类授权**：否。
 
+### B14 Task 4.4 —— `llm.providers.register` / `llm.models.register` 的标准 handle
+- **未完成子项**：两者仍是官方原样透传（`lib/index.js` 本轮零 diff）：`llm.providers.register` 透传官方可调用 handle 且 `.replace` 是未登记成员，`llm.models.register` 透传官方裸 disposer。
+- **解除动作**：改 `lib/index.js` 把两者包装为标准资源 handle（`.replace` 作为显式扩展成员保留并登记），registry 两 leaf 行与两 handle 行同步。
+- **人类授权**：否。
+
+### B15 Task 3.5 尾项 —— authority closure（`bypasses`）登记
+- **未完成子项**：design §5 末段要求为 `storage.open`（保留 `domain`）、`settings` mutation、`events` 派发三条路径在 registry 的 `bypasses` 字段写明是否旁路高层 authority，**无旁路者记录「闭合」**；registry 实测 `bypasses` 字段**零行**。
+- **解除动作**：在上述三类成员行新增 array 形 `bypasses`，按 `composition-and-authority` §6 逐条写明旁路判定或「闭合」。
+- **人类授权**：否。
+
+### B16 Task 10.1(a) 与 Task 3.2-R1 —— 处置台账与 `lifecycle.register` leaf 行
+- **未完成子项**：(a) `tasks.md` Task 10.1(a) 要求逐项记录 A1–A5 / B1–B3 / C1–C17 / R1–R6 的最终去向（证据锚点 + 落地提交）；本台账 §1/§3 记录了**本轮实际处置**，但未按该编号全集逐项给出「修复 / 合理例外 / 已修复 / 误报」四态结论与锚点。(b) Task 3.2-R1 要求补 `lifecycle.register` 的**现行 leaf 行**（现 registry 只有旧名 `lifecycle.registerFace` 的 removed 行与 `lifecycle.register.handle`），未做。
+- **解除动作**：(a) 按编号全集补一张四态结论表（未处置者指向本节的 B 编号）；(b) 补 `lifecycle.register` 现行 leaf 行并核对旧路径映射。
+- **人类授权**：否。
+
 ## 4. registry 校验规则的现状说明（如实登记）
 
 `scripts/registry-validate.mjs` 本轮新增两条 entry 级校验：
@@ -148,5 +163,18 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 第二轮终审结论见 §7.2。
 
 ### 7.2 全局终审记录（第二轮）
+
+第二轮结论 **有偏差**，四条阻塞级意见（同样集中在诚实性与一致性）：
+
+1. **Task 4.4 未完成且未登记**（`llm.providers.register` / `llm.models.register` 仍为官方透传）→ **已闭合**：补登为 B14。
+2. **Task 3.5 的 authority closure（`bypasses`）未完成且未登记** → **已闭合**：补登为 B15。
+3. **§1 声称「观察面成员行已落 registry」但实际未落**：程序化 diff 显示 45 个变化行中 observe 行为 0；`prompts.contribute.handle` 与缺失的 `tasks.observe.handle` 同型。→ **已闭合**：观察面 9 行（含补入的 `tasks.observe.handle`）与 `prompts.contribute.handle` 均已落盘，成员表重建为 **538 行**；§1 的措辞改为逐面列举变化行数。
+4. **本轮修订新引入的不符**：`executions.recovery.checkpoints.restore` 的失败形状被我写成单一形态，而实现有「无控制对象的前置拒绝」与「带控制对象的 stop-then-restore 拒绝」两态。→ **已闭合**：registry 行改为四态枚举（含 `invalid-input` 无 `observedAt` 的前置拒绝）。
+
+中度/低度意见（attachments 注册类「环境不可用」仍折叠、`feature-list` 通栏冲突措辞、Task 10.1(a) 与 3.2-R1 未登记、B 条目缺「原因」、events 异步变体的 Promise 返回未注明）亦已处置：`invoke` 的注册类在 `!active()` / 缺成员两条 early return 上改为 **typed disabled throw**（不再是可用性结果），并新增两条断言钉住注册类抛错与操作类降级；`feature-list` 措辞改为「按各成员 idiom 的冲突规则」；补登 B16；§3 抬头改为如实说明「原因」在何处写出；events 异步变体的 Promise 返回并入 B5 的 `async` 回填。
+
+第三轮终审结论见 §7.3。
+
+### 7.3 全局终审记录（第三轮）
 
 见文末（由终审子 agent 给出后追加）。

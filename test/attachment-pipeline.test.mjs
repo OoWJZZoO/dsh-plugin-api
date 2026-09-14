@@ -90,3 +90,46 @@ test('lib/index attachment loader and version gate fail closed independently, wi
   assert.equal('reconnect' in surface && 'connection' in surface, false, 'no browser reconnect state')
   assert.equal('events' in surface && 'client' in surface, false, 'no client-facing event/service')
 })
+
+test('a registration-class failure reaches the caller typed instead of an availability verdict', () => {
+  const ctx = new Context()
+  const provider = makePipeline()
+  provider.pipeline.registerTransform = () => { throw new Error('transform conflict') }
+  const Service = createPluginApiService({
+    apiVersion: '0.1',
+    registry: { snapshot: () => [], isActive: () => false },
+    coreActive: true,
+    attachmentsProvider: () => provider,
+  })
+  const service = new Service(ctx)
+
+  // The registration owns its failure presentation: the error the
+  // registration raised must reach the caller, not be folded into a statement
+  // about whether the pipeline is available.
+  assert.throws(() => service.attachments.pipeline.transforms.register({ id: 'x' }), /transform conflict/)
+
+  // An operation-class call keeps degrading to the discriminated unavailable
+  // result, so a transient pipeline problem never becomes an exception.
+  provider.pipeline.ingest = () => { throw new Error('pipeline hiccup') }
+  const outcome = service.attachments.pipeline.ingest('source')
+  assert.equal(outcome.status, 'unavailable')
+  assert.equal(outcome.error.code, 'ATTACHMENT_PIPELINE_UNAVAILABLE')
+})
+
+test('a registration call against a missing pipeline refuses typed rather than degraded', () => {
+  const ctx = new Context()
+  const Service = createPluginApiService({
+    apiVersion: '0.1',
+    registry: { snapshot: () => [], isActive: () => false },
+    coreActive: true,
+    attachmentsProvider: () => null,
+  })
+  const service = new Service(ctx)
+  assert.throws(
+    () => service.attachments.pipeline.transforms.register({ id: 'x' }),
+    (error) => {
+      assert.equal(error?.feature, 'attachments')
+      return true
+    },
+  )
+})
