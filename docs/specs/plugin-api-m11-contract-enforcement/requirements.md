@@ -18,7 +18,7 @@ Stage 1 Requirements（2026-09-14 交付）。本文是 M11 契约收口 feature
 ## Req 1 输入固化与处置表
 
 - **User story**：作为维护者，我要看到指引列出的每一项问题都有明确去向和证据，以便在实现前就知道哪些要改、哪些是合理例外、哪些不成立。
-- **Req 1.1** WHEN 本线进入设计 THEN 指引 §3/§4/§5 的全部问题项（主线 A1–A5、主线 B1–B3、局部必修 C1–C14）与子审追加线索（附录 A–D 的剩余线索，含 design §2.3 的 C15–C17）SHALL 逐项进入处置表，字段含：问题编号、实际公共 path、源码证据锚点（按符号定位）、当前实际形状、目标 idiom 与形状、处置结论（修复 / 合理例外 / 已修复 / 误报）、依据与理由；任何计数型结论 SHALL 写明计量单位（成员行 / 例外记录 / 公共 path）与取样口径。【治理】
+- **Req 1.1** WHEN 本线进入设计 THEN 指引 §3/§4/§5 的全部问题项（主线 A1–A5、主线 B1–B3、局部必修 C1–C14）与子审追加线索（附录 A–D 的剩余线索，含 design §2.3b 的 C15–C17）SHALL 逐项进入处置表，字段含：问题编号、实际公共 path、源码证据锚点（按符号定位）、当前实际形状、目标 idiom 与形状、处置结论（修复 / 合理例外 / 已修复 / 误报）、依据与理由；任何计数型结论 SHALL 写明计量单位（成员行 / 例外记录 / 公共 path）与取样口径。【治理】
 - **Req 1.2** WHEN 某处置结论为「合理例外」THEN 该行 SHALL 引用 registry 的六项例外记录（`memberPath`、`baseContract`、`exception`、`reason`、`replacementShape`、`verification`）或给出待登记的完整六项内容；SHALL NOT 以「领域不同」为唯一理由。【治理】
 - **Req 1.3** WHEN 某处置结论为「误报 / 已修复」THEN 该行 SHALL 附当前源码证据（`file:line` 或符号）说明为何不成立或已完成；SHALL NOT 为凑齐问题而实施无意义修改。【治理 + 验收】
 - **Req 1.4** GIVEN 指引文件仅存在于 `temp/`（gitignored、永不提交）THEN 其范围与结论 SHALL 在实现开始前固化进已提交的本 spec 制品；SHALL NOT 让实现或验收依赖 `temp/` 文件的可获得性。【治理】
@@ -130,7 +130,7 @@ Stage 1 Requirements（2026-09-14 交付）。本文是 M11 契约收口 feature
 ## Req 13 验收、证据与完成判定
 
 - **User story**：作为维护者，我要用可执行的证据证明契约已收口，而不是靠阅读代码判断。
-- **Req 13.1** WHEN 契约收口宣称完成 THEN registry 驱动或本线新增的机械校验 SHALL 全绿，覆盖：入口动词与 idiom 一致、handle 成员集按 composition 一致、失败呈现与登记一致、`generation` / `seq` / `epoch` 未混用、每个 namespace 的 `availability` 存在性。【验收】
+- **Req 13.1** WHEN 契约收口宣称完成 THEN registry 驱动或本线新增的机械校验 SHALL 全绿，覆盖：入口动词与 idiom 一致、handle 成员集与所属 idiom 一致（policy / resourceRegistry 一律含 `generation`，见 design §4-S1）、失败呈现与登记一致、`generation` / `seq` / `epoch` 未混用、每个 namespace 的 `availability` 存在性、handle 扩展成员已按成员行登记（见 S12）。【验收】
 - **Req 13.2** WHEN 组合行为宣称一致 THEN SHALL 以两个独立 synthetic 插件在真实公共入口上验证（反向加载顺序、同 key 冲突、卸载隔离、旧 handle 不得撤销新资源、callback 失败隔离）。【验收】
 - **Req 13.3** WHEN 迁移与等价性宣称成立 THEN 证据 SHALL 来自真实公共入口执行（迁移切片 / fixture，文件头写明「原行为 → 现行公共调用 → 运行结果」矩阵）；SHALL NOT 以 import 扫描、路径计数或测试总数充当证据。【验收】
 - **Req 13.4** WHEN 本线交付 THEN `npm test`（仓库内存护栏内）SHALL 全绿，client bundle SHALL 经重建产出且 `--check` 一致，`git diff --check` SHALL 干净。【验收】
