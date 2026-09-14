@@ -94,3 +94,31 @@ test('missing multi-segment subtrees are left absent without promotion', () => {
   assert.equal(out.recovery.checkpoints, undefined)
   assert.equal(out.checkpoints, undefined)
 })
+test('non-standard domain statuses are mapped and their own token becomes the reason', () => {
+  // A top-level namespace surface is decorated on its own, the way the facade
+  // decorates each namespace: the availability member lands on that surface.
+  const decorate = makeDecorator()
+  const cases = {
+    tasks: Object.freeze({ get() {}, get availability() { return { status: 'unsupported', detail: 'no durable backend' } } }),
+    mcp: Object.freeze({ get() {}, get availability() { return { status: 'unknown' } } }),
+    security: Object.freeze({ get() {}, get availability() { return { status: 'inert' } } }),
+    storage: Object.freeze({ get() {}, get availability() { return { status: 'active', scope: 'profile', durability: 'durable', epoch: 'e1' } } }),
+  }
+
+  const tasks = decorate(cases.tasks, ['tasks']).availability()
+  assert.equal(tasks.status, 'unavailable', 'unsupported is not active')
+  assert.equal(tasks.reason, 'unsupported', 'the domain token survives as the reason')
+  assert.equal(tasks.detail, 'no durable backend', 'the domain detail survives')
+  assert.ok(Object.isFrozen(tasks))
+
+  assert.equal(decorate(cases.mcp, ['mcp']).availability().status, 'degraded', 'unknown degrades rather than reporting active')
+  assert.equal(decorate(cases.security, ['security']).availability().status, 'degraded', 'inert degrades rather than reporting active')
+
+  const storage = decorate(cases.storage, ['storage']).availability()
+  assert.equal(storage.status, 'active')
+  assert.deepEqual(
+    { scope: storage.scope, durability: storage.durability, epoch: storage.epoch },
+    { scope: 'profile', durability: 'durable', epoch: 'e1' },
+    'the coordination-style detail fields survive alongside the normalized status',
+  )
+})

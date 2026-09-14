@@ -25,7 +25,7 @@
 
 | 项目 | 结果 |
 |---|---|
-| `npm test`（4G 内存护栏内） | **3513 / 3513 通过**（开工基线 3469；内核批次后 3480；本线净增 44） |
+| `npm test`（4G 内存护栏内） | **3514 / 3514 通过**（开工基线 3469；内核批次后 3480；本线净增 45） |
 | `node scripts/registry-validate.mjs <registry>` | `registry valid`（exit 0） |
 | `node scripts/convergence-verify.mjs` | `538 member rows, 37 behavior rows, 37 fully linked behavior rows`（exit 0） |
 | `npm run build:client:check` | `client bundle is up to date with its sources`（exit 0；`lib/client.js` 本轮零 diff，与 client 侧未触碰一致） |
@@ -135,6 +135,12 @@
 - **解除动作**：二选一——(a) 改 R 包使注册类输入校验**抛 typed error**（与 idiom 一致，需复核替代行的被替代契约与 boot 自检）；(b) 按 Req 11.5 补一条完整六项例外并在 registry 登记该 carve-out。**不得**两套并存而不登记。
 - **人类授权**：否。
 
+### B20 Task 4.3（接线半）—— `llm.routing` 注册的调用者绑定未接通
+- **未完成子项**：routing 的四类注册表（`packages/agent-loop/lib/route-policy.js` 的 `createRegistrationRegistry`）已按 `(owner, id)` 键建表、支持注入 `resolveOwnerId`、跨 owner 同 id 抛 `ROUTE_POLICY_OWNER_CONFLICT`；但 facade 未把调用者绑定转发进去（`lib/plugin-api-service.js` 的 `invokeRoutePolicy` 原样转发实参，R 包 owner 创建时也未注入解析器），因此**经公共路径注册时 owner 恒为根 token**：跨 owner typed conflict 在公共面上不可达，两个插件同 id 会走同 owner latest-wins 静默替换。registry 四行已把 `identitySource` 如实改为 `derived-caller (root-fallback)` 并在 `currentShape` 写明该事实；本线**不声称**该族已达成派生 owner。
+- **解除动作**：按 facade 对 `diagnostics.register` 的既有机制（`callerAware` + getter 内 stamp `callerCtx`）给 routing 四类注册补调用者绑定，并让 `packages/agent-loop` 的 owner 创建接受 facade 注入的 `resolveOwnerId`（走该包既有的门面契约符号，保持替代行契约复刻与 boot 自检）；接通后把 registry 四行的 `identitySource` 改回 `derived-caller`。
+- **人类授权**：否。
+- **备注**：同批已接通的两族（`llm.requestTransforms` / `llm.admissionPolicies`、`tools.discovery.catalog`）不再有该缺口。
+
 ## 4. registry 校验规则的现状说明（如实登记）
 
 `scripts/registry-validate.mjs` 本轮新增两条 entry 级校验：
@@ -217,5 +223,16 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 第五轮终审结论见 §7.5。
 
 ### 7.5 全局终审记录（第五轮）
+
+第五轮结论 **有偏差**，两条阻塞级意见，均已在**代码层**（而非只改登记）闭合：
+
+1. **五行注册类 leaf 的 `idempotency` 与实现相左**（`tools.discovery.catalog.register`、`agents.providers.register`、`diagnostics.register`、`tools.guard.register`、`tools.presentation.register`）→ **已闭合**：按实现逐行改正（重复即拒 / 每次重新委派 / per-owner latest-wins / 每次追加 / 同 scope 第二次拒绝），handle 行同步。
+2. **三个 llm 注册族与 `tools.discovery.catalog` 的公开路径 owner 恒为根 token**，与我方「派生 owner」的声称不符（routing 四类的跨 owner conflict 在公共面不可达）→ **已闭合（分两半）**：`llm.requestTransforms` / `llm.admissionPolicies` / `tools.discovery.catalog` 三族按与 `diagnostics.register` 相同的机制**接通了调用者绑定**（slot 的 `callerAware` + getter 内 stamp `callerCtx`；`invokeNested` 的 caller-bound 选项）；**routing 四类未接通**（需 R 包 owner 创建接受 facade 注入的解析器），已把 registry 四行的 `identitySource` 如实改为 `derived-caller (root-fallback)`、`currentShape` 写明现状，并**补登为 B20**——本线不再声称该族已达成派生 owner。
+
+低度意见（`agents.providers.register` leaf 的 announce 文案残留；Task 8.15 的 availability 映射测试缺席）→ **已闭合**：文案不再声称不存在的 reason；新增一条矩阵断言（`unsupported`→`unavailable`、`unknown`/`inert`→`degraded`、原 token 作 `reason`、领域 detail 保留）。
+
+第六轮终审结论见 §7.6。
+
+### 7.6 全局终审记录（第六轮）
 
 见文末（由终审子 agent 给出后追加）。
