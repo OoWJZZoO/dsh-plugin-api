@@ -14,20 +14,20 @@
 | 契约内核 | `lib/contract-kernel.js`：判别式结果、资源/贡献/操作 handle、观察 handle（K1/K2/K5/K6/K7 的共用形状）。**零 harness 依赖**（全文零 `import`、纯函数） | 新增 + `test/contract-kernel.test.mjs`（11 断言） | 仅覆盖「可释放对象」的共用形状；**不含**异步 contribution 的 pending `status()` 状态机（见 B7） |
 | 分册修订 S1–S15 | `api-idioms`（generation 定义、身份双角色、dispose 结果、availability detail 与归一表、缺位词汇、失败呈现分界、扩展成员/例外边界、terminal 在场条件、异步 contribution `status()`、同步/异步声明、生产者模型）、`public-api-shape`（host/client 树逐名刷新、层级预算、capability 示例修正）、`identity-and-lifecycle`（handle 生命周期面）、`composition-and-authority`（owner 双角色、producer 判定）、`domain-composition`（events 行）、`capability-strategy`（`services.*` 存在性口径例外）、`README`（索引） | `docs/standards/*` | 分册条款**已全部落盘**；S1/S2 在**未收口成员**上的实现一致性按 §4 与 B2 处理 |
 | canonical 事件生产权 | 运行时事件目录条目携带 producer 声明（facade / official 两态）；`dispatch()` 在派发前判定——非 producer 返回冻结 `{ok:false, code:'denied'}` 且**不派发**，未声明者 fail-closed；门面转译路径以内部 owner 身份取得权限；官方原生 `ctx.emit` 不经 `dispatch()` 不受影响；`events.define` 语义不变 | `lib/events-bus.js` + 全部 `lib/*-events-catalog.js` + `test/events-producer-authority.test.mjs`（15 断言） | 见 §6 的**能力边界变化**单列 |
-| host 注册面收口 | `tools.register` 双形态同形、`tools.restrict`、`tools.guard`、`tools.presentation`、`llm.requestTransforms`、`llm.admissionPolicies`、`llm.routing` 四类（**R 包**）、`remotes`、`tools.discovery.catalog`、`prompts.provenance.policy`（policy 形状 + typed throw + priority 词表校验）、`agents.providers`（显式变体判别）、`attachments.pipeline.transforms`（**R 包**，含把 facade 的注册类兜底 catch 收窄为 typed throw 穿透）、`diagnostics.register` —— 一律冻结标准 handle + 派生 owner + 铸造 generation | `lib/{plugin-api-service,llm-request,llm-input-policy,host-remote,remote-publication,tool-discovery,context-engine,agent-create-api,diagnostics}.js` + `packages/{agent-loop,attachments}` | 冲突规则**按各成员 idiom**：`llm.*` / `tools.register` / `prompts.provenance.policy` 跨 owner 同 id 为 typed owner-conflict；`diagnostics.register` 为 per-owner 记录（跨 owner 同 checkId **并存**，不是冲突）；`tools.guard`/`tools.presentation` 仅包裹官方注册、**无 owner 维度冲突判定**；`remotes.register` 的冲突键是 key |
+| host 注册面收口 | `tools.register` 双形态同形、`tools.restrict`、`tools.guard`、`tools.presentation`、`llm.requestTransforms`、`llm.admissionPolicies`、`llm.routing` 四类（**R 包**）、`remotes`、`tools.discovery.catalog`、`prompts.provenance.policy`（policy 形状 + typed throw + priority 词表校验）、`agents.providers`（显式变体判别）、`attachments.pipeline.transforms`（**R 包**，含把 facade 的注册类兜底 catch 收窄为 typed throw 穿透）、`diagnostics.register` —— 一律冻结标准 handle + 派生 owner + 铸造 generation | `lib/{plugin-api-service,llm-request,llm-input-policy,host-remote,remote-publication,tool-discovery,context-engine,agent-create-api,diagnostics}.js` + `packages/{agent-loop,attachments}` | 冲突规则**按各成员 idiom，逐成员如实**：`llm.requestTransforms` / `llm.admissionPolicies` / `llm.routing` 四类 / `prompts.provenance.policy` 跨 owner 同 id 为 typed owner-conflict；`tools.register` 的 **scoped** 路径冲突键是 `(owner, target, id)`（跨 owner 同 id 不受 owner 维度判定），**全局**路径保留官方内容语义；`tools.discovery.catalog` 按 entry id 冲突；`diagnostics.register` 为 per-owner latest-wins（跨 owner 同 checkId **并存**）；`tools.guard`/`tools.presentation` 仅包裹官方注册、**门面不做冲突判定**；`remotes.register` 的冲突键是 key |
 | 观察面收口 | `sessions.activity.observe`、`executions.observe`、`tasks.observe`、`llm.routing.observe`、`mcp.observe`（**R 包**）、`diagnostics.observe` —— 冻结四成员 handle；内部可变记录闭包私有；释放后订阅 no-op；listener 异常只降级自身；`current()` 释放后返回降级视图 | `lib/{session-activity-observe,execution-observation,session-route,task-execution-observation,diagnostics}.js` + `packages/mcp` | **不含** host `events.observe`、`sessions.planMode.observe`、`sessions.permissionPresets.observe`、`events.define.handle` 的 dispose 收口（见 B8） |
 | 操作控制对象 | `sessions.request`、`workflows.start`、`executions.recovery.checkpoints.restore` —— 控制对象统一在 `operation`，`dispose()` 返回 `requested`/`stale`，只读快照并入 `status()`，`observe` 返回退订函数并首投当前状态，`terminal` 仅在返回时可裁决时出现 | `lib/{session-interaction-operation-authority,workflows-operation,workflows-facade,checkpoint-restore}.js` | `tasks.start/settle/attach` 的动词串改名**未做**（见 B1） |
 | availability 归一（装饰层） | 领域 detail 保留、非标准状态映射（`unsupported`→`unavailable`、`unknown`/`inert`→`degraded`，原 token 作 `reason`）、删除「解析成功即 active」、异步领域解析**首次探针惰性启动并缓存**（该次返回 descriptor 回退，其后读缓存）使公共探针始终同步 | `lib/namespace-availability.js` | **域侧子项未做**：`coordination.availability` 的缓存化、`security.availability` 的状态化（两文件本轮零改动），见 B9 |
 | 缺位词汇（部分） | `executions.get`、`tasks.get`、`tasks.history` 按「确定不存在 ⇒ `missing` / 无法得知 ⇒ `unavailable`」 | `lib/{execution-observation,task-execution-observation}.js` | 余下点位（如 `lib/session-activity-view.js` 的 `absent`）**未做**，见 B10 |
-| registry 与机械校验 | **共 57 行**随之落盘（可复核：`git diff cf2a2d1 -- <registry>` 逐行）：注册面 33 行（`tools.register`/`restrict`/`guard`/`presentation`、`llm.requestTransforms`/`admissionPolicies`/`routing` 四类、`agents.providers`、`remotes`、`tools.discovery.catalog`、`prompts.provenance.policy`、`attachments.pipeline.transforms`、`diagnostics.register` 的 leaf 与 handle 行）、观察面 9 行（`executions`/`tasks`/`llm.routing`/`mcp`/`diagnostics` 的 `observe` 及其 handle 行，并**补入缺失的 `tasks.observe.handle` 行**）、贡献面 1 行（`prompts.contribute.handle`）、操作面 6 行（`events.{emit,serial,parallel,bail,waterfall}` 的判别式结果与 producer 判定、`executions.recovery.checkpoints.restore` 及其 handle 行、`workflows.start` 及其 handle 行）、缺位词汇 3 行（`executions.get` / `tasks.get` / `tasks.history`）；`scripts/registry-validate.mjs` 新增两条 entry 级校验；差异表 `docs/specs/plugin-api-m10-contract-convergence/convergence/public-member-table.md` 随 registry 机械重建（**538 行**），并新增其重建入口 `scripts/convergence-table-sync.mjs` | registry + `scripts/*` | 校验面仅新增两条（见 §4）；**例外台账重分类（Task 3.3）未做**，见 B4；成员行数由 537 增至 538 是**补入缺失的 handle 行**，不新增公共能力（`oldToTargetMapping` 同步补行） |
+| registry 与机械校验 | **共 57 行**随之落盘（56 改 + 1 增；可复核口径：以 `cf2a2d1` 的 `members` 为基线逐行比对 `runtime|publicPath` 与字段，实测注册面 **32** + 观察面 **10** + 贡献面 **2** + 操作面 **9** + 缺位词汇 **4** = 57）：注册面 32 行（`tools.register`/`restrict`/`guard`/`presentation`、`llm.requestTransforms`/`admissionPolicies`/`routing` 四类、`agents.providers`、`remotes`、`tools.discovery.catalog`、`prompts.provenance.policy`、`attachments.pipeline.transforms`、`diagnostics.register` 的 leaf 与 handle 行）、观察面 10 行（`executions`/`tasks`/`llm.routing`/`mcp`/`diagnostics` 的 `observe` 及其 handle 行，并**补入缺失的 `tasks.observe.handle` 行**）、贡献面 2 行（`prompts.contribute` 及其 handle 行）、操作面 9 行（`events.{emit,serial,parallel,bail,waterfall}` 的判别式结果与 producer 判定 = 5、`executions.recovery.checkpoints.restore` 及其 handle 行 = 2、`workflows.start` 及其 handle 行 = 2）、缺位词汇 4 行（`executions.get` / `tasks.get` / `tasks.history` / `storage.availability`）；`scripts/registry-validate.mjs` 新增两条 entry 级校验；差异表 `docs/specs/plugin-api-m10-contract-convergence/convergence/public-member-table.md` 随 registry 机械重建（**538 行**），并新增其重建入口 `scripts/convergence-table-sync.mjs` | registry + `scripts/*` | 校验面仅新增两条（见 §4）；**例外台账重分类（Task 3.3）未做**，见 B4；成员行数由 537 增至 538 是**补入缺失的 handle 行**，不新增公共能力（`oldToTargetMapping` 同步补行） |
 
 ## 2. 跑测与审计（本轮实际结果）
 
 | 项目 | 结果 |
 |---|---|
-| `npm test`（4G 内存护栏内） | **3511 / 3511 通过**（开工基线 3469；内核批次后 3480；本线净增 42） |
+| `npm test`（4G 内存护栏内） | **3513 / 3513 通过**（开工基线 3469；内核批次后 3480；本线净增 44） |
 | `node scripts/registry-validate.mjs <registry>` | `registry valid`（exit 0） |
-| `node scripts/convergence-verify.mjs` | `537 member rows, 37 behavior rows, 37 fully linked behavior rows`（exit 0） |
+| `node scripts/convergence-verify.mjs` | `538 member rows, 37 behavior rows, 37 fully linked behavior rows`（exit 0） |
 | `npm run build:client:check` | `client bundle is up to date with its sources`（exit 0；`lib/client.js` 本轮零 diff，与 client 侧未触碰一致） |
 | 治理 token 审计 | `node --test test/governance-token-audit.test.mjs` 2/2 通过（本轮修正了一处 `scripts/convergence-table-sync.mjs` 的 prose 泄漏） |
 | 版本冻结审计 | `package.json` 与 registry `contractBaseline` 零 diff |
@@ -120,6 +120,21 @@
 - **解除动作**：(a) 按编号全集补一张四态结论表（未处置者指向本节的 B 编号）；(b) 补 `lifecycle.register` 现行 leaf 行并核对旧路径映射。
 - **人类授权**：否。
 
+### B17 Task 3.1（词表半）—— registry `vocabulary` 增补
+- **未完成子项**：Task 3.1 第一句要求 `vocabulary` 增 `identitySource` 两值（`derived-caller` / `declared-resource-scope`）与 `async` 相关词表；registry `vocabulary` 与基线逐字节相同（22 键），两处均无。
+- **解除动作**：在 `vocabulary` 增 `identitySource: ['derived-caller','declared-resource-scope', ...]` 与 `async` 词表，并在 `scripts/registry-validate.mjs` 加对应字段校验；与 B5 的成员行回填同批完成。
+- **人类授权**：否。
+
+### B18 Task 3.2-R5 / Task 8.11（availability 半）—— `storage.availability` 的领域 detail
+- **未完成子项**：`lib/storage-binding.js` 的 `storage.availability` 仍只返回 `{status:'active'}`，未按 K4 披露 `scope` / `durability` / `epoch`。
+- **解除动作**：改 `lib/storage-binding.js` 使 `availability()` 同步返回三值状态 + 该三项领域 detail；registry 行同步（本版已先把该行改为描述**现状**，避免登记与实现不符）。
+- **人类授权**：否。
+
+### B19 Task 4.5（R 包输入校验半）—— `attachments.pipeline.transforms.register` 的失败呈现仍有两套
+- **未完成子项**：facade 侧四条失败路径已 typed（见 §7.2），但 R 包 `packages/attachments/lib/pipeline-service.js` 自身的输入校验与「已释放」路径仍以**冻结判别式结果**返回（`packages/attachments/lib/pipeline-core.js` 的 `{status:'unavailable', …, error:{code:'ATTACHMENT_TRANSFORM_INVALID' | 'ATTACHMENT_OWNER_REQUIRED' | 'ATTACHMENT_POLICY_INVALID'}}`），facade 对非 thenable 结果原样透出；故该成员的公共失败呈现是「冲突：typed throw + 输入非法：判别式结果」两套，与本轮修订的 S2「注册类失败一律 typed throw」不一致，registry 行的 `failureSemantics: typed-throw` 只覆盖前者。
+- **解除动作**：二选一——(a) 改 R 包使注册类输入校验**抛 typed error**（与 idiom 一致，需复核替代行的被替代契约与 boot 自检）；(b) 按 Req 11.5 补一条完整六项例外并在 registry 登记该 carve-out。**不得**两套并存而不登记。
+- **人类授权**：否。
+
 ## 4. registry 校验规则的现状说明（如实登记）
 
 `scripts/registry-validate.mjs` 本轮新增两条 entry 级校验：
@@ -176,5 +191,19 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 第三轮终审结论见 §7.3。
 
 ### 7.3 全局终审记录（第三轮）
+
+第三轮结论 **有偏差**，五条阻塞级意见（前两轮的同类：覆盖与登记的一致性），全部已就地闭合或补登：
+
+1. **`checkpoints.restore` 的失败枚举仍不完整**（漏了 owner 派生不可用的无 `observedAt` 分支，且未提 planner 码透传）→ **已闭合**：registry 行改为五态枚举，含两条无 `observedAt` 的前置拒绝与 planner 码透传说明。
+2. **新增的 `tasks.observe.handle` 行漏记已登记的扩展成员**（`taskId` / `initialState`），父行同源 → **已闭合**：两行的 `currentShape` 均写明这两个扩展成员。另记一处非阻塞的字段级差异：该行 `effect: 'subscribe'`（其余 projection handle 行多为 `read`）、`identitySource: 'caller plugin context'`（同类带值行多为 `parent handle generation`），与其父行一致而与同类 handle 行不一致，属既有口径，随 B2 一并对齐。
+3. **Task 3.1 的 `vocabulary` 增补未做且未登记** → **已闭合**：补登为 B17。
+4. **Task 3.2-R5 / 8.11 的 `storage.availability` 未做且未登记，且 registry 行与实现不符** → **已闭合**：补登为 B18，并先把 registry 行改为描述**现状**（不再声称披露 `scope/durability/epoch`），避免登记与实现不符。
+5. **attachments 的 `failureSemantics: typed-throw` 在 R 包自身的输入校验路径上不成立** → **已闭合**：补登为 B19（两套失败呈现并存，须改 R 或登记 carve-out，不得静默）。
+
+中度/低度（§1 行数与面别计数不符且内部不自洽、§2 与成员表 prose 的 537、`tools.register` 的冲突规则陈述、`feature-list` 的 B1–B13、三处 `conflictRule` 字段与实现相左）亦已处置：§1 改为「56 改 + 1 增 = 57」并按实测给出 32/10/2/9/4 的面别分解；§2 与成员表 prose 均改为 538（`scripts/convergence-table-sync.mjs` 现在同时维护该计数行）；`tools.register` 的冲突规则按 scoped `(owner, target, id)` 与全局官方内容语义分开陈述；`feature-list` 的阻塞项编号改为 B1–B19；`tools.guard`/`tools.presentation` 的两处 `conflictRule` 改为 `not-applicable`（门面不做冲突判定）、`diagnostics.register` 的两处改为 `latest-wins`（per-owner latest-wins、跨 owner 并存）。
+
+第四轮终审结论见 §7.4。
+
+### 7.4 全局终审记录（第四轮）
 
 见文末（由终审子 agent 给出后追加）。

@@ -52,15 +52,20 @@ export function renderMemberTable(registry) {
  * Replace the member table inside the checked-in file, keeping the prose header
  * (everything before the table header row) and the trailing appendix.
  */
-export function rewriteMemberTable(document, table) {
+export function rewriteMemberTable(document, table, rowCount) {
   const lines = document.split('\n')
   const headerIndex = lines.findIndex((line) => line.startsWith('| publicPath |'))
   if (headerIndex < 0) throw new Error('public-member-table.md has no member table header row')
   let end = headerIndex
   while (end < lines.length && lines[end].startsWith('|')) end += 1
-  const before = `${lines.slice(0, headerIndex).join('\n')}\n`
+  const before = lines
+    .slice(0, headerIndex)
+    // The prose above the table states the row count; it is part of the
+    // projection, so it is regenerated alongside the rows.
+    .map((line) => (/^共 \d+ 行/.test(line) ? `共 ${rowCount} 行（registry \`members\` 全量）。` : line))
+    .join('\n')
   const after = lines.slice(end).join('\n')
-  return `${before}${table}\n${after}`
+  return `${before}\n${table}\n${after}`
 }
 
 /* Direct CLI execution. */
@@ -80,7 +85,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
   }
   const table = renderMemberTable(registry)
   const current = readFileSync(TABLE_PATH, 'utf8')
-  const next = rewriteMemberTable(current, table)
+  const next = rewriteMemberTable(current, table, (registry.members ?? []).length)
   if (next === current) {
     console.log(`member table is in sync with the registry (${(registry.members ?? []).length} rows)`)
     process.exit(0)
