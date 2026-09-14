@@ -139,7 +139,7 @@
 - **未完成子项**：routing 的四类注册表（`packages/agent-loop/lib/route-policy.js` 的 `createRegistrationRegistry`）已按 `(owner, id)` 键建表、支持注入 `resolveOwnerId`、跨 owner 同 id 抛 `ROUTE_POLICY_OWNER_CONFLICT`；但 facade 未把调用者绑定转发进去（`lib/plugin-api-service.js` 的 `invokeRoutePolicy` 原样转发实参，R 包 owner 创建时也未注入解析器），因此**经公共路径注册时 owner 恒为根 token**：跨 owner typed conflict 在公共面上不可达，两个插件同 id 会走同 owner latest-wins 静默替换。registry 四行已把 `identitySource` 如实改为 `derived-caller (root-fallback)` 并在 `currentShape` 写明该事实；本线**不声称**该族已达成派生 owner。
 - **解除动作**：按 facade 对 `diagnostics.register` 的既有机制（`callerAware` + getter 内 stamp `callerCtx`）给 routing 四类注册补调用者绑定，并让 `packages/agent-loop` 的 owner 创建接受 facade 注入的 `resolveOwnerId`（走该包既有的门面契约符号，保持替代行契约复刻与 boot 自检）；接通后把 registry 四行的 `identitySource` 改回 `derived-caller`。
 - **人类授权**：否。
-- **备注**：同批已接通的两族（`llm.requestTransforms` / `llm.admissionPolicies`、`tools.discovery.catalog`）不再有该缺口。
+- **备注**：同批已接通的三族（`llm.requestTransforms` / `llm.admissionPolicies`、`tools.discovery.catalog`）不再有该缺口（`tools.discovery.catalog` 的接线在第六轮补齐，见 §7.6）。
 
 ## 4. registry 校验规则的现状说明（如实登记）
 
@@ -234,5 +234,16 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 第六轮终审结论见 §7.6。
 
 ### 7.6 全局终审记录（第六轮）
+
+第六轮结论 **有偏差**，两条阻塞 + 两条中度，均已在**代码层或登记层**闭合：
+
+1. **`tools.discovery.catalog.register` 经公开路径仍未从调用者派生 owner**（`invokeNested` 转发的是挂载期的门面上下文，不是注册时的调用者）→ **已闭合**：按 `llm` / `diagnostics` 的同一机制，在 `tools` getter 内为该 slot stamp `callerCtx`，`invokeNested` 转发该 stamped 上下文。`test/index-tool-discovery.test.mjs` 的「this facade surface forwards no caller binding」注释已失真，同步改写为「无 loader entry 的 harness 上下文不可追踪，故由根 token 归因」。
+2. **`tools.register` 的 `idempotency: content-idempotent` 与官方动词相左**（官方 `NamedEntries.insert` 对同名一律抛错，不比较内容）→ **已闭合**：两行改为 `not idempotent`，`currentShape` 改写明「官方全局动词对重复 tool 名直接拒绝（无内容比较、无替换），故重复登记是 typed duplicate 而非幂等 no-op」。该口径来自 M10 期的旧表述，本线改写该行时保留，现已一并修正。
+3. **中度：`tools.restrict.register` 的 `latest-wins` 与两条路径都不符**（官方 `restrict` 是追加/交集语义、facade scoped 同键是 typed conflict）→ **已闭合**：两行改为 `not idempotent`，`currentShape` 写明「官方动词每次追加一条 restriction、从不替换」。
+4. **中度：四个注册 handle 行的 `idempotency` 未与其 leaf 对齐**（这四行正是第五轮「handle 行同步」要求的两行 + 第四轮遗留的两行）→ **已闭合**：`agents.providers.register.handle` 改 `not idempotent`，`diagnostics.register.handle`、`llm.routing.candidates.register.handle`、`llm.routing.health.probe.register.handle` 改 `latest-wins`，与各自 leaf 一致。
+
+第七轮终审结论见 §7.7。
+
+### 7.7 全局终审记录（第七轮）
 
 见文末（由终审子 agent 给出后追加）。

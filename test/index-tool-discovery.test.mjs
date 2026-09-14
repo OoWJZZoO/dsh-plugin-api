@@ -147,8 +147,8 @@ test('full discovery lifecycle through the facade apply', async () => {
   const audit = discovery.audit.list({ kind: 'activate' })
   assert.equal(audit.items.length, 1)
   // The catalog owner is the caller identity derived from the registration
-  // call; this facade surface forwards no caller binding, so the shared root
-  // token attributes the entry.
+  // call. A harness context without a loader entry cannot be traced, so the
+  // shared root token attributes the entry.
   assert.equal(audit.items[0].owner, 'root')
 
   assert.equal(discovery.deactivate('alpha', { reason: 'retired' }).ok, true)
