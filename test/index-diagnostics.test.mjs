@@ -77,16 +77,24 @@ assert.equal(names.indexOf('diagnostics'), names.indexOf('workspaceTransactions'
   assert.equal(typeof diag.get, 'function')
   assert.equal(typeof diag.observe, 'function')
 
-  const dispose = diag.register({
-    ownerId: 'o', checkId: 'c', scope: 'plugin',
+  const handle = diag.register({
+    checkId: 'c', scope: 'plugin',
     run() { return { health: 'healthy', availability: 'active' } },
   })
+  const notifications = []
+  const observation = diag.observe({ scope: 'plugin' }, (payload) => notifications.push(payload))
+  assert.deepEqual(Object.keys(observation).sort(), ['current', 'dispose', 'epoch', 'subscribe'])
+  assert.equal(Object.isFrozen(observation), true)
   await settle()
   const view = diag.get({ scope: 'plugin' })
   assert.equal(view.checks.length, 1)
   assert.equal(view.checks[0].health, 'healthy')
   assert.equal(Object.isFrozen(view), true)
-  assert.equal(dispose(), true)
+  assert.equal(observation.current().checks.length, 1)
+  assert.equal(notifications.length >= 1, true)
+  assert.equal(observation.dispose().code, 'revoked')
+  assert.equal(handle.dispose().ok, true)
+  assert.equal(handle.dispose().code, 'stale')
 
   // host scope exposes the bounded facade aggregate
   const host = diag.get({ scope: 'host' })
@@ -122,5 +130,5 @@ test('a failing cleanup registration leaves the feature inert and apply returns 
   assert.equal(diagnostics.isActive, false)
   // The disabled surface never returns silent data: it throws a typed error.
   assert.throws(() => state.pluginApi.diagnostics.get({ scope: 'plugin' }), PluginApiFeatureDisabledError)
-  assert.throws(() => state.pluginApi.diagnostics.register({ ownerId: 'o', checkId: 'c', scope: 'plugin', run() {} }), PluginApiFeatureDisabledError)
+  assert.throws(() => state.pluginApi.diagnostics.register({ checkId: 'c', scope: 'plugin', run() {} }), PluginApiFeatureDisabledError)
 })

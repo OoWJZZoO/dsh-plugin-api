@@ -58,14 +58,22 @@ test('ctx.mcpCatalog service exposes projection + onChange subscription', () => 
   const { ctx } = makeEventCtx()
   const api = new McpCatalogService(ctx, shared)
   const received = []
-  const disposer = api.onChange((snapshot) => received.push(snapshot))
+  const handle = api.onChange((snapshot) => received.push(snapshot))
+  assert.deepEqual(Object.keys(handle).sort(), ['current', 'dispose', 'epoch', 'subscribe'])
+  assert.equal(Object.isFrozen(handle), true)
+  assert.deepEqual(handle.current(), { servers: [], tools: [] })
   applyPayload(shared, ctx, payload())
   assert.equal(received.length, 1)
   assert.equal(received[0].name === undefined, true) // snapshot object, not an event envelope
   assert.equal(api.servers().length, 1)
   assert.equal(api.tools()[0].publicName, 'mcp__github__alpha')
   assert.equal(api.resolvePublicName('mcp__github__alpha').identity.rawName, 'alpha')
-  disposer()
+  assert.deepEqual(handle.dispose(), { ok: true, code: 'revoked' })
+  assert.equal(handle.dispose().code, 'stale', 'a released handle is a typed no-op')
+  // A released handle answers an explicit degraded view and its subscription is
+  // a no-op rather than a stream that silently stops delivering.
+  assert.equal(handle.current().reason, 'the observation handle is released')
+  assert.equal(typeof handle.subscribe(() => {}), 'function')
   applyPayload(shared, ctx, payload({ generation: 'github#2', tools: [] }))
   assert.equal(received.length, 1, 'unsubscribed listener no longer receives events')
 })

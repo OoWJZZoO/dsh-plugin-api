@@ -15,21 +15,32 @@ function makePolicy(id, overrides = {}) {
   }
 }
 
-test('registry accepts a valid image policy and returns an identity-bound disposer', () => {
+test('registry accepts a valid image policy and returns the standard policy handle', () => {
   const registry = createLlmInputPolicyRegistry()
-  const disposer = registry.register(makePolicy('p1'))
+  const caller = { fiber: { name: 'plugin-a' } }
+  const handle = registry.register(makePolicy('p1'), caller)
 
   assert.equal(registry.size, 1)
-  assert.equal(disposer(), true)
-  assert.equal(disposer(), false)
+  assert.deepEqual(Object.keys(handle).sort(), ['dispose', 'generation', 'id', 'ownerId'])
+  assert.equal(handle.id, 'p1')
+  assert.equal(handle.ownerId, 'plugin-a')
+  assert.equal(typeof handle.generation, 'string')
+  assert.ok(Object.isFrozen(handle))
+  assert.equal(handle.dispose().ok, true)
+  assert.equal(handle.dispose().code, 'stale')
   assert.equal(registry.size, 0)
 })
 
-test('registry rejects duplicate ids and invalid shapes atomically', () => {
+test('registry rejects cross-owner duplicate ids and invalid shapes atomically', () => {
   const registry = createLlmInputPolicyRegistry()
-  registry.register(makePolicy('p1'))
+  const pluginA = { fiber: { name: 'plugin-a' } }
+  const pluginB = { fiber: { name: 'plugin-b' } }
+  registry.register(makePolicy('p1'), pluginA)
 
-  assert.throws(() => registry.register(makePolicy('p1')), LlmInputPolicyRegistrationError)
+  assert.throws(
+    () => registry.register(makePolicy('p1'), pluginB),
+    (error) => error instanceof LlmInputPolicyRegistrationError && /another owner/.test(error.message),
+  )
   assert.throws(() => registry.register(makePolicy('p2', { input: 'audio' })), LlmInputPolicyRegistrationError)
   assert.throws(() => registry.register(makePolicy('p3', { match: undefined })), LlmInputPolicyRegistrationError)
   assert.throws(() => registry.register(makePolicy('p4', { process: 'not-a-function' })), LlmInputPolicyRegistrationError)
@@ -45,7 +56,7 @@ test('registry rejects duplicate ids and invalid shapes atomically', () => {
 
 test('registry snapshot preserves successful-registration order with frozen entries', () => {
   const registry = createLlmInputPolicyRegistry()
-  const a = registry.register(makePolicy('a'))
+  const a = registry.register(makePolicy('a'), { fiber: { name: 'plugin-a' } })
   const b = registry.register(makePolicy('b'))
   registry.register(makePolicy('c'))
 
@@ -59,28 +70,35 @@ test('registry snapshot preserves successful-registration order with frozen entr
   }
 
   // disposal after the snapshot cannot alter a held snapshot
-  a()
-  b()
+  assert.equal(a.dispose().ok, true)
+  assert.equal(b.dispose().ok, true)
   assert.deepEqual(snapshot.map((e) => e.id), ['a', 'b', 'c'])
   assert.deepEqual(registry.snapshot().map((e) => e.id), ['c'])
 })
 
-test('disposal removes only the exact token; a newer registration with the same id survives', () => {
+test('same owner + same id is latest-wins; the stale handle cannot remove the newer registration', () => {
   const registry = createLlmInputPolicyRegistry()
-  const first = registry.register(makePolicy('dup'))
+  const caller = { fiber: { name: 'plugin-a' } }
+  const first = registry.register(makePolicy('dup'), caller)
   const firstToken = registry.snapshot()[0].token
 
-  assert.equal(first(), true)
-  assert.equal(first(), false)
+  assert.equal(first.dispose().ok, true)
+  assert.equal(first.dispose().code, 'stale')
   assert.equal(registry.size, 0)
   assert.equal(registry.isAvailable(firstToken), false)
 
-  const second = registry.register(makePolicy('dup'))
-  assert.equal(first(), false, 'the stale disposer cannot remove the newer registration')
+  const second = registry.register(makePolicy('dup'), caller)
+  assert.equal(first.dispose().code, 'stale', 'the stale handle cannot remove the newer registration')
   assert.equal(registry.snapshot().map((e) => e.id).join(','), 'dup')
   assert.equal(registry.snapshot()[0].token !== firstToken, true)
   assert.equal(registry.isAvailable(registry.snapshot()[0].token), true)
-  assert.equal(second(), true)
+
+  // A second registration of the same (owner, id) replaces the live one.
+  const third = registry.register(makePolicy('dup'), caller)
+  assert.equal(second.dispose().code, 'stale', 'the superseded handle is a typed no-op')
+  assert.notEqual(third.generation, second.generation)
+  assert.equal(registry.snapshot().map((e) => e.id).join(','), 'dup')
+  assert.equal(third.dispose().ok, true)
 })
 
 test('disposed registry rejects further registration', () => {

@@ -57,12 +57,12 @@ test('prompts.contribute returns a discriminated result with a seq handle and re
   assert.equal(invalid.code, 'invalid-input')
 
   // disposal is idempotent and frees the id for a fresh contribution
-  assert.equal(first.handle.dispose(), true)
-  assert.equal(first.handle.dispose(), false)
+  assert.equal(first.handle.dispose().code, 'revoked')
+  assert.equal(first.handle.dispose().code, 'stale')
   const revived = contribute({ kind: 'tools', id: 'provider-a', provider: () => {} })
   assert.equal(revived.ok, true)
-  revived.handle.dispose()
-  assert.equal(revived.handle.dispose(), false, 'dispose stays idempotent after revival')
+  assert.equal(revived.handle.dispose().code, 'revoked')
+  assert.equal(revived.handle.dispose().code, 'stale', 'dispose stays idempotent after revival')
 })
 
 test('the five prompt kinds merge into prompts.contribute', () => {
@@ -84,7 +84,10 @@ test('resource registrations expose the merged register entry with official iden
   const api = state.pluginApi
   // tools policy and resource registration entries
   const restriction = api.tools.restrict.register({ tool: 'x' })
-  assert.equal(typeof restriction, 'function', 'official disposer identity is preserved')
+  assert.equal(typeof restriction, 'object', 'the shared resource handle replaces the bare official disposer')
+  assert.equal(typeof restriction.dispose, 'function')
+  assert.ok(Object.isFrozen(restriction))
+  assert.equal(restriction.dispose().code, 'revoked')
   assert.equal(typeof api.tools.guard.register, 'function')
   assert.equal(typeof api.tools.presentation.register, 'function')
   assert.equal(typeof api.tools.executionMode.register, 'function')
@@ -100,25 +103,48 @@ test('resource registrations expose the merged register entry with official iden
   assert.equal('contribute' in api.settings, false, 'the registered entry is settings.remote.contribute only')
 })
 
-test('merged agent provider registration dispatches by spec shape', () => {
+test('merged agent provider registration dispatches by the explicit kind', () => {
   const calls = []
+  const disposed = []
   const agents = {
     get() {}, list() {}, roots() {},
-    enter(...args) { calls.push(['enter', ...args]); return 'enter-ok' },
+    enter(...args) { calls.push(['enter', ...args]); return () => disposed.push('enter') },
     announce(...args) { calls.push(['announce', ...args]); return 'announce-ok' },
-    setFactory(...args) { calls.push(['setFactory', ...args]); return 'factory-ok' },
+    setFactory(...args) { calls.push(['setFactory', ...args]); return () => disposed.push('factory') },
   }
   const { ctx, state } = createHarness({ agents })
   apply(ctx)
   const providers = state.pluginApi.agents.providers
   assert.equal(typeof providers.register, 'function')
-  const entered = providers.register({ id: 'a', owner: 'o' })
-  assert.equal(entered, 'enter-ok')
+
+  const enterHandle = providers.register({ kind: 'enter', agent: { id: 'a' }, owner: 'o' })
+  assert.equal(enterHandle.id, 'a')
+  assert.equal(enterHandle.ownerId, 'root')
   assert.equal(calls[0][0], 'enter')
-  const announced = providers.register({ id: 'b', announce: {} })
-  assert.equal(announced, 'announce-ok')
-  const factory = providers.register({ id: 'c', factory: () => {} })
-  assert.equal(factory, 'factory-ok')
+  assert.deepEqual(calls[0].slice(1), [{ id: 'a' }, 'o'])
+
+  const announceHandle = providers.register({ kind: 'announce', agent: { id: 'b' } })
+  assert.equal(announceHandle.id, 'b')
+  assert.equal(announceHandle.dispose().code, 'stale', 'an announcement is irreversible')
+  assert.equal(calls[1][0], 'announce')
+
+  const factoryHandle = providers.register({ kind: 'factory', id: 'c', factory: () => {} })
+  assert.equal(factoryHandle.id, 'c')
+  assert.equal(calls[2][0], 'setFactory')
+
+  assert.equal(enterHandle.dispose().code, 'revoked')
+  assert.equal(factoryHandle.dispose().code, 'revoked')
+  assert.deepEqual(disposed, ['enter', 'factory'])
+
+  // Unknown/missing kinds are a typed throw naming the legal variants.
+  assert.throws(
+    () => providers.register({ agent: { id: 'd' } }),
+    (error) => error.code === 'AGENT_PROVIDER_INVALID_REGISTRATION' && /"factory" \| "announce" \| "enter"/.test(error.message),
+  )
+  assert.throws(
+    () => providers.register({ kind: 'claim', agent: { id: 'd' } }),
+    (error) => error.code === 'AGENT_PROVIDER_INVALID_REGISTRATION' && /invalid/.test(error.message),
+  )
 })
 
 test('channel auth/redaction registrations and skills activation registers are shaped', () => {

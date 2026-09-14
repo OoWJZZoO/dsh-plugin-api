@@ -58,9 +58,10 @@ test('slice A: read-image installs its tool and guidance for the owning agent on
   const other = await singletons.systemPrompt.assemble({ agent: 'session-without-image' })
   assert.deepEqual(other.sections, [])
 
-  // the contribution handle is the disposal path the consumer now holds
-  assert.equal(guidance.handle.dispose(), true)
-  assert.equal(tool.dispose(), true)
+  // the contribution handle is the disposal path the consumer now holds; both
+  // answer with the shared discriminated result
+  assert.equal(guidance.handle.dispose().code, 'revoked')
+  assert.equal(tool.dispose().code, 'revoked')
   assert.deepEqual(singletons.tools.view('session-with-image').tools, [])
   assert.deepEqual((await singletons.systemPrompt.assemble({ agent: 'session-with-image' })).sections, [])
 })

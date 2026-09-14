@@ -167,10 +167,14 @@ assert.equal(features[25].name, 'toolDiscovery')
   assert.equal(Object.keys(catalog).length, 48)
 
   const definition = { name: 'demo', output: {} }
-  const disposer = state.pluginApi.tools.register(definition)
+  const handle = state.pluginApi.tools.register(definition)
   assert.equal(tools.registerCalls.length, 1)
   assert.equal(tools.registerCalls[0], definition)
-  assert.equal(disposer, tools.registerDisposer)
+  // The official disposer is wrapped: the caller gets the shared resource
+  // handle, and revoking it goes through the official registration verb.
+  assert.equal(handle.id, 'demo')
+  assert.equal(handle.dispose().code, 'revoked')
+  assert.equal(handle.dispose().code, 'stale')
 
   const input = { callId: '1', name: 'demo', arguments: {}, signal: new AbortController().signal }
   assert.deepEqual(await state.pluginApi.tools.execute(input), tools.executeResult)

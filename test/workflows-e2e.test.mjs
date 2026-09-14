@@ -184,7 +184,10 @@ test('the real engine executes the run and the facade maps its terminal', async 
     const outcome = face.start(request(kit, { args: { value: 1 } }))
     assert.equal(outcome.ok, true)
     assert.equal(outcome.code, 'started')
-    handle = outcome.handle
+    assert.deepEqual(Object.keys(outcome).sort(), ['code', 'ok', 'operation'], 'the control handle rides the operation member')
+    assert.equal('handle' in outcome, false)
+    assert.equal('terminal' in outcome, false, 'an accepted-but-undecided start carries no terminal')
+    handle = outcome.operation
     assert.equal(typeof handle.id, 'string')
     assert.equal(typeof handle.ownerId, 'string')
     assert.equal(Object.isFrozen(handle.meta), true)
@@ -195,6 +198,7 @@ test('the real engine executes the run and the facade maps its terminal', async 
     assert.equal(terminal.terminal, 'success')
     assert.deepEqual(terminal.value, { answer: 42 })
     assert.equal(handle.status().state, 'settled')
+    assert.equal(handle.status().terminal, 'success', 'the settled state reports the unified terminal vocabulary')
 
     const started = kit.facts.filter((entry) => entry.name === 'workflow/start')
     const ended = kit.facts.filter((entry) => entry.name === 'workflow/end')
@@ -204,7 +208,7 @@ test('the real engine executes the run and the facade maps its terminal', async 
     assert.equal(ended[0].rest[0].stopReason, 'completed')
     assert.equal(ended[0].rest[0].value, undefined, 'the end fact never carries the script value')
   } finally {
-    await handle?.dispose()
+    handle?.dispose()
   }
 })
 
@@ -222,13 +226,13 @@ test('a started run delivers the mapped terminal for every outcome', async () =>
     const kit = await createHarness({ engine: double })
     const outcome = faceOf(kit).start(request(kit))
     assert.equal(outcome.ok, true)
-    const terminal = await outcome.handle.result
+    const terminal = await outcome.operation.result
     assert.equal(terminal.terminal, expected)
     if (behaviour === 'complete') assert.deepEqual(terminal.value, { answer: 42 })
     if (behaviour === 'error') assert.match(String(terminal.error), /script exploded/)
     if (behaviour === 'abort') assert.equal(terminal.stopReason, 'cancelled')
-    assert.equal(outcome.handle.status().state, 'settled')
-    await outcome.handle.dispose()
+    assert.equal(outcome.operation.status().state, 'settled')
+    outcome.operation.dispose()
   }
 })
 
@@ -236,11 +240,11 @@ test('a repeated start creates a new run identity', async () => {
   const kit = await createHarness({ engine: doubleEngine() })
   const first = faceOf(kit).start(request(kit))
   const second = faceOf(kit).start(request(kit))
-  assert.notEqual(first.handle.id, second.handle.id, 'an external repeat creates a new run, never a merged identity')
-  assert.equal((await first.handle.result).terminal, 'success')
-  assert.equal((await second.handle.result).terminal, 'success')
-  await first.handle.dispose()
-  await second.handle.dispose()
+  assert.notEqual(first.operation.id, second.operation.id, 'an external repeat creates a new run, never a merged identity')
+  assert.equal((await first.operation.result).terminal, 'success')
+  assert.equal((await second.operation.result).terminal, 'success')
+  first.operation.dispose()
+  second.operation.dispose()
 })
 
 test('the parent must be a live agent reference and reaches the engine unchanged', async () => {
@@ -255,7 +259,7 @@ test('the parent must be a live agent reference and reaches the engine unchanged
   const started = face.start(request(kit))
   assert.equal(started.ok, true)
   assert.equal(double.runs[0].request.parent, kit.parent, 'the verified live agent itself is forwarded')
-  await started.handle.dispose()
+  started.operation.dispose()
 })
 
 test('the request-shape refusals never reach the engine', async () => {
@@ -284,17 +288,17 @@ test('cancellation is a signal and the handle stays bound to its own run', async
   const kit = await createHarness({ engine: double })
   const first = faceOf(kit).start(request(kit))
   const second = faceOf(kit).start(request(kit))
-  first.handle.cancel('user asked')
+  first.operation.cancel('user asked')
   assert.equal(double.runs[0].run.cancelReason, 'user asked')
   assert.equal(double.runs[1].run.cancelReason, undefined, 'a handle never reaches another run')
 
-  first.handle.cancel('again')
+  first.operation.cancel('again')
   double.runs[0].run.release()
   double.runs[1].run.release()
-  assert.equal((await first.handle.result).terminal, 'aborted', 'the engine adjudicates the cancelled run')
-  assert.equal((await second.handle.result).terminal, 'success', 'the other run keeps its own terminal')
-  await first.handle.dispose()
-  await second.handle.dispose()
+  assert.equal((await first.operation.result).terminal, 'aborted', 'the engine adjudicates the cancelled run')
+  assert.equal((await second.operation.result).terminal, 'success', 'the other run keeps its own terminal')
+  first.operation.dispose()
+  second.operation.dispose()
 })
 
 test('observation is run-scoped and cancel/dispose are idempotent', async () => {
@@ -302,17 +306,20 @@ test('observation is run-scoped and cancel/dispose are idempotent', async () => 
   const kit = await createHarness({ engine: double })
   const outcome = faceOf(kit).start(request(kit))
   const seen = []
-  outcome.handle.observe((event) => seen.push(event.name))
+  outcome.operation.observe((event) => seen.push(event.name))
   // Facts for this run and for an unrelated run.
-  kit.root.emit('workflow/phase', { id: outcome.handle.id }, 'one')
+  kit.root.emit('workflow/phase', { id: outcome.operation.id }, 'one')
   kit.root.emit('workflow/phase', { id: 'other-run' }, 'two')
   assert.deepEqual(seen, ['workflow/phase'], 'only this run identity reaches the observer')
 
-  await outcome.handle.dispose()
-  await outcome.handle.dispose()
+  const stopped = outcome.operation.dispose()
+  assert.deepEqual({ ...stopped }, { ok: true, code: 'requested' })
+  assert.equal(Object.isFrozen(stopped), true)
+  assert.deepEqual({ ...outcome.operation.dispose() }, { ok: false, code: 'stale', reason: 'the stop was already requested' })
   assert.equal(double.runs[0].run.disposed, 1, 'dispose is idempotent and reaches the engine once')
   double.runs[0].run.release()
-  assert.equal((await outcome.handle.result).terminal, 'success')
+  assert.equal((await outcome.operation.result).terminal, 'success')
+  assert.equal(outcome.operation.status().terminal, 'success')
 })
 
 test('the engine seam absence degrades this feature alone', async () => {
@@ -328,7 +335,7 @@ test('the facade subscribes to the six registered workflow facts and scopes them
   const double = doubleEngine({ behaviour: 'hold' })
   const kit = await createHarness({ engine: double })
   const outcome = faceOf(kit).start(request(kit))
-  const runId = outcome.handle.id
+  const runId = outcome.operation.id
   // The double does not dispatch engine facts, so the six registered names are
   // delivered explicitly; the real-engine test above is the dispatch evidence
   // (it observes start/end from the engine itself).
@@ -338,12 +345,12 @@ test('the facade subscribes to the six registered workflow facts and scopes them
     kit.root.emit(name, { id: runId }, name === 'workflow/phase' ? 'title' : 'payload')
   }
   double.runs[0].run.release()
-  await outcome.handle.result
+  await outcome.operation.result
   kit.root.emit('workflow/end', { id: runId }, { stopReason: 'completed', agentsStarted: 0 })
   const names = new Set(kit.facts.map((entry) => entry.name))
   for (const name of FACT_NAMES) assert.equal(names.has(name), true, `${name} is observable`)
   assert.equal(kit.facts.every((entry) => entry.name.startsWith('workflow/')), true)
-  await outcome.handle.dispose()
+  outcome.operation.dispose()
 })
 
 test('the real engine refuses every cannot-begin case synchronously with its official code', async () => {
@@ -366,7 +373,7 @@ test('the real engine invokes a child agent attributed to the verified parent', 
       script: 'const childText = await agent("do the thing")\nreturn { childText }',
     }))
     assert.equal(outcome.ok, true)
-    handle = outcome.handle
+    handle = outcome.operation
     const terminal = await handle.result
     assert.equal(terminal.terminal, 'success')
     assert.equal(kit.childStarts.length, 1, 'the script really invoked the subagent seam')
@@ -377,7 +384,7 @@ test('the real engine invokes a child agent attributed to the verified parent', 
     assert.equal(names.includes('workflow/agent-start'), true, 'the engine dispatches the child lifecycle facts')
     assert.equal(names.includes('workflow/agent-end'), true)
   } finally {
-    await handle?.dispose()
+    handle?.dispose()
   }
 })
 
@@ -387,7 +394,7 @@ test('the caller-supplied args and correlation data reach the engine unchanged',
   const outcome = faceOf(kit).start(request(kit, { args: { value: 7, nested: { a: 1 } } }))
   assert.equal(outcome.ok, true)
   assert.deepEqual(double.runs[0].request.args, { value: 7, nested: { a: 1 } })
-  await outcome.handle.dispose()
+  outcome.operation.dispose()
 })
 
 test('a pre-aborted signal and an explicit cancel both settle as aborted', async () => {
@@ -401,22 +408,22 @@ test('a pre-aborted signal and an explicit cancel both settle as aborted', async
   assert.equal(double.runs[0].request.signal.aborted, true)
   double.runs[0].run.cancel('workflow start signal already aborted')
   double.runs[0].run.release()
-  const terminal = await outcome.handle.result
+  const terminal = await outcome.operation.result
   assert.equal(terminal.terminal, 'aborted')
   assert.equal(terminal.stopReason, 'cancelled')
-  await outcome.handle.dispose()
+  outcome.operation.dispose()
 })
 
 test('cancel after settlement is a no-op and never rewrites the terminal', async () => {
   const double = doubleEngine()
   const kit = await createHarness({ engine: double })
   const outcome = faceOf(kit).start(request(kit))
-  const terminal = await outcome.handle.result
+  const terminal = await outcome.operation.result
   assert.equal(terminal.terminal, 'success')
-  outcome.handle.cancel('too late')
+  outcome.operation.cancel('too late')
   assert.equal(double.runs[0].run.cancelReason, 'too late', 'the cancel is delegated as a signal')
-  assert.equal((await outcome.handle.result).terminal, 'success', 'the settled terminal is never rewritten')
-  await outcome.handle.dispose()
+  assert.equal((await outcome.operation.result).terminal, 'success', 'the settled terminal is never rewritten')
+  outcome.operation.dispose()
 })
 
 test('an engine with the wrong shape degrades typed, and the namespace recovers when it appears', async () => {
@@ -431,7 +438,7 @@ test('an engine with the wrong shape degrades typed, and the namespace recovers 
   assert.equal(faceOf(kit).availability().status, 'active')
   const outcome = faceOf(kit).start(request(kit))
   assert.equal(outcome.ok, true)
-  await outcome.handle.dispose()
+  outcome.operation.dispose()
 
   // An object that exists but is not a usable engine is refused too.
   const mismatch = await createHarness({ shapeMismatch: true })
@@ -461,20 +468,20 @@ test('two calling plugins receive their own sub-surface and own their runs', asy
 
   const runA = first.workflows.start(request(kit))
   const runB = second.workflows.start(request(kit))
-  assert.equal(runA.handle.ownerId, 'CallerA')
-  assert.equal(runB.handle.ownerId, 'CallerB')
-  assert.notEqual(runA.handle.id, runB.handle.id)
+  assert.equal(runA.operation.ownerId, 'CallerA')
+  assert.equal(runB.operation.ownerId, 'CallerB')
+  assert.notEqual(runA.operation.id, runB.operation.id)
 
   // Each owner's cancel reaches only its own run.
-  runA.handle.cancel('A stops')
+  runA.operation.cancel('A stops')
   assert.equal(double.runs[0].run.cancelReason, 'A stops')
   assert.equal(double.runs[1].run.cancelReason, undefined)
   double.runs[0].run.release()
   double.runs[1].run.release()
-  assert.equal((await runA.handle.result).terminal, 'aborted')
-  assert.equal((await runB.handle.result).terminal, 'success')
-  await runA.handle.dispose()
-  await runB.handle.dispose()
+  assert.equal((await runA.operation.result).terminal, 'aborted')
+  assert.equal((await runB.operation.result).terminal, 'success')
+  runA.operation.dispose()
+  runB.operation.dispose()
 })
 
 test('the real engine mints an official UUID run identity', async () => {
@@ -482,11 +489,11 @@ test('the real engine mints an official UUID run identity', async () => {
   let handle = null
   try {
     const outcome = faceOf(kit).start(request(kit))
-    handle = outcome.handle
+    handle = outcome.operation
     assert.match(handle.id, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, 'the official engine mints the run identity')
     await handle.result
   } finally {
-    await handle?.dispose()
+    handle?.dispose()
   }
 })
 
@@ -494,7 +501,7 @@ test('unmounting and an inert core keep the namespace typed and retire old handl
   const double = doubleEngine({ behaviour: 'hold' })
   const kit = await createHarness({ engine: double })
   const outcome = faceOf(kit).start(request(kit))
-  const handle = outcome.handle
+  const handle = outcome.operation
   assert.equal(handle.status().state, 'running')
 
   // The assembly's unload sequence: slot rollback, then owner cleanup.
@@ -508,7 +515,7 @@ test('unmounting and an inert core keep the namespace typed and retire old handl
   // its operations cannot touch another run.
   double.runs[0].run.release()
   assert.equal((await handle.result).terminal, 'success')
-  await handle.dispose()
+  handle.dispose()
 })
 
 test('an inert core keeps the member set and answers typed without throwing on availability', async () => {

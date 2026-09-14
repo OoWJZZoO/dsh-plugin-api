@@ -59,7 +59,16 @@ function createFakeCatalog() {
     servers(options = {}) { calls.push(['servers', options]); return Object.freeze([{ serverName: 's1', lifecycleState: 'available' }]) },
     tools(options = {}) { calls.push(['tools', options]); return Object.freeze([]) },
     resolvePublicName(publicName) { calls.push(['resolvePublicName', publicName]); return Object.freeze({ identity: { serverName: 's1', rawName: 't1' }, publicName }) },
-    onChange(listener) { calls.push(['onChange', listener]); return () => {} },
+    onChange(listener) {
+      calls.push(['onChange', listener])
+      // the replacement catalog answers with the standard observation handle
+      return Object.freeze({
+        epoch: 'epoch:1',
+        current() { return Object.freeze({ servers: [], tools: [] }) },
+        subscribe() { return () => {} },
+        dispose() { return Object.freeze({ ok: true, code: 'revoked' }) },
+      })
+    },
   }
 }
 
@@ -115,8 +124,10 @@ test('pluginApi.mcp delegates queries to the marked replacement catalog when act
   const resolved = mcp.resolvePublicName('mcp__s1__t1')
   assert.deepEqual(resolved, { identity: { serverName: 's1', rawName: 't1' }, publicName: 'mcp__s1__t1' })
 
-  const disposer = mcp.observe(() => {})
-  assert.equal(typeof disposer, 'function')
+  const handle = mcp.observe(() => {})
+  assert.equal(typeof handle.subscribe, 'function')
+  assert.equal(typeof handle.current, 'function')
+  assert.equal(handle.dispose().ok, true)
 
   assert.deepEqual(catalog.calls.map(([method]) => method), ['servers', 'resolvePublicName', 'onChange'])
 })

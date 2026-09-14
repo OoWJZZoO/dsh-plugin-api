@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { Context } from '@deepseek-ai/cordis'
 import { LocalAttachmentStore } from '../lib/forked-store.js'
 import { BLOB_MEDIA_TYPE } from '../lib/pipeline-core.js'
+import { TransformRegistrationError } from '../lib/pipeline-service.js'
 
 const PNG = Buffer.from('89504e470d0a1a0a0000000d4948445200000001000000010804000000b51c0c020000000b4944415478da6364f80f00010501012718e3660000000049454e44ae426082', 'hex')
 
@@ -377,7 +378,7 @@ test('transform repeats decoder duration admission and publishes only a derived 
   })
   try {
     const source = await pipeline.pipeline.ingest({ kind: 'paste', bytes: new Uint8Array([100]), mediaType: 'audio/mpeg' }, identity())
-    const dispose = pipeline.pipeline.registerTransform({
+    const handle = pipeline.pipeline.registerTransform({
       id: 'compress',
       ownerId: 'owner-a',
       generation: 'g1',
@@ -390,8 +391,13 @@ test('transform repeats decoder duration admission and publishes only a derived 
     assert.equal(denied.error.code, 'ATTACHMENT_DURATION_TOO_LONG')
     const stillThere = await pipeline.projection.resolve({ ...identity(), attachmentId: source.value.attachmentId })
     assert.equal(stillThere.status, 'success')
-    assert.equal(dispose(), true)
-    assert.equal(dispose(), false)
+    assert.deepEqual(Object.keys(handle).sort(), ['dispose', 'generation', 'id', 'ownerId'])
+    assert.equal(handle.id, 'compress')
+    assert.equal(handle.ownerId, 'owner-a')
+    assert.equal(typeof handle.generation, 'string')
+    assert.ok(Object.isFrozen(handle))
+    assert.equal(handle.dispose().code, 'revoked')
+    assert.equal(handle.dispose().code, 'stale')
   } finally {
     await stop(fiber)
   }
@@ -406,7 +412,7 @@ test('transform deadline and concurrency denial do not publish, while caller can
     const source = await pipeline.pipeline.ingest({ kind: 'paste', bytes: new Uint8Array([1]), mediaType: 'application/octet-stream' }, identity())
     let release
     const wait = new Promise((resolve) => { release = resolve })
-    const dispose = pipeline.pipeline.registerTransform({
+    const handle = pipeline.pipeline.registerTransform({
       id: 'slow',
       ownerId: 'owner-a',
       generation: 'g1',
@@ -424,7 +430,7 @@ test('transform deadline and concurrency denial do not publish, while caller can
     assert.equal(transformed.status, 'success')
     assert.equal(transformed.value.origin, 'derived')
     assert.equal(transformed.value.parent.recordId, source.value.recordId)
-    assert.equal(dispose(), true)
+    assert.equal(handle.dispose().code, 'revoked')
 
     const secondSource = await pipeline.pipeline.ingest({ kind: 'paste', bytes: new Uint8Array([3]), mediaType: 'application/octet-stream' }, identity('g2'))
     const controller = new AbortController()
@@ -446,7 +452,7 @@ test('transform deadline abort is denied and cannot publish a derived record', a
   const { fiber, pipeline } = await start({ maxPipelineDeadlineMs: 1000 })
   try {
     const source = await pipeline.pipeline.ingest({ kind: 'paste', bytes: new Uint8Array([1]), mediaType: BLOB_MEDIA_TYPE }, identity())
-    const dispose = pipeline.pipeline.registerTransform({
+    const handle = pipeline.pipeline.registerTransform({
       id: 'deadline',
       ownerId: 'owner-a',
       generation: 'g1',
@@ -461,7 +467,45 @@ test('transform deadline abort is denied and cannot publish a derived record', a
     assert.equal(result.status, 'denied')
     assert.equal(result.error.code, 'ATTACHMENT_TRANSFORM_DENIED')
     assert.equal((await pipeline.journal.list('session', 'owner-a')).length, 1)
-    assert.equal(dispose(), true)
+    assert.equal(handle.dispose().code, 'revoked')
+  } finally {
+    await stop(fiber)
+  }
+})
+
+test('transform registration conflicts on different content and stays idempotent on identical content', async () => {
+  const { fiber, pipeline } = await start()
+  try {
+    const capability = {
+      id: 'dedupe',
+      ownerId: 'owner-a',
+      generation: 'g1',
+      mediaTypes: [BLOB_MEDIA_TYPE],
+      policy: { deadlineMs: 1000 },
+      run: async () => new Uint8Array([1]),
+    }
+    const first = pipeline.pipeline.registerTransform(capability)
+
+    // Identical content for the same (owner, id) is idempotent: the existing
+    // slot and its handle are returned unchanged.
+    const second = pipeline.pipeline.registerTransform(capability)
+    assert.equal(second, first, 'identical re-registration reuses the live handle')
+    assert.equal(first.dispose().code, 'revoked')
+
+    // Different content for the same (owner, id) is a typed conflict decision,
+    // never a silent overwrite of the live registration.
+    const live = pipeline.pipeline.registerTransform(capability)
+    assert.throws(
+      () => pipeline.pipeline.registerTransform({ ...capability, run: async () => new Uint8Array([2]) }),
+      (error) => error instanceof TransformRegistrationError && error.code === 'ATTACHMENT_TRANSFORM_CONFLICT',
+    )
+    assert.equal(live.dispose().code, 'revoked', 'the original registration survived the conflict')
+
+    // A different owner with the same id occupies its own slot.
+    const other = pipeline.pipeline.registerTransform({ ...capability, ownerId: 'owner-b' })
+    assert.equal(other.ownerId, 'owner-b')
+    assert.notEqual(other.generation, live.generation)
+    assert.equal(other.dispose().code, 'revoked')
   } finally {
     await stop(fiber)
   }

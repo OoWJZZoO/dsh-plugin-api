@@ -239,6 +239,35 @@ test('dispose requests stop of the caller own operation without forging a termin
   assert.equal(out.operation.status().terminal.outcome, 'aborted')
 })
 
+test('the request handle is an operation control object: requested stop, stale repeat, unsubscribing observe', async () => {
+  const { authority } = makeAuthority()
+  const out = await authority.request({ sessionId: 's1', message: { kind: 'user-message', text: 'x' } })
+  assert.equal('terminal' in out, false, 'an accepted-but-undecided result carries no terminal')
+  const handle = out.operation
+  assert.deepEqual(Object.keys(handle).sort(), ['capability', 'dispose', 'id', 'observe', 'ownerId', 'status'])
+  assert.equal(Object.isFrozen(handle), true)
+  assert.equal(handle.status().terminal, null, 'status() is the terminal source while the outcome is undecided')
+
+  const seen = []
+  const unsubscribe = handle.observe((status) => seen.push(status))
+  assert.equal(typeof unsubscribe, 'function')
+  assert.equal(seen.length, 1, 'the current status is delivered on subscription')
+  assert.equal(seen[0].phase, 'accepted')
+  unsubscribe()
+  unsubscribe() // a repeated unsubscribe stays a no-op
+  assert.equal(seen.length, 1, 'an unsubscribed listener stops receiving')
+
+  const stopped = handle.dispose()
+  assert.deepEqual({ ...stopped }, { ok: true, code: 'requested' })
+  assert.equal(Object.isFrozen(stopped), true)
+  assert.deepEqual({ ...handle.dispose() }, { ok: false, code: 'stale', reason: 'the stop was already requested' })
+  assert.equal(handle.status().phase, 'terminal')
+  assert.ok(
+    ['success', 'error', 'aborted', 'denied', 'superseded'].includes(handle.status().terminal.outcome),
+    'the committed terminal stays inside the unified terminal vocabulary',
+  )
+})
+
 test('availability reflects authority, boundary and durable state', async () => {
   const active = makeAuthority().authority
   assert.deepEqual(active.availability(), { status: 'active' })

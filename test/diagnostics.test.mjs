@@ -26,18 +26,57 @@ async function settle() {
   await new Promise((resolve) => setImmediate(resolve))
 }
 
+/**
+ * A caller-context double: the registration owner is derived from the calling
+ * plugin's context, never from a caller-supplied string.
+ */
+const caller = (name) => ({ fiber: { name } })
+
 async function sleep(ms) {
   await new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /* ------------------------------- 注册与所有权 ------------------------------ */
 
-test('register validates required identity and run function', () => {
+test('register validates input with a typed error that lists the legal scopes', () => {
   const { api } = createOwner()
-  assert.throws(() => api.register({}), TypeError)
-  assert.throws(() => api.register({ ownerId: 'a', checkId: 'b', scope: 'plugin' }), TypeError)
-  assert.throws(() => api.register({ ownerId: 'a', checkId: 'b', scope: 'bogus', run() {} }), TypeError)
-  assert.throws(() => api.register({ ownerId: 'a', checkId: 'b', run() {} }), TypeError)
+  const typed = (error) => error.code === 'DIAGNOSTICS_INPUT_INVALID'
+  assert.throws(() => api.register({}), typed)
+  assert.throws(() => api.register({ checkId: 'b', scope: 'plugin' }), typed)
+  assert.throws(() => api.register({ checkId: 'b', scope: 'bogus', run() {} }), (error) =>
+    typed(error) && error.message.includes('boot, host, client, plugin'))
+  assert.throws(() => api.register({ checkId: 'b', run() {} }), typed)
+  assert.throws(() => api.register(null), typed)
+  // a null retry block is tolerated instead of extracting a bare TypeError
+  const tolerant = api.register({
+    checkId: 'b', scope: 'plugin', retry: null,
+    run() { return { health: 'healthy', availability: 'active' } },
+  })
+  assert.equal(tolerant.dispose().ok, true)
+})
+
+test('register derives the owner from the caller context and returns the standard handle', async () => {
+  const { api } = createOwner()
+  // A caller-declared owner is ignored: identity comes from the caller context.
+  const handle = api.register({
+    ownerId: 'spoofed', checkId: 'c', scope: 'plugin',
+    run() { return { health: 'healthy', availability: 'active' } },
+  }, caller('plugin-a'))
+  assert.deepEqual(Object.keys(handle).sort(), ['dispose', 'generation', 'id', 'ownerId'])
+  assert.equal(Object.isFrozen(handle), true)
+  assert.equal(handle.id, 'c')
+  assert.equal(handle.ownerId, 'plugin-a')
+  assert.equal(typeof handle.generation, 'string')
+  await settle()
+  assert.equal(api.get({ scope: 'plugin' }).checks[0].ownerId, 'plugin-a')
+  assert.equal(api.get({ scope: 'plugin', ownerId: 'spoofed' }).checks.length, 0)
+  const released = handle.dispose()
+  assert.equal(released.ok, true)
+  assert.equal(released.code, 'revoked')
+  const stale = handle.dispose()
+  assert.equal(stale.ok, false)
+  assert.equal(stale.code, 'stale')
+  assert.equal(api.get({ scope: 'plugin' }).checks.length, 0)
 })
 
 test('register exposes only the projection surface (no durable mutation face)', () => {
@@ -66,66 +105,66 @@ test('a registration is immediately observable as pending, then settles', async 
 test('duplicate same-owner same-check is latest-wins and only touches this owner', async () => {
   const { api, logs } = createOwner()
   let value = 'first'
-  const disposer = api.register({
-    ownerId: 'o', checkId: 'c', scope: 'plugin',
+  const handle = api.register({
+    checkId: 'c', scope: 'plugin',
     run() { return { health: 'healthy', availability: value === 'first' ? 'active' : 'inactive' } },
-  })
+  }, caller('o'))
   await settle()
   assert.equal(api.get({ scope: 'plugin', ownerId: 'o' }).checks[0].availability, 'active')
 
   value = 'second'
-  const disposer2 = api.register({ ownerId: 'o', checkId: 'c', scope: 'plugin', run() { return { health: 'degraded', availability: 'inactive' } } })
+  const handle2 = api.register({ checkId: 'c', scope: 'plugin', run() { return { health: 'degraded', availability: 'inactive' } } }, caller('o'))
   await settle()
   assert.equal(api.get({ scope: 'plugin', ownerId: 'o' }).checks.length, 1)
   assert.equal(api.get({ scope: 'plugin', ownerId: 'o' }).checks[0].health, 'degraded')
-  // The old disposer is identity-bound and no longer removes the newer generation.
-  assert.equal(disposer(), false)
-  assert.equal(disposer2(), true)
+  // The old handle is identity-bound and no longer removes the newer generation.
+  assert.equal(handle.dispose().code, 'stale')
+  assert.equal(handle2.dispose().ok, true)
   // Replacement is reported (bounded conflict log).
   assert.ok(logs.some(([level, message]) => level === 'info' && message.includes('latest-wins')))
 })
 
 test('cross-owner isolation: another owner is never disposed by a duplicate', async () => {
   const { api } = createOwner()
-  api.register({ ownerId: 'o1', checkId: 'c', scope: 'plugin', run() { return { health: 'healthy', availability: 'active' } } })
-  const o2 = api.register({ ownerId: 'o2', checkId: 'c', scope: 'plugin', run() { return { health: 'degraded', availability: 'inactive' } } })
+  api.register({ checkId: 'c', scope: 'plugin', run() { return { health: 'healthy', availability: 'active' } } }, caller('o1'))
+  const o2 = api.register({ checkId: 'c', scope: 'plugin', run() { return { health: 'degraded', availability: 'inactive' } } }, caller('o2'))
   await settle()
-  api.register({ ownerId: 'o1', checkId: 'c', scope: 'plugin', run() { return { health: 'failed', availability: 'unavailable' } } })
+  api.register({ checkId: 'c', scope: 'plugin', run() { return { health: 'failed', availability: 'unavailable' } } }, caller('o1'))
   await settle()
   assert.equal(api.get({ scope: 'plugin', ownerId: 'o1' }).checks.length, 1)
   assert.equal(api.get({ scope: 'plugin', ownerId: 'o2' }).checks.length, 1)
-  assert.equal(o2(), true) // o2's check still live and disposable by its own disposer
+  assert.equal(o2.dispose().ok, true) // o2's check still live and disposable by its own handle
 })
 
 test('disposer is idempotent and removes only the owned check', async () => {
   const { api } = createOwner()
-  const a = api.register({ ownerId: 'o', checkId: 'a', scope: 'plugin', run() { return { health: 'healthy', availability: 'active' } } })
-  const b = api.register({ ownerId: 'o', checkId: 'b', scope: 'plugin', run() { return { health: 'degraded', availability: 'inactive' } } })
+  const a = api.register({ checkId: 'a', scope: 'plugin', run() { return { health: 'healthy', availability: 'active' } } }, caller('o'))
+  const b = api.register({ checkId: 'b', scope: 'plugin', run() { return { health: 'degraded', availability: 'inactive' } } }, caller('o'))
   await settle()
-  assert.equal(a(), true)
-  assert.equal(a(), false)
+  assert.equal(a.dispose().ok, true)
+  assert.equal(a.dispose().code, 'stale')
   const view = api.get({ scope: 'plugin' })
   assert.deepEqual(view.checks.map((c) => c.checkId).sort(), ['b'])
-  assert.equal(b(), true)
+  assert.equal(b.dispose().ok, true)
 })
 
 test('a late callback after disposal loses publication and cannot remove a newer generation', async () => {
   const { api } = createOwner()
   let release
   const late = new Promise((resolve) => { release = resolve })
-  const disposer = api.register({
-    ownerId: 'o', checkId: 'slow', scope: 'plugin',
+  const handle = api.register({
+    checkId: 'slow', scope: 'plugin',
     run() { return late.then(() => ({ health: 'healthy', availability: 'active' })) },
-  })
+  }, caller('o'))
   await settle()
-  disposer()
+  handle.dispose()
   release({ health: 'healthy', availability: 'active' })
   // The newer generation (re-registered after dispose) must not be removed.
-  const newer = api.register({ ownerId: 'o', checkId: 'slow', scope: 'plugin', run() { return { health: 'degraded', availability: 'inactive' } } })
+  const newer = api.register({ checkId: 'slow', scope: 'plugin', run() { return { health: 'degraded', availability: 'inactive' } } }, caller('o'))
   await settle()
   assert.equal(api.get({ scope: 'plugin', ownerId: 'o' }).checks.length, 1)
   assert.equal(api.get({ scope: 'plugin', ownerId: 'o' }).checks[0].health, 'degraded')
-  assert.equal(newer(), true)
+  assert.equal(newer.dispose().ok, true)
 })
 
 /* --------------------------- 探针行为（失败隔离 / 取消 / 重试） ------------------------------ */
@@ -179,21 +218,21 @@ test('declared transient retry is bounded; undeclared is never retried', async (
   const { api } = createOwner()
   let declaredCalls = 0
   api.register({
-    ownerId: 'o', checkId: 'declared', scope: 'plugin', retry: { declared: true, maxAttempts: 2 },
+    checkId: 'declared', scope: 'plugin', retry: { declared: true, maxAttempts: 2 },
     run() {
       declaredCalls += 1
       if (declaredCalls === 1) return Promise.reject(new Error('transient'))
       return Promise.resolve({ health: 'healthy', availability: 'active' })
     },
-  })
+  }, caller('o'))
   let undeclaredCalls = 0
   api.register({
-    ownerId: 'o', checkId: 'undeclared', scope: 'plugin',
+    checkId: 'undeclared', scope: 'plugin',
     run() {
       undeclaredCalls += 1
       return Promise.reject(new Error('boom'))
     },
-  })
+  }, caller('o'))
   await settle()
   assert.equal(declaredCalls, 2)
   assert.equal(api.get({ scope: 'plugin', ownerId: 'o' }).checks.find((c) => c.checkId === 'declared').health, 'healthy')
@@ -206,17 +245,17 @@ test('a stale result after re-registration never overwrites the newer generation
   let release
   const pending = new Promise((resolve) => { release = resolve })
   const early = api.register({
-    ownerId: 'o', checkId: 'c', scope: 'plugin',
+    checkId: 'c', scope: 'plugin',
     run() { return pending.then(() => ({ health: 'healthy', availability: 'active' })) },
-  })
+  }, caller('o'))
   await settle()
-  api.register({ ownerId: 'o', checkId: 'c', scope: 'plugin', run() { return { health: 'failed', availability: 'unavailable' } } })
+  api.register({ checkId: 'c', scope: 'plugin', run() { return { health: 'failed', availability: 'unavailable' } } }, caller('o'))
   await settle()
   release({ health: 'healthy', availability: 'active' })
   await settle()
   assert.equal(api.get({ scope: 'plugin' }).checks.length, 1)
   assert.equal(api.get({ scope: 'plugin' }).checks[0].health, 'failed')
-  assert.equal(early(), false) // old disposer identity-bound
+  assert.equal(early.dispose().code, 'stale') // old handle identity-bound
 })
 
 /* ------------------------ 快照模型 / 范围查询 / 证据 ----------------------- */
@@ -224,7 +263,7 @@ test('a stale result after re-registration never overwrites the newer generation
 test('snapshots expose the full structured model and are read-only', async () => {
   const { api } = createOwner()
   api.register({
-    ownerId: 'o', checkId: 'c', scope: 'plugin',
+    checkId: 'c', scope: 'plugin',
     dependencies: [{ id: 'llm', status: 'absent', evidence: { package: 'dsh-llm', version: '1.2.3' } }],
     run() {
       return {
@@ -238,7 +277,7 @@ test('snapshots expose the full structured model and are read-only', async () =>
         uncertainty: 'observed',
       }
     },
-  })
+  }, caller('o'))
   await settle()
   const check = api.get({ scope: 'plugin' }).checks[0]
   assert.equal(check.ownerId, 'o')
@@ -331,22 +370,63 @@ test('audience projection keeps or drops internal detail without ever leaking se
 
 /* -------------------------------- 变更通知 -------------------------------- */
 
-test('onChange delivers one notification with immutable snapshot and a per-subscriber epoch', async () => {
+test('observe delivers one notification with immutable snapshot and a per-subscriber epoch', async () => {
   const { api } = createOwner()
   const events = []
-  const offA = api.observe({ scope: 'plugin' }, (payload) => events.push(['a', payload]))
-  const offB = api.observe({ scope: 'plugin', ownerId: 'o' }, (payload) => events.push(['b', payload]))
-  api.register({ ownerId: 'o', checkId: 'c', scope: 'plugin', run() { return { health: 'healthy', availability: 'active' } } })
+  const first = api.observe({ scope: 'plugin' }, (payload) => events.push(['a', payload]))
+  const second = api.observe({ scope: 'plugin', ownerId: 'o' }, (payload) => events.push(['b', payload]))
+  assert.deepEqual(Object.keys(first).sort(), ['current', 'dispose', 'epoch', 'subscribe'])
+  assert.equal(Object.isFrozen(first), true)
+  assert.equal('listeners' in first, false, 'the internal listener set never escapes')
+  assert.equal('disposed' in first, false, 'the internal liveness flag never escapes')
+  assert.equal(typeof first.current, 'function')
+  api.register({ checkId: 'c', scope: 'plugin', run() { return { health: 'healthy', availability: 'active' } } }, caller('o'))
   await settle()
   // ephemeral pending + terminal final coalesce into ONE notification in one window
   assert.equal(events.length, 2) // one per subscriber
   assert.deepEqual(events[0][1].snapshot, events[1][1].snapshot)
   assert.equal(events[0][1].snapshot, events[1][1].snapshot) // same committed reference
   assert.equal(events[0][1].observerEpoch !== events[1][1].observerEpoch, true)
+  assert.equal(events[0][1].observerEpoch, first.epoch)
   assert.equal('observerEpoch' in events[0][1].snapshot, false) // epoch is delivery metadata only
   assert.equal(Object.isFrozen(events[0][1].snapshot), true)
-  offA()
-  offB()
+  // `current()` is the read face of the subscribed filter
+  assert.equal(first.current().scope, 'plugin')
+  assert.equal(first.current().checks.length, 1)
+  assert.equal(first.dispose().code, 'revoked')
+  assert.equal(first.dispose().code, 'stale')
+  // a released handle subscribes as a no-op, never as a dead stream
+  const unreachable = []
+  const unsubscribe = first.subscribe(() => unreachable.push('never'))
+  assert.equal(typeof unsubscribe, 'function')
+  assert.doesNotThrow(() => unsubscribe())
+  second.dispose()
+})
+
+test('a released observation answers a degraded view instead of going silent', async () => {
+  const { owner, api } = createOwner()
+  const handle = api.observe({ scope: 'plugin' }, () => {})
+  api.register({ checkId: 'c', scope: 'plugin', run() { return { health: 'healthy', availability: 'active' } } }, caller('o'))
+  await settle()
+  assert.equal(handle.current().state, 'healthy')
+  owner.dispose()
+  const degraded = handle.current()
+  assert.equal(degraded.state, 'unknown')
+  assert.deepEqual(degraded.checks, [])
+  assert.match(degraded.reason, /no longer active/)
+  assert.equal(typeof handle.subscribe(() => {}), 'function')
+  assert.equal(handle.dispose().code, 'stale')
+})
+
+test('observe never throws through the caller for a non-function listener', () => {
+  const { api } = createOwner()
+  const handle = api.observe({ scope: 'plugin' }, 'not-a-function')
+  assert.deepEqual(Object.keys(handle).sort(), ['current', 'dispose', 'epoch', 'subscribe'])
+  assert.equal(typeof handle.subscribe(null), 'function')
+  assert.equal(handle.dispose().code, 'revoked')
+  // an invalid scope filter is a typed input error that lists the legal scopes
+  assert.throws(() => api.observe({ scope: 'bogus' }, () => {}), (error) =>
+    error.code === 'DIAGNOSTICS_INPUT_INVALID' && error.message.includes('boot, host, client, plugin'))
 })
 
 test('equivalent updates are coalesced and do not loop', async () => {
@@ -377,18 +457,18 @@ test('a throwing listener is contained and other listeners still receive', async
   assert.equal(seen.length, 1)
 })
 
-test('subscriber disposer removes only its own listener', async () => {
+test('a released subscription removes only its own listener', async () => {
   const { api } = createOwner()
   const notifications = []
   const first = api.observe({ scope: 'plugin' }, () => notifications.push('first'))
   api.observe({ scope: 'plugin' }, () => notifications.push('second'))
-  api.register({ ownerId: 'o', checkId: 'c', scope: 'plugin', run() { return { health: 'healthy', availability: 'active' } } })
+  api.register({ checkId: 'c', scope: 'plugin', run() { return { health: 'healthy', availability: 'active' } } }, caller('o'))
   await settle()
   assert.deepEqual(notifications, ['first', 'second']) // insertion order
-  assert.equal(first(), true)
-  assert.equal(first(), false)
+  assert.equal(first.dispose().ok, true)
+  assert.equal(first.dispose().code, 'stale')
   notifications.length = 0
-  api.register({ ownerId: 'o', checkId: 'd', scope: 'plugin', run() { return { health: 'degraded', availability: 'inactive' } } })
+  api.register({ checkId: 'd', scope: 'plugin', run() { return { health: 'degraded', availability: 'inactive' } } }, caller('o'))
   await settle()
   assert.deepEqual(notifications, ['second'])
 })

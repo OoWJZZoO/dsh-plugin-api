@@ -141,6 +141,42 @@ test('context feature mounts through apply and serves the full lifecycle', () =>
   assert.equal(contextState.isActive, true)
 })
 
+test('provenance policy registers through the public member with the standard handle', () => {
+  const host = createHost()
+  apply(host.ctx)
+  const context = host.ctx.get('pluginApi').prompts.provenance
+  context.contribute(spec({ id: 'a' }))
+  context.contribute(spec({ id: 'b' }))
+
+  const handle = context.policy.register({
+    id: 'drop-b',
+    priority: 'highest',
+    decide: (nodes) => nodes.filter((node) => node.id !== 'b'),
+  })
+  assert.deepEqual(Object.keys(handle).sort(), ['dispose', 'generation', 'id', 'ownerId'])
+  assert.equal(handle.id, 'drop-b')
+  assert.equal(handle.ownerId, 'root', 'the public surface forwards no caller binding in this composition')
+  assert.equal(typeof handle.generation, 'string')
+  assert.ok(Object.isFrozen(handle))
+
+  const graph = context.compose({ sessionId: 'session-1' })
+  assert.deepEqual(graph.nodes.map((node) => node.id), ['a'])
+  assert.equal(graph.dropped[0].reason.code, 'policy-excluded')
+
+  // An unknown priority is a registration error, never a silent default tier.
+  assert.throws(
+    () => context.policy.register({ id: 'x', priority: 'urgent', decide: () => [] }),
+    (error) => error.code === 'PROVENANCE_POLICY_INVALID' && /monitor/.test(error.message),
+  )
+  assert.throws(
+    () => context.policy.register((nodes) => nodes),
+    (error) => error.code === 'PROVENANCE_POLICY_INVALID',
+  )
+
+  assert.equal(handle.dispose().code, 'revoked')
+  assert.equal(context.compose({ sessionId: 'session-1' }).nodes.length, 2)
+})
+
 test('evidence resolver gates: marker, loader composition, and version contract must all match', () => {
   const marker = {
     package: '@deepseek-ai/dsh-plugin-api-agent-loop',

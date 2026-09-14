@@ -264,8 +264,8 @@ test('history returns bounded truncated-aware events with nextCursor', async () 
   assert.equal(page.truncated, true)
   assert.equal(page.events.length, 1)
   assert.ok(page.nextCursor)
-  // a missing task returns a typed unavailable, never fabricated history
+  // a definitely-absent task answers the typed absence code, never fabricated history
   const missing = await owner.api.history('task-void')
   assert.equal(missing.ok, false)
-  assert.equal(missing.code, 'unavailable')
+  assert.equal(missing.code, 'missing')
 })

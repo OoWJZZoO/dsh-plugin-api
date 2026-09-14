@@ -52,7 +52,11 @@ test('execution disabled surface throws core-inactive and feature-disabled error
     assert.equal(error.feature, 'executions')
     return true
   })
-  assert.deepEqual(active.executions.availability(), { status: 'unavailable' })
+  const disabled = active.executions.availability()
+  assert.equal(disabled.status, 'unavailable')
+  assert.ok(Object.isFrozen(disabled), 'the availability result stays frozen')
+  assert.deepEqual(disabled.sources, {}, 'the domain detail survives the normalized status')
+  assert.equal(disabled.epoch, 'none')
 })
 
 test('mount exposes the execution surface and delegates to the owner', () => {

@@ -181,8 +181,9 @@ test('AC 7.1 contract lock: pro-ex-shaped get/set publishes with stable wire ide
       return { ok: true, value }
     },
   }
-  const disposer = api.register('extraproAnchorConfig', service)
+  const handle = api.register('extraproAnchorConfig', service)
   assert.equal(provided.get('extraproAnchorConfig'), service)
+  assert.equal(handle.ownerId, 'root')
   // remoteMethods descriptors: get then set, both direct.
   const descriptors = protocol.remoteMethods(service)
   assert.deepEqual(descriptors.map((d) => d.method), ['get', 'set'])
@@ -198,5 +199,5 @@ test('AC 7.1 contract lock: pro-ex-shaped get/set publishes with stable wire ide
   const result = await service.set({ enabled: false })
   assert.deepEqual(result, { ok: true, value: { enabled: false } })
   assert.deepEqual(store, { enabled: false }, 'full document replaced atomically')
-  disposer()
+  assert.equal(handle.dispose().code, 'revoked')
 })

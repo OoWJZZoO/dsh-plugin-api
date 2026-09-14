@@ -107,7 +107,7 @@ test('activation takes effect at the next assemble (intra-turn rebuild anchor)',
 
 test('handle dispose hides the toolset at the next assemble', async () => {
   const fixture = createFixture()
-  fixture.engine.catalog.register({ id: 'alpha', owner: 'owner-a', summary: 'Alpha', capabilities: [], activate: () => DEFS })
+  fixture.engine.catalog.register({ id: 'alpha', summary: 'Alpha', capabilities: [], activate: () => DEFS }, { fiber: { name: 'owner-a' } })
   const handle = await fixture.engine.activate('alpha', { session: { id: 's1' } })
   assert.equal((await fixture.assemble('s1')).tools.length, 1)
   handle.dispose()
@@ -117,7 +117,7 @@ test('handle dispose hides the toolset at the next assemble', async () => {
 
 test('toolsets never leak across sessions', async () => {
   const fixture = createFixture()
-  fixture.engine.catalog.register({ id: 'alpha', owner: 'owner-a', summary: 'Alpha', capabilities: [], activate: () => DEFS })
+  fixture.engine.catalog.register({ id: 'alpha', summary: 'Alpha', capabilities: [], activate: () => DEFS }, { fiber: { name: 'owner-a' } })
   const handle = await fixture.engine.activate('alpha', { session: { id: 's1' } })
   assert.equal((await fixture.assemble('s1')).tools.length, 1)
   assert.deepEqual((await fixture.assemble('s2')).tools, [], 'unrelated session sees nothing')
@@ -127,8 +127,8 @@ test('toolsets never leak across sessions', async () => {
 
 test('a failing entry is contained: other entries keep exposing schemas', async () => {
   const fixture = createFixture()
-  fixture.engine.catalog.register({ id: 'bad', owner: 'owner-b', summary: 'Bad', capabilities: [], activate: () => { throw new Error('boom') } })
-  fixture.engine.catalog.register({ id: 'good', owner: 'owner-a', summary: 'Good', capabilities: [], activate: () => DEFS })
+  fixture.engine.catalog.register({ id: 'bad', summary: 'Bad', capabilities: [], activate: () => { throw new Error('boom') } }, { fiber: { name: 'owner-b' } })
+  fixture.engine.catalog.register({ id: 'good', summary: 'Good', capabilities: [], activate: () => DEFS }, { fiber: { name: 'owner-a' } })
   await assert.rejects(fixture.engine.activate('bad', { session: { id: 's1' } }), ToolDiscoveryEntryFailedError)
   const handle = await fixture.engine.activate('good', { session: { id: 's1' } })
   const assembly = await fixture.assemble('s1')
@@ -155,7 +155,7 @@ test('non-cloneable parameters never reach the official assemble and fail the en
 
 test('a poisoned provider context degrades to empty output and never breaks assembling', async () => {
   const fixture = createFixture()
-  fixture.engine.catalog.register({ id: 'alpha', owner: 'owner-a', summary: 'Alpha', capabilities: [], activate: () => DEFS })
+  fixture.engine.catalog.register({ id: 'alpha', summary: 'Alpha', capabilities: [], activate: () => DEFS }, { fiber: { name: 'owner-a' } })
   const handle = await fixture.engine.activate('alpha', { session: { id: 's1' } })
   const assembly = await fixture.systemPrompt.assemble({ scope: { get session() { throw new Error('poison') } } })
   assert.deepEqual(assembly.tools, [], 'provider returned empty output')
@@ -168,7 +168,7 @@ test('a poisoned provider context degrades to empty output and never breaks asse
 
 test('hint contributes zero bytes when no entries are active for the scope', async () => {
   const fixture = createFixture()
-  fixture.engine.catalog.register({ id: 'alpha', owner: 'owner-a', summary: 'Alpha', capabilities: [], activate: () => DEFS })
+  fixture.engine.catalog.register({ id: 'alpha', summary: 'Alpha', capabilities: [], activate: () => DEFS }, { fiber: { name: 'owner-a' } })
   const assembly = await fixture.assemble('s1')
   const hintSection = assembly.sections.find((section) => section.name === 'discovery:hints')
   assert.equal(hintSection.text, '', 'registered but not active: zero bytes')

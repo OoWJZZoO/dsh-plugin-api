@@ -101,29 +101,31 @@ test('apply mounts llm/request before llm/admission with usable surfaces', () =>
   const admissionIndex = features.findIndex((f) => f.name === 'llm/admission')
   assert.ok(requestIndex >= 0 && admissionIndex > requestIndex, 'llm/request mounts before llm/admission')
 
-  const disposer = state.pluginApi.llm.requestTransforms.register({
+  const handle = state.pluginApi.llm.requestTransforms.register({
     id: 'probe',
     mode: 'compat',
     apply() { return { kind: 'pass' } },
     isConverged() { return true },
   })
-  assert.throws(
-    () => state.pluginApi.llm.requestTransforms.register({ id: 'probe', mode: 'compat', apply() {}, isConverged() {} }),
-    LlmRequestTransformRegistrationError,
-    'duplicate transform id is rejected',
-  )
-  assert.equal(disposer(), true)
-  assert.equal(disposer(), false)
+  assert.deepEqual(Object.keys(handle).sort(), ['dispose', 'generation', 'id', 'ownerId'])
+  assert.equal(handle.ownerId, 'root')
+  assert.equal(handle.id, 'probe')
+  assert.equal(typeof handle.generation, 'string')
+  // Same owner + same id is latest-wins; the superseded handle is a typed no-op.
+  const newerHandle = state.pluginApi.llm.requestTransforms.register({ id: 'probe', mode: 'compat', apply() {}, isConverged() {} })
+  assert.equal(handle.dispose().code, 'stale', 'the superseded handle cannot remove the newer registration')
+  assert.equal(newerHandle.dispose().code, 'revoked')
+  assert.equal(newerHandle.dispose().code, 'stale')
 
-  const policyDisposer = state.pluginApi.llm.admissionPolicies.register({
+  const policyHandle = state.pluginApi.llm.admissionPolicies.register({
     id: 'probe-policy',
     input: 'image',
     match() { return true },
     process() { return { kind: 'pass' } },
     validate() { return true },
   })
-  assert.equal(policyDisposer(), true)
-  assert.equal(policyDisposer(), false)
+  assert.equal(policyHandle.dispose().code, 'revoked')
+  assert.equal(policyHandle.dispose().code, 'stale')
 
   assert.throws(
     () => state.pluginApi.llm.admissionPolicies.register({ id: 'p', input: 'audio', match() {}, process() {}, validate() {} }),

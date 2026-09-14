@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createContextEngine } from '../lib/context-engine.js'
+import { createContextEngine, ProvenancePolicyRegistrationError } from '../lib/context-engine.js'
 
 function fakeSources(overrides = {}) {
   const status = (value) => () => value
@@ -159,8 +159,8 @@ test('compose policy waterfall: pure functions ordered by priority, a throw degr
   engine.contribute(spec({ id: 'a', source: { kind: 'memory', owner: 'p1' } }))
   engine.contribute(spec({ id: 'b', source: { kind: 'memory', owner: 'p1' } }))
   engine.contribute(spec({ id: 'c', source: { kind: 'memory', owner: 'p1' } }))
-  engine.policy.register((nodes) => nodes.filter((n) => n.id !== 'b'), { name: 'drop-b', priority: 'highest' })
-  engine.policy.register(() => { throw new Error('boom') }, { name: 'exploder', priority: 'monitor' })
+  engine.policy.register({ id: 'drop-b', priority: 'highest', decide: (nodes) => nodes.filter((n) => n.id !== 'b') })
+  engine.policy.register({ id: 'exploder', priority: 'monitor', decide: () => { throw new Error('boom') } })
   const graph = engine.compose({ sessionId: 'session-1' })
   assert.deepEqual(graph.nodes.map((n) => n.id), ['a', 'c'])
   assert.equal(graph.dropped[0].nodeId, 'b')
@@ -169,11 +169,37 @@ test('compose policy waterfall: pure functions ordered by priority, a throw degr
   assert.equal(graph.policyDegraded[0].name, 'exploder')
 })
 
-test('policy registration is a fail-safe no-op for non-functions', () => {
+test('policy registration is a typed throw for invalid specs and mints the standard handle', () => {
   const engine = makeEngine()
-  const result = engine.policy.register('nope')
-  assert.equal(result.ok, false)
-  assert.equal(result.code, 'CONTRIBUTION_INVALID')
+  assert.throws(() => engine.policy.register('nope'), ProvenancePolicyRegistrationError)
+  assert.throws(
+    () => engine.policy.register({ id: 'x', priority: 'loudest', decide: () => [] }),
+    (error) => error instanceof ProvenancePolicyRegistrationError && /invalid/.test(error.message) && /monitor/.test(error.message),
+  )
+  assert.throws(() => engine.policy.register({ priority: 'normal', decide: () => [] }), ProvenancePolicyRegistrationError)
+  assert.throws(() => engine.policy.register({ id: 'x', decide: 'nope' }), ProvenancePolicyRegistrationError)
+
+  const handle = engine.policy.register({
+    id: 'keep-all',
+    priority: 'normal',
+    decide: (nodes) => nodes,
+  })
+  assert.deepEqual(Object.keys(handle).sort(), ['dispose', 'generation', 'id', 'ownerId'])
+  assert.equal(handle.id, 'keep-all')
+  assert.equal(handle.ownerId, 'root')
+  assert.equal(typeof handle.generation, 'string')
+  assert.equal(handle.dispose().ok, true)
+  assert.equal(handle.dispose().code, 'stale')
+
+  // Same owner + same id is latest-wins; a different owner is a typed conflict.
+  const first = engine.policy.register({ id: 'dup', decide: () => [] }, { fiber: { name: 'plugin-a' } })
+  const second = engine.policy.register({ id: 'dup', decide: () => [] }, { fiber: { name: 'plugin-a' } })
+  assert.equal(first.dispose().code, 'stale')
+  assert.throws(
+    () => engine.policy.register({ id: 'dup', decide: () => [] }, { fiber: { name: 'plugin-b' } }),
+    ProvenancePolicyRegistrationError,
+  )
+  assert.equal(second.dispose().ok, true)
 })
 
 test('evidence intake transitions matching nodes to sent and records sentBy', () => {

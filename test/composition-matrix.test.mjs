@@ -28,47 +28,64 @@ function transformFor(owner, tag) {
   }
 }
 
-test('ordered: reverse registration order, repeatable snapshot, and same-key deterministic rejection', () => {
+test('ordered: reverse registration order, repeatable snapshot, and owner-scoped rejection', () => {
   const registry = createTransformRegistry()
   const pluginFirst = transformFor('A', 'a')
   const pluginSecond = transformFor('B', 'b')
+  const ownerA = { fiber: { name: 'plugin-a' } }
+  const ownerB = { fiber: { name: 'plugin-b' } }
 
   // Reverse registration order with identical priority: snapshot follows
   // successful registration order and is stable across repeated reads.
-  const disposerLower = registry.register({ id: 't1', mode: 'compat', priority: 'normal', ...pluginSecond })
-  const disposerA = registry.register({ id: 't2', mode: 'compat', priority: 'normal', ...pluginFirst })
+  const handleLower = registry.register({ id: 't1', mode: 'compat', priority: 'normal', ...pluginSecond }, ownerB)
+  const handleA = registry.register({ id: 't2', mode: 'compat', priority: 'normal', ...pluginFirst }, ownerA)
   const firstOrder = registry.snapshot().map((entry) => entry.token)
   assert.deepEqual(registry.snapshot().map((entry) => entry.token), firstOrder, 'snapshot order is repeatable')
   assert.deepEqual(registry.snapshot().map((entry) => entry.id), ['t1', 't2'], 'registration order wins at equal priority')
 
   // Priority outranks registration order deterministically.
-  const disposerHigh = registry.register({ id: 't0', mode: 'compat', priority: 'highest', ...pluginFirst })
+  const handleHigh = registry.register({ id: 't0', mode: 'compat', priority: 'highest', ...pluginFirst }, ownerA)
   assert.deepEqual(registry.snapshot().map((entry) => entry.id), ['t0', 't1', 't2'])
 
-  // Same-key conflict: a second registration with the same id is rejected
-  // deterministically, regardless of owner; the original stays live.
+  // The handle is the standard policy handle: derived owner, minted generation.
+  assert.equal(handleHigh.id, 't0')
+  assert.equal(handleHigh.ownerId, 'plugin-a')
+  assert.equal(typeof handleHigh.generation, 'string')
+  assert.equal(handleLower.ownerId, 'plugin-b')
+  assert.ok(Object.isFrozen(handleHigh))
+
+  // Same owner + same id is latest-wins: the newer registration replaces the
+  // older one and the older handle becomes a typed stale no-op.
+  const handleLowerAgain = registry.register({ id: 't1', mode: 'compat', priority: 'normal', ...pluginSecond }, ownerB)
+  assert.equal(handleLowerAgain.ownerId, 'plugin-b')
+  assert.notEqual(handleLowerAgain.generation, handleLower.generation, 'a newer occupancy mints a newer generation')
+  assert.equal(handleLower.dispose().code, 'stale', 'the superseded handle cannot remove the newer registration')
+  assert.deepEqual(registry.snapshot().map((entry) => entry.id), ['t0', 't2', 't1'])
+
+  // Cross owner + same id is a typed owner conflict, never a silent overwrite.
   assert.throws(
-    () => registry.register({ id: 't1', mode: 'compat', priority: 'normal', ...pluginFirst }),
-    (error) => error instanceof LlmRequestTransformRegistrationError && /duplicate transform id "t1"/.test(error.message),
+    () => registry.register({ id: 't1', mode: 'compat', priority: 'normal', ...pluginFirst }, ownerA),
+    (error) => error instanceof LlmRequestTransformRegistrationError && /another owner/.test(error.message),
   )
-  assert.deepEqual(registry.snapshot().map((entry) => entry.id), ['t0', 't1', 't2'])
+  assert.deepEqual(registry.snapshot().map((entry) => entry.id), ['t0', 't2', 't1'])
 
   // Disposer removes exactly its own registration and is a typed no-op after.
-  disposerHigh()
-  assert.deepEqual(registry.snapshot().map((entry) => entry.id), ['t1', 't2'])
-  assert.equal(disposerHigh(), false, 'second dispose is a no-op')
+  assert.equal(handleHigh.dispose().code, 'revoked')
+  assert.deepEqual(registry.snapshot().map((entry) => entry.id), ['t2', 't1'])
+  assert.equal(handleHigh.dispose().code, 'stale', 'second dispose is a typed no-op')
   assert.equal(registry.snapshot().map((entry) => entry.id).includes('t0'), false)
 
   // Missing disposal keeps the registration live (no implicit removal).
-  assert.deepEqual(registry.snapshot().map((entry) => entry.id), ['t1', 't2'])
+  assert.deepEqual(registry.snapshot().map((entry) => entry.id), ['t2', 't1'])
 
-  // After the original owner removes its registration, another owner may
-  // register the same key again (ownership transfers explicitly).
-  disposerLower()
-  const disposerReclaim = registry.register({ id: 't1', mode: 'compat', priority: 'high', ...pluginSecond })
+  // After the owning registration is released, another owner may claim the
+  // same key again (the slot is free again).
+  handleLowerAgain.dispose()
+  const handleReclaim = registry.register({ id: 't1', mode: 'compat', priority: 'high', ...pluginFirst }, ownerA)
+  assert.equal(handleReclaim.ownerId, 'plugin-a')
   assert.deepEqual(registry.snapshot().map((entry) => entry.id), ['t1', 't2'])
-  disposerA()
-  disposerReclaim()
+  handleA.dispose()
+  handleReclaim.dispose()
   assert.deepEqual(registry.snapshot(), [])
 
   // Invalid priority and invalid specs are typed-rejected before registration.
@@ -79,7 +96,7 @@ test('ordered: reverse registration order, repeatable snapshot, and same-key det
 
 test('ordered: registry disposal retires every token (stale epoch) and closes registration', () => {
   const registry = createTransformRegistry()
-  const registrations = [1, 2, 3].map((n) => registry.register({
+  const handles = [1, 2, 3].map((n) => registry.register({
     id: `t${n}`,
     mode: 'compat',
     priority: 'normal',
@@ -92,7 +109,7 @@ test('ordered: registry disposal retires every token (stale epoch) and closes re
   registry.dispose()
   assert.ok(tokens.every((token) => !registry.isAvailable(token)), 'old-generation tokens are stale after disposal')
   assert.throws(() => registry.register({ id: 'late', mode: 'compat', apply() {}, isConverged() {} }), LlmRequestTransformRegistrationError)
-  for (const dispose of registrations) assert.equal(dispose(), false, 'post-disposal disposers are typed no-ops')
+  for (const handle of handles) assert.equal(handle.dispose().code, 'stale', 'post-disposal disposers are typed no-ops')
 })
 
 test('ordered: events execute in successful registration order at equal priority and validate the vocabulary', () => {
@@ -250,8 +267,16 @@ test('synthetic consumer pair: reverse load order, owner conflict, stale dispose
   // policy surface; registration order is preserved and both stay live.
   const second = api.tools.restrict.register((input) => ({ allowed: input.tool === 'second' }))
   const first = api.tools.restrict.register((input) => ({ allowed: true }))
-  assert.equal(typeof second, 'function')
-  assert.equal(typeof first, 'function')
+  // Both registrations answer with the same resource handle contract: identity
+  // members, a minted generation and a discriminated dispose.
+  for (const handle of [second, first]) {
+    assert.equal(typeof handle, 'object')
+    assert.equal(typeof handle.id, 'string')
+    assert.equal(typeof handle.ownerId, 'string')
+    assert.equal(typeof handle.generation, 'string')
+    assert.equal(typeof handle.dispose, 'function')
+    assert.ok(Object.isFrozen(handle))
+  }
 
   // Same-owner idempotence and distinct-owner conflicts on one contribution
   // key: the second same-id contribution from another owner is a typed
@@ -264,16 +289,18 @@ test('synthetic consumer pair: reverse load order, owner conflict, stale dispose
 
   // Stale disposer after the owner's contribution was evicted: dispose stays
   // idempotent and never resurrects the contribution.
-  assert.equal(contributionA.handle.dispose(), true)
-  assert.equal(contributionA.handle.dispose(), false)
+  assert.equal(contributionA.handle.dispose().code, 'revoked')
+  assert.equal(contributionA.handle.dispose().code, 'stale')
 
   // Callback failure containment on the projection surface: a throwing
-  // observer never reaches the dispatch caller, peers still observe.
+  // observer never reaches the dispatch caller, peers still observe. Official
+  // events reach facade observers through the official native dispatch; the
+  // facade dispatch member is reserved for the facade's own produced events.
   const seen = []
   const handle = api.events.observe('goal/changed')
   handle.subscribe(() => { throw new Error('observer boom') })
   handle.subscribe((payload) => seen.push(payload.change))
-  assert.doesNotThrow(() => api.events.emit('goal/changed', { change: 'x' }))
+  assert.doesNotThrow(() => ctx.emit('goal/changed', { change: 'x' }))
   assert.deepEqual(seen, ['x'])
 
   // Exclusive pre-check before side effects: a conflicting remote

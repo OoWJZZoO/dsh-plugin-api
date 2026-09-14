@@ -266,19 +266,19 @@ test('slice E: a started workflow delivers exactly one terminal and an identity 
   assert.equal(runs.length, 1)
   assert.equal(runs[0].request.parent, parent, 'the verified parent reaches the engine')
   const observed = []
-  started.handle.observe((status) => observed.push(status.state))
+  started.operation.observe((status) => observed.push(status.state))
   runs[0].release()
-  const terminal = await started.handle.result
+  const terminal = await started.operation.result
   await new Promise((resolve) => setTimeout(resolve, 0))
   assert.equal(terminal.terminal, 'success', 'one terminal, adjudicated by the engine')
-  assert.equal(started.handle.status().state, 'settled', 'the holder-owned handle settles once')
+  assert.equal(started.operation.status().state, 'settled', 'the holder-owned handle settles once')
   // Observation itself (the run-scoped `workflow/*` feed) is the workflow
   // line's own e2e evidence; this combination scenario asserts the shared
   // identity and the single terminal the other lines consume.
   assert.equal(Array.isArray(observed), true)
   // The run identity is the evidence reference a task record links to.
-  assert.equal(typeof started.handle.id, 'string')
-  assert.equal(started.handle.id, runs[0].run.id)
+  assert.equal(typeof started.operation.id, 'string')
+  assert.equal(started.operation.id, runs[0].run.id)
 })
 
 test('slice F: a capture taken before the effect keeps the pre-effect anchor while the live state drifts', async () => {
@@ -503,7 +503,7 @@ test('slice I: one chain runs query -> operation -> restore stop -> terminal -> 
   assert.equal(plan.ok, true)
   const restored = await checkpoints.api.restore(captured.summary.checkpointId, { plan: plan.plan }, { owner: 'plugin-a' })
   assert.equal(restored.ok, true)
-  assert.equal(restored.handle.status().terminal, 'success')
+  assert.equal(restored.operation.status().terminal, 'success')
   assert.equal(state.cancels.length, 1, 'the stop rode the shared boundary exactly once')
   assert.equal(state.cancels[0].reason.classification, 'system', 'the stop is the restore cause, not a user cancel')
   // The attempt the stop ended carries that operation's terminal: the loop

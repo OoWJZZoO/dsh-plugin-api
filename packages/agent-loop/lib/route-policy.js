@@ -10,6 +10,51 @@ const DEFAULT_HISTORY_LIMIT = 50
 const MAX_HISTORY_LIMIT = 200
 const MAX_DIAGNOSTICS = 100
 const MAX_REASON_LENGTH = 240
+const SLOT_SEPARATOR = '\u0000'
+
+/**
+ * Owner token used when the caller binding carries no resolvable identity.
+ * Shared with the facade's caller-identity resolution.
+ */
+const FALLBACK_OWNER = 'root'
+
+/**
+ * Frozen discriminated release result shared with the facade outer contract:
+ * resources report `revoked` on the call that released them and `stale` when
+ * there is nothing left to release.
+ */
+function releaseResult(revoked, reason) {
+  return Object.freeze({
+    ok: revoked === true,
+    code: revoked === true ? 'revoked' : 'stale',
+    ...(typeof reason === 'string' && reason.length > 0 ? { reason } : {}),
+  })
+}
+
+/**
+ * Build one frozen registration handle
+ * `{ id, ownerId, generation, dispose() }`. `dispose()` is idempotent, never
+ * throws through the caller, and answers with the shared discriminated result.
+ */
+function registrationHandle({ id, ownerId, generation, revoke }) {
+  let released = false
+  return Object.freeze({
+    id,
+    ownerId,
+    generation,
+    dispose() {
+      if (released) return releaseResult(false, 'the registration is already released')
+      released = true
+      let revoked = false
+      try {
+        revoked = revoke() === true
+      } catch {
+        return releaseResult(false, 'the release failed')
+      }
+      return releaseResult(revoked, 'the registration is already released')
+    },
+  })
+}
 
 function isObject(value) {
   return value !== null && typeof value === 'object'
@@ -152,20 +197,49 @@ function sameGeneration(left, right) {
   return normalizedGeneration(left) === normalizedGeneration(right)
 }
 
-function identityOf(definition, label) {
+/**
+ * Resolve the registration owner from the caller binding the facade forwards
+ * (`register(definition, callerBinding)`).
+ *
+ * The binding is either the owner identity the facade already derived from the
+ * calling plugin's context, or that calling context itself when an identity
+ * resolver was injected at owner creation. A registration definition never
+ * declares the owner, and an unresolvable caller binds to the shared root token.
+ */
+function ownerOf(state, callerBinding) {
+  if (typeof callerBinding === 'string' && validIdentity(callerBinding)) return callerBinding.trim()
+  if (typeof state.resolveOwnerId === 'function') {
+    try {
+      const resolved = state.resolveOwnerId(callerBinding)
+      if (validIdentity(resolved)) return resolved.trim()
+    } catch {
+      // An unresolvable caller binds to the shared root token.
+    }
+  }
+  return state.ownerFallback
+}
+
+/**
+ * Registration identity: the definition declares the resource `id`; the owner
+ * is derived from the caller binding and the generation is minted here. A
+ * definition-supplied `ownerId` / `generation` belongs to the replaced
+ * facade-owned caller contract and is not accepted as identity.
+ */
+function identityOf(state, definition, label, callerBinding) {
   if (!isPlainObject(definition) || !validIdentity(definition.id)) {
     throw makeError('ROUTE_POLICY_INVALID_REGISTRATION', `${label} registration requires a stable id`)
   }
-  if (!validIdentity(definition.ownerId)) {
-    throw makeError('ROUTE_POLICY_INVALID_REGISTRATION', `${label} registration requires an ownerId`)
-  }
-  if (definition.generation === undefined || definition.generation === null) {
-    throw makeError('ROUTE_POLICY_INVALID_REGISTRATION', `${label} registration requires a generation`)
+  const ownerId = ownerOf(state, callerBinding)
+  const stripped = {}
+  for (const [key, value] of Object.entries(definition)) {
+    if (key === 'ownerId' || key === 'generation') continue
+    stripped[key] = value
   }
   return {
     id: definition.id.trim(),
-    ownerId: definition.ownerId.trim(),
-    generation: normalizedGeneration(definition.generation),
+    ownerId,
+    generation: `${ownerId}:${++state.generation}`,
+    definition: stripped,
   }
 }
 
@@ -231,32 +305,56 @@ function normalizeLimit(value) {
   return Math.min(value, MAX_HISTORY_LIMIT)
 }
 
+/**
+ * One registration table per kind. The table is keyed by `(owner, id)`, so a
+ * registration never silently overwrites a different owner's entry: the same
+ * `(owner, id)` slot is latest-wins, while the same `id` under a different
+ * owner is a typed owner conflict.
+ *
+ * `register(definition, callerBinding)` derives the owner from the caller
+ * binding and mints the generation; a successful registration answers with the
+ * frozen standard handle `{ id, ownerId, generation, dispose() }`.
+ */
 function createRegistrationRegistry(state, label, validate) {
-  const records = new Map()
+  const records = new Map() // `${ownerId}\u0000${id}` -> record
   let sequence = 0
 
-  const register = (definition) => {
+  const register = (definition, callerBinding) => {
     assertActive(state.active)
-    const identity = identityOf(definition, label)
+    const identity = identityOf(state, definition, label, callerBinding)
     validate(definition)
+    const slotKey = `${identity.ownerId}${SLOT_SEPARATOR}${identity.id}`
+    for (const record of records.values()) {
+      if (record.id === identity.id && record.ownerId !== identity.ownerId) {
+        throw makeError(
+          'ROUTE_POLICY_OWNER_CONFLICT',
+          `${label} id "${identity.id}" is already registered by another owner`,
+          { id: identity.id },
+        )
+      }
+    }
     const record = {
-      ...identity,
-      definition,
+      id: identity.id,
+      ownerId: identity.ownerId,
+      generation: identity.generation,
+      definition: identity.definition,
       sequence: sequence++,
       current: true,
     }
-    const previous = records.get(identity.id)
+    const previous = records.get(slotKey)
     if (previous) previous.current = false
-    records.set(identity.id, record)
-    let disposed = false
-    return () => {
-      if (disposed) return false
-      disposed = true
-      if (records.get(identity.id) !== record) return false
-      record.current = false
-      records.delete(identity.id)
-      return true
-    }
+    records.set(slotKey, record)
+    return registrationHandle({
+      id: record.id,
+      ownerId: record.ownerId,
+      generation: record.generation,
+      revoke: () => {
+        if (records.get(slotKey) !== record) return false
+        record.current = false
+        records.delete(slotKey)
+        return true
+      },
+    })
   }
 
   const current = () => [...records.values()].filter((record) => record.current)
@@ -721,6 +819,12 @@ export function createRoutePolicyOwner(options = {}) {
     historyLimit: normalizeLimit(options.historyLimit ?? DEFAULT_HISTORY_LIMIT),
     diagnostics: [],
     active: () => !disposed,
+    // Registration identity: the facade injects the caller-identity resolver
+    // (and optionally its root fallback token); the owner table then derives
+    // every `ownerId` and mints every `generation` itself.
+    resolveOwnerId: typeof options.resolveOwnerId === 'function' ? options.resolveOwnerId : null,
+    ownerFallback: validIdentity(options.ownerFallback) ? options.ownerFallback.trim() : FALLBACK_OWNER,
+    generation: 0,
   }
   const candidateOwner = createCandidateOwner(state)
   const policyOwner = createPolicyOwner(state, candidateOwner)

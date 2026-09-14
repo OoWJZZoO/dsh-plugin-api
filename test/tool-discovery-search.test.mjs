@@ -15,15 +15,14 @@ function engine(options = {}) {
 
 const DEFS = [{ name: 'alpha_run', description: 'Runs alpha', parameters: { type: 'object', properties: {} } }]
 
-function register(engineApi, overrides = {}) {
+function register(engineApi, overrides = {}, callerCtx = { fiber: { name: 'owner-a' } }) {
   return engineApi.catalog.register({
     id: 'alpha',
-    owner: 'owner-a',
     summary: 'Alpha tool',
     capabilities: ['vision'],
     activate: () => DEFS,
     ...overrides,
-  })
+  }, callerCtx)
 }
 
 function toolsetNames(engineApi, scopeKey) {

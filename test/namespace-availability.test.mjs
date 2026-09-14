@@ -48,10 +48,10 @@ test('multi-segment path is decorated in place under its parent object', () => {
   assert.equal(typeof descriptor.value, 'function', 'availability is replaced by a callable member')
   assert.equal(typeof descriptor.get, 'undefined')
 
-  // the decorated availability admits the domain status and normalizes into
-  // the frozen uniform vocabulary
+  // the decorated availability admits the domain status, keeps the domain's
+  // own detail fields, and stays frozen
   const report = checkpoints.availability()
-  assert.deepEqual(report, { status: 'active' }, 'domain detail is normalized into the uniform vocabulary')
+  assert.deepEqual(report, { status: 'active', detail: 'domain availability' }, 'domain detail is preserved alongside the normalized status')
   assert.ok(Object.isFrozen(report))
 })
 

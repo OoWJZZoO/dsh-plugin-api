@@ -4,6 +4,7 @@ import { createEventsBus } from '../lib/events-bus.js'
 import { baseEventsCatalog } from '../lib/events-catalog.js'
 import { composeCatalogs } from '../lib/catalog-compose.js'
 import { agentEventsCatalog } from '../lib/agent-events-catalog.js'
+import { attentionEventsCatalog } from '../lib/attention-events-catalog.js'
 import { llmEventsCatalog } from '../lib/llm-events-catalog.js'
 import { systemPromptEventsCatalog } from '../lib/system-prompt-events-catalog.js'
 import { settingsEventsCatalog } from '../lib/settings-events-catalog.js'
@@ -11,10 +12,24 @@ import { settingsEventsCatalog } from '../lib/settings-events-catalog.js'
 const coreCatalog = composeCatalogs(
   baseEventsCatalog,
   agentEventsCatalog,
+  attentionEventsCatalog,
   llmEventsCatalog,
   systemPromptEventsCatalog,
   settingsEventsCatalog,
 )
+
+/**
+ * The facade's own owner identity: canonical dispatch is a producer right, so
+ * these host-side tests dispatch as the facade's production path and exercise
+ * the facade-produced `attention/update` event.
+ */
+const FACADE_OWNER = '@deepseek-ai/dsh-plugin-api-main'
+const hostBus = (ctx, extra = {}) => createEventsBus({
+  ctx,
+  catalog: coreCatalog,
+  resolveOwnerId: () => FACADE_OWNER,
+  ...extra,
+})
 
 /**
  * Minimal Cordis-like context: hook registration plus the four dispatch modes
@@ -218,9 +233,9 @@ test('an observer registration grants no dispatch rights and define is a separat
 
 test('dispatch returns a frozen discriminated outcome and reports unsupported names', () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: coreCatalog })
+  const events = hostBus(ctx)
 
-  const result = events.emit('goal/changed', { change: 'x' })
+  const result = events.emit('attention/update', { change: 'x' })
   assert.deepEqual(result, { ok: true, code: 'dispatched', outcome: null })
   assert.ok(Object.isFrozen(result))
 
@@ -229,16 +244,45 @@ test('dispatch returns a frozen discriminated outcome and reports unsupported na
   assert.equal(unsupported.code, 'unsupported')
   assert.ok(Object.isFrozen(unsupported))
 
-  const fault = events.waterfall('goal/changed')
+  const fault = events.waterfall('attention/update')
   assert.equal(fault.ok, false)
   assert.equal(fault.code, 'error')
   assert.match(fault.reason, /not a function|is not a function/)
 
-  const asyncResult = events.serial('goal/changed', { change: 'async' })
+  const asyncResult = events.serial('attention/update', { change: 'async' })
   assert.equal(typeof asyncResult.then, 'function', 'async modes keep native await semantics')
   return asyncResult.then((outcome) => {
     assert.deepEqual(outcome, { ok: true, code: 'dispatched', outcome: null })
   })
+})
+
+test('a non-producer caller is denied and the dispatch never reaches the cordis context', () => {
+  const ctx = createMockCordisCtx()
+  const events = createEventsBus({
+    ctx,
+    catalog: coreCatalog,
+    resolveOwnerId: (callerCtx) => callerCtx?.ownerId,
+  })
+  const thirdParty = { ownerId: '@deepseek-ai/third-party-plugin' }
+  let emitCalls = 0
+  const originalEmit = ctx.emit
+  ctx.emit = (name, ...args) => {
+    emitCalls += 1
+    return originalEmit(name, ...args)
+  }
+
+  const denied = events.emit.call(thirdParty, 'attention/update', { change: 'x' })
+  assert.deepEqual(denied, {
+    ok: false,
+    code: 'denied',
+    reason: 'caller @deepseek-ai/third-party-plugin is not a declared producer of event attention/update',
+  })
+  assert.ok(Object.isFrozen(denied))
+
+  const deniedOfficial = events.emit.call(thirdParty, 'goal/changed', { agent: 'a' })
+  assert.equal(deniedOfficial.code, 'denied')
+  assert.match(deniedOfficial.reason, /official runtime/)
+  assert.equal(emitCalls, 0, 'a denied dispatch never reaches the cordis context')
 })
 
 test('events.availability reports the active bus and the unavailable stub shape', () => {

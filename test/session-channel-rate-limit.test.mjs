@@ -37,7 +37,10 @@ test('rate limit: custom limits override defaults', () => {
 })
 
 test('rate limit: windows reset after the window elapses', () => {
-  const limiter = createRateLimiter({ open: { windowMs: 1, maxCalls: 1 } })
+  // A wider window keeps the two immediate checks inside the same window
+  // regardless of timer granularity; a 1ms window races the scheduler and
+  // makes this assertion depend on machine load rather than on the limiter.
+  const limiter = createRateLimiter({ open: { windowMs: 100, maxCalls: 1 } })
   assert.ok(limiter.check('open').ok)
   const exceeded = limiter.check('open')
   assert.equal(exceeded.ok, false)
@@ -46,7 +49,7 @@ test('rate limit: windows reset after the window elapses', () => {
     setTimeout(() => {
       assert.ok(limiter.check('open').ok, 'window must reset after elapse')
       resolve()
-    }, 5)
+    }, 200)
   })
 })
 

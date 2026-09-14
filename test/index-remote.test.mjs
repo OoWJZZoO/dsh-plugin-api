@@ -141,11 +141,11 @@ test('a healthy generic publish through the mounted facade registers the service
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
   const service = { get() { return { value: { enabled: true } } }, set() { return { ok: true } } }
-  const disposer = state.pluginApi.remotes.register('extraproAnchorConfig', service)
-  assert.equal(typeof disposer, 'function')
+  const handle = state.pluginApi.remotes.register('extraproAnchorConfig', service)
+  assert.deepEqual(Object.keys(handle).sort(), ['dispose', 'generation', 'id', 'ownerId'])
   const published = state.providedServices.find((s) => s.name === 'extraproAnchorConfig')
   assert.ok(published, 'service published through official boundary')
-  disposer()
+  assert.equal(handle.dispose().code, 'revoked')
 })
 
 test('apply stays fail-safe (feature-disabled disabled surface) when the typert protocol is unavailable', () => {

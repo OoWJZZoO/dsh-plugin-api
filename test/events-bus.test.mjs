@@ -4,6 +4,7 @@ import { createEventsBus } from '../lib/events-bus.js'
 import { baseEventsCatalog } from '../lib/events-catalog.js'
 import { composeCatalogs } from '../lib/catalog-compose.js'
 import { agentEventsCatalog } from '../lib/agent-events-catalog.js'
+import { attentionEventsCatalog } from '../lib/attention-events-catalog.js'
 import { llmEventsCatalog } from '../lib/llm-events-catalog.js'
 import { systemPromptEventsCatalog } from '../lib/system-prompt-events-catalog.js'
 import { settingsEventsCatalog } from '../lib/settings-events-catalog.js'
@@ -13,11 +14,26 @@ import { scopeTarget } from '@deepseek-ai/dsh-scope'
 const coreCatalog = composeCatalogs(
   baseEventsCatalog,
   agentEventsCatalog,
+  attentionEventsCatalog,
   llmEventsCatalog,
   systemPromptEventsCatalog,
   settingsEventsCatalog,
   toolsEventsCatalog,
 )
+
+/**
+ * The facade's own owner identity. Dispatching a canonical event is a producer
+ * right: these host-side tests dispatch as the facade's own production path,
+ * and `attention/update` is the facade-produced event they exercise it on.
+ * Official-produced events stay observation-only through the facade bus.
+ */
+const FACADE_OWNER = '@deepseek-ai/dsh-plugin-api-main'
+const hostBus = (ctx, extra = {}) => createEventsBus({
+  ctx,
+  catalog: coreCatalog,
+  resolveOwnerId: () => FACADE_OWNER,
+  ...extra,
+})
 
 /**
  * Minimal Cordis-like context for host-side event bus tests.
@@ -266,36 +282,50 @@ test('system-prompt/assemble scope filtering uses args[1].scope', () => {
 
 test('emit/serial/parallel/bail/waterfall delegate to ctx and return the discriminated dispatch outcome', async () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: coreCatalog })
+  const events = hostBus(ctx)
 
-  ctx.emit('goal/changed', { agent: 'a' })
-  assert.deepEqual(await events.emit('goal/changed', { agent: 'a' }), { ok: true, code: 'dispatched', outcome: null })
-  assert.deepEqual(await events.bail('goal/changed', { agent: 'a' }), { ok: true, code: 'dispatched', outcome: null })
-  assert.deepEqual(await events.serial('goal/changed', { agent: 'a' }), { ok: true, code: 'dispatched', outcome: null })
+  ctx.emit('attention/update', { agent: 'a' })
+  assert.deepEqual(await events.emit('attention/update', { agent: 'a' }), { ok: true, code: 'dispatched', outcome: null })
+  assert.deepEqual(await events.bail('attention/update', { agent: 'a' }), { ok: true, code: 'dispatched', outcome: null })
+  assert.deepEqual(await events.serial('attention/update', { agent: 'a' }), { ok: true, code: 'dispatched', outcome: null })
 
-  const parallel = await events.parallel('goal/changed', { agent: 'a' })
+  const parallel = await events.parallel('attention/update', { agent: 'a' })
   assert.equal(parallel.ok, true)
   assert.equal(parallel.code, 'dispatched')
   assert.deepEqual(parallel.outcome, [])
 
-  const waterfall = await events.waterfall('goal/changed', { agent: 'a' }, () => 'inner')
+  const waterfall = await events.waterfall('attention/update', { agent: 'a' }, () => 'inner')
   assert.equal(waterfall.ok, true)
   assert.equal(waterfall.code, 'dispatched')
   assert.equal(waterfall.outcome, 'inner')
+
+  // The other half of the producer boundary on a bus that derives the caller
+  // identity from the dispatch receiver: third-party callers are refused while
+  // the facade's own production identity stays admitted.
+  const deriving = hostBus(ctx, { resolveOwnerId: (callerCtx) => callerCtx?.fiber?.name })
+  const thirdParty = { ctx: { fiber: { name: '@deepseek-ai/third-party-plugin' } } }
+  const deniedFacadeEvent = deriving.emit.call(thirdParty, 'attention/update', { agent: 'a' })
+  assert.equal(deniedFacadeEvent.ok, false)
+  assert.equal(deniedFacadeEvent.code, 'denied')
+  const deniedOfficialEvent = deriving.emit.call(thirdParty, 'goal/changed', { agent: 'a' })
+  assert.equal(deniedOfficialEvent.code, 'denied')
+  assert.match(deniedOfficialEvent.reason, /official runtime/)
+  const facadeCaller = { ctx: { fiber: { name: FACADE_OWNER } } }
+  assert.equal(deriving.emit.call(facadeCaller, 'attention/update', { agent: 'a' }).ok, true)
 })
 
 test('monitor observers cannot bail or reshape serial dispatch', async () => {
   const ctx = createMockCordisCtx()
-  const events = createEventsBus({ ctx, catalog: coreCatalog })
+  const events = hostBus(ctx)
   let observed = false
-  events.observe('goal/changed').subscribe(() => {
+  events.observe('attention/update').subscribe(() => {
     observed = true
     return 'attempted-bail'
   })
 
-  const bailResult = await events.bail('goal/changed', { agent: 'a' })
+  const bailResult = await events.bail('attention/update', { agent: 'a' })
   assert.equal(bailResult.outcome, null, 'a monitor observer cannot bail the dispatch')
-  const serialResult = await events.serial('goal/changed', { agent: 'a' })
+  const serialResult = await events.serial('attention/update', { agent: 'a' })
   assert.equal(serialResult.outcome, null, 'a monitor observer cannot reshape serial dispatch')
   assert.equal(observed, true)
 })
@@ -406,7 +436,7 @@ test('llm/stream facade observer receives the frozen (options, next) args array'
   assert.equal(seen[0], options)
 })
 
-test('events.waterfall("llm/stream") delegates to ctx.waterfall with the same args and returns its result', () => {
+test('events.waterfall delegates to ctx.waterfall with the same args and returns its result', () => {
   const base = createMockCordisCtx()
   const calls = []
   const ctx = { ...base }
@@ -416,15 +446,15 @@ test('events.waterfall("llm/stream") delegates to ctx.waterfall with the same ar
     return original(name, ...args)
   }
 
-  const events = createEventsBus({ ctx, catalog: coreCatalog })
+  const events = hostBus(ctx)
   const options = { provider: 'deepseek', model: 'chat', messages: [] }
   const next = () => 'delegated-result'
 
-  const result = events.waterfall('llm/stream', options, next)
+  const result = events.waterfall('attention/update', options, next)
 
   assert.deepEqual(result, { ok: true, code: 'dispatched', outcome: 'delegated-result' })
   assert.equal(calls.length, 1)
-  assert.equal(calls[0][0], 'llm/stream')
+  assert.equal(calls[0][0], 'attention/update')
   assert.equal(calls[0][1], options)
   assert.equal(calls[0][2], next)
 })

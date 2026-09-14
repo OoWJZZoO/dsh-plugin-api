@@ -99,7 +99,7 @@ test('the handle exposes the official identity, meta and a derived status', asyn
   run.settle({ stopReason: 'completed', value: 1, agentsStarted: 3 })
   const settled = await handle.result
   assert.equal(settled.terminal, 'success')
-  assert.deepEqual({ ...handle.status() }, { state: 'settled', stopReason: 'completed', agentsStarted: 3 })
+  assert.deepEqual({ ...handle.status() }, { state: 'settled', terminal: 'success', stopReason: 'completed', agentsStarted: 3 })
   assert.equal(await handle.result, settled, 'the result settles exactly once')
 })
 
@@ -152,15 +152,26 @@ test('cancel and dispose are delegated, bounded and idempotent', async () => {
   const handle = createWorkflowRunHandle({ run, ownerId: 'plugin-a' })
   handle.cancel('user asked')
   assert.deepEqual(calls.cancel, ['user asked'])
-  await handle.dispose()
-  await handle.dispose()
+  const first = handle.dispose()
+  assert.deepEqual({ ...first }, { ok: true, code: 'requested' }, 'dispose hands the teardown to the run and answers requested')
+  assert.equal(Object.isFrozen(first), true)
+  assert.deepEqual({ ...handle.dispose() }, { ok: false, code: 'stale', reason: 'the stop was already requested' }, 'a second dispose is a typed no-op')
   assert.equal(calls.dispose, 1, 'dispose is idempotent and reaches the engine once')
+  const unsubscribe = handle.observe(() => {})
+  assert.equal(typeof unsubscribe, 'function', 'a disposed handle still answers with an unsubscribe function')
+  assert.equal(unsubscribe(), undefined)
 
   // A hostile engine must not let cancel escape the facade.
   const hostile = fakeRun()
   hostile.run.cancel = () => { throw new Error('engine cancel exploded') }
   const hostileHandle = createWorkflowRunHandle({ run: hostile.run, ownerId: 'plugin-a' })
   assert.doesNotThrow(() => hostileHandle.cancel('x'))
+
+  // A hostile teardown must not escape dispose either.
+  const hostileTeardown = fakeRun()
+  hostileTeardown.run.dispose = () => { throw new Error('engine dispose exploded') }
+  const teardownHandle = createWorkflowRunHandle({ run: hostileTeardown.run, ownerId: 'plugin-a' })
+  assert.doesNotThrow(() => teardownHandle.dispose())
 })
 
 test('handle operations stay bound to the run they were created with', async () => {

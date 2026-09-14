@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { createEventsBus } from '../lib/events-bus.js'
 import { baseEventsCatalog } from '../lib/events-catalog.js'
 import { agentEventsCatalog } from '../lib/agent-events-catalog.js'
+import { attentionEventsCatalog } from '../lib/attention-events-catalog.js'
 import { llmEventsCatalog } from '../lib/llm-events-catalog.js'
 import { toolsEventsCatalog } from '../lib/tools-events-catalog.js'
 import { composeCatalogs } from '../lib/catalog-compose.js'
@@ -251,8 +252,26 @@ test('observer failure containment preserves unrelated custom and canonical even
   assert.deepEqual(seenClean, [{ n: 2 }], 'the unrelated custom event keeps dispatching')
   const canonicalSeen = []
   bus.observe('tools/change').subscribe((payload) => canonicalSeen.push(payload))
-  bus.emit('tools/change', { tool: 'x' })
-  assert.equal(canonicalSeen.length, 1, 'canonical dispatch is unaffected by custom registrations')
+  const denied = bus.emit('tools/change', { tool: 'x' })
+  assert.equal(denied.code, 'denied', 'canonical production stays a separate right from custom publishing')
+  assert.equal(canonicalSeen.length, 0, 'a denied canonical dispatch publishes nothing')
+
+  // Both halves of the boundary: the facade's own producer identity still
+  // dispatches a facade-produced canonical event through the same bus.
+  const facadeCtx = createMockCordisCtx()
+  const facadeBus = createEventsBus({
+    ctx: facadeCtx,
+    catalog: composeCatalogs(coreCatalog, attentionEventsCatalog),
+    resolveOwnerId: () => '@deepseek-ai/dsh-plugin-api-main',
+  })
+  const facadeSeen = []
+  facadeBus.observe('attention/update').subscribe((payload) => facadeSeen.push(payload))
+  assert.deepEqual(
+    facadeBus.emit('attention/update', { seq: 1 }),
+    { ok: true, code: 'dispatched', outcome: null },
+    'the declared producer identity still dispatches',
+  )
+  assert.deepEqual(facadeSeen, [{ seq: 1 }])
 })
 
 test('caller-bound owner identity is derived from the caller context when traced', () => {

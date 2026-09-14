@@ -147,7 +147,7 @@ test('stop-restore: full sequence commits restore exclusively through the author
   // branch authority (never a parallel channel).
   const restored = await facade.api.restore(checkpointId, { plan: plan.plan }, { owner: 'owner-a' })
   assert.equal(restored.ok, true, 'restore ok; result=' + JSON.stringify(restored))
-  const handle = restored.handle
+  const handle = restored.operation
   const status = handle.status()
   assert.equal(status.terminal, 'success')
   assert.ok(state.cancels.length >= 1, 'the system stop went out over the shared boundary')

@@ -32,15 +32,20 @@ function makeService(methods = ['hello']) {
   return service
 }
 
-test('publish returns a disposer and registers through official boundary', () => {
+test('register returns the standard handle and registers through official boundary', () => {
   const { ctx, provided } = makeHost()
   const { api } = createHostRemoteApi({ ctx, protocol, active: true })
   const service = makeService(['hello'])
-  const dispose = api.register('extraproAnchorConfig', service)
-  assert.equal(typeof dispose, 'function')
+  const handle = api.register('extraproAnchorConfig', service)
+  assert.deepEqual(Object.keys(handle).sort(), ['dispose', 'generation', 'id', 'ownerId'])
+  assert.equal(handle.id, 'extraproAnchorConfig')
+  assert.equal(handle.ownerId, 'root')
+  assert.equal(typeof handle.generation, 'string')
+  assert.ok(Object.isFrozen(handle))
   assert.equal(provided.get('extraproAnchorConfig'), service)
   assert.deepEqual(protocol.remoteMethods(service).map((e) => e.method), ['hello'])
-  dispose()
+  assert.equal(handle.dispose().code, 'revoked')
+  assert.equal(handle.dispose().code, 'stale')
   assert.equal(provided.has('extraproAnchorConfig'), false)
 })
 
@@ -48,12 +53,12 @@ test('plain-object service is re-homed; markers never leak onto Object.prototype
   const { ctx } = makeHost()
   const { api } = createHostRemoteApi({ ctx, protocol, active: true })
   const service = makeService(['hello', 'ping'])
-  const dispose = api.register('k', service)
+  const handle = api.register('k', service)
   assert.ok(isRehomedService(service))
   assert.ok(Object.getPrototypeOf(service) !== Object.prototype)
   assert.deepEqual(protocol.remoteMethods(Object.create(null)), [])
   assert.deepEqual(protocol.remoteMethods({}), [])
-  dispose()
+  handle.dispose()
 })
 
 test('publish rejects null / array / no-callable-own member / non-extensible', () => {
@@ -107,7 +112,7 @@ test('signature contract: destructuring/defaults/rest/duplicates and non-final s
   assert.equal(provided.size, 0)
 })
 
-test('idempotence: same key + same reference returns the same disposer without re-registration', () => {
+test('idempotence: same key + same reference returns the same handle without re-registration', () => {
   const { ctx, provided } = makeHost()
   const { api } = createHostRemoteApi({ ctx, protocol, active: true })
   const service = makeService(['hello'])
@@ -115,7 +120,7 @@ test('idempotence: same key + same reference returns the same disposer without r
   const d2 = api.register('k', service)
   assert.equal(d2, d1)
   assert.equal(provided.get('k'), service)
-  d1()
+  assert.equal(d1.dispose().code, 'revoked')
   assert.equal(provided.has('k'), false)
 })
 
@@ -130,7 +135,7 @@ test('conflict: same key + different service throws and does not mutate the pass
   assert.equal(Object.getPrototypeOf(second), protoBefore, 'conflicted object is not mutated (client)')
   assert.equal(isRehomedService(second), false, 'conflicted object is not re-homed')
   assert.equal(provided.get('k'), first)
-  d1()
+  d1.dispose()
 })
 
 test('conflict: same key already published by another instance (shared owner map) throws', () => {
@@ -210,7 +215,7 @@ test('pro-ex-shaped service: get/set plain methods publish with stable wire iden
       return { ok: true }
     },
   }
-  const dispose = api.register('extraproAnchorConfig', service)
+  const handle = api.register('extraproAnchorConfig', service)
   const fn = provided.get('extraproAnchorConfig')
   assert.equal(fn, service, 'identity preserved through publication')
   assert.deepEqual(protocol.remoteMethods(service).map((e) => e.method), ['get', 'set'])
@@ -222,5 +227,23 @@ test('pro-ex-shaped service: get/set plain methods publish with stable wire iden
   assert.deepEqual(snapshot.value, { enabled: true })
   assert.deepEqual(await service.set({ enabled: false }), { ok: true })
   assert.equal(store.enabled, false)
-  dispose()
+  handle.dispose()
+})
+
+test('owner conflict: the same key under a different caller owner is a typed conflict', () => {
+  const { ctx, provided } = makeHost()
+  const { api } = createHostRemoteApi({ ctx, protocol, active: true })
+  const service = makeService(['hello'])
+  const handle = api.register('k', service, { fiber: { name: 'plugin-a' } })
+  assert.equal(handle.ownerId, 'plugin-a')
+
+  // The same caller stays idempotent...
+  assert.equal(api.register('k', service, { fiber: { name: 'plugin-a' } }), handle)
+  // ...a different owner claiming the same key is rejected, never a silent takeover.
+  assert.throws(
+    () => api.register('k', service, { fiber: { name: 'plugin-b' } }),
+    (error) => error instanceof PluginApiRemoteError && /another owner/.test(error.message),
+  )
+  assert.equal(provided.get('k'), service)
+  assert.equal(handle.dispose().code, 'revoked')
 })

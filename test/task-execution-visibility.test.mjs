@@ -201,16 +201,19 @@ test('projections redact secrets, prompt content, and unbounded evidence per aud
   assert.equal(got.task.provenance.some((entry) => entry.id === 'the full prompt'), true)
 })
 
-test('scope denial returns the same unavailable shape as a missing task', async () => {
+test('scope denial answers unavailable while a definitely-absent task answers missing', async () => {
   const sources = createSources()
   const { owner } = createOwner(sources)
   await owner.api.register({ taskId: 'task-1', ownerId: 'owner-1', scope: taskScope, intent: { kind: 'review', summary: 'review PR' } })
   const denied = await owner.api.get('task-1', { audience: { role: 'ui', workspace: { kind: 'workspace', key: 'other-repo' } } })
   const missing = await owner.api.get('task-void', { audience: { role: 'ui', workspace: { kind: 'workspace', key: 'other-repo' } } })
-  assert.equal(denied.found, false)
-  assert.equal(denied.task.state, 'unknown')
-  assert.equal(missing.found, false)
-  assert.equal(missing.task.state, 'unknown')
+  // the record exists but sits outside the caller's declared workspace, so its
+  // existence cannot be determined for this caller
+  assert.equal(denied.ok, false)
+  assert.equal(denied.code, 'unavailable')
+  // the registry proved this record is not there
+  assert.equal(missing.ok, false)
+  assert.equal(missing.code, 'missing')
 })
 
 test('redaction/freezing failure fails closed for the projection and preserves the underlying task state', async () => {

@@ -131,22 +131,78 @@ test('health evidence opens a circuit and bounded probe closes it', async () => 
   assert.equal(route.api.circuit.status(scope).state, 'closed')
 })
 
-test('old owner generation disposers cannot remove a newer registration', () => {
+test('registration handles derive the owner, mint the generation, and never remove a newer registration', () => {
+  // The facade forwards the caller binding: either the owner identity it
+  // already derived (a token), or the calling context when a resolver is
+  // injected at owner creation (see the table case below).
   const route = owner()
-  const oldDispose = route.api.policy.register({
+  const plugin = 'plugin'
+  const other = 'other-plugin'
+  const oldHandle = route.api.policy.register({
     id: 'same',
-    ownerId: 'plugin',
-    generation: 1,
     decide() { return { action: 'no-op' } },
-  })
-  const newDispose = route.api.policy.register({
+  }, plugin)
+  assert.equal(oldHandle.id, 'same')
+  assert.equal(oldHandle.ownerId, 'plugin', 'the definition ownerId is not accepted as identity')
+  assert.equal(typeof oldHandle.generation, 'string')
+  assert.ok(Object.isFrozen(oldHandle))
+
+  const newHandle = route.api.policy.register({
     id: 'same',
-    ownerId: 'plugin',
-    generation: 2,
     decide() { return { action: 'no-op' } },
-  })
-  assert.equal(oldDispose(), false)
+  }, plugin)
+  assert.notEqual(newHandle.generation, oldHandle.generation)
+  assert.equal(oldHandle.dispose().ok, false, 'the superseded handle cannot remove the newer registration')
+  assert.equal(oldHandle.dispose().code, 'stale')
   assert.equal(route.api.policy.availability.registrations, 1)
-  assert.equal(newDispose(), true)
+
+  // Cross owner + same id is a typed owner conflict.
+  assert.throws(
+    () => route.api.policy.register({ id: 'same', decide() { return { action: 'no-op' } } }, other),
+    (error) => error.code === 'ROUTE_POLICY_OWNER_CONFLICT',
+  )
+  assert.equal(newHandle.dispose().ok, true)
   assert.equal(route.api.policy.availability.registrations, 0)
+})
+
+test('candidate, circuit-policy and probe tables derive the owner and mint handles', async () => {
+  const route = owner({ resolveOwnerId: (callerCtx) => callerCtx?.fiber?.name })
+  const plugin = { fiber: { name: 'plugin-a' } }
+  const other = { fiber: { name: 'plugin-b' } }
+  assert.equal(route.api.policy.register({ id: 'resolved', decide: () => ({ action: 'no-op' }) }, plugin).ownerId, 'plugin-a')
+
+  const candidateHandle = route.api.candidates.register({ id: 'cand', list: () => [] }, plugin)
+  assert.deepEqual(Object.keys(candidateHandle).sort(), ['dispose', 'generation', 'id', 'ownerId'])
+  assert.equal(candidateHandle.ownerId, 'plugin-a')
+  assert.equal(candidateHandle.dispose().code, 'revoked')
+  assert.equal(candidateHandle.dispose().code, 'stale')
+
+  const circuitHandle = route.api.health.registerCircuitPolicy({
+    id: 'circuit',
+    openAfter: 2,
+  }, plugin)
+  assert.equal(circuitHandle.ownerId, 'plugin-a')
+  assert.throws(
+    () => route.api.health.registerCircuitPolicy({ id: 'circuit', openAfter: 1 }, other),
+    (error) => error.code === 'ROUTE_POLICY_OWNER_CONFLICT',
+  )
+
+  const probeHandle = route.api.health.registerProbe({
+    id: 'probe',
+    run: () => 'healthy',
+  }, plugin)
+  assert.equal(probeHandle.ownerId, 'plugin-a')
+  assert.equal(typeof probeHandle.generation, 'string')
+
+  // The health tables consume the live registrations and the minted
+  // generation, and each handle releases exactly its own slot.
+  const scope = { provider: 'p', model: 'm' }
+  route.api.health.observe(scope, 'failure', { source: 'test', reason: 'first' })
+  route.api.health.observe(scope, 'failure', { source: 'test', reason: 'second' })
+  assert.equal(route.api.circuit.status(scope).state, 'open')
+  const result = await route.api.health.probe(scope)
+  assert.equal(result.state, 'success')
+  assert.equal(route.api.circuit.status(scope).state, 'closed')
+  assert.equal(circuitHandle.dispose().code, 'revoked')
+  assert.equal(probeHandle.dispose().code, 'revoked')
 })

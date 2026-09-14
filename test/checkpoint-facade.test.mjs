@@ -54,7 +54,7 @@ test('facade: surface exposes create/list/inspect/planRestore/restore/availabili
   assert.equal(plan.ok, true)
   const restored = await surface.restore(outcome.summary.checkpointId, { plan: plan.plan }, { owner: 'plugin-a' })
   assert.equal(restored.ok, true)
-  assert.equal(restored.handle.status().terminal, 'success')
+  assert.equal(restored.operation.status().terminal, 'success')
 })
 
 test('facade: two synthetic plugins exercising the same paths in reverse registration order get identical outcomes', async () => {

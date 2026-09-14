@@ -30,21 +30,34 @@ function createExtension(registry, options = {}) {
   })
 }
 
-test('all agent extension members preserve exact arguments, receiver, and raw return identities', () => {
+test('all agent extension members preserve exact arguments and receivers; provider variants answer standard handles', () => {
   const { registry, calls, results } = createRegistry()
   const api = createExtension(registry).createView({ registry })
   const options = {}
   const resume = {}
-  const agent = {}
+  const agent = { id: 'agent-1' }
   const owner = {}
   const factory = {}
 
   assert.equal(api.create(options), results.create)
   assert.equal(api.resume(resume), results.resume)
   assert.equal(api.register(agent), results.register)
-  assert.equal(api.providers.register({ agent, owner }), results.enter)
-  assert.equal(api.providers.register({ agent, announce: agent }), results.announce)
-  assert.equal(api.providers.register({ factory }), results.setFactory)
+
+  // The provider variants are discriminated explicitly by `kind`; each answers
+  // the standard resource handle whose dispose drives the official verb.
+  const enterHandle = api.providers.register({ kind: 'enter', agent, owner })
+  const announceHandle = api.providers.register({ kind: 'announce', agent })
+  const factoryHandle = api.providers.register({ kind: 'factory', factory })
+  for (const handle of [enterHandle, announceHandle, factoryHandle]) {
+    assert.deepEqual(Object.keys(handle).sort(), ['dispose', 'generation', 'id', 'ownerId'])
+    assert.equal(handle.ownerId, 'root')
+    assert.equal(typeof handle.generation, 'string')
+    assert.ok(Object.isFrozen(handle))
+  }
+  assert.equal(enterHandle.id, 'agent-1')
+  assert.equal(announceHandle.id, 'agent-1')
+  assert.equal(factoryHandle.id, 'factory')
+
   assert.deepEqual(calls.map(({ name, args, receiver }) => [name, args, receiver]), [
     ['create', [options], registry],
     ['resume', [resume], registry],
@@ -53,6 +66,11 @@ test('all agent extension members preserve exact arguments, receiver, and raw re
     ['announce', [agent], registry],
     ['setFactory', [factory], registry],
   ])
+
+  assert.equal(enterHandle.dispose().code, 'revoked')
+  assert.equal(announceHandle.dispose().code, 'stale', 'announcement is irreversible: the handle reports a typed no-op')
+  assert.equal(factoryHandle.dispose().code, 'revoked')
+  assert.equal(enterHandle.dispose().code, 'stale')
 })
 
 test('create and resume return the official registry promises and their exact handles', async () => {
@@ -109,7 +127,7 @@ test('availability converges on the unified { status, reason } vocabulary', () =
   })
   assert.ok(Object.isFrozen(availability))
   assert.equal('isActive' in view.providers, false)
-  assert.throws(() => view.providers.register({ announce: {} }), (error) => {
+  assert.throws(() => view.providers.register({ kind: 'announce', agent: { id: 'a' } }), (error) => {
     assert.equal(error.code, 'PLUGIN_API_FEATURE_DISABLED')
     assert.equal(error.feature, 'agents')
     assert.match(error.message, /providers\.register/)
@@ -163,7 +181,7 @@ test('inactive state wins before registry resolution', () => {
   assert.equal(resolved, 0)
 })
 
-test('official disposer and AgentHandle.dispose remain unwrapped after containment', async () => {
+test('official AgentHandle.dispose stays unwrapped; the factory handle wraps the official disposer', async () => {
   let disposed = 0
   const disposer = () => { disposed += 1 }
   const handle = { dispose: disposer }
@@ -177,8 +195,10 @@ test('official disposer and AgentHandle.dispose remain unwrapped after containme
 
   assert.equal(returnedHandle, handle)
   assert.equal(returnedHandle.dispose, disposer)
-  assert.equal(view.providers.register({ factory: {} }), disposer)
-  returnedHandle.dispose()
+  const factoryHandle = view.providers.register({ kind: 'factory', factory: {} })
+  assert.equal(factoryHandle.dispose().code, 'revoked')
+  assert.equal(disposed, 1, 'the standard handle drives the official effect disposer exactly once')
+  assert.equal(factoryHandle.dispose().code, 'stale')
   assert.equal(disposed, 1)
 })
 
@@ -192,7 +212,7 @@ test('missing factory and occupied provider slot remain official call-time outco
   const extension = createExtension(registry)
   const view = extension.createView({ registry })
 
-  assert.throws(() => view.providers.register({ factory: {} }), (error) => error === occupied)
+  assert.throws(() => view.providers.register({ kind: 'factory', factory: {} }), (error) => error === occupied)
   assert.equal(extension.availability.status, 'active')
   return assert.rejects(() => view.create({}), (error) => error === noFactory)
 })
@@ -212,7 +232,7 @@ test('direct and facade calls preserve receiver ownership for all ownership-sens
   extension.createView({ registry: facade.registry }).create(options)
   extension.createView({ registry: facade.registry }).resume(options)
   extension.createView({ registry: facade.registry }).register(agent)
-  extension.createView({ registry: facade.registry }).providers.register({ factory })
+  extension.createView({ registry: facade.registry }).providers.register({ kind: 'factory', factory })
 
   assert.deepEqual(direct.calls.map(({ name, receiver }) => [name, receiver]), [
     ['create', direct.registry],
@@ -253,7 +273,7 @@ test('logger failure is inert during member degradation', () => {
     logger: { error() { throw new Error('logger failure') } },
   })
 
-  assert.throws(() => extension.createView({}).providers.register({ announce: {}, agent: {} }), (error) => {
+  assert.throws(() => extension.createView({}).providers.register({ kind: 'announce', agent: { id: 'a' } }), (error) => {
     assert.equal(error.code, 'PLUGIN_API_FEATURE_DISABLED')
     assert.match(error.message, /providers\.register/)
     return true
@@ -282,15 +302,16 @@ test('call-resolution containment does not intercept other returned handles or d
   const view = extension.createView({})
 
   failAnnounce = true
-  assert.throws(() => view.providers.register({ announce: {} }), /providers\.register/)
+  assert.throws(() => view.providers.register({ kind: 'announce', agent: { id: 'a1' } }), /providers\.register/)
   const handle = await view.create({})
   assert.equal(handle.dispose, handleDispose)
   assert.equal(view.register({}), registerDispose)
-  assert.equal(view.providers.register({ agent: {} }, undefined), enterDispose)
-  assert.equal(view.providers.register({}), enterDispose)
+  const enterHandle = view.providers.register({ kind: 'enter', agent: { id: 'a2' }, owner: undefined })
+  const plainEnterHandle = view.providers.register({ kind: 'enter', agent: { id: 'a3' } })
+  assert.equal(enterHandle.dispose().code, 'revoked')
+  assert.equal(plainEnterHandle.dispose().code, 'revoked')
   handle.dispose()
   registerDispose()
-  enterDispose()
   factoryDispose()
-  assert.equal(disposed, 1111)
+  assert.equal(disposed, 1211, 'two enter handles drove the official detach disposer once each')
 })

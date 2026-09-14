@@ -192,6 +192,92 @@ export function createCatalogQuery(shared) {
   }
 }
 
+/** The "release performed by this call" answer of a catalog observation. */
+const REVOKED = Object.freeze({ ok: true, code: 'revoked' })
+
+/** The "already released" no-op answer of a catalog observation. */
+const STALE = Object.freeze({ ok: false, code: 'stale', reason: 'the observation handle is already released' })
+
+/**
+ * Create the frozen projection observer handle behind `mcp.observe`.
+ *
+ * The shape is the community facade's shared outer contract —
+ * `{ current(), subscribe(listener), dispose(), epoch }` — kept local to this
+ * replacement package so it stays self-contained (the replacement row is
+ * loaded from its own installed package and never imports the main facade's
+ * internals). The listener set and the liveness flag live in this closure, so
+ * no internal mutable record reaches the caller; `subscribe` answers a no-op
+ * unsubscribe once released, and one failing listener only degrades itself.
+ *
+ * @param {object} spec
+ * @param {object} spec.shared the shared catalog state.
+ * @param {number|string} spec.epoch the subscription generation token.
+ * @param {(publish: (payload: unknown) => void) => Function} spec.attach
+ *   subscribes the change feed and returns the feed disposer.
+ * @returns {Readonly<object>} the frozen handle.
+ */
+export function createCatalogObserverHandle({ shared, epoch, attach }) {
+  const listeners = new Set()
+  let disposed = false
+
+  const publish = (payload) => {
+    if (disposed) return
+    for (const listener of [...listeners]) {
+      try {
+        const returned = listener(payload)
+        if (returned != null && typeof returned.then === 'function') {
+          Promise.resolve(returned).catch(() => {})
+        }
+      } catch {
+        // containment: one listener never affects its peers or the feed
+      }
+    }
+  }
+
+  let detachFeed = null
+  try {
+    detachFeed = attach(publish)
+  } catch {
+    detachFeed = null
+  }
+
+  return Object.freeze({
+    epoch,
+
+    current() {
+      if (disposed) {
+        return deepFreeze({
+          servers: [],
+          tools: [],
+          reason: 'the observation handle is released',
+        })
+      }
+      return deepFreeze(buildSnapshot(shared))
+    },
+
+    subscribe(listener) {
+      if (disposed || typeof listener !== 'function') return () => {}
+      listeners.add(listener)
+      return () => {
+        listeners.delete(listener)
+      }
+    },
+
+    dispose() {
+      if (disposed) return STALE
+      disposed = true
+      listeners.clear()
+      try {
+        if (typeof detachFeed === 'function') detachFeed()
+      } catch {
+        // feed disposal must never break handle teardown
+      }
+      detachFeed = null
+      return REVOKED
+    },
+  })
+}
+
 /**
  * Cordis service registering the read-only catalog projection as
  * `ctx.mcpCatalog` on the root context.
@@ -200,10 +286,27 @@ export class McpCatalogService extends Service {
   constructor(ctx, shared) {
     super(ctx, CATALOG_SERVICE_NAME)
     this.shared = shared
+    this._observerEpoch = 0
     Object.assign(this, createCatalogQuery(shared))
   }
 
+  /**
+   * Subscribe to catalog change notifications.
+   *
+   * @param {(snapshot: object) => unknown} listener the change listener.
+   * @returns {Readonly<object>} frozen `{ current, subscribe, dispose, epoch }`.
+   */
   onChange(listener) {
-    return this.ctx.on(MCP_CATALOG_CHANGED, listener)
+    this._observerEpoch += 1
+    const handle = createCatalogObserverHandle({
+      shared: this.shared,
+      epoch: `epoch:${this._observerEpoch}`,
+      attach: (publish) => {
+        const feed = this.ctx.on(MCP_CATALOG_CHANGED, (snapshot) => publish(snapshot))
+        return typeof feed === 'function' ? feed : () => {}
+      },
+    })
+    handle.subscribe(listener)
+    return handle
   }
 }

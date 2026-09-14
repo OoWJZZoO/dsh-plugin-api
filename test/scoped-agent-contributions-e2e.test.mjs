@@ -50,7 +50,7 @@ test('two contributors on one target coexist with owner attribution', async () =
   const asm = await singletons.systemPrompt.assemble({ agent: 'shared' })
   assert.deepEqual(asm.sections.map((section) => section.name), ['one', 'two'])
   // disposal of one owner's contribution leaves the other intact
-  assert.equal(first.handle.dispose(), true)
+  assert.equal(first.handle.dispose().code, 'revoked')
   const after = await singletons.systemPrompt.assemble({ agent: 'shared' })
   assert.deepEqual(after.sections.map((section) => section.name), ['two'])
 })
@@ -291,9 +291,9 @@ test('tools: conflict rules, identity-bound dispose, and resume re-install', asy
   assert.throws(() => state.pluginApi.tools.register({ name: 'x' }, { scope: { id: 'scope:nope' } }), /live scope handle/)
 
   assert.deepEqual(singletons.tools.view('agent-tools').tools, ['scoped-one', 'scoped-two'])
-  assert.equal(first.dispose(), true)
+  assert.equal(first.dispose().code, 'revoked')
   assert.deepEqual(singletons.tools.view('agent-tools').tools, ['scoped-two'], 'only its own key is removed')
-  assert.equal(first.dispose(), false, 'dispose is idempotent')
+  assert.equal(first.dispose().code, 'stale', 'dispose is idempotent')
 
   const entry = state.pluginApi.agents.get('agent-tools')
   disposeAgent(entry)
@@ -301,7 +301,7 @@ test('tools: conflict rules, identity-bound dispose, and resume re-install', asy
   const resumed = makeAgent('agent-tools')
   announce(resumed.agent)
   assert.deepEqual(singletons.tools.view('agent-tools').tools, ['scoped-two'], 're-installed into the new instance layer')
-  assert.equal(second.dispose(), true)
+  assert.equal(second.dispose().code, 'revoked')
 })
 
 test('scoped contributions are runtime state and never open a durable tier', async () => {

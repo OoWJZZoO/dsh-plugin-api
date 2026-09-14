@@ -48,7 +48,10 @@ test('session route validates, caches identity, corroborates events, and observe
   h.sessions.set(session.id, session)
   assert.equal(h.owner.api.current(session), undefined)
   const seen = []
-  const dispose = h.owner.api.on(session, (route) => seen.push(route))
+  const handle = h.owner.api.on(session, (route) => seen.push(route))
+  assert.deepEqual(Object.keys(handle).sort(), ['current', 'dispose', 'epoch', 'subscribe'])
+  assert.ok(Object.isFrozen(handle), 'the public handle is frozen')
+  assert.equal('listeners' in handle, false, 'the internal listener set never escapes')
 
   let route = { provider: 'p1', model: 'm1' }
   session.requestContext = () => ({ ...route })
@@ -57,6 +60,7 @@ test('session route validates, caches identity, corroborates events, and observe
   const first = seen[0]
   assert.equal(Object.isFrozen(first), true)
   assert.equal(h.owner.api.current(session), first)
+  assert.equal(handle.current(), first)
 
   h.emit('session/event', session, { type: 'request/context', seq: 1, data: route })
   assert.equal(seen.length, 1)
@@ -65,8 +69,13 @@ test('session route validates, caches identity, corroborates events, and observe
   h.emit('session/event', session, { type: 'request/context', seq: 2, data: route })
   assert.equal(seen.length, 2)
   assert.notEqual(seen[1], first)
-  assert.equal(dispose(), true)
-  assert.equal(dispose(), false)
+  assert.equal(handle.dispose().code, 'revoked')
+  assert.equal(handle.dispose().code, 'stale')
+  // A released handle answers a typed unavailable view, never a dead stream.
+  const released = handle.current()
+  assert.equal(released.ok, false)
+  assert.equal(released.code, 'unavailable')
+  assert.equal(typeof handle.subscribe(() => {}), 'function')
 })
 
 test('wait resolves next route, aborts exactly, and once detaches before callback', async () => {

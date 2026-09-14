@@ -121,7 +121,7 @@ test('contract fixtures are deeply immutable and match their declared cardinalit
 
 test('contract fixtures pin exact names, members, and catalog metadata', () => {
   assert.deepEqual(CATALOG_ENTRY_FIELDS, [
-    'name', 'mode', 'scopeFiltered', 'scopeKey', 'payload', 'args', 'fault', 'freeze',
+    'name', 'mode', 'scopeFiltered', 'scopeKey', 'payload', 'args', 'producer', 'fault', 'freeze',
   ])
   assert.deepEqual(HOST_NAMESPACE_CONTRACTS.map((contract) => [contract.name, contract.members]), [
     ['llm', ['listProviders', 'listConfigurableProviders', 'discoverModels', 'providerRetryPolicy', 'listModels', 'resolveCallConfig', 'contentHasImage', 'createUserMessage', 'BlockAssembler']],

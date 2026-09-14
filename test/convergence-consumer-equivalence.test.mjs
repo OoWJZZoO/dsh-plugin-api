@@ -96,14 +96,16 @@ test('slice A: the read-image admission policy registers publicly and governs th
   assert.deepEqual(await imageCheck(), { ok: false, code: 'model-unavailable' })
 
   // The plugin's own call: one policy registered through the public member.
-  const dispose = harness.state.pluginApi.llm.admissionPolicies.register({
+  const handle = harness.state.pluginApi.llm.admissionPolicies.register({
     id: 'img-policy',
     input: 'image',
     match() { return true },
     process() { return { kind: 'pass' } },
     validate() { return true },
   })
-  assert.equal(typeof dispose, 'function', 'registration returns the caller-bound disposer the plugin keeps')
+  assert.equal(typeof handle.dispose, 'function', 'registration returns the standard handle the plugin keeps')
+  assert.equal(typeof handle.ownerId, 'string')
+  assert.equal(typeof handle.generation, 'string')
 
   // The policy governs the official refusal inside the official scope...
   assert.deepEqual(await imageCheck(), { ok: true, selected: true })
@@ -118,13 +120,13 @@ test('slice A: the read-image admission policy registers publicly and governs th
 
   // Disposal restores the official refusal: the plugin's decision never
   // outlives its own registration.
-  dispose()
+  assert.equal(handle.dispose().ok, true)
   assert.deepEqual(await imageCheck(), { ok: false, code: 'model-unavailable' })
 })
 
 test('slice B: a policy that never matches leaves the official refusal untouched', async () => {
   const harness = mountFacade()
-  const dispose = harness.state.pluginApi.llm.admissionPolicies.register({
+  const handle = harness.state.pluginApi.llm.admissionPolicies.register({
     id: 'video-policy',
     input: 'image',
     match() { return false },
@@ -135,6 +137,6 @@ test('slice B: a policy that never matches leaves the official refusal untouched
     const refused = await harness.services.apiProxy.sessions.selectModel({ payload: { sessionId: 's1', provider: 'provider-a', model: 'model-a' } })
     assert.deepEqual(refused, { ok: false, code: 'model-unavailable' }, 'no matching policy means the official decision stands')
   } finally {
-    dispose()
+    handle.dispose()
   }
 })

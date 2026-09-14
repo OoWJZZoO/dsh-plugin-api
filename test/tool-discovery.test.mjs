@@ -26,29 +26,34 @@ function engine(options = {}) {
 
 const DEFS = [{ name: 'alpha_run', description: 'Runs alpha', parameters: { type: 'object', properties: {} } }]
 
-function register(engineApi, overrides = {}) {
+function register(engineApi, overrides = {}, callerCtx = { fiber: { name: 'owner-a' } }) {
   return engineApi.catalog.register({
     id: 'alpha',
-    owner: 'owner-a',
     summary: 'Alpha tool',
     capabilities: ['vision'],
     activate: () => DEFS,
     ...overrides,
-  })
+  }, callerCtx)
 }
 
 function toolsetNames(engineApi, scopeKey) {
   return engineApi.provider({ scope: { session: { id: scopeKey } } }).schemas.map((tool) => tool.name)
 }
 
-test('register returns a handle with generation and an idempotent disposer', () => {
+test('register returns the standard handle with a derived owner and an idempotent disposer', () => {
   const api = engine()
   const handle = register(api)
+  const specOwner = register(api, { id: 'beta' }, { fiber: { name: 'plugin-b' } })
+  assert.deepEqual(Object.keys(handle).sort(), ['dispose', 'generation', 'id', 'ownerId'])
+  assert.equal(handle.id, 'alpha')
+  assert.equal(handle.ownerId, 'owner-a', 'the owner is derived from the caller binding, not the spec')
+  assert.equal(specOwner.ownerId, 'plugin-b')
   assert.equal(typeof handle.generation, 'string')
-  assert.ok(handle.generation.startsWith('owner-a:'))
+  assert.ok(handle.generation.startsWith('owner-a:'), 'the generation is minted from the derived owner')
+  assert.ok(Object.isFrozen(handle))
   assert.equal(typeof handle.dispose, 'function')
-  assert.equal(handle.dispose(), true)
-  assert.equal(handle.dispose(), false, 'entry disposer is idempotent')
+  assert.equal(handle.dispose().code, 'revoked')
+  assert.equal(handle.dispose().code, 'stale', 'entry disposer is idempotent')
 })
 
 test('duplicate entry id is a typed conflict and the existing entry is preserved', () => {

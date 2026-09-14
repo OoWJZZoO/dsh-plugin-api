@@ -109,6 +109,18 @@ function createMockCtx(options = {}) {
   return { ctx, state, agents, web }
 }
 
+/**
+ * Assert the standard provider handle shape and drive its single disposal.
+ * The handle replaces the raw official return: the official verb is what the
+ * handle's `dispose()` drives.
+ */
+function disposeProviderHandle(handle, expectedCode = 'revoked') {
+  assert.deepEqual(Object.keys(handle).sort(), ['dispose', 'generation', 'id', 'ownerId'])
+  assert.ok(Object.isFrozen(handle))
+  assert.equal(handle.dispose().code, expectedCode)
+  return handle
+}
+
 test('apply mounts agent after events and exposes a working registry read API', () => {
   const { ctx, state, agents } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
@@ -132,13 +144,14 @@ assert.deepEqual(features.map((f) => f.name), ['tools', 'events', 'agent', 'llm'
 test('mounted agent extension facade preserves all registry lifecycle result identities', () => {
   const { ctx, state, agents } = createMockCtx()
   const calls = []
+  const official = { enter: 0, announce: 0, setFactory: 0 }
   const values = {
     create: Promise.resolve({ id: 'created' }),
     resume: Promise.resolve({ id: 'resumed' }),
     register: () => 'register-disposer',
-    enter: () => 'enter-disposer',
-    announce: () => 'announced',
-    setFactory: () => 'factory-disposer',
+    enter: () => { official.enter += 1; return () => {} },
+    announce: () => { official.announce += 1; return undefined },
+    setFactory: () => { official.setFactory += 1; return () => {} },
   }
   for (const name of ['create', 'resume', 'register', 'enter', 'announce', 'setFactory']) {
     agents[name] = function (...args) {
@@ -153,9 +166,13 @@ test('mounted agent extension facade preserves all registry lifecycle result ide
   assert.equal(agent.create({ id: 'create' }), values.create)
   assert.equal(agent.resume({ id: 'resume' }), values.resume)
   assert.equal(agent.register({ id: 'register' }), 'register-disposer')
-  assert.equal(agent.providers.register({ agent: { id: 'enter' }, owner: ctx }), 'enter-disposer')
-  assert.equal(agent.providers.register({ announce: { id: 'announce' } }), 'announced')
-  assert.equal(agent.providers.register({ factory }), 'factory-disposer')
+  disposeProviderHandle(agent.providers.register({ kind: 'enter', agent: { id: 'enter' }, owner: ctx }))
+  disposeProviderHandle(
+    agent.providers.register({ kind: 'announce', agent: { id: 'announce' } }),
+    'stale',
+  )
+  disposeProviderHandle(agent.providers.register({ kind: 'factory', factory }))
+  assert.deepEqual(official, { enter: 1, announce: 1, setFactory: 1 })
   assert.equal(typeof state.pluginApi.llm.routing.forExecution, 'function')
   assert.deepEqual(calls.map(({ name }) => name), ['create', 'resume', 'register', 'enter', 'announce', 'setFactory'])
   assert.ok(calls.every(({ receiver }) => receiver === agents))
@@ -175,8 +192,8 @@ test('active composed facade degrades only a missing agent extension leaf', () =
   const agent = state.pluginApi.agents
   assert.equal(agent.create({}), 'created')
   assert.equal(agent.resume({}), 'resumed')
-  assert.equal(agent.providers.register({ agent: {}, owner: undefined }), 'entered')
-  assert.throws(() => agent.providers.register({ factory: {} }), PluginApiFeatureDisabledError)
+  disposeProviderHandle(agent.providers.register({ kind: 'enter', agent: {}, owner: undefined }))
+  assert.throws(() => agent.providers.register({ kind: 'factory', factory: {} }), PluginApiFeatureDisabledError)
   assert.equal(agent.availability().status, 'degraded')
   assert.equal(agent.get('agent-1').id, 'agent-1')
   assert.equal(typeof state.pluginApi.llm.routing.forExecution, 'function')
@@ -187,9 +204,9 @@ test('active composed facade degrades each missing agent extension leaf independ
     create: (agent) => agent.create({}),
     resume: (agent) => agent.resume({}),
     register: (agent) => agent.register({}),
-    enter: (agent) => agent.providers.register({ agent: {}, owner: undefined }),
-    announce: (agent) => agent.providers.register({ announce: {} }),
-    setFactory: (agent) => agent.providers.register({ factory: {} }),
+    enter: (agent) => disposeProviderHandle(agent.providers.register({ kind: 'enter', agent: {}, owner: undefined })),
+    announce: (agent) => agent.providers.register({ kind: 'announce', agent: { id: `announce-${Math.random()}` } }),
+    setFactory: (agent) => disposeProviderHandle(agent.providers.register({ kind: 'factory', factory: {} })),
   }
   for (const missing of ['create', 'resume', 'register', 'enter', 'announce']) {
     const { ctx, state, agents } = createMockCtx()
@@ -207,7 +224,7 @@ test('active composed facade degrades each missing agent extension leaf independ
           `missing ${missing} member must throw for ${name}`,
         )
       } else {
-        assert.equal(invoke[name](agent), `ok-${name}`)
+        assert.doesNotThrow(() => invoke[name](agent))
       }
     }
     assert.equal(agent.availability().status, 'degraded')
@@ -232,7 +249,7 @@ test('active composed facade availability tracks late member degradation', () =>
   agents.setFactory = undefined
 
   assert.throws(
-    () => agent.providers.register({ factory: {} }),
+    () => agent.providers.register({ kind: 'factory', factory: {} }),
     (error) => error instanceof PluginApiFeatureDisabledError && /providers\.register/.test(error.message),
   )
   assert.equal(agent.availability().status, 'degraded')
@@ -262,9 +279,12 @@ test('active composed agent extension view resolves every official call from the
   assert.equal(agent.create({}), 'create')
   assert.equal(agent.resume({}), 'resume')
   assert.equal(agent.register({}), 'register')
-  assert.equal(agent.providers.register({ agent: {}, owner: undefined }), 'enter')
-  assert.equal(agent.providers.register({ announce: {} }), 'announce')
-  assert.equal(agent.providers.register({ factory: {} }), 'setFactory')
+  const enterHandle = agent.providers.register({ kind: 'enter', agent: { id: 'consumer-1' }, owner: undefined })
+  const announceHandle = agent.providers.register({ kind: 'announce', agent: { id: 'consumer-2' } })
+  const factoryHandle = agent.providers.register({ kind: 'factory', factory: {} })
+  disposeProviderHandle(enterHandle)
+  disposeProviderHandle(announceHandle, 'stale')
+  disposeProviderHandle(factoryHandle)
   assert.ok(consumerCalls.every(({ receiver }) => receiver === consumerAgents))
   assert.equal(hostAgents.create(), undefined)
 })
@@ -285,7 +305,7 @@ test('exec-route publication failure leaves active agent extension members uncha
 
   apply(ctx)
   assert.equal(state.pluginApi.agents.create({}), 'create')
-  assert.equal(state.pluginApi.agents.providers.register({ factory: {} }), 'setFactory')
+  disposeProviderHandle(state.pluginApi.agents.providers.register({ kind: 'factory', factory: {} }))
   assert.equal(state.pluginApi.agents.availability().status, 'active')
   assert.equal(state.pluginApi.agents.availability().status, 'active')
   assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'execRoute')?.isActive, false)
@@ -467,7 +487,7 @@ test('exec-route cleanup failure leaves active agent extension members intact', 
   assert.equal(typeof dispose, 'function')
   assert.doesNotThrow(() => dispose())
   assert.equal(state.pluginApi.agents.create({}), 'create')
-  assert.equal(state.pluginApi.agents.providers.register({ factory: {} }), 'setFactory')
+  disposeProviderHandle(state.pluginApi.agents.providers.register({ kind: 'factory', factory: {} }))
   assert.equal(state.pluginApi.agents.availability().status, 'active')
 })
 
@@ -483,7 +503,7 @@ test('successful exec-route disposal leaves active agent extension members intac
   assert.equal(typeof dispose, 'function')
   dispose()
   assert.equal(state.pluginApi.agents.create({}), 'create')
-  assert.equal(state.pluginApi.agents.providers.register({ factory: {} }), 'setFactory')
+  disposeProviderHandle(state.pluginApi.agents.providers.register({ kind: 'factory', factory: {} }))
   assert.equal(state.pluginApi.agents.availability().status, 'active')
   assert.equal(state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((feature) => feature.name === 'execRoute')?.isActive, true)
 })
@@ -780,15 +800,15 @@ test('integrated agent extension lifecycle double preserves official identity, o
   state.pluginApi.events.observe('agent/session-start').subscribe(() => Promise.reject(new Error('async lifecycle rejection')))
 
   const directFactoryDisposer = direct.setFactory(directFactory)
-  const facadeFactoryDisposer = facade.providers.register({ factory: facadeFactory })
+  const facadeFactoryHandle = facade.providers.register({ kind: 'factory', factory: facadeFactory })
   assert.equal(directFactoryDisposer, direct.factoryDisposer)
-  assert.equal(facadeFactoryDisposer, consumer.factoryDisposer)
+  assert.equal(typeof facadeFactoryHandle.dispose, 'function')
   assert.equal(direct.isFactoryOccupied(), true)
   assert.equal(consumer.isFactoryOccupied(), true)
   assert.throws(() => direct.setFactory({ label: 'duplicate' }), /direct: factory occupied/)
-  assert.throws(() => facade.providers.register({ factory: { label: 'duplicate' } }), /facade: factory occupied/)
+  assert.throws(() => facade.providers.register({ kind: 'factory', factory: { label: 'duplicate' } }), /facade: factory occupied/)
   directFactoryDisposer()
-  facadeFactoryDisposer()
+  assert.equal(facadeFactoryHandle.dispose().code, 'revoked')
   assert.equal(direct.isFactoryOccupied(), false)
   assert.equal(consumer.isFactoryOccupied(), false)
   assert.equal(facade.availability().status, 'active')
@@ -846,33 +866,32 @@ test('integrated agent extension lifecycle double preserves official identity, o
   const directEntered = { id: 'direct-entered', label: 'direct-entered' }
   const facadeEntered = { id: 'facade-entered', label: 'facade-entered' }
   const directEnterDisposer = direct.enter(directEntered, undefined)
-  const facadeEnterDisposer = facade.providers.register({ agent: facadeEntered, owner: facadeFiber.agent })
+  const facadeEnterHandle = facade.providers.register({ kind: 'enter', agent: facadeEntered, owner: facadeFiber.agent })
   assert.equal(directEnterDisposer, direct.enterDisposers.at(-1))
-  assert.equal(facadeEnterDisposer, consumer.enterDisposers.at(-1))
   assert.equal(typeof directEnterDisposer, 'function')
-  assert.equal(typeof facadeEnterDisposer, 'function')
+  assert.equal(typeof facadeEnterHandle.dispose, 'function')
   assert.equal(direct.announce(directEntered), undefined)
-  assert.equal(facade.providers.register({ announce: facadeEntered }), undefined)
+  assert.equal(typeof facade.providers.register({ kind: 'announce', agent: facadeEntered }).dispose, 'function')
   assert.throws(() => direct.announce({ id: 'missing-direct' }), (error) => error === direct.errors.invalidAnnounce)
-  assert.throws(() => facade.providers.register({ announce: { id: 'missing-facade' } }), (error) => error === consumer.errors.invalidAnnounce)
+  assert.throws(() => facade.providers.register({ kind: 'announce', agent: { id: 'missing-facade' } }), (error) => error === consumer.errors.invalidAnnounce)
   const directDuplicate = { id: 'direct-entered', label: 'direct-duplicate' }
   const facadeDuplicate = { id: 'facade-entered', label: 'facade-duplicate' }
   assert.throws(() => direct.enter(directDuplicate, undefined), (error) => error === direct.errors.duplicate)
-  assert.throws(() => facade.providers.register({ agent: facadeDuplicate, owner: facadeFiber.agent }), (error) => error === consumer.errors.duplicate)
+  assert.throws(() => facade.providers.register({ kind: 'enter', agent: facadeDuplicate, owner: facadeFiber.agent }), (error) => error === consumer.errors.duplicate)
   directEnterDisposer()
-  facadeEnterDisposer()
+  assert.equal(facadeEnterHandle.dispose().code, 'revoked')
 
   const directVeto = new Error('direct veto')
   const facadeVeto = new Error('facade veto')
   const directVetoAgent = { id: 'direct-veto', label: 'direct-veto', veto: directVeto }
   const facadeVetoAgent = { id: 'facade-veto', label: 'facade-veto', veto: facadeVeto }
   direct.enter(directVetoAgent, undefined)
-  facade.providers.register({ agent: facadeVetoAgent, owner: facadeFiber.agent })
+  facade.providers.register({ kind: 'enter', agent: facadeVetoAgent, owner: facadeFiber.agent })
   // Projection listeners are contained per the observe contract: the veto
   // listener's throw is absorbed by the observe containment and never
   // reaches the registry publication.
   assert.doesNotThrow(() => direct.announce(directVetoAgent))
-  assert.doesNotThrow(() => facade.providers.register({ announce: facadeVetoAgent }))
+  assert.doesNotThrow(() => facade.providers.register({ kind: 'announce', agent: facadeVetoAgent }))
   assert.ok(observed.some(({ name, label, listener }) => name === 'agent/created' && label === 'direct-veto' && listener === 'first'))
   assert.ok(observed.some(({ name, label, listener }) => name === 'agent/created' && label === 'facade-veto' && listener === 'first'))
 

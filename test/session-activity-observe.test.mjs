@@ -17,6 +17,13 @@ test('observe: handle shape is { current, subscribe, dispose, epoch }', () => {
   const projection = makeProjection()
   projection.setSliceState({ active: true, versionMatched: true })
   const handle = projection.api.observe({ sessionId: 's1' })
+  assert.deepEqual(Object.keys(handle).sort(), ['current', 'dispose', 'epoch', 'subscribe'])
+  assert.ok(Object.isFrozen(handle), 'the public handle is frozen')
+  assert.equal('listeners' in handle, false, 'the internal listener set never escapes')
+  assert.equal('disposed' in handle, false, 'the internal liveness flag never escapes')
+  assert.equal('stale' in handle, false, 'the internal epoch flag never escapes')
+  assert.equal('signal' in handle, false, 'the internal abort signal never escapes')
+  assert.equal('abortHandler' in handle, false, 'the internal abort handler never escapes')
   assert.equal(typeof handle.current, 'function')
   assert.equal(typeof handle.subscribe, 'function')
   assert.equal(typeof handle.dispose, 'function')
@@ -53,8 +60,26 @@ test('observe: dispose is idempotent and stops invocation', () => {
   const handle = projection.api.observe({ sessionId: 's1' })
   const received = []
   handle.subscribe((payload) => received.push(payload))
-  assert.equal(handle.dispose(), true)
-  assert.equal(handle.dispose(), false)
+  const released = handle.dispose()
+  assert.equal(released.ok, true)
+  assert.equal(released.code, 'revoked')
+  const stale = handle.dispose()
+  assert.equal(stale.ok, false)
+  assert.equal(stale.code, 'stale')
+  startAttempt(projection)
+  assert.equal(received.length, 0)
+})
+
+test('observe: a subscription from a released handle is a no-op', () => {
+  const projection = makeProjection()
+  projection.setSliceState({ active: true, versionMatched: true })
+  const handle = projection.api.observe({ sessionId: 's1' })
+  handle.dispose()
+  const received = []
+  const unsubscribe = handle.subscribe((payload) => received.push(payload))
+  assert.equal(typeof unsubscribe, 'function')
+  assert.doesNotThrow(() => unsubscribe())
+  assert.doesNotThrow(() => handle.subscribe(null))
   startAttempt(projection)
   assert.equal(received.length, 0)
 })
@@ -91,9 +116,11 @@ test('observe: epoch rollover isolates old handles — old callbacks never deliv
   startAttempt(projection)
   assert.equal(oldCalls.length, 0)
   assert.equal(freshCalls.length, 1)
-  // old handle still disposes idempotently
-  assert.equal(old.dispose(), true)
-  assert.equal(old.dispose(), false)
+  // epoch rollover releases every old handle: subscribing is a no-op and the
+  // stale disposer answers the stale no-op code
+  assert.equal(typeof old.subscribe(() => {}), 'function')
+  assert.equal(old.dispose().code, 'stale')
+  assert.equal(old.dispose().code, 'stale')
 })
 
 test('observe: subscriptions are additive and independent; order encodes no semantics', () => {
@@ -157,8 +184,9 @@ test('observe: invalid inputs are typed and never corrupt other subscriptions', 
   const handle = projection.api.observe({ sessionId: 's1' })
   const received = []
   handle.subscribe((p) => received.push(p))
-  assert.throws(() => handle.subscribe('not-a-function'), TypeError)
-  assert.throws(() => handle.subscribe(null), TypeError)
+  // a non-function listener is a contained no-op subscription, never a throw
+  assert.equal(typeof handle.subscribe('not-a-function'), 'function')
+  assert.equal(typeof handle.subscribe(null), 'function')
   startAttempt(projection)
   assert.equal(received.length, 1)
   // observe without a session is refused with a typed invalid-input error and

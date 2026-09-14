@@ -119,8 +119,8 @@ test('remote: publication registers with wire-parameter validation and an isolat
     getPayload(limit) { return { limit } },
     setPayload(payload) { return { ok: true, payload } },
   }
-  const disposer = remote.register('regressionConfig', service)
-  assert.equal(typeof disposer, 'function')
+  const handle = remote.register('regressionConfig', service)
+  assert.equal(typeof handle.dispose, 'function')
   const published = state.provided.find((s) => s.name === 'regressionConfig')
   assert.ok(published, 'service published through the official boundary')
   assert.equal(published.value, service)
@@ -133,10 +133,10 @@ test('remote: publication registers with wire-parameter validation and an isolat
     (error) => error instanceof PluginApiRemoteError,
   )
 
-  // The disposer is idempotent and removes only its own publication.
-  assert.equal(await disposer(), true)
+  // The handle disposer is idempotent and removes only its own publication.
+  assert.equal(handle.dispose().code, 'revoked')
   assert.equal(state.provided.some((s) => s.name === 'regressionConfig'), false)
-  assert.equal(await disposer(), false)
+  assert.equal(handle.dispose().code, 'stale')
 })
 
 test('remote: same-key same-reference publish is idempotent; a conflicting owner is rejected', () => {
@@ -147,13 +147,13 @@ test('remote: same-key same-reference publish is idempotent; a conflicting owner
 
   const first = remote.register('conflictConfig', service)
   const second = remote.register('conflictConfig', service)
-  assert.equal(first, second, 'idempotent re-publication reuses the same disposer')
+  assert.equal(first, second, 'idempotent re-publication reuses the same handle')
   assert.throws(
     () => remote.register('conflictConfig', { get() { return { ok: true } } }),
     (error) => error instanceof PluginApiRemoteError,
     'a different reference under the same key is a typed conflict',
   )
-  first()
+  assert.equal(first.dispose().code, 'revoked')
   assert.equal(state.provided.some((s) => s.name === 'conflictConfig'), false)
 })
 

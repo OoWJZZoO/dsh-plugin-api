@@ -54,6 +54,12 @@ test('observe subscribes to committed snapshots and disposes idempotently', () =
   const owner = createExecutionObservation({ ctx })
   const { api } = owner
   const observer = api.observe({ sessionId: 's1' })
+  assert.deepEqual(Object.keys(observer).sort(), ['current', 'dispose', 'epoch', 'subscribe'])
+  assert.ok(Object.isFrozen(observer), 'the public handle is frozen')
+  assert.equal('listeners' in observer, false, 'the internal listener set never escapes')
+  assert.equal('disposed' in observer, false, 'the internal liveness flag never escapes')
+  assert.equal('signal' in observer, false, 'the internal abort signal never escapes')
+  assert.equal('abortHandler' in observer, false, 'the internal abort handler never escapes')
   const seen = []
   observer.subscribe((snapshots) => seen.push(snapshots))
 
@@ -62,8 +68,60 @@ test('observe subscribes to committed snapshots and disposes idempotently', () =
   assert.equal(seen.at(-1).length, 1)
   assert.equal(seen.at(-1)[0].outcome, 'success')
 
-  assert.equal(observer.dispose(), true)
-  assert.equal(observer.dispose(), false)
+  const released = observer.dispose()
+  assert.equal(released.ok, true)
+  assert.equal(released.code, 'revoked')
+  const stale = observer.dispose()
+  assert.equal(stale.ok, false)
+  assert.equal(stale.code, 'stale')
+})
+
+test('a subscription from a released execution handle is a no-op', () => {
+  const { ctx, listeners } = createMockCtx()
+  const owner = createExecutionObservation({ ctx })
+  const { api } = owner
+  const observer = api.observe({ sessionId: 's1' })
+  observer.dispose()
+  const seen = []
+  const unsubscribe = observer.subscribe((snapshots) => seen.push(snapshots))
+  assert.equal(typeof unsubscribe, 'function')
+  assert.doesNotThrow(() => unsubscribe())
+  assert.doesNotThrow(() => observer.subscribe('not-a-function'))
+  runToolCall(listeners, 's1')
+  assert.equal(seen.length, 0)
+})
+
+test('a failing listener degrades only itself and a rejecting listener never escapes', async () => {
+  const { ctx, listeners } = createMockCtx()
+  const owner = createExecutionObservation({ ctx })
+  const { api } = owner
+  const observer = api.observe({ sessionId: 's1' })
+  const seen = []
+  observer.subscribe(() => { throw new Error('listener boom') })
+  observer.subscribe(async () => { throw new Error('listener rejection') })
+  observer.subscribe((snapshots) => seen.push(snapshots))
+  // the reactive and the async paths both deliver to the healthy listener
+  runToolCall(listeners, 's1')
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(seen.length >= 1, true)
+  assert.equal(seen.at(-1)[0].outcome, 'success')
+  observer.dispose()
+})
+
+test('get answers the shared absence vocabulary instead of undefined', () => {
+  const { ctx, listeners } = createMockCtx()
+  const owner = createExecutionObservation({ ctx })
+  const { api } = owner
+  runToolCall(listeners, 's1')
+  const projection = api.history('s1').items[0]
+  const missing = api.get('unknown-execution', { audience: 'ui' })
+  assert.equal(missing.ok, false)
+  assert.equal(missing.code, 'missing')
+  assert.ok(Object.isFrozen(missing))
+  owner.dispose()
+  const unavailable = api.get(projection.executionId, { audience: 'ui' })
+  assert.equal(unavailable.ok, false)
+  assert.equal(unavailable.code, 'unavailable')
 })
 
 test('AbortSignal stops the observer only and never commits aborted', () => {
@@ -74,7 +132,7 @@ test('AbortSignal stops the observer only and never commits aborted', () => {
   const controller = new AbortController()
   const observer = api.observe({ sessionId: 's1', signal: controller.signal })
   controller.abort()
-  assert.equal(observer.dispose(), false, 'already disposed by abort')
+  assert.equal(observer.dispose().code, 'stale', 'already disposed by abort')
   assert.equal(observer.current().length, 0)
 
   runToolCall(listeners, 's1')

@@ -153,9 +153,11 @@ function createHarness(options = {}) {
   }
 }
 
-test('registry validates atomically, orders by priority then sequence, disposes by exact token', () => {
+test('registry validates atomically, orders by priority then sequence, disposes by exact slot', () => {
   const registry = createTransformRegistry()
   const calls = []
+  const pluginA = { fiber: { name: 'plugin-a' } }
+  const pluginB = { fiber: { name: 'plugin-b' } }
   const make = (id, priority) => ({
     id,
     mode: 'compat',
@@ -164,14 +166,29 @@ test('registry validates atomically, orders by priority then sequence, disposes 
     isConverged: () => calls.push(`${id}:assert`),
   })
 
-  const a = registry.register(make('a', 'high'))
-  const b = registry.register(make('b', 'normal'))
-  const c = registry.register(make('c', 'low'))
+  const a = registry.register(make('a', 'high'), pluginA)
+  const b = registry.register(make('b', 'normal'), pluginB)
+  const c = registry.register(make('c', 'low'), pluginA)
 
   assert.deepEqual(registry.snapshot().map((e) => e.id), ['a', 'b', 'c'])
   assert.equal(registry.size, 3)
 
-  assert.throws(() => registry.register(make('b', 'high')), LlmRequestTransformRegistrationError)
+  // The handle carries the derived owner and a minted generation.
+  assert.equal(a.ownerId, 'plugin-a')
+  assert.equal(b.ownerId, 'plugin-b')
+  assert.equal(typeof a.generation, 'string')
+  assert.ok(Object.isFrozen(a))
+
+  // Same owner + same id is latest-wins; a different owner claiming the same
+  // id is a typed owner conflict.
+  const bAgain = registry.register(make('b', 'high'), pluginB)
+  assert.equal(b.dispose().code, 'stale', 'the superseded handle cannot remove the newer registration')
+  assert.deepEqual(registry.snapshot().map((e) => e.id), ['a', 'b', 'c'])
+  assert.throws(
+    () => registry.register(make('b', 'low'), pluginA),
+    (error) => error instanceof LlmRequestTransformRegistrationError && /another owner/.test(error.message),
+  )
+
   assert.throws(() => registry.register({ id: 'x', mode: 'async', apply() {}, isConverged() {} }), LlmRequestTransformRegistrationError)
   assert.throws(() => registry.register({ id: 'x', mode: 'compat', apply() {} }), LlmRequestTransformRegistrationError)
   assert.throws(() => registry.register({ id: 'x', mode: 'compat', priority: 'ultra', apply() {}, isConverged() {} }), LlmRequestTransformRegistrationError)
@@ -180,21 +197,21 @@ test('registry validates atomically, orders by priority then sequence, disposes 
   const aToken = registry.snapshot().find((e) => e.id === 'a').token
   assert.equal(registry.isAvailable(aToken), true)
 
-  // dispose removes only the exact token; a newer registration with the same id survives
-  assert.equal(a(), true)
-  assert.equal(a(), false)
+  // dispose removes only the exact slot; a later registration with the same id survives
+  assert.equal(a.dispose().ok, true)
+  assert.equal(a.dispose().code, 'stale')
   assert.equal(registry.size, 2)
   assert.equal(registry.isAvailable(aToken), false)
 
   const bToken = registry.snapshot().find((e) => e.id === 'b').token
-  assert.equal(b(), true, 'dispose the original b registration')
-  assert.equal(b(), false)
+  assert.equal(bAgain.dispose().ok, true, 'dispose the latest b registration')
+  assert.equal(bAgain.dispose().code, 'stale')
   assert.equal(registry.snapshot().map((e) => e.id).join(','), 'c')
-  const b2 = registry.register(make('b', 'lowest'))
+  const b2 = registry.register(make('b', 'lowest'), pluginB)
   assert.equal(bToken !== registry.snapshot().find((e) => e.id === 'b').token, true,
     'a newer registration carries a fresh token')
   assert.equal(registry.snapshot().map((e) => e.id).join(','), 'c,b')
-  assert.equal(b2(), true)
+  assert.equal(b2.dispose().ok, true)
   assert.equal(registry.snapshot().map((e) => e.id).join(','), 'c')
 
   registry.dispose()
@@ -271,8 +288,8 @@ test('replacement suppresses the original continuation and re-enters llm.stream 
   assert.ok(!Object.isFrozen(candidate.signal))
   assert.equal(request.messages[0].content[0].text, 'hello')
 
-  assert.equal(disposer(), true)
-  assert.equal(disposer(), false)
+  assert.equal(disposer.dispose().ok, true)
+  assert.equal(disposer.dispose().code, 'stale')
 })
 
 test('self-reentry bypasses the pipeline: apply runs once and the marked candidate continues once', () => {
@@ -301,7 +318,7 @@ test('self-reentry bypasses the pipeline: apply runs once and the marked candida
   assert.equal(harness.state.continuationCalls, 0)
   assert.equal(harness.state.streamCalls.length, 1)
   assert.equal(harness.state.streamCalls[0].messages[0].content[0].text, 'projected')
-  disposer()
+  assert.equal(disposer.dispose().ok, true)
 })
 
 test('foreign owner marker is preserved: a second owner processes the marked candidate as a fresh operation', () => {
@@ -424,7 +441,7 @@ test('operation-start transform snapshot is fixed: mid-operation registration an
           isConverged() { order.push('late-assert'); return true },
         })
       }
-      secondDisposer()
+      secondDisposer.dispose()
       return { kind: 'pass' }
     },
     isConverged() { order.push('first-assert'); return true },

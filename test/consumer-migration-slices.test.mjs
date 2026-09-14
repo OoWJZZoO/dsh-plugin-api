@@ -211,14 +211,13 @@ test('slice C: a remote published with plain methods is invocable through the of
       return { ok: true, applied: value }
     },
   }
-  const disposer = state.pluginApi.remotes.register('anchorConfig', anchorConfig)
+  const handle = state.pluginApi.remotes.register('anchorConfig', anchorConfig)
   const published = state.providedServices.find((entry) => entry.name === 'anchorConfig')
   assert.ok(published, 'the plain-method service is published through the official boundary')
   assert.deepEqual(published.value.get('theme'), { value: { key: 'theme', enabled: true } })
   assert.deepEqual(published.value.set({ enabled: false }), { ok: true, applied: { enabled: false } })
   assert.deepEqual(applied, [{ enabled: false }], 'the call reached the plugin method exactly once')
-  assert.equal(typeof disposer, 'function')
-  disposer()
+  assert.equal(handle.dispose().code, 'revoked')
 })
 
 test('slice D: a declarative storage domain carries the plugin business records', async () => {

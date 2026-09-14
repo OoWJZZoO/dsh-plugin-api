@@ -126,6 +126,8 @@ test('full discovery lifecycle through the facade apply', async () => {
   const discovery = host.ctx.get('pluginApi').tools.discovery
 
   const registered = discovery.catalog.register(DESCRIPTOR)
+  assert.deepEqual(Object.keys(registered).sort(), ['dispose', 'generation', 'id', 'ownerId'])
+  assert.equal(registered.id, 'alpha')
   assert.equal(typeof registered.generation, 'string')
 
   const before = host.systemPrompt.assemble({ scope: { session: { id: 's1' } } })
@@ -144,7 +146,10 @@ test('full discovery lifecycle through the facade apply', async () => {
 
   const audit = discovery.audit.list({ kind: 'activate' })
   assert.equal(audit.items.length, 1)
-  assert.equal(audit.items[0].owner, 'owner-a')
+  // The catalog owner is the caller identity derived from the registration
+  // call; this facade surface forwards no caller binding, so the shared root
+  // token attributes the entry.
+  assert.equal(audit.items[0].owner, 'root')
 
   assert.equal(discovery.deactivate('alpha', { reason: 'retired' }).ok, true)
   await assert.rejects(discovery.activate('alpha', { session: { id: 's1' } }), (error) => error.code === 'DISCOVERY_ENTRY_DEACTIVATED')

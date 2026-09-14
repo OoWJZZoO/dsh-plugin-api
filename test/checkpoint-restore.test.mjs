@@ -79,10 +79,10 @@ test('restore: successful idle restore commits exactly one success terminal thro
   const { checkpointId, plan } = await seedSession({ harness: h })
   const result = await h.restore.restore(checkpointId, { plan }, { owner: 'plugin-a' })
   assert.equal(result.ok, true)
-  assert.equal(result.code, 'started')
-  assert.ok(result.handle)
-  assert.equal(result.handle.id, result.operation.id)
-  const status = result.handle.status()
+  assert.equal(result.code, 'completed')
+  assert.ok(result.operation)
+  assert.equal(result.operation.status().id, result.operation.id)
+  const status = result.operation.status()
   assert.equal(status.terminal, 'success')
   assert.equal(status.phase, 'terminal')
   assert.equal(status.result.partial, false)
@@ -91,7 +91,7 @@ test('restore: successful idle restore commits exactly one success terminal thro
   // Exactly one terminal: a second commit attempt is rejected by status closure.
   const retry = await h.restore.restore(checkpointId, { plan }, { owner: 'plugin-a' })
   assert.equal(retry.ok, true) // new operation, new identity (no cascade; each restore is its own operation)
-  assert.notEqual(retry.handle.id, result.handle.id)
+  assert.notEqual(retry.operation.id, result.operation.id)
 })
 
 test('restore: preflight rejects a stale plan with typed conflict before any step executes', async () => {
@@ -159,7 +159,7 @@ test('restore: fencing loss stops new steps, fails closed with partial', async (
   const { checkpointId, plan } = await seedSession({ harness: h })
   const result = await h.restore.restore(checkpointId, { plan }, { owner: 'plugin-a' })
   assert.equal(result.ok, true)
-  const status = result.handle.status()
+  const status = result.operation.status()
   assert.equal(status.terminal, 'error')
   assert.match(status.reason, /lease|fencing/)
   assert.equal(status.result.partial, true)
@@ -173,7 +173,7 @@ test('restore: stepwise partial result — a failed step stops further steps wit
   const { checkpointId, plan } = await seedSession({ harness: h })
   const result = await h.restore.restore(checkpointId, { plan }, { owner: 'plugin-a' })
   assert.equal(result.ok, true)
-  const status = result.handle.status()
+  const status = result.operation.status()
   assert.equal(status.terminal, 'error')
   assert.equal(status.reason, 'branch anchor stale')
   assert.equal(status.result.partial, true)
@@ -191,7 +191,7 @@ test('restore: stop-then-restore sequencing — cancel request through the share
   assert.equal(result.ok, true)
   // The bounded wait observed the attempt's committed terminal.
   assert.equal(waiter.terminalOf('attempt-9'), 'aborted')
-  const status = result.handle.status()
+  const status = result.operation.status()
   assert.equal(status.terminal, 'success')
   assert.equal(status.stoppedAttempt.attemptId, 'attempt-9')
   assert.equal(status.stoppedAttempt.terminal, 'aborted')
@@ -207,8 +207,8 @@ test('restore: bounded-wait failure closes — no rewind happens under a live at
   const result = await h.restore.restore(checkpointId, { plan }, { owner: 'plugin-a' })
   assert.equal(result.ok, false)
   assert.equal(result.code, 'denied')
-  assert.equal(result.operation.terminal, 'error')
-  assert.match(result.operation.reason, /did not reach a terminal|bound/)
+  assert.equal(result.operation.status().terminal, 'error')
+  assert.match(result.operation.status().reason, /did not reach a terminal|bound/)
   assert.equal(h.branch.branches().filter((item) => item.restored).length, 0, 'never rewinds under a live attempt')
 })
 
@@ -237,23 +237,56 @@ test('restore: caller cancellation adjudicates aborted; current step reaches its
   const { checkpointId, plan } = await seedSession({ harness: h })
   const result = await h.restore.restore(checkpointId, { plan, signal: controller.signal }, { owner: 'plugin-a' })
   assert.equal(result.ok, true)
-  const status = result.handle.status()
+  const status = result.operation.status()
   assert.equal(status.terminal, 'aborted')
   assert.equal(status.result.partial, true)
   assert.deepEqual(status.result.stepsDone, [])
   assert.equal(h.branch.branches().filter((item) => item.restored).length, 0, 'cancellation never forges a step result')
 })
 
-test('restore: dispose requests a stop without forging a terminal', async () => {
+test('restore: dispose is a typed stop request that never forges a terminal', async () => {
   const h = harness()
   const { checkpointId, plan } = await seedSession({ harness: h })
   const result = await h.restore.restore(checkpointId, { plan }, { owner: 'plugin-a' })
   assert.equal(result.ok, true)
-  const before = result.handle.status().terminal
-  const disposed = result.handle.dispose()
-  assert.equal(disposed.ok, true)
-  const after = result.handle.status().terminal
-  assert.equal(after, before)
+  const before = result.operation.status().terminal
+  const disposed = result.operation.dispose()
+  assert.deepEqual({ ...disposed }, { ok: false, code: 'stale', reason: 'the operation has already settled' })
+  assert.equal(Object.isFrozen(disposed), true)
+  assert.equal(result.operation.status().terminal, before)
+})
+
+test('restore: the control handle is the operation and folds the status snapshot into status()', async () => {
+  const h = harness()
+  const { checkpointId, plan } = await seedSession({ harness: h })
+  const result = await h.restore.restore(checkpointId, { plan }, { owner: 'plugin-a' })
+  assert.deepEqual(Object.keys(result).sort(), ['code', 'observedAt', 'ok', 'operation'])
+  assert.equal('handle' in result, false, 'the control handle lives under the operation member')
+  const handle = result.operation
+  assert.deepEqual(Object.keys(handle).sort(), ['dispose', 'id', 'observe', 'ownerId', 'status'])
+  assert.equal(Object.isFrozen(handle), true)
+  const status = handle.status()
+  assert.equal(status.id, handle.id)
+  assert.equal(status.ownerId, 'plugin-a')
+  assert.equal(status.checkpointId, checkpointId)
+  assert.equal(status.phase, 'terminal')
+  assert.equal(status.terminal, 'success')
+  assert.equal(Object.isFrozen(status), true)
+
+  const seen = []
+  const unsubscribe = handle.observe((snapshot) => seen.push(snapshot))
+  assert.equal(typeof unsubscribe, 'function')
+  assert.equal(seen.length, 1, 'the current state is delivered on subscription')
+  assert.equal(seen[0].terminal, 'success')
+  assert.equal(Object.isFrozen(seen[0]), true)
+  unsubscribe()
+  unsubscribe() // a repeated unsubscribe stays a no-op
+
+  // A broken listener only degrades itself.
+  const kept = []
+  handle.observe(() => { throw new Error('broken listener') })
+  handle.observe((snapshot) => kept.push(snapshot.terminal))
+  assert.deepEqual(kept, ['success'])
 })
 
 test('restore: one operation per checkpoint — no implicit cross-record cascade', async () => {
@@ -263,8 +296,8 @@ test('restore: one operation per checkpoint — no implicit cross-record cascade
   const secondPlan = await h.planner.planRestore(second.summary.checkpointId)
   const firstResult = await h.restore.restore(checkpointId, { plan }, { owner: 'plugin-a' })
   const secondResult = await h.restore.restore(second.summary.checkpointId, { plan: secondPlan.plan }, { owner: 'plugin-a' })
-  assert.equal(firstResult.handle.status().terminal, 'success')
-  assert.equal(secondResult.handle.status().terminal, 'success')
+  assert.equal(firstResult.operation.status().terminal, 'success')
+  assert.equal(secondResult.operation.status().terminal, 'success')
 })
 
 test('restore: journal and snapshot slices restore through their declared authorities', async () => {
@@ -272,7 +305,7 @@ test('restore: journal and snapshot slices restore through their declared author
   const journalCp = await h.capture.create({ scope: { workspaceId: 'workspace-1' }, source: { kind: 'workspace-journal' } }, { owner: 'plugin-a' })
   const journalPlan = await h.planner.planRestore(journalCp.summary.checkpointId)
   const journalResult = await h.restore.restore(journalCp.summary.checkpointId, { plan: journalPlan.plan }, { owner: 'plugin-a' })
-  assert.equal(journalResult.handle.status().terminal, 'success')
+  assert.equal(journalResult.operation.status().terminal, 'success')
   assert.equal(h.journal.transactions()[0].recovered, true)
 
   const snapCp = await h.capture.create({ scope: { workspaceId: 'workspace-1' }, source: { kind: 'workspace-snapshot' } }, { owner: 'plugin-a' })
@@ -282,7 +315,7 @@ test('restore: journal and snapshot slices restore through their declared author
   assert.ok(snapshotFixtureState)
   // The snapshot apply step requires the restore fencing token.
   const snapResult = await h.restore.restore(snapCp.summary.checkpointId, { plan: snapPlan.plan }, { owner: 'plugin-a' })
-  assert.equal(snapResult.handle.status().terminal, 'success')
+  assert.equal(snapResult.operation.status().terminal, 'success')
   assert.ok(h.snapshot.lastApplied())
 })
 
@@ -292,7 +325,7 @@ test('restore: recovery authority is never consumed (no double-consume)', async 
   const recoveryPatch = { evaluate: () => { recoveryCalls += 1 } }
   const { checkpointId, plan } = await seedSession({ harness: h })
   const result = await h.restore.restore(checkpointId, { plan }, { owner: 'plugin-a' })
-  assert.equal(result.handle.status().terminal, 'success')
+  assert.equal(result.operation.status().terminal, 'success')
   assert.equal(recoveryCalls, 0)
   void recoveryPatch
 })

@@ -21,6 +21,7 @@ import {
   sourceProvenance,
   success,
   transformPolicyEvidence,
+  transformPolicyFailure,
   validateDurationPolicy,
   validateIdentity,
   validateTransformRegistration,
@@ -108,6 +109,59 @@ function effectiveLimit(...values) {
 
 function registrationKey(ownerId, id) {
   return `${ownerId}${TRANSFORM_KEY_SEPARATOR}${id}`
+}
+
+/**
+ * Typed conflict error for `registerTransform`: a different content claim for
+ * an already-registered `(owner, id)` slot is a stable typed conflict, never a
+ * silent overwrite. Input validation keeps the pipeline's discriminated
+ * presentation (the replacement's boot self-check pins that probe shape).
+ */
+export class TransformRegistrationError extends Error {
+  constructor(code, message) {
+    super(message)
+    this.name = 'TransformRegistrationError'
+    this.code = code
+  }
+}
+
+/** Content identity of one normalized transform registration (functions by reference). */
+function sameRegistrationContent(left, right) {
+  return left.generation === right.generation
+    && left.run === right.run
+    && (left.dispose ?? null) === (right.dispose ?? null)
+    && (left.decoder ?? null) === (right.decoder ?? null)
+    && JSON.stringify(left.policy ?? null) === JSON.stringify(right.policy ?? null)
+    && left.mediaTypes.length === right.mediaTypes.length
+    && left.mediaTypes.every((mediaType, index) => mediaType === right.mediaTypes[index])
+}
+
+/**
+ * Build one frozen registration handle
+ * `{ id, ownerId, generation, dispose() }`. `dispose()` is idempotent, never
+ * throws through the caller, and answers with the discriminated result shared
+ * with the facade outer contract (`revoked` on release, `stale` otherwise).
+ */
+function transformHandle({ id, ownerId, generation, revoke }) {
+  let released = false
+  return Object.freeze({
+    id,
+    ownerId,
+    generation,
+    dispose() {
+      if (released) return deepFreeze({ ok: false, code: 'stale', reason: 'the transform is already released' })
+      released = true
+      let revoked = false
+      try {
+        revoked = revoke() === true
+      } catch {
+        return deepFreeze({ ok: false, code: 'stale', reason: 'the transform release failed' })
+      }
+      return revoked
+        ? deepFreeze({ ok: true, code: 'revoked' })
+        : deepFreeze({ ok: false, code: 'stale', reason: 'the transform is already released' })
+    },
+  })
 }
 
 function markOperationToken(token, status, code, message) {
@@ -670,32 +724,68 @@ export class AttachmentPipelineService extends Service {
     } catch (error) { return resultFromError(error, signal, 'ATTACHMENT_READ_FAILED') }
   }
 
+  /**
+   * Register one transform capability and answer with the standard
+   * resourceRegistry handle `{ id, ownerId, generation, dispose() }`.
+   *
+   * `capability.ownerId` / `capability.generation` are the declared resource
+   * scope the transform serves (the owner and source generation of the records
+   * it may transform), not a caller identity; the generation that identifies
+   * this occupancy of the `(owner, id)` registration slot is minted here.
+   *
+   * Re-registering the same `(owner, id)` with identical content is idempotent
+   * and answers with the existing handle; different content is a typed
+   * conflict (`TransformRegistrationError`), never a silent overwrite.
+   *
+   * @param {object} capability transform capability spec.
+   * @returns {Readonly<{ id: string, ownerId: string, generation: string, dispose: () => object }>}
+   * @throws {TransformRegistrationError} when the slot is claimed with different content.
+   */
   registerTransform(capability) {
     const inactive = this._unavailableIfDisposed()
     if (inactive) return inactive
     const invalid = validateTransformRegistration(capability)
     if (invalid) return invalid
     const policy = effectiveTransformPolicy({ maxBytes: this.config.maxBytes, deadlineMs: this.config.deadlineMs, concurrency: this.config.maxConcurrency, maxDurationMs: this.config.maxDurationMs }, capability.policy ?? {})
-    if (!policy) return failure('unavailable', 'ATTACHMENT_POLICY_INVALID', 'transform policy is invalid')
+    if (!policy) return transformPolicyFailure()
     const key = registrationKey(capability.ownerId, capability.id)
-    const previous = this.transforms.get(key)
-    if (previous) previous.active = false
-    const registration = {
+    const prepared = {
       ...capability,
       policy,
       mediaTypes: [...capability.mediaTypes].map(normalizeMediaType),
+    }
+    const previous = this.transforms.get(key)
+    if (previous?.active) {
+      if (!sameRegistrationContent(previous, prepared)) {
+        throw new TransformRegistrationError(
+          'ATTACHMENT_TRANSFORM_CONFLICT',
+          `transform "${capability.id}" is already registered for this owner with different content`,
+        )
+      }
+      if (previous.handle) return previous.handle
+    }
+    const registration = {
+      ...prepared,
+      slotGeneration: `${capability.ownerId}:${opaqueId('registration')}`,
       active: true,
       inFlight: 0,
+      handle: null,
     }
     this.transforms.set(key, registration)
-    const dispose = () => {
-      if (this.transforms.get(key) !== registration) return false
-      registration.active = false
-      this.transforms.delete(key)
-      try { registration.dispose?.() } catch { /* disposer containment */ }
-      return true
-    }
-    return dispose
+    const handle = transformHandle({
+      id: registration.id,
+      ownerId: registration.ownerId,
+      generation: registration.slotGeneration,
+      revoke: () => {
+        if (this.transforms.get(key) !== registration) return false
+        registration.active = false
+        this.transforms.delete(key)
+        try { registration.dispose?.() } catch { /* disposer containment */ }
+        return true
+      },
+    })
+    registration.handle = handle
+    return handle
   }
 
   _deadline(options, registration) {

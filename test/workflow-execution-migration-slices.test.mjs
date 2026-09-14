@@ -8,8 +8,8 @@
  *
  * | slice | original consumer behavior | migrated public call | observed result |
  * |---|---|---|---|
- * | A | a TUI/automation plugin can only read `workflow/*` events for display; there is no supported start entry | `workflows.start(request)` plus `handle.observe`/`handle.result` | the run really starts, progress and the single terminal come from the public handle, and cancellation is a signal the engine adjudicates |
- * | B | a plugin has no run identity to link its task records to | `handle.id` passed into the existing `tasks.attach/start` workflow source | the official run identity is the evidence reference; the tasks face stays untouched and no second executor exists |
+ * | A | a TUI/automation plugin can only read `workflow/*` events for display; there is no supported start entry | `workflows.start(request)` plus `operation.observe`/`operation.result` | the run really starts, progress and the single terminal come from the public control handle, and cancellation is a signal the engine adjudicates |
+ * | B | a plugin has no run identity to link its task records to | `operation.id` passed into the existing `tasks.attach/start` workflow source | the official run identity is the evidence reference; the tasks face stays untouched and no second executor exists |
  *
  * Non-functional, recorded instead of approximated: the consumers' own command
  * registries, renderers and remote contracts are not part of this contract.
@@ -60,23 +60,23 @@ test('slice A: a display-only plugin migrates to the supported start entry', asy
   })
   assert.equal(outcome.code, 'started')
   const progress = []
-  outcome.handle.observe((event) => progress.push(event.name))
+  outcome.operation.observe((event) => progress.push(event.name))
 
   // Progress arrives through the existing fact surface, scoped to this run: the
   // six registered names are reachable, and another run's facts are not.
-  for (const entry of kit.emitted) entry.listener({ id: outcome.handle.id }, 'payload')
+  for (const entry of kit.emitted) entry.listener({ id: outcome.operation.id }, 'payload')
   for (const entry of kit.emitted) entry.listener({ id: 'another-run' }, 'payload')
   assert.deepEqual([...new Set(progress)].sort(), [...new Set(kit.emitted.map((entry) => entry.name))].sort(), 'the six registered facts reach this run')
   assert.equal(progress.length, kit.emitted.length, "another run's facts never reach this handle")
 
   // Cancellation is a signal the engine adjudicates.
-  outcome.handle.cancel('user pressed stop')
+  outcome.operation.cancel('user pressed stop')
   assert.equal(kit.runs[0].run.cancelReason, 'user pressed stop')
   kit.runs[0].release()
-  const terminal = await outcome.handle.result
+  const terminal = await outcome.operation.result
   assert.equal(terminal.terminal, 'success')
   assert.deepEqual(terminal.value, { done: true })
-  await outcome.handle.dispose()
+  outcome.operation.dispose()
 })
 
 test('slice B: the run identity links to the existing tasks source with no second executor', () => {
@@ -87,7 +87,7 @@ test('slice B: the run identity links to the existing tasks source with no secon
     parent: kit.parent,
   })
   // The consumer passes the official id as the workflow evidence reference.
-  const linked = { workflowId: outcome.handle.id, taskId: 'task-1' }
+  const linked = { workflowId: outcome.operation.id, taskId: 'task-1' }
   assert.equal(typeof linked.workflowId, 'string')
   assert.equal(linked.workflowId, kit.runs[0].run.id, 'the run identity is the official one')
   // The facade minted exactly one run and no second execution path.

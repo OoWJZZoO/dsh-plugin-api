@@ -187,6 +187,33 @@ export function validateRegistry(registry) {
         }
       }
 
+      // Policy and registry handles always carry a generation: it is the
+      // owner-minted slot token that makes stale / superseded decidable, so it
+      // is required regardless of composition mode and never omitted for an
+      // additive registration.
+      //
+      // The rule binds rows that spell out their member set: a row whose
+      // declared shape itemizes handle members must name the generation member.
+      // A row that only carries a prose summary, or that registers a deviation
+      // through an idiom exception, is not reported here — a missing shape
+      // declaration at all is a separate registration gap.
+      if (member.kind === 'handle' && (idiom === 'policy' || idiom === 'resourceRegistry')) {
+        const shape = typeof member.currentShape === 'string' ? member.currentShape : ''
+        const itemizesMembers = shape.includes('{')
+        const acknowledged = Array.isArray(member.idiomExceptions) && member.idiomExceptions.length > 0
+        if (itemizesMembers && !/generation/.test(shape) && !acknowledged) {
+          errors.push(`${where}: a ${idiom} handle that itemizes its members must record the required generation member, got ${JSON.stringify(member.currentShape)}`)
+        }
+      }
+      // Every idiom exception names the base contract it deviates from, and
+      // that base contract must be one of the eight idioms.
+      if (Array.isArray(member.idiomExceptions) && member.idiomExceptions.length > 0) {
+        for (const [eindex, exception] of member.idiomExceptions.entries()) {
+          if (!IDIOMS.includes(exception?.baseContract)) {
+            errors.push(`${where}.idiomExceptions[${eindex}].baseContract ${JSON.stringify(exception?.baseContract)} is not one of the eight idioms`)
+          }
+        }
+      }
       for (const field of ['effect', 'composition', 'status', 'implementationChannel']) {
         if (member[field] !== undefined && !memberOf(field, member[field])) {
           // `pending-audit` is a provisional inventory marker for members whose
