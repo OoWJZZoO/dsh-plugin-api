@@ -246,4 +246,14 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 
 ### 7.7 全局终审记录（第七轮）
 
+第七轮结论 **有偏差**，只剩**一条**阻塞（治理同步面）+ 三条低度；第六轮的四条意见**全部确认闭合**，且「57 个改动行逐行核对未再发现登记与实现不符」。
+
+阻塞（**Task 10.3 的 S10 半：`AGENTS.md` §2/§4 未落盘且未登记**）→ **已闭合**：`AGENTS.md` §4 第 6 条补两项——(a) `services.*` 的官方存在性口径（`isActive`）为**受支持例外**、语义面一律 `availability().status`（外层三值 + 领域 detail 保留）、不得把 `isActive` 口径扩散或以对象存在性冒充 `active`；(b) `capabilityMatrix()` 的内容模型只表达**当前**能力与限制、迁移账本留在 registry。S10 的分册修订此前已落盘（`capability-strategy.md` §6、`api-idioms.md` §2），至此治理同步面补齐。
+
+低度（`tools.restrict.register` / `tools.presentation.register` 丢失官方 scoped-context 前置条件）→ **已闭合**：两行的 `currentShape` 恢复该前置条件说明（实现未变）。另两条低度按**维护项**记录、不影响本线结论：① 三处 handle 行的 `idempotency` 与其 leaf 措辞不齐（`settings.register.handle`、`workflows.start.handle`、`sessions.cancel.handle`，均非本线改动行的实现矛盾，建议下一维护批次统一 handle 行口径）；② registry 在本轮若干次落盘中出现非 ASCII 转义序列化的编码转换（`JSON.parse` 等价、validator 与三表校验均不受影响），已在本次收口时统一为带转义的可复现序列化。
+
+第八轮终审结论见 §7.8。
+
+### 7.8 全局终审记录（第八轮）
+
 见文末（由终审子 agent 给出后追加）。

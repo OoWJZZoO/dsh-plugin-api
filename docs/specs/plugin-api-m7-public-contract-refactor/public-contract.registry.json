@@ -14912,7 +14912,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": "restriction registration; both forms answer with the same frozen handle (global and scoped through the target agent context). The official restrict verb appends one restriction per call and never replaces an earlier one, so a repeated registration is an additional restriction rather than an idempotent no-op; the facade does no content comparison of its own",
+      "currentShape": "restriction registration; both forms answer with the same frozen handle (global and scoped through the target agent context). The official restrict verb requires a scoped context and appends one restriction per call, never replacing an earlier one, so a repeated registration is an additional restriction rather than an idempotent no-op; the facade does no content comparison of its own",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14978,7 +14978,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "presentation registration; the official registration verb performs the installation and its disposer is wrapped into the shared frozen handle",
+      "currentShape": "presentation registration; the official registration verb requires a scoped context and refuses a second declaration in the same scope, and its disposer is wrapped into the shared frozen handle",
       "migrationAction": null,
       "status": "advanced",
       "verification": [

@@ -184,6 +184,8 @@ THEN the adapter SHALL receive the transformed request and the transform SHALL b
    - session 上屏事件构造 helper（封装 `surfaceOp` / `sourceEventSeqs`）
 5. client bundle 允许打包一份 zod，用于生成满足 `dsh-api-remotes` 校验的真 codec；其余依赖尽量保持 peerDependencies 以共享宿主实例。
 6. **能力上限策略（权威细则 `docs/standards/capability-strategy.md`）**：采用方案一（门面转译）+ 方案三（replacement bundle）双通道。B 类是否转 R 按组件边界、契约可保留性、风险和维护成本判断，不采用统一量化门槛；高风险或无法证明官方契约保留时维持门面转译；横切派发语义（priority / deepFreeze / fault containment）永不 R。方案二（修改运行时源码）不作为插件分发通道，仅 boot 胶水级 C 类（如 U4）可作部署/运维例外，且必须人工批准、可逆、升级重放、不受 `dsh.api` 版本承诺。任何新增 R 类都须走 spec coding Stage 0–4。
+   - **可用性口径（存在性例外）**：`services.*` 成员按官方存在性口径（`isActive`）报告可用性，**不套用**语义命名空间的 `availability().status` 三值模型，该例外在 registry 以 `availabilityExemption` 登记；该例外**只适用于 `services.*`**，门面语义命名空间一律使用 `availability().status`（外层三值 + 领域 detail 保留），不得把 `isActive` 口径扩散到语义面，也不得以对象存在性冒充 `active`。
+   - **`capabilityMatrix()` 的内容模型**：只表达**当前**能力簇与当前状态及限制 / 缺口原因，**不是迁移账本**；改名 / 合并 / 迁移 / 删除 / 内化等历史处置只存在于 registry 的登记面，不进入运行时可见输出。
 7. **包策略与安装模式（constitution 级）**：
    - 辅助包与主包遵循同一版本模型（官方 runtime 全量 identity `A` + `dsh.api` 的 `B.C` + 包本地维护号 `D`），且装配要求 `A.B.C` 完全一致（见第 2 条）；`D` 可按包独立变化。`A.B.C` 不一致时，仅停用该辅助包相关的 R 类特性，不波及主包门面与其他能力。
    - 只提供两种明确的安装模式：
