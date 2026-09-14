@@ -18,9 +18,9 @@ M10 交付后，人类要求检验 host/client 的 `pluginApi` API 树是否满�
 本线同时发现一条被忽略的根因：**部分分叉并非实现偷懒，而是分册本身自相矛盾、或分册落后于已交付事实**，实现被迫在「对齐分册」与「对齐现实」之间二选一，于是留下两套惯例。典型证据：
 
 - `api-idioms.md` §2 规定 `generation` 只表示可比较的并发控制令牌、注册顺序用 `seq`，而 §3.2/§3.6 强制所有 policy/resourceRegistry handle 必须含 `generation`；纯 additive 注册无代次可比，实现只能造字段或发例外。
-- `api-idioms.md` §3.2 规定注册错误「不返回 `ok:false`」，而 `public-api-shape.md` §5 允许「返回或抛出」capability-unavailable；实现因此分裂（registry 口径 42 个注册入口登记 typed-throw，而 `prompts.provenance.policy.register` 实际返回 `{ok:false, code, detail}`，与自己的登记行相反）。
+- `api-idioms.md` §3.2 规定注册错误「不返回 `ok:false`」，而 `public-api-shape.md` §5 允许「返回或抛出」capability-unavailable；实现因此分裂（registry 现行 41 个 `.register` 行登记 typed-throw，而 `prompts.provenance.policy.register` 实际返回 `{ok:false, code, detail}`，与自己的登记行相反）。
 - `composition-and-authority.md` §5.1 的「不接受调用方伪造 owner」被机械套用到所有名为 owner 的参数上，使「调用者身份」与「资源所属者/目标 scope」两个概念被合并，登记与实现彼此矛盾。
-- `public-api-shape.md` §2 的 host 树仍列 `events.on/once`、`executions.onChange`、`llm.routing.on/once/wait`、`sessions.onDurable/onceDurable`，而 registry 中这 20 个成员**全部为 `removed`**（实现已按 §3.1 迁到 `observe`）；§4 的 client 树只有 8 个领域，运行时与 registry 已是 14 个（缺 `sessions`、`attention`）。
+- `public-api-shape.md` §2 的 host 树仍列出 `llm.routing.on/once`、`executions.onChange`、`sessions.durable.onDurable/onceDurable` 这 5 个已在 registry 标记为 `removed` 的订阅名（实现已按 §3.1 迁到 `observe`；同类 on/once 风格成员在 registry 中共 20 行 / 19 个公共 path 为 `removed`，树中另列的 `llm.routing.wait` 则仍为 `advanced`）；§4 的 client 树只有 8 个领域，运行时与 registry 已是 14 个（缺 `sessions`、`attention`）。
 
 因此本线把「分册修订」列为与「实现收口」并列的交付目标，而不是附带的文档整理。
 

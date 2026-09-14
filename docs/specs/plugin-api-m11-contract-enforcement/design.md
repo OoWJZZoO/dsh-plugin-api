@@ -3,7 +3,7 @@
 > feature_name: `plugin-api-m11-contract-enforcement`
 > milestone: M11
 > status: Stage 0–2 已交付（2026-09-14）。本文与同目录 `goal.md`、`requirements.md` 同日由 SPEC1 一口气产出并提交；不创建 `tasks.md`、不写实现代码。
-> 上游输入：本目录 `goal.md`（十条 Scope direction）、`requirements.md`（Req 1–14）；`temp/m11-api-contract-convergence-handoff.md`（临时指引，结论已固化进本文 §2）；`docs/standards/*` 十二册；canonical registry（`docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json`，537 成员 / 52 namespace / 100 能力簇行 / 69 事件目录行 / 17 条 idiom 例外）；本线开工时的只读证据核验（本文 §2 各行锚点均按符号复核；核验结论与指引原文的差异在行内注明）。
+> 上游输入：本目录 `goal.md`（十条 Scope direction）、`requirements.md`（Req 1–14）；`temp/m11-api-contract-convergence-handoff.md`（临时指引，结论已固化进本文 §2）；`docs/standards/*` 十二册；canonical registry（`docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json`，537 成员行 / 52 namespace / 100 能力簇行 / 69 事件目录行 / 17 个带 idiom 例外的成员行，合计 20 条例外记录、覆盖 16 个公共 path）；本线开工时的只读证据核验（本文 §2 各行锚点均按符号复核；核验结论与指引原文的差异在行内注明）。
 > 执行口径：版本冻结基线内交付（runtime `0.1.0-rc.6`、包 `0.1.0-rc.6-0.1.0`、`dsh.api: 0.1`），不步进任何版本字段；**不新增 R 点**，仅允许在既有替代包自身的扩展面内修订并维持被替代官方行的契约复刻与 boot 自检；官方包文件零修改；所有入口 fail-safe。
 
 ## §0 衔接索引
@@ -32,7 +32,7 @@
 
 **现状**：同一树内注册成功返回五种形状——裸函数（`llm.requestTransforms`、`llm.admissionPolicies`、`llm.routing.*` 四类、`llm.models`、`remotes`、`diagnostics`、`attachments.pipeline.transforms`）、官方可调用 handle 附带 `.replace`（`llm.providers`）、`{id, ownerId, targetId, dispose()}`（`tools.register` 的 scoped 分支，`lib/plugin-api-service.js:513`）、`{generation, dispose()}`（`tools.discovery.catalog`，`lib/tool-discovery.js:228`）、标准六元组（`llm.adapters`、`agents.scopes`）。
 
-**目标**：门面自有（非 `services.*`）注册成员一律返回其 idiom 规定的 handle：`policy` 与 `resourceRegistry` 为 `{ id, ownerId, generation, dispose() }`；`contribution` 见 K7。官方必要附加能力（`.replace`）作为 handle 的**显式成员**保留并登记；领域附加成员（`targetId`、`status()`、`snapshot()`）保留并走 §3 例外。
+**目标**：门面自有（非 `services.*`）注册成员一律返回其 idiom 规定的 handle：`policy` 与 `resourceRegistry` 为 `{ id, ownerId, generation, dispose() }`；`contribution` 见 K7。官方必要附加能力（`.replace`）与领域附加成员（`targetId`、`status()`、`snapshot()`、`result`、`cancel`）作为 handle 的**显式成员**保留，并按 handle 成员行单独登记（api-idioms §1）——**不消耗六项例外**（六项例外只保留给外层合同偏离，见 §4-S12）；`generation` 的语义按其真实用途写清（S1），不因成员属 additive 就省略。
 
 **理由**：调用方需要能写出一段通用清理代码；「改安装目标范围」不应改变外层合同（`tools.register` 双形态是当前最刺眼的一例）。**反方案**：保留各成员原生形状、只做文档统一（被否：指引 §2 已证同一套路在 9 个注册成员上分叉，文档统一不解决第二次学习的成本）。
 
@@ -72,7 +72,7 @@
 
 **现状**：`sessions.request` 用 `operation` 承载 handle（对齐 registry）；`workflows.start` 用 `handle`；`executions.recovery.checkpoints.restore` 同时给出 `handle`（真 handle）与 `operation`（只读状态快照），且成功码为 `started`（registry 记录为 `accepted|completed`），`handle.observe` 返回对象而非退订函数；`tasks.start/settle/attach` 的 `operation` 字段是**动词字符串**且不返回任何操作身份；四个域的 `status()` 词汇各不相同（`phase/terminal`、`state`、`phase/attempts`）。
 
-**目标**：(1) 发起结果统一 `{ ok, code, operation, ... }`，`operation` 是控制对象 handle；`terminal` 仅在发起时已可裁决时出现（缺失走已登记例外）；(2) handle 统一 `{ id, ownerId, status(), observe(), dispose() }` 加已登记领域扩展；(3) `tasks.start/settle/attach` 的动词串字段改名为 `action`，并按语义归类为**带例外的 operation**（控制对象是 durable task/attempt 身份，经 `tasks.get/observe` 观察；不铸造第二套操作身份）；(4) `checkpoints.restore` 的 `operation` 快照并入 `handle.status()`，成功码与 registry 对齐，`handle.observe` 返回退订函数；(5) 领域 `status()` 词汇可以不同，但字段名与终态词汇统一（终态使用 `success | error | aborted | denied | superseded`）。
+**目标**：(1) 发起结果统一 `{ ok, code, operation, ... }`，`operation` 是控制对象 handle；`terminal` **仅在返回时终态已可裁决时出现**——该规则按 S13 写入分册成为一般条款，因此不再为「接受时未裁决」逐成员登记例外（`workflows.start` 的既有例外随之回收）；(2) handle 统一 `{ id, ownerId, status(), observe(), dispose() }` 加已登记领域扩展；(3) `tasks.start/settle/attach` 的动词串字段改名为 `action`，并按语义归类为**带例外的 operation**（控制对象是 durable task/attempt 身份，经 `tasks.get/observe` 观察；不铸造第二套操作身份）；(4) `checkpoints.restore` 的 `operation` 快照并入 `handle.status()`，成功码与 registry 对齐，`handle.observe` 返回退订函数；(5) 领域 `status()` 词汇可以不同，但字段名与终态词汇统一（终态使用 `success | error | aborted | denied | superseded`）。
 
 **理由**：通用「取控制对象 → observe → dispose」代码要在三个域成立；`tasks` 的 `operation` 字符串会让 `res.operation.status()` 直接抛 `TypeError`。**反方案**：给 `tasks` 硬造长操作 handle（否：指引 §4-B1 明确禁止凭字段名造长操作；task 的 authority 在任务注册表，门面不铸造第二身份）。
 
@@ -133,7 +133,7 @@
 
 | 编号 | 公共 path | 证据锚点 | 当前实际形状 | 目标 | 处置 / 落点 |
 |---|---|---|---|---|---|
-| B1 | `sessions.request` | `lib/session-interaction-operation-normalize.js:337`、`lib/session-interaction-operation-authority.js:292` | `operation` 为 handle，`observe` 返回退订函数，`dispose()` 返回 `{ok, code:'accepted'|'stale'|'unavailable'}` | K6：外层补 `terminal` 缺失例外登记；`dispose()` 改为「请求停止」码 `requested`/`stale` | 修复（轻）/ `lib/session-interaction-operation-authority.js` |
+| B1 | `sessions.request` | `lib/session-interaction-operation-normalize.js:337`、`lib/session-interaction-operation-authority.js:292` | `operation` 为 handle，`observe` 返回退订函数，`dispose()` 返回 `{ok, code:'accepted'|'stale'|'unavailable'}` | K6：`terminal` 缺失按 S13 的一般规则处理（**不新增例外**，与 `workflows.start` 的既有例外一并回收）；`dispose()` 改为「请求停止」码 `requested`/`stale` | 修复（轻）/ `lib/session-interaction-operation-authority.js` |
 | B1 | `workflows.start` | `lib/workflows-facade.js:135`、`lib/workflows-operation.js:60` | `handle` 承载句柄；`status()` 用 `state`；`dispose()` 返回 `Promise`；`cancel` 返回 `undefined` | K6/K2：字段名改 `operation`；`dispose()` 返回 `{ok, code:'requested'|'stale'}`；run authority 与 `meta`/`result`/`cancel` 扩展保留（已登记例外） | 修复（轻）/ `lib/workflows-operation.js` |
 | B1 | `executions.recovery.checkpoints.restore` | `lib/checkpoint-restore.js:366`、`:392`、`:411` | `handle` 为句柄、`operation` 为只读快照；成功码 `started`（登记为 `accepted|completed`）；`handle.observe` 返回 `{ok, current, subscribe, dispose}` 对象 | K6：字段名改 `operation`；快照并入 `status()`；成功码对齐；`observe` 返回退订函数；恢复阶段与资格控制保留 | 修复 / `lib/checkpoint-restore.js` |
 | B1 | `tasks.start` / `tasks.settle` / `tasks.attach` | `lib/task-execution-observation.js:511`、`:596`、`:916`、`:973`、`:1148`、`:1215` | `operation` 为动词字符串；无操作身份；结果含 `taskId` 与领域 payload | K6：动词串改名 `action`；归类为带例外的 operation（控制对象 = durable task/attempt，经 `tasks.get/observe` 观察） | 修复 + 例外 / `lib/task-execution-observation.js` |
@@ -152,48 +152,64 @@
 | C4 | `sessions.channels` 名不符实 | `lib/session-channel-project.js:25`、`:32`；`lib/session-channel-core.js:290`；facade `:3343` | `observe()` 返回一次性深度冻结快照 `{channels, subscriptions, connectionState}`（无订阅、无 handle）；内部 `onChange` 未公开；`list` 实为需 channel/subscription 身份 + cursor 的事件帧拉取 | Req 5.4/5.5：快照 → `current()`；订阅 → `observe(listener)` 标准 handle；事件帧拉取改名（建议 `history({...})`，属 api-idioms §3.1 允许的查询动词）；`ack` 与订阅身份保留 | 修复 / `lib/session-channel-project.js` + facade |
 | C5 | 观察 handle 泄漏内部记录 | `lib/session-activity-observe.js:67`、`lib/execution-observation.js:92` | 见 A5 行 | K5 | 修复 / 同 A5 |
 | C6 | `agents.providers.register` 键嗅探 | `lib/agent-create-api.js:146` | 依 `factory`/`announce`/`agent` 键存在性分派，返回官方 effect disposer / `undefined` / detach closure 三态；未知键无稳定错误 | Req 9.4：显式变体判别（形如 `kind`）、非法输入列出合法变体、各变体返回标准 handle 或登记例外；官方 factory/announce/enter 语义与 owner 传参保留 | 修复 / `lib/agent-create-api.js` |
-| C7 | client `connection.get` 实为设置 API | `lib/client-runtime.js:288`、`lib/client-connection.js:26` | 门面自建 `Proxy({})`，逐属性转发官方 settings，`Object.keys()` 为空、同名属性每次返回新闭包 | Req 10.5：改名为反映对象角色的导航成员（`connection.api.settings`），与 `pluginApi.settings` 职责区分；不新增重复 authority | 修复 / `lib/client-runtime.js`（+ registry `connection.api.settings` 行） |
+| C7 | client `connection.get` 实为设置 API | `lib/client-runtime.js:288`、`lib/client-connection.js:26` | 门面自建 `Proxy({})`，逐属性转发官方 settings，`Object.keys()` 为空、同名属性每次返回新闭包 | Req 10.5：改名为反映对象角色的导航成员 `connection.api.settings`（与既有的 `connection.api.llm` 对称），与 `pluginApi.settings` 职责区分；不新增重复 authority | 修复 / `lib/client-runtime.js`。**注**：registry 现行行为 `connection.api.settings`（client，`removed`，`targetPath: connection.get`，`migrationAction: rename`），故本项是**对已批准 rename 的回滚**，须同时改写 registry 行、`oldToTargetMapping` 与 `statusByPath`，避免生成 `connection.get → connection.api.settings` 的自环，并在交付台账中标注该回滚与理由 |
 | C8 | `settings.scope` 双端结构不同 | `lib/settings.js:59`；`lib/client-settings-scope.js:5` | host：`scope(ns)` → 门面 handle（需先 `settings.register`）；client：`scope.bind({namespace, decode})` → 官方 scope（`getSnapshot/subscribe/set/unset`） | Req 10.6：统一**调用套路**为可调用成员（client 暴露 `scope(spec)`，内部沿用 `bind`）；返回对象差异（门面 handle vs 官方 scope）作为环境差异显式登记，不做机械抹平 | 修复（调用套路）+ 登记（返回差异）/ `lib/client-settings-scope.js` |
 | C9 | prompts 匿名 id 与错误词表 | `lib/plugin-api-service.js:1340`、`:2446`、`:1321`、`:1337` | 全局匿名 id `anonymous:<seq>`、scoped 匿名 id `scoped:<kind>`（同 owner/target 第二个同 kind 必冲突）；kind 非法时错误不列合法值 | Req 9.6：两条路径共用同一匿名 id 规则；错误列出合法 kind 词表 | 修复 / `lib/plugin-api-service.js` |
 | C10a | `registerMinimalCatalogUpdate` 残留 | `lib/index.js:1974`、`:1979`；facade `:3273` | **公开面已不含该名**（只暴露 `policy.register`）；内部 owner 对象仍保留该名，且 `packages/tool-skill/lib/apply.js:308` 只提供该名，facade 回退分支为实际承载 | 保持公开面现状；内部残留与回退分支显式登记，不删除（删除会切断 tool-skill 替代行） | 已修复（公开面）/ 登记同步 |
 | C10b | active/disabled 成员集合漂移 | `lib/decision-participation-facade.js:444`（disabled）、`:228`（active） | disabled 形态含 `admitted()`，active 形态没有；`events.decisions` 两形态都有；registry 无任何 `*.admitted` 行 | Req 9.5：两形态成员集合一致；`admitted` 补登记或内化 | 修复 + 登记 / `lib/decision-participation-facade.js` + registry |
-| C10c | `agents.scopes` handle 与登记关系 | `lib/scoped-agent-contributions.js:275`、`:329` | handle `{id, ownerId, generation, target, status(), dispose()}`，`status()`→`usable`/`destroyed`，`dispose()`→`{status:'ok'|'stale'}` | K2 统一 `dispose()` 结果码；`status()` 领域词汇保留并登记；**leaf 行 `failureSemantics: typed-throw` 与自身 `currentShape` 矛盾** ⇒ 登记修正 | 修复（dispose 结果）+ 登记修正 / `lib/scoped-agent-contributions.js` |
+| C10c | `agents.scopes` handle 与登记关系 | `lib/scoped-agent-contributions.js:275`、`:329` | handle `{id, ownerId, generation, target, status(), dispose()}`，`status()`→`usable`/`destroyed`，`dispose()`→`{status:'ok'|'stale'}` | K2 统一 `dispose()` 结果码；`status()` 领域词汇保留并登记（S6）；`target`/`status()` 属 handle 扩展成员，按 S12 改为成员行登记、例外记录回收；**leaf 行 `failureSemantics: typed-throw` 与自身 `currentShape` 矛盾**（实现返回判别式结果）⇒ 按 S2 的决定修正实现或登记 | 修复（dispose 结果 + 失败呈现对齐）+ 登记修正 / `lib/scoped-agent-contributions.js` |
 | C11 | 缺位 / 不可用词汇 | `lib/session-activity-view.js:15`、`:92`；`lib/execution-observation.js:140`；`lib/sessions-interactions-facade.js:276`；`lib/task-execution-observation.js:1224`、`:1369` | `absent`（activity，且与非法输入合并）、`undefined`（executions.get）、`missing`（interactions.get，已正确区分 unavailable）、`{ok:true, found:false}`（tasks.get）、`unavailable`（tasks.history 对「不存在」） | 统一：确定不存在 → `missing`；无法得知 → `unavailable`；成功只读视图不带 `ok` 合法（`activity.list/history` 保持） | 修复 / 四个属主模块 |
 | C12 | settings mutation 呈现 | `lib/official-host-namespaces.js:318`；registry 三行记为 `discriminated-result` | 直通官方 `Promise<void>` 并抛官方错误，无 `commitState` | mutation idiom：包装为冻结 `{ok, code, commitState, generation}`；官方 revisions/CAS 语义与错误映射保留 | 修复 / `lib/official-host-namespaces.js` |
 | C13 | `storage.open.handle.domain` | `lib/storage-binding.js:201`；`:205`；registry 行 `removed/migrate` | 运行时 handle 仍含 `domain`（官方 domain handle，`table()`/`keys()`/`delete()`），且 `purge` 依赖它；registry 记「已删除、迁往 `services.storage`」；`storage.availability` 只返回 `{status:'active'}` 与自身 `currentShape` 不符 | 判定：**保留** `domain` 并把 registry 行改回 retained，理由登记为「owner-scoped 记录访问面，无等价公共替代」；`storage.availability` 按 K4 补齐 scope/durability/epoch | 修复（登记 + availability）/ `lib/storage-binding.js` + registry |
 | C14 | `capabilityMatrix` 内容模型 | `lib/capability-matrix.js`；facade `:2047`；registry 行 `selfDescription` | 100 行静态矩阵，含 `renamed`/`merged`/`migrated`/`deleted`/`internalized` 迁移词汇与已删除旧 path | Req 4：保留成员（api-idioms §2 已授权），**改内容模型**为「当前能力簇 + 当前状态 + 限制/缺口原因」，迁移词汇移出运行时可见输出（保留在 registry 的登记面） | 修复 / `lib/capability-matrix.js` |
 
+### §2.3b 子审追加线索的补处置（附录 A–D 剩余线索）
+
+| 编号 | 主题 | 证据锚点 | 当前实际形状 | 目标 | 处置 / 落点 |
+|---|---|---|---|---|---|
+| C15 | `settings.register.handle` 与 `settings.scope.handle` 是同一对象 | `lib/settings.js:43-71`（`register` 存入 `scopes` map、`scope(ns)` 取回同一 handle） | 运行时同一 handle，由两个公共入口给出；registry 按两行分别登记 | 判定：**保持实现**（同一 authority 的两个入口，`scope` 是取回而非第二次注册）；在 registry 两行加互指说明，避免被读成两个 authority | 登记修正 / registry |
+| C16 | 分册正文笔误：示例使用不存在的 capability id | `public-api-shape.md:137` 的 `capabilities.require(['llm.routing', 'events.compaction'])` | `events.compaction` 不存在，实为 `sessions.compaction`（registry 无 `events.compaction` 能力路径） | 随 S8/S11 一并修正分册正文示例 | 修复 / `docs/standards/public-api-shape.md` |
+| C17 | `tasks` 全域 async 未声明（附录 B 问题 5） | `lib/task-execution-observation.js`（`register/start/claim/reassign/settle/attach/get/observe/history` 均为 async） | 调用点按同步写法使用会得到 Promise（`tasks.observe` 返回 Promise\<handle>） | 判定：**保留 async**（指引 §6 明确排除「同步/异步差异本身」），但 SHALL 在 registry 的成员行与分册中显式声明 async 语义，使调用点可预测；不作为形状阻塞 | 登记声明 / registry + 分册 |
+
 ### §2.4 核验补充（registry 自身缺口）
 
 | 编号 | 缺口 | 锚点 | 处置 |
 |---|---|---|---|
-| R1 | `lifecycle.register.handle` 有行，但无 `lifecycle.register` leaf 行（`lifecycle.registerFace` 记为 removed） | registry members / `lib/client-generation-rebind.js:1045` | 补 leaf 行并核对旧路径映射 |
+| R1 | `lifecycle.register.handle` 有现行（advanced）行，但其父 leaf `lifecycle.register` **只有 removed 行**（旧名 `lifecycle.registerFace` 记为 removed） | registry members / `lib/client-generation-rebind.js:1045` | 补现行 leaf 行并核对旧路径映射 |
 | R2 | 三个 domain namespace 的 `admitted()` 无 registry 行 | `lib/decision-participation-facade.js:228`、`:444` | 随 C10b 一并补登记或内化 |
 | R3 | `diagnostics.register.handle` 的 `currentShape` 为 `null` | registry members | 随 A2 修复补齐 |
 | R4 | `events.emit` 的 `currentShape` 记为 "returns undefined"，实际返回判别式结果 | `lib/events-bus.js:854` | 随 B3 修复同步登记 |
 | R5 | `storage.availability` 的 `currentShape` 与实现不符 | `lib/storage-binding.js:205` | 随 C13 同步 |
-| R6 | `capabilityMatrix` 行 `currentShape` 为 `null`；client 面 `events.observe` 无独立行（仅 host 行） | registry members | 随 C14 与 A5（client 行）同步补齐 |
+| R6 | `capabilityMatrix` 行 `currentShape` 为 `null`；client 面 `events.observe` **无现行（advanced）行**（registry 中 client 侧的 on/once 等 5 行为 removed） | registry members | 随 C14 与 A5（client 行）同步补齐现行行 |
 
 ---
 
 ## §3 idiom 归类与例外变更
 
-现状：registry 共 **17 行**带六项例外的成员记录，对应 **16 个**公共 path（`sessions.interactions.respond` 的 host 与 client 两行各带一条同文案例外，属合法双运行时登记，非重复）。本线原则：**例外净额不增加**（Req 11.5）。为使该原则可判定，本线随 §4-S1/S6 明确一条分类规则：**handle 上的领域扩展成员按公共 path 单独登记即可，不再需要六项例外；六项例外只保留给「外层合同偏离」（入口动词、结果形状、失败呈现、身份成员集与 baseContract 不一致）**。据此：
+**计量口径**（Req 1.1）：以「例外记录」为主口径，同时给出「带例外的成员行」与「公共 path」两个辅助口径。现状实测：**17 个成员行**带例外，合计 **20 条例外记录**，覆盖 **16 个公共 path**（`sessions.interactions.respond` 的 host/client 两行各 1 条属同一 path 的双运行时登记；`workflows.start.handle` 单行 3 条；`sessions.selection.set` 单行 2 条；`llm.adapters.decorations.register.handle`、`agents.scopes.register.handle` 各 1 条）。
 
-**重分类（3 条，从例外降为扩展成员登记）**：
+**分类规则（本线确立，随 §4-S12 写入 api-idioms §1/§5）**：handle 上的**领域扩展成员**（如 `meta`、`result`、`cancel`、`target`、`status()`、`snapshot()`、`.replace`）按公共 path 单独登记即可，**不消耗六项例外**；六项例外只保留给**外层合同偏离**（入口动词、结果形状、失败呈现、身份成员集与 baseContract 不一致）。
 
-- `workflows.start.handle.meta`：现例外理由是「handle 携带 engine-validated meta block」——这是附加数据成员而非外层合同偏离，改为普通 handle 成员行。
-- `agents.scopes.register.handle`：现例外理由是「scope-bound handle extension members target / status()」——同上；`status()` 的领域词汇（`usable`/`destroyed`）按 S6 保留并登记。
-- `llm.adapters.decorations.register.handle`：按 S1 的新分层规则（`additive` ⇒ `{ id, ownerId, seq, dispose() }`）补齐身份成员，`snapshot()` 作为扩展成员登记，例外理由「caller-bound facet」不再成立。
+**重分类（回收 6 条记录 / 4 行）**：
 
-**保留（其余 14 条记录）**：`events.define` 与 `events.define.handle`、`agents.register`、`sessions.channels.ack`、`tools.executionPolicies.register`、`events.decisions.register`、`profiles.snapshot.validate`、`sessions.compaction.run`（外层结果缺 operation 身份）、`workflows.start`（terminal 缺失）、`executions.recovery.checkpoints.planRestore`、`sessions.interactions.respond`（host/client 两条）、`sessions.selection.get`、`sessions.selection.set`。
+| 成员行 | 回收记录数 | 回收理由（例外原文摘要 → 判定） |
+|---|---|---|
+| `workflows.start.handle` | 3（`.meta` / `.result` / `.cancel`） | 三条原文均为「handle carries the … member」，属扩展成员而非外层偏离；`meta`/`result`/`cancel` 的领域语义与官方契约不变，仅登记方式改变 |
+| `agents.scopes.register.handle` | 1 | 原文为「scope-bound handle extension members target / status()」；`status()` 领域词汇按 S6 保留并登记 |
+| `llm.adapters.decorations.register.handle` | 1 | 按修正后的 S1 补齐 `id`/`ownerId`/`generation` 身份成员，`snapshot()` 转为扩展成员登记，原理由「caller-bound facet handle」不再成立 |
+| `workflows.start` | 1 | 按 S13（`terminal` 的在场条件）不再需要「缺 terminal」例外 |
 
-**新增（2 条）**：
+**保留（14 条记录，均为真实外层合同偏离）**：`events.define`、`events.define.handle`、`agents.register`、`sessions.channels.ack`（结果同时承载 ack 与终态）、`tools.executionPolicies.register`（`execute` 点是 around 屏障）、`events.decisions.register`（fs 意图异步屏障）、`profiles.snapshot.validate`（验证兼作后续 apply 决策准备）、`sessions.compaction.run`（外层结果缺 operation 身份）、`executions.recovery.checkpoints.planRestore`（动词名例外）、`sessions.interactions.respond`（host/client 各 1 条：接受结果不带 handle 与 terminal）、`sessions.selection.set`（2 条：完成语义 + 缺 `commitState`/`generation`，两条为不同偏差，分别标注）、`sessions.selection.get`（读非纯）。
 
-- `tasks.start` / `tasks.settle` / `tasks.attach`（合一条）：operation idiom，但外层结果不含 `operation` handle 与 `terminal`；理由为「控制对象是 durable task/attempt 身份，由 `tasks.get/observe` 提供，门面不铸造第二套操作身份」；`replacementShape` 记录 `{ ok, code, action, taskId, task, terminal? }`；`verification` 指向任务语义分类测试。
-- 异步 contribution handle 的 `status()` 扩展（client `remotes.contribute` / `settings.remote.contribute`，合一条）：handle 为 `{ id, ownerId, seq, dispose(), status() }`，`status()` 取 `pending|active|failed|revoked`；理由为 api-idioms §3.5 要求 pending 期可撤销且失败可观察。
+**新增（3 条记录 / 3 行）**：
 
-**净额**：17 − 3 + 2 = **16**，不高于现状。
+| 成员 | 六项（摘要） |
+|---|---|
+| `tasks.start` / `tasks.settle` / `tasks.attach` 各 1 条 | `memberPath`: 三者各自；`baseContract: operation`；`exception`: 外层结果不含 `operation` handle 与 `terminal`；`reason`: 控制对象是 durable task/attempt 身份，经 `tasks.get`/`tasks.observe` 观察，门面不铸造第二套操作身份；`replacementShape`: `{ ok, code, action, taskId, task, terminal? }`；`verification`: 任务语义分类测试 + 双插件组合测试 |
+
+异步 contribution 的 `status()` 扩展**不在此列**：按 S14 它被写入 api-idioms §3.5 成为**通用规则**而非个别例外；`sessions.request` 亦因 S13 而无需新增例外（同一事实不再两套登记）。
+
+**净额**：记录口径 20 − 6 + 3 = **17**；成员行口径 17 − 4 + 3 = **16**；公共 path 口径 16 − 4 + 3 = **15**。三个口径同时下降，满足 Req 11.5。
 
 ---
 
@@ -203,19 +219,22 @@
 
 | 编号 | 分册 · 条款 | 问题（证据） | 修订方向 | 同步面 | 人类确认 |
 |---|---|---|---|---|---|
-| S1 | `api-idioms.md` §2、§3.2、§3.6 | §2 说 `generation` 只是并发控制令牌、注册顺序用 `seq`，§3.2/§3.6 却要求所有 policy/registry handle 必含 `generation`；纯 additive 注册无代次可比（`llm.adapters.decorations.register.handle` 直接放弃身份成员） | handle 必备成员按 composition 分层：`coordinated`/`ordered` ⇒ `{ id, ownerId, generation, dispose() }`；`additive`/`pure` 注册 ⇒ `{ id, ownerId, seq, dispose() }` | registry handle 行 + `scripts/registry-validate.mjs` entry 级校验 | 否 |
-| S2 | `api-idioms.md` §3.2/§3.6 与 `public-api-shape.md` §5 | §3.2 说注册错误「不返回 `ok:false`」，§5 说不可用成员「返回或抛出」；实现因此分裂（registry 42 个注册入口登记 typed-throw，`prompts.provenance.policy.register` 却返回 `{ok:false, code, detail}`） | 定一条可判定分界：**注册（policy / resourceRegistry）失败一律 typed throw**；**contribution / mutation / operation / coordination 失败一律判别式结果**（环境不可用在该 idiom 下映射为 `inactive`/`unavailable` 码）。两册写入同一句话 | registry `failureSemantics` 词表 | 否 |
+| S1 | `api-idioms.md` §2、§3.2、§3.6 | §2 把 `generation` 定义为「可比较的并发控制令牌」，该定义过窄（registry 中 32 行的 `identitySource` 为「parent handle generation」，`llm.adapters.decorations.register` 的 lifecycle 本身含 `superseded`），于是 §3.2/§3.6 强制 handle 含 `generation` 被读成「多余字段」，`llm.adapters.decorations.register.handle` 甚至因此放弃全部身份成员 | 扩写 §2 定义：`generation` 是 **owner 铸造的不透明 token，标识 (owner, key) 槽位当前占用者，用于 stale / superseded 判定**；排序用 `seq`；**所有 policy / resourceRegistry handle 一律必含 `generation`**（不按 composition 分层，不省略） | registry handle 行 + `scripts/registry-validate.mjs` entry 级校验 | 否 |
+| S2 | `api-idioms.md` §3.2/§3.6 与 `public-api-shape.md` §5 | §3.2 说注册错误「不返回 `ok:false`」，§5 说不可用成员「返回或抛出」；实现因此分裂（registry 现行 41 个 `.register` 行全部登记 typed-throw——policy 19 + resourceRegistry 22，`prompts.provenance.policy.register` 却返回 `{ok:false, code, detail}`；`agents.scopes.register` 的 leaf 行登记 typed-throw 而其 `currentShape` 与实际返回都是判别式结果） | 定一条可判定分界：**注册（policy / resourceRegistry）失败一律 typed throw**；**contribution / mutation / operation / coordination 失败一律判别式结果**（环境不可用在该 idiom 下映射为 `inactive`/`unavailable` 码）。两册写入同一句话 | registry `failureSemantics` 词表 | 否 |
 | S3 | `api-idioms.md` §2、`composition-and-authority.md` §5.1 | 两册只承认「派生的 owner」一个维度，被机械套用到所有名为 owner 的参数（security/diagnostics/storage/transactions/client lifecycle/prompts 覆盖位） | 区分并命名两个概念：`ownerId`（调用者身份，一律派生）；资源所属者 / 目标 scope 以领域参数命名并单独登记。`identitySource` 词表增加 `derived-caller` / `declared-resource-scope` 两值 | registry `identitySource` 词表 + 各成员行 | 否 |
 | S4 | `api-idioms.md` §2、§3.7；`namespace-availability` 实现契约 | §2「至少含 status」被实现读成「只留 status」，与 §3.7「coordination 的 availability 必须说明 durability/operations/backend/epoch」正面冲突，导致 `unknown`/`unsupported` 报 `active` | 写明：外层三值 + **领域 detail 保留**；非标准状态映射表（`unsupported`→`unavailable`、`unknown`/`inert`→`degraded`，附 `reason`）；禁止「有对象/解析成功即 active」；异步领域解析须在挂载期完成 | registry `availabilityShape` 字段 + 各 namespace 记录 | 否 |
 | S5 | `api-idioms.md` §2 | 只说「幂等 dispose()、stale 返回 no-op 或结果」，未定返回形状，实现出现四种（布尔 / Promise / `{ok,code}` / `{status}`） | 统一：普通 handle `dispose()` 返回冻结 `{ ok, code, reason? }`，资源类码 `revoked`/`stale`，operation 类码 `requested`/`stale`；coordination `release(handle)` 例外保留 | registry `lifecycle` 字段文案 | 否 |
 | S6 | `identity-and-lifecycle.md` §3、`api-idioms.md` §2 | §3 规定了 `outcome`/`commitState`/`lifecycleState` 字段名，但未定义 handle `status()` 的取值域，实现出现 `usable`/`destroyed`、`ok`/`stale`、`phase`/`state` 多套 | 补 handle 生命周期小节：`status()` 承载资源/操作生命周期（领域词汇可不同，但字段名与终态词汇统一）；`lifecycleState` 与 `terminal` 不得混用 | registry `lifecycle` 文案 + §3 例外复核 | 否 |
 | S7 | `api-idioms.md` §3.1 | 只写「缺位或降级返回降级视图或 typed unavailable result」，未定缺失词汇，实现出现 `absent`/`missing`/`undefined`/`found:false` 四套 | 补缺位词汇表：确定不存在 ⇒ `missing`；无法得知 ⇒ `unavailable`；成功只读视图不带 `ok` 合法 | registry `failureSemantics` 与相关行 | 否 |
-| S8 | `public-api-shape.md` §2、§3.6、§4 | host 树仍列 20 个已 `removed` 的 `on`/`once`/`onChange` 成员；client 树只有 8 个领域（运行时 14 个，缺 `sessions`/`attention`）；§3.6「最多两层 namespace 后接方法」与现实的 4 层领域（`llm.routing.health.circuitPolicy` 等）不符，且未说明 handle 成员是否占层级预算 | 树图按 registry 现状刷新；层级规则改为「叶子路径总段数上限 + 强领域关系白名单」，并明确 handle 成员（`*.register.handle`）不占领域层级预算 | §2 树图、§4 client 树、§9 registry 指针 | 否 |
+| S8 | `public-api-shape.md` §2、§3.6、§4、§5 | host 树仍列出 5 个已 `removed` 的订阅名（`llm.routing.on`/`once`、`executions.onChange`、`sessions.durable.onDurable`/`onceDurable`；同类 on/once 风格成员在 registry 中共 20 行 / 19 个 path 为 `removed`），并混入仍为 `advanced` 的 `llm.routing.wait`；client 树只有 8 个领域（运行时 14 个，缺 `sessions`/`attention`）；§3.6「最多两层 namespace 后接方法」与现实的 4 层领域（`llm.routing.health.circuitPolicy` 等）不符且未说明 handle 成员是否占层级预算；§5 的能力示例 `events.compaction` 不存在（见 C16） | 树图按 registry 现状逐名刷新（含删除已 removed 项、保留 advanced 项）；层级规则改为「叶子路径总段数上限 + 强领域关系白名单」并明确 handle 成员不占层级预算；修正 §5 示例 | §2 树图、§4 client 树、§5 示例、§9 registry 指针 | 否 |
 | S9 | `api-idioms.md` §4、`composition-and-authority.md` §8、`domain-composition.md` events 行 | 三册都要求「订阅权不等于生产权」，但没有一册定义 event → producer owner 的映射承载、门面自身生产路径如何取得权限、无声明 producer 事件的行为 | 补 producer 模型：映射由 canonical 事件目录条目承载（`producerAuthority`）；未声明者 fail-closed；门面内部生产路径以内部 owner 身份取得权限；第三方一律 `events.define` | registry `eventCatalog` 行 + `AGENTS.md` §4 第 3 条 + feature-list §3.1 | **是**（能力边界收紧，见 K8） |
 | S10 | `capability-strategy.md` §6、`api-idioms.md` §2 | `services.*` 用官方 `isActive`、语义面用 `availability().status`，两套口径未在分册承认（registry 已有 4 条 `availabilityExemption`）；`capabilityMatrix()` 被 §2 授权保留，但内容为迁移账本 | §6 写明 passthrough 存在性口径为例外；§2 为 `capabilityMatrix()` 补内容定义（只表达当前能力与限制，迁移账本留在 registry） | registry `servicesWhitelist`、`capabilityMatrix` 行 | **是**（该册 §9 要求实质修订经人类确认） |
 | S11 | `docs/standards/README.md` | 分册索引与各册适用范围未随本轮修订更新 | 索引同步（如新增/改写条款涉及范围描述） | 索引表 | 否 |
+| S12 | `api-idioms.md` §1、§5 | §1 规定 handle 上的成员按 dot path 登记并给出六项例外的适用条件，但未区分「领域扩展成员」与「外层合同偏离」，于是扩展成员也逐条发例外——registry 中 `workflows.start.handle` 单行 3 条、`agents.scopes.register.handle` 1 条均属此类，例外台账被扩展成员淹没（§3 重分类的依据） | 写明分类边界：扩展成员按成员行登记、不消耗六项例外；六项例外只用于外层合同偏离；§5 的机械校验增加「扩展成员已登记且与 handle 实际成员集一致」 | registry 例外清单 + `scripts/registry-validate.mjs` | 否 |
+| S13 | `api-idioms.md` §3.4 | §3.4 把结果形状写作 `{ ok, code, operation, terminal, ... }` 却未说明 `terminal` 的在场条件，导致「返回时尚未裁决」的成员被逐个判为偏离（`workflows.start` 已登记例外，`sessions.request` 未登记——同一事实两套登记，指引附录 B 问题 7） | 明确 `terminal` **仅在返回时终态已可裁决时出现**；未裁决的接受结果以 `operation.status()` 为终态来源 | registry `sessions.request` / `workflows.start` 的例外行回收 | 否 |
+| S14 | `api-idioms.md` §3.5 | §3.5 要求异步 contribution 提供可安全 dispose 的 pending handle，却未规定调用方如何得知生效结果，故 client 两处 contribution 只能各自造 `status` 形状（且 `status` 充当成功标志） | 写明异步生效的 contribution handle 增加 `status()`（取值 `pending\|active\|failed\|revoked`）；同步生效的 contribution 不提供该成员 | registry contribution handle 行 | 否 |
 
-> 说明：S9 与 S10 的「人类确认」是分册治理条款自身的要求（`capability-strategy.md` §9、K8 能力边界变化），不是本线新增的范围请求。其余修订属分册维护，按 AGENTS §6 的规范目录义务落盘。
+> 说明：S10 的「人类确认」依据是该册自身的治理条款（`capability-strategy.md` §9：本文任何实质修订须经人类确认）；S9 的确认依据**不是**该 §9（它只约束该册自身修订），而是 K8 引入的能力边界收紧（第三方经门面派发 canonical 系统事件由可用变为 typed `denied`）以及人类对本轮分册修订的授权。两项都不是本线新增的范围请求；其余修订（S1–S8、S11–S14）属分册维护，按 AGENTS §6 的规范目录义务落盘。
 
 ---
 
@@ -260,7 +279,7 @@
 | `lib/index.js` | A2（providers / models）、C10a 登记 |
 | `lib/tool-discovery.js`、`lib/diagnostics.js`、`lib/remote-publication.js`、`lib/host-remote.js`、`lib/settings-remote.js` | A2 注册面 |
 | `lib/context-engine.js` | A3 |
-| `lib/session-activity-observe.js`、`lib/execution-observation.js`、`lib/session-route.js` | A5、C5、C11 |
+| `lib/session-activity-observe.js`、`lib/execution-observation.js`、`lib/session-route.js`、`lib/session-activity-view.js`、`lib/sessions-interactions-facade.js` | A5、C5、C11（C11 的四处属主模块全列） |
 | `lib/task-execution-observation.js` | B1（tasks）、A5（tasks.observe）、C11 |
 | `lib/session-interaction-operation-authority.js`、`lib/workflows-operation.js`、`lib/checkpoint-restore.js` | B1 |
 | `lib/events-bus.js` | B3/K8 |
@@ -270,7 +289,8 @@
 | `packages/agent-loop/lib/route-policy.js` | A2（routing，**R 包**） |
 | `packages/attachments/lib/pipeline-service.js` | A2（attachments，**R 包**） |
 | `packages/mcp/lib/catalog.js` | A5（mcp，**R 包**） |
-| `docs/standards/*`（12 册） | §4-S1–S11 |
+| `lib/settings.js` | C15（登记互指；实现不变） |
+| `docs/standards/*`（12 册） | §4-S1–S14（含 public-api-shape §5 示例修正 C16） |
 | `public-contract.registry.json` | 全部形状变更 + §2.4 的 R1–R5 缺口 |
 | `scripts/registry-validate.mjs`（扩展） | §8 的 entry 级机械校验 |
 | `docs/specs/plugin-api-features/feature-list.md`、`README.md`、`AGENTS.md` §4 | 登记与治理同步（S9/S10 确认后） |
@@ -308,7 +328,7 @@
 
 **主要风险与对策**
 
-1. **「统一」做成「强行同形」**：领域差异（coordination `release`、`services.*`、workflow run authority、checkpoint 恢复阶段、task 生命周期词汇、`status()` 领域取值）必须走六项例外机制，逐条附 `reason` 与 `verification`；例外总数不增（§3）。
+1. **「统一」做成「强行同形」**：领域差异分两类处置——**handle 扩展成员**按成员行登记（S12，不消耗例外）；**外层合同偏离**（coordination `release`、`services.*`、checkpoint 恢复阶段等）走六项例外并逐条附 `reason` 与 `verification`。三口径例外总数均须下降（§3）。
 2. **分册修订先于实现**：修订未落盘前不落新形状，避免「改标准迁就实现」；S9/S10 需人类确认，确认前两者保持现状并在处置表标注为待确认阻塞。
 3. **R 包修订触碰替代契约**：三处 R 落点改动后必须复核 R2/R4/R6 并跑既有替代包测试；若某处无法在不破坏契约复刻的前提下完成，登记为阻塞项（不自行扩大 R 范围）。
 4. **availability 透传导致装饰器变「第二实现」**：装饰器只做状态归一与字段保留，不解释、不合成领域字段；领域必须自己给出标准状态或可映射状态。
@@ -317,7 +337,7 @@
 
 **明确排除（指引 §6，本线不予处置）**：SDK、TS 化、API reference 生成、发布包装、开发者培训、测试完备性工程；同步/异步差异本身；接受结果没有终态；operation 内部阶段与领域 payload 差异；coordination `release(handle)`；`services.*` 保留官方习惯；question pending/answer seam、per-session grant、pairing-required 等受官方能力限制的场景；不默认新增 MCP 注册平台、异步完整请求改写、凭据系统、动态 remote 发现；不做假想攻击的安全加固；不新增 R 点。
 
-**取舍记录**：本线唯一的加性成员是 C3 的 slots 只读声明投影（承载官方已有的 `spec`/`declarationEpoch`/`snapshot` 事实，用于区分「未声明」与「已声明为空」），不新增根、不新增注册平台，登记为 projection 成员；`tasks.*` 不铸造操作 handle（保留 domain authority，登记例外）；`storage.open.handle.domain` 保留而非删除（无等价公共替代，删除会切断唯一记录访问面）；`connection.get` 改名而非保留（消除与 `pluginApi.settings` 的重复 authority）；`settings.scope` 只统一调用套路、不强行统一返回对象（环境差异真实存在）；`capabilityMatrix` 改内容模型而非内化（api-idioms §2 已授权该成员，内化反而需要改两册）。
+**取舍记录**：本线唯一的加性成员是 C3 的 slots 只读声明投影（承载官方已有的 `spec`/`declarationEpoch`/`snapshot` 事实，用于区分「未声明」与「已声明为空」），不新增根、不新增注册平台，登记为 projection 成员；`tasks.*` 不铸造操作 handle（保留 domain authority，登记例外）；`storage.open.handle.domain` 保留而非删除（无等价公共替代，删除会切断唯一记录访问面）；`connection.get` 改名为 `connection.api.settings` 是**对 M3 期已批准 rename 的回滚**（须同步 registry 行、`oldToTargetMapping`、`statusByPath`，避免自环），取回对称性（与 `connection.api.llm` 一致）优先于维持一次不理想的改名；`settings.scope` 只统一调用套路、不强行统一返回对象（环境差异真实存在）；`settings.register.handle` 与 `settings.scope.handle` 是同一对象而保留两行登记（同一 authority 的两个入口，非重复权威）；`tasks` 全域 async 予以保留（指引 §6 排除同步/异步差异本身），仅补声明；`capabilityMatrix` 改内容模型而非内化（api-idioms §2 已授权该成员，内化反而需要改两册）。
 
 ---
 

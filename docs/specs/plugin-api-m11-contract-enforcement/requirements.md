@@ -18,7 +18,7 @@ Stage 1 Requirements（2026-09-14 交付）。本文是 M11 契约收口 feature
 ## Req 1 输入固化与处置表
 
 - **User story**：作为维护者，我要看到指引列出的每一项问题都有明确去向和证据，以便在实现前就知道哪些要改、哪些是合理例外、哪些不成立。
-- **Req 1.1** WHEN 本线进入设计 THEN 指引 §3/§4/§5 的全部问题项（主线 A1–A5、主线 B1–B3、局部必修 C1–C14）与子审追加线索（附录 A–D 的剩余线索）SHALL 逐项进入处置表，字段含：问题编号、实际公共 path、源码证据锚点（按符号定位）、当前实际形状、目标 idiom 与形状、处置结论（修复 / 合理例外 / 已修复 / 误报）、依据与理由。【治理】
+- **Req 1.1** WHEN 本线进入设计 THEN 指引 §3/§4/§5 的全部问题项（主线 A1–A5、主线 B1–B3、局部必修 C1–C14）与子审追加线索（附录 A–D 的剩余线索，含 design §2.3 的 C15–C17）SHALL 逐项进入处置表，字段含：问题编号、实际公共 path、源码证据锚点（按符号定位）、当前实际形状、目标 idiom 与形状、处置结论（修复 / 合理例外 / 已修复 / 误报）、依据与理由；任何计数型结论 SHALL 写明计量单位（成员行 / 例外记录 / 公共 path）与取样口径。【治理】
 - **Req 1.2** WHEN 某处置结论为「合理例外」THEN 该行 SHALL 引用 registry 的六项例外记录（`memberPath`、`baseContract`、`exception`、`reason`、`replacementShape`、`verification`）或给出待登记的完整六项内容；SHALL NOT 以「领域不同」为唯一理由。【治理】
 - **Req 1.3** WHEN 某处置结论为「误报 / 已修复」THEN 该行 SHALL 附当前源码证据（`file:line` 或符号）说明为何不成立或已完成；SHALL NOT 为凑齐问题而实施无意义修改。【治理 + 验收】
 - **Req 1.4** GIVEN 指引文件仅存在于 `temp/`（gitignored、永不提交）THEN 其范围与结论 SHALL 在实现开始前固化进已提交的本 spec 制品；SHALL NOT 让实现或验收依赖 `temp/` 文件的可获得性。【治理】
@@ -64,7 +64,7 @@ Stage 1 Requirements（2026-09-14 交付）。本文是 M11 契约收口 feature
 ## Req 6 操作身份、结果词汇与控制对象
 
 - **User story**：作为插件作者，我要能从 session 请求、workflow 启动、checkpoint 恢复拿到同一个「控制对象」，并用同一段代码观察与停止它。
-- **Req 6.1** WHEN 长操作发起成功 THEN 结果 SHALL 为 `{ ok, code, operation, ... }`，其中 `operation` 为控制该操作的口号（handle）；`terminal` 仅在发起时已可裁决时出现，其缺失 SHALL 作为例外登记而非伪造。【验收】
+- **Req 6.1** WHEN 长操作发起成功 THEN 结果 SHALL 为 `{ ok, code, operation, ... }`，其中 `operation` 为控制该操作的 handle；`terminal` **仅在返回时终态已可裁决时出现**，该在场条件 SHALL 作为分册一般条款（design §4-S13）生效，SHALL NOT 逐成员登记例外，也 SHALL NOT 为未裁决的接受结果伪造终态。【验收】
 - **Req 6.2** WHEN 长操作 handle 被返回 THEN 其成员 SHALL 为 `{ id, ownerId, status(), observe(), dispose() }` 加已登记领域扩展；`observe(listener)` SHALL 返回退订函数并首投当前状态。【验收】
 - **Req 6.3** WHEN 某成员的结果字段承载的是「动作名称」而非操作身份 THEN 该字段 SHALL 改名，SHALL NOT 占用 `operation` 名称。【治理 + 验收】
 - **Req 6.4** WHEN 某动作不产生调用方持有的长操作 THEN 该成员 SHALL 按语义归类（mutation / policy / projection / 带例外的 operation）并登记例外；SHALL NOT 凭字段名给所有动作硬造长操作 handle。【治理】
@@ -115,7 +115,7 @@ Stage 1 Requirements（2026-09-14 交付）。本文是 M11 契约收口 feature
 - **Req 11.2** WHEN 分册修订与实现收口同时进行 THEN 两者 SHALL 相互一致：修订后的条款 SHALL 是该成员实现的唯一规则来源；SHALL NOT 保留与分册相反且未登记的例外。【分册 + 验收】
 - **Req 11.3** WHEN 分册修订涉及能力上限（`capability-strategy.md`）THEN 该册实质修订 SHALL 经人类确认后方可落盘，并同步 `AGENTS.md` §2/§4 与 `docs/specs/plugin-api-features/feature-list.md`。【治理】
 - **Req 11.4** WHEN 修订含树图 / 层级 / 命名空间条目 THEN 分册 SHALL 与 runtime、registry 的现行事实一致（含 client 领域树与已删除成员的清理）。【分册 + 治理】
-- **Req 11.5** WHEN 本线新增 idiom 例外 THEN 例外总数 SHALL 不高于现状（现有 17 条），且每条 SHALL 附完整六项与 `verification`；SHALL NOT 用「改分册」为不必要的认知负担开脱。【治理 + 验收】
+- **Req 11.5** WHEN 本线新增或重分类 idiom 例外 THEN 例外总数 SHALL 不高于现状（现状为 17 个带例外的成员行 / 20 条例外记录 / 16 个公共 path），核算 SHALL 以「例外记录」为主口径并同时给出「成员行」口径；每条新增例外 SHALL 附完整六项与 `verification`；SHALL NOT 用「改分册」为不必要的认知负担开脱。【治理 + 验收】
 - **Req 11.6** WHEN 分册修订被提出 THEN 该修订 SHALL NOT 放宽 fail-safe、版本冻结、横切派发语义（priority / deepFreeze / fault containment）、官方包禁改与既有 Stage 门。【治理】
 
 ## Req 12 登记与一致性义务
