@@ -256,4 +256,12 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 
 ### 7.8 全局终审记录（第八轮）
 
-见文末（由终审子 agent 给出后追加）。
+**第八轮结论：无偏差** —— 第七轮的唯一阻塞与三条低度全部闭合或如实记为维护项；`cf2a2d1..HEAD` 的 57 个成员行逐行复核、Task 1–10 全子项对账、四项机械门只读复跑、版本冻结与无夹带面**均未发现实质问题**。终审确认的要点：
+
+- 第七轮阻塞（Task 10.3 的 S10 半）已闭合：`AGENTS.md` §4 第 6 条新增的两个子条与 `capability-strategy.md` §6、`api-idioms.md` §2 逐句一致；registry 的 `services` namespace 记录确带 `availabilityExemption`。
+- 57 行改动（56 改 + 1 增）逐行与实现相符，面别分解 32/10/2/9/4 零未归类；本轮新改的两行（`tools.restrict.register`、`tools.presentation.register`）与官方 `dsh-tools` 的 scoped-context 前置条件一致。
+- 未完成项**全部**可落位 B1–B20，无「未完成且未登记」项；B1/B5/B9/B10/B11/B14/B15/B17/B18/B19/B20 的描述经抽验与实现相符。
+- 四项机械门全绿；版本冻结、`servicesWhitelist` 54 键、官方包零修改、R 点零变化实测成立；`843791d` 的改动面精确（4 文件）。
+- 终审另记一条**不构成偏差**的备注：B8 括注中关于 `attention.contribute` 失效形态的措辞略不精确（该 handle 的 dispose 已返回判别式结果，偏离在**码集**用了 `noop`/`withdrawn` 而非 K2 的 `stale`/`revoked`；client `attention.observe` 的 dispose 返回 `undefined` 未在该枚举中点名，但已落入 Task 4.14 的第二臂 → B2）。登记本身成立、无工作被隐匿，属措辞级；按收敛轮纪律不计偏差，随 B2/B8 的收口一并对齐。
+
+**终审范围声明**：本轮终审通过的是**已交付范围**（§1）与**登记面**（§3 的阻塞项穷尽性与诚实性）的一致性。本 feature **仍未达到完成判定**：Stage 4 的验收义务由 B1–B20 承载，其中 B2（K1/K2/K3 全树一致性收口）、B3（client 公共面）、B12（C 系列余项）、B13（组合验收与迁移切片）是范围最大的四项。**本线不声称 M11 已收口**。
