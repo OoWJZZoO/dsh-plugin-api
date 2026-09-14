@@ -60,7 +60,7 @@ Composable Profile
 
 所有注册、策略和 mutation API 统一遵守：
 
-1. owner identity 优先从调用方 Cordis fiber/插件身份派生，不接受调用方伪造 owner。
+1. owner identity 优先从调用方 Cordis fiber/插件身份派生，不接受调用方伪造 owner。**「调用者身份」与「资源所属者 / 目标 scope」是两个不同概念**：前者是 `ownerId`，一律派生；后者若确有语义，必须以自己的名字作为领域参数出现（如 scoped 注册的 `targetId`、storage 的 `scope`、contribution 的 `target`），不得借用 `ownerId` 命名，也不得用统一命名抹掉真实归属。registry 的 `identitySource` 以 `derived-caller` / `declared-resource-scope` 区分两者；调用方上下文不可追踪时使用根 token 并如实登记 `derived-caller (root-fallback)`。
 2. 调用方提供的内部 `id` 只在本 owner namespace 内有意义；跨 owner 同名不得静默覆盖。
 3. 仅供机器关联的私有 key 应自动 owner-qualification。tool 名、command 名、remote service key 等用户可见全局名称不得静默改名，必须使用共享、冲突拒绝或 claim 规则。
 4. `latest-wins` 只允许发生在同一 owner、同一逻辑 key 内。
@@ -127,7 +127,7 @@ pluginApi: {
 ## 8. 策略、Transform 与事件
 
 - 通用 `waterfall` 只能提供调用机制，不能替代领域组合规则。
-- 订阅权与生产权分离：`on/once` 可以是 additive consumer 面；canonical system event 的 `emit/serial/parallel/bail/waterfall` 只授予其 producer authority。
+- 订阅权与生产权分离：`on/once` 可以是 additive consumer 面；canonical system event 的 `emit/serial/parallel/bail/waterfall` 只授予其 producer authority。**event → producer owner 的映射由 canonical 事件目录条目承载**（registry 的 `producerAuthority` 字段）；派发前必须判定调用者是否为该事件的 producer owner，非 producer 返回 typed `denied`；目录中**未声明 producer 归属的条目默认不可由第三方派发**（fail-closed）。门面自身的转译生产路径以内部 owner 身份取得权限，不占用第三方路径；订阅侧保持 additive。
 - 第三方自定义事件只能通过合作型 `events.define` 取得能力受限的 publisher handle，不能依赖一个可派发任意系统事件名的全局入口。`events.define` 的 owner 归因在可追踪调用上下文存在时绑定真实 owner；不可追踪时使用根 token。该模型不提供对抗性同进程身份隔离，主动绕过门面仍在保证范围外。
 - 每个多插件决策点必须写明 decision vocabulary、支配元素、多个 transform 的合并规则、priority 相同的注册顺序、callback 失败策略、reducer 的幂等/结合性或顺序依赖，以及输出是否冻结并携带 owner/provenance。
 - 关键决策点优先使用领域 typed decision 和 reducer，不向第三方只暴露可返回任意对象的裸 waterfall。

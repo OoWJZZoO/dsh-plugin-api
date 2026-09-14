@@ -15,72 +15,107 @@
 
 ```text
 pluginApi
-├── isActive / apiVersion / assertCompatible / capabilities
+├── isActive / apiVersion / assertCompatible / capabilities / capabilityMatrix
 ├── events
+│   ├── availability / catalog / observe
+│   ├── define
+│   ├── emit / serial / parallel / bail / waterfall
+│   └── decisions (register)
 ├── llm
-│   ├── modelInfo / prepareCall / stream / providers
-│   ├── requestTransforms
-│   ├── admissionPolicies
-│   ├── adapters
+│   ├── availability / modelInfo / prepareCall / stream
+│   ├── requestTransforms (register)
+│   ├── admissionPolicies (register)
+│   ├── providers (register) / models (list / register)
+│   ├── adapters (list / register)
+│   │   └── decorations (list / register)
 │   └── routing
-│       ├── forExecution / current / on / once / wait
-│       ├── policies / candidates
-│       ├── health / circuit
-│       └── decisions
+│       ├── availability / current / forExecution / observe / wait
+│       ├── policies (register) / candidates (list / register)
+│       ├── circuit (inspect) / decisions (get / history)
+│       └── health (get / history / observe)
+│           ├── circuitPolicy (register)
+│           └── probe (register)
 ├── agents
-│   ├── get / list / roots / create / resume / register
-│   ├── providers
-│   └── availability
+│   ├── get / list / roots / create / resume / register / availability
+│   ├── providers (register)
+│   ├── scopes (register / snapshotOf)
+│   └── decisions (register)
 ├── executions
-│   ├── observe / get / history / onChange / visibility
-│   ├── availability
+│   ├── get / history / observe / availability
+│   ├── visibility (register)
 │   └── recovery
-│       ├── classify / evaluate / consume
-│       ├── capability / policy
-│       ├── adapters / visibility
-│       └── availability
+│       ├── coverage / evaluate / availability
+│       ├── capability (register) / policy (register) / visibility (register)
+│       └── checkpoints (create / inspect / list / planRestore / restore / availability)
 ├── sessions
-│   ├── get / list / fork / header / events / seq / surface /
-│   ├── requestHeader / requestContext / deriveMessages
-│   ├── durableEventTypes / durableEventDescriptors / isDurableEventType
-│   ├── onDurable / onceDurable / appendMessage
-│   ├── branches
-│   ├── channels
+│   ├── get / list / fork / cancel / request / availability
+│   ├── durable (get / list / observe / appendMessage / isDurableEventType)
+│   ├── views (header / events / seq / surface / requestHeader / requestContext /
+│   │          deriveMessages / isSessionEventType / isSurfaceEventType /
+│   │          sessionEventTypes / surfaceEventTypes / availability)
+│   ├── activity (current / get / history / list / observe / availability)
+│   ├── branches (commit / create / graph / plan / preview / restore / rollback / availability)
+│   ├── channels (ack / acquire / heartbeat / list / observe / release / resume / availability)
+│   │   ├── auth (approvePairing / initiatePairing / register / rejectPairing)
+│   │   │   └── pairingProvider (register)
+│   │   └── redaction (register)
 │   ├── compaction (run / availability)
 │   ├── interactions (list / get / respond / availability)
-│   └── selection (get / set / availability)
-├── workflows
-│   └── start / availability
+│   ├── selection (get / set / availability)
+│   ├── planMode (get / select / observe / availability)
+│   └── permissionPresets (current / options / select / observe / availability)
+├── workflows (start / availability)
 ├── tools
-│   ├── register / restrict / guard / get / schemas / execute /
-│   ├── presentAs / executionMode / defineTool / toolAbortedError
+│   ├── availability / defineTool / execute / get / list / register
+│   ├── restrict (register) / guard (register) / presentation (register) / executionMode (register)
+│   ├── executionPolicies (register)
 │   └── discovery
+│       ├── activate / deactivate / list / availability
+│       ├── audit (list)
+│       └── catalog (register)
 ├── skills
+│   ├── availability
 │   └── activation
+│       ├── activate / deactivate / register / availability
+│       ├── audit (list) / exposure (list)
+│       └── policy (register)
 ├── prompts
-│   ├── section / context / variable / tools / suppressRuntimeContext
-│   ├── render / renderContextSections
+│   ├── availability / contribute / render / renderContextSections / renderContextSnapshot / joinContextSections
+│   ├── assemblyPolicies (register)
 │   └── provenance
-│       └── contribute / compose / inspect / mapping / observe / policy
+│       ├── availability / compose / contribute / inspect / mapping / observe
+│       └── policy (register)
 ├── attachments
-│   ├── pipeline
-│   └── projection
-├── mcp
+│   ├── availability
+│   ├── pipeline (capabilities / cleanup / ingest / transform)
+│   │   └── transforms (register)
+│   └── projection (get / open / project / provenance / availability)
+├── mcp (availability / observe / resolvePublicName / servers / tools)
 ├── tasks
-├── coordination
+│   ├── acquire / attach / get / history / observe / register / settle / start / takeover / availability
+├── coordination (acquire / compareAndSet / heartbeat / observe / release / takeover / availability)
 ├── workspaces
-│   └── transactions
+│   ├── availability
+│   └── transactions (commit / get / observe / prepare / preview / record / recover / rollback)
 ├── security
-├── diagnostics
-├── settings
-├── profiles
-├── remotes
-├── storage
+│   ├── availability
+│   ├── audit (list)
+│   ├── policy (register) / redaction (register)
+│   └── egress (coverage / register)
+│       └── lease (acquire / release)
+├── diagnostics (get / observe / register / availability)
+├── settings (inspect / mutate / register / replace / scope / update / availability)
+│   └── remote (contribute)
+├── profiles (apply / health / inspect / planDiff / availability)
+│   └── snapshot (apply / create / delete / modify / validate)
+├── remotes (register / availability)
+├── storage (open / availability)
+├── credentials (set / unset / availability)
 └── services
     └── <静态白名单的官方低层 service passthrough>
 ```
 
-现行 domain tree 与逐成员状态的唯一事实源是公共契约 registry（`hostDomainTree` 与 `members`）。本册不复制其逐成员登记。
+现行 domain tree 与逐成员状态的唯一事实源是公共契约 registry（`hostDomainTree` 与 `members`）。本册不复制其逐成员登记；上面的树是**可读概览**，与 registry 不一致时以 registry 为准，并须同步刷新本树（含删除已 `removed` 的名字、保留仍为 `advanced` 的名字）。
 
 主要归并规则（已完成，旧 path 不再存在）：
 
@@ -100,9 +135,10 @@ pluginApi
 3. namespace 使用名词，方法使用动词。
 4. 成员的入口动词、返回形状与 handle 由 `api-idioms.md` 的 idiom 分类决定；不得以 namespace 历史命名另造变体。
 5. 注册表使用复数资源或 `policies.register`，避免使用看起来像立即执行的 `request.transform()` 形状。
-6. 除 `services.*` 外，最多两层领域 namespace 后接方法；只有强领域关系才允许第三层。
+6. 叶子路径的总段数有上限（registry 校验的 `MAX_PATH_DEPTH = 5`，`services.*` 不受限）：`llm.routing.health.circuitPolicy` 这类**强领域关系**允许第三层领域 namespace 后接方法，但必须有真实的领域从属关系；**handle 成员（`.handle` 后缀行）不占层级预算**，因为它们是对同一成员的形状登记而非新的导航层。
 7. 本地重构期不保留兼容 alias；删除重复 authority，例如多个 namespace 上指向同一个 route 查询的委托。
 8. 事件协议名继续使用稳定的 slash path；capability path 使用 dot path，两者不得混用。
+9. 订阅名只使用 `observe`；已 `removed` 的 `on` / `once` / `onChange` / `onDurable` / `onceDurable` / `onRebind` 风格成员不得以 alias 形式回流（`remotes.$on` 是官方 client 直通面，不属此列）。
 
 ## 4. Client API
 
@@ -110,7 +146,7 @@ pluginApi
 
 ```text
 ctx.pluginApi
-├── isActive / apiVersion / assertCompatible / capabilities
+├── isActive / apiVersion / assertCompatible / capabilities / capabilityMatrix
 ├── connection
 ├── events
 ├── remotes
@@ -118,11 +154,16 @@ ctx.pluginApi
 ├── slots
 ├── lifecycle
 ├── codec
+├── sessions
+├── attention
 └── services
 ```
 
-- 门面自有语义位于根领域。
-- 纯官方 client 直通（conversation、conversation events/views、timer、command UI、input triggers、model directories 等）统一进入 `services.*`。
+client 领域树与 host 一样以 registry（`clientDomainTree` / `clientRoot.members`）为唯一事实源；上树须与它逐名一致。要点：
+
+- 门面自有语义位于根领域；client 面的 `sessions` 与 `attention` 是 M9 之后交付的一等领域，必须与其余根领域同形（`availability()`、owner / generation / stale disposer 契约一致）。
+- client 的 `slots` / `remotes` / `settings` / `connection` / `events` / `codec` 与 host 的同名或同类面使用同一套外层合同（contribution 判别式结果 + handle、观察 handle、availability 三值），不得因运行环境不同另造外层合同。
+- 纯官方 client 直通（conversation、conversation events/views、timer、command UI、input triggers、model directories、locale、modules、layout、theme、appShell 等）统一进入 `services.*`。
 - host/client 分别导出 `HostPluginApi` 与 `ClientPluginApi` 类型，不依赖运行时可选属性区分环境。
 - `defineManifest` 是构建期 helper，只作为 client 静态模块导出，不进入运行时 `ctx.pluginApi`。
 - client slot、remote、settings 和 lifecycle 同样遵守 owner、generation、stale disposer 和 composition contract。
@@ -134,13 +175,13 @@ ctx.pluginApi
 ```js
 pluginApi.capabilities.get('llm.adapters')
 pluginApi.capabilities.list({ prefix: 'llm.' })
-pluginApi.capabilities.require(['llm.routing', 'events.compaction'])
+pluginApi.capabilities.require(['llm.routing', 'sessions.compaction'])
 ```
 
-- capability ID 必须是公共语义 path，不得使用内部 feature key、package 名或 replacement 名。
-- capability 状态只表达 `active | degraded | unavailable`；健康状态属于 `diagnostics`。
+- capability ID 必须是公共语义 path，不得使用内部 feature key、package 名或 replacement 名。示例与树图引用的 capability 必须真实存在（以 registry 的成员与能力簇为唯一事实源）。
+- capability 状态只表达 `active | degraded | unavailable`；健康状态属于 `diagnostics`。client 面与 host 面接受**同一套公共语义 dot path（含成员级 path）**，并按真实叶子状态报告，不得以对象存在性报告 `active`。
 - 公共 namespace 始终存在，不能通过属性是否存在表达安装状态。
-- 调用不可用成员统一返回或抛出 capability-unavailable typed error；正常业务冲突不复用 unavailable 错误。
+- 调用不可用成员时：**注册类成员（policy / resourceRegistry）抛 typed error；contribution / mutation / operation / coordination 返回判别式结果**（`api-idioms.md` §2「失败呈现的分界」）。正常业务冲突不复用 unavailable 错误。
 - capability 粒度必须足以表达部分可用性，不能用一个过大的 namespace boolean 掩盖成员差异。
 - API 协议兼容与 capability presence 分开协商；无关 capability 的加性新增不应使旧插件整体失配。
 

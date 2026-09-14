@@ -27,3 +27,12 @@
 - timeout 不新增终态词汇，归入 `error`，并以原因/分类字段标记为 timeout。
 - 对尚未提交的竞争性失败信号，裁决优先级为 `aborted` > `superseded` > 普通 `error` > timeout 型 `error`。该优先级只适用于同一提交窗口；任何终态一旦原子提交，后到信号不得改写它。
 - generation 只保证同一 owner、同一运行生命周期内有效；需要跨重启识别的对象必须使用单独的 durable identity。
+
+## 4. handle 的生命周期面
+
+公开 handle 的生命周期由固定的成员名与词汇承载，领域只能在取值域上扩展：
+
+- **`status()`** 承载资源或操作的生命周期。领域词汇可以不同（如 `usable` / `destroyed`、`phase` / `attempts`），但**字段名统一为 `status()`**，且终态取值必须落在 §3 的统一终态词汇内。
+- **`lifecycleState` 与 `terminal` 不得混用**：`lifecycleState` 描述资源当前处于哪个生命周期阶段，`terminal` 是 §3 的一次性裁决；不得用生命周期词（`settled` / `committed` / `closed` / `disposed`）冒充终态，也不得把终态写成阶段。
+- **`dispose()`** 是普通 handle 的唯一释放入口（coordination lease 用 `release(handle)`），返回冻结判别式结果 `{ ok, code, reason? }`；资源类成功码 `revoked`、no-op 码 `stale`，operation 类成功码 `requested`、no-op 码 `stale`（见 `api-idioms.md` §2）。operation handle 的 `dispose()` 是「请求停止」，其终态仍由 `status()` 承担。
+- **`generation`** 是 owner 铸造的不透明槽位令牌（§2），用于 stale / superseded 判定；排序用 `seq`，装配 / 后端代次用 `epoch`，三者不得互换。

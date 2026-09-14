@@ -109,6 +109,8 @@ R8. **不覆盖 boot 胶水与框架级语义**：`dsh-app-boot`、launcher 与 
 - 白名单与逐成员登记见公共契约 registry 的 `servicesWhitelist`；本册不复制该清单。
 - 直接 `import`/`inject` 官方内部包是 **unsupported escape hatch**，与 supported-but-tiered 的 `services.*` 是两个不同概念：前者无兼容承诺，后者有版本协商与 fail-safe 保护。
 
+**存在性口径的例外（受支持、需登记）**：`services.*` 成员报告可用性时使用**官方存在性口径**（`isActive`），不套用语义命名空间的 `availability().status` 三值模型；registry 为此设有 `availabilityExemption` 登记位。该例外**只适用于 `services.*`**——门面语义命名空间一律使用 `availability().status`（外层三值 + 领域 detail 保留，见 `api-idioms.md` §2），不得把 `isActive` 口径扩散到语义面，也不得用对象存在性冒充 `active`。
+
 ### 6.1 成员分级
 
 | 官方成员类型 | 门面处理 |

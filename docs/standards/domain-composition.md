@@ -15,7 +15,7 @@
 
 | 领域 | 组合要求 |
 |---|---|
-| `events` | 区分 observe-only consumer 与 producer authority；canonical system event 只能由其 owner 派发；关键决策不用裸 waterfall 代替领域 reducer。第三方自定义事件通过合作型 `define` / publisher handle 发布；不提供对抗性同进程身份隔离，主动绕过门面在保证范围外 |
+| `events` | 区分 observe-only consumer 与 producer authority；canonical system event 只能由其 owner 派发，**event → producer owner 的映射由 canonical 事件目录条目承载**（registry `producerAuthority`），派发前判定归属、非 producer 返回 typed `denied`、**未声明 producer 的条目 fail-closed**；关键决策不用裸 waterfall 代替领域 reducer。第三方自定义事件通过合作型 `define` / publisher handle 发布；不提供对抗性同进程身份隔离，主动绕过门面在保证范围外 |
 | `llm.requestTransforms` | owner-scoped、确定的 priority/注册顺序、声明改写范围、at-most-once/convergence；同字段冲突有明确规则 |
 | `llm.admissionPolicies` | 使用固定 decision algebra；deny/ask/allow 等优先级不得由监听顺序隐式决定 |
 | `llm.adapters` | owner/id/generation 隔离；稳定链序；卸载和 topology reconcile 不影响其他 owner |
