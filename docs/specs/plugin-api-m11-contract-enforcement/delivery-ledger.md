@@ -61,7 +61,7 @@
 - **人类授权**：否。
 
 ### B5 Task 3.1 的 registry 面 —— S15 的全量 `async` 回填
-- **未完成子项**：`api-idioms` §5 已把 `async` 列为必需字段，但 registry 537 行**未回填**，validator 也**未加**该校验。
+- **未完成子项**：`api-idioms` §5 已把 `async` 列为必需字段，但 registry 538 行**未回填**，validator 也**未加**该校验。
 - **解除动作**：二选一——(a) 新增构建期/测试期的成员调用形态采集入口（mount facade 后按 `constructor.name === 'AsyncFunction'` 逐叶判定）生成 `async` 投影；(b) 按模块分组人工回填并在 validator 中加「`async` 必填且为 boolean」的 entry 级校验。
 - **人类授权**：否（S15 已随分册修订落盘）。
 
@@ -205,5 +205,17 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 第四轮终审结论见 §7.4。
 
 ### 7.4 全局终审记录（第四轮）
+
+第四轮结论 **有偏差**，但只剩**一条**阻塞级意见与一条中度、两条低度；第三轮的五条阻塞与全部中度/低度**已确认闭合**。
+
+阻塞（`llm.routing.candidates` / `llm.routing.health.probe` 四行的 `conflictRule` / `idempotency` 与实现及同族两行不符）→ **已闭合**：四类 routing 注册共用同一个 `(owner, id)` 键实现的表，本轮恰好就是把它改成 owner 维度的提交，但只有 `policies` 与 `health.circuitPolicy` 两行跟上了字段；四行已统一为 `conflictRule: owner-conflict`，两 leaf 行的 `idempotency` 改为 `latest-wins`。同类的相邻行一并核对并同步：`agents.providers.register`（provider slot 一个 owner 一个槽位，第二 owner 为 typed conflict）与 `tools.discovery.catalog.register`（重复 entry id 无论 owner 一律拒绝）的 `conflictRule` 改为 `owner-conflict`。
+
+中度（`llm.requestTransforms.register` / `llm.admissionPolicies.register` 的 `currentShape` 声称了一条不存在的官方安装路径）→ **已闭合**：两行改写为「门面自有注册表 + 经 `llm/stream` 重入 / 解析模型信息包装消费」，与实现一致。
+
+低度（B5 仍写 537；`agents.providers.register.handle` 的 announce no-op reason 文案）→ **已闭合**：B5 改为 538；该行改为「always answers the typed stale no-op」，不再声称 reason 文案。
+
+第五轮终审结论见 §7.5。
+
+### 7.5 全局终审记录（第五轮）
 
 见文末（由终审子 agent 给出后追加）。
