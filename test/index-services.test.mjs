@@ -64,7 +64,7 @@ function createMockCtx(options = {}) {
   return { ctx, state, services }
 }
 
-test('apply mounts an active frozen services namespace when all 48 official services are present', () => {
+test('apply mounts an active frozen services namespace when all 49 official services are present', () => {
   const allServices = {}
   for (const def of SERVICE_DEFINITIONS) {
     const svc = {}
@@ -97,7 +97,7 @@ test('apply mounts an active frozen services namespace when all 48 official serv
   assert.equal(state.pluginApi.isActive, true)
   assert.equal(state.pluginApi.services[servicesNamespaceBrand], true)
   assert.ok(Object.isFrozen(state.pluginApi.services))
-  assert.equal(Object.keys(state.pluginApi.services).length, 53)
+  assert.equal(Object.keys(state.pluginApi.services).length, 54)
   assert.equal(state.pluginApi.services.fs.isActive, true)
   assert.equal(state.pluginApi.services.jobs.isActive, true)
   assert.equal(state.pluginApi.services.shellEnv.isActive, true)

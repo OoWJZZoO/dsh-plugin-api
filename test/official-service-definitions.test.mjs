@@ -5,6 +5,7 @@ import { buildActiveFacade } from '../lib/services.js'
 import { OFFICIAL_SERVICE_DEFINITIONS } from '../lib/official-service-definitions.js'
 
 const EXPECTED_DEFINITIONS = [
+  ['appExit', 'appExit', [['exit', 'method']]],
   ['agentLoop', 'agentLoop', [['config', 'getter'], ['create', 'method'], ['createAgent', 'method'], ['resume', 'method']]],
   ['agentPresets', 'agentPresets', [['list', 'method'], ['resolve', 'method'], ['mount', 'method'], ['composeFrom', 'method'], ['composedPreset', 'method'], ['read', 'method'], ['copy', 'method'], ['remove', 'method'], ['serviceFor', 'method'], ['recompose', 'method'], ['standingKeyFor', 'method']]],
   ['apiProxy', 'apiProxy', [['downloads', 'getter'], ['respond', 'method'], ['sessionsModels', 'method'], ['sessionsSelectModel', 'method']]],
@@ -111,12 +112,12 @@ function assertFacadeMemberFailure(facade, definition) {
 
 test('the fragment has the exact static service and member contract', () => {
   assert.deepEqual(normalizedDefinitions(OFFICIAL_SERVICE_DEFINITIONS), EXPECTED_DEFINITIONS)
-  assert.equal(OFFICIAL_SERVICE_DEFINITIONS.length, 28)
+  assert.equal(OFFICIAL_SERVICE_DEFINITIONS.length, 29)
   assert.equal(
     OFFICIAL_SERVICE_DEFINITIONS.reduce((count, definition) => count + definition.members.length, 0),
-    109,
+    110,
   )
-  assert.equal(new Set(OFFICIAL_SERVICE_DEFINITIONS.map((definition) => definition.key)).size, 28)
+  assert.equal(new Set(OFFICIAL_SERVICE_DEFINITIONS.map((definition) => definition.key)).size, 29)
 
   for (const definition of OFFICIAL_SERVICE_DEFINITIONS) {
     assert.deepEqual(Object.keys(definition), ['key', 'ctxService', 'members'])
@@ -202,7 +203,17 @@ test('the active builder preserves falsey values, Promise identity, disposer ide
 
 test('every required service member independently produces a disabled facade when absent', () => {
   for (const definition of OFFICIAL_SERVICE_DEFINITIONS) {
-    const { service } = createService(definition, definition.members[0].name)
+    const required = definition.members.filter((member) => member.optional !== true)
+    // An all-optional service (the launcher-provided `appExit` seam) stays
+    // active when a member is absent by design; its members degrade alone.
+    if (required.length === 0) {
+      const { service } = createService(definition, definition.members[0].name)
+      const facade = buildActiveFacade(definition, service)
+      assert.equal(facade.isActive, true)
+      assert.equal(Object.keys(facade).includes(definition.members[0].name), false)
+      continue
+    }
+    const { service } = createService(definition, required[0].name)
     const facade = buildActiveFacade(definition, service)
     assert.equal(facade.isActive, false)
     assertFacadeMemberFailure(facade, definition)

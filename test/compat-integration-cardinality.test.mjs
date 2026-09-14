@@ -92,6 +92,7 @@ const SERVICES_KEYS = [
   'web',
   'jobs',
   'shellEnv',
+  'appExit',
   'agentLoop',
   'agentPresets',
   'apiProxy',
@@ -171,7 +172,7 @@ test('durable observation retains its independent exact five-kind catalog', () =
   assert.deepEqual(Object.keys(DURABLE_EVENT_DESCRIPTORS), DURABLE_KIND_NAMES)
 })
 
-test('services namespace retains its independent exact 46-key static allowlist', () => {
-  assert.equal(SERVICES_NAMESPACE_KEYS.length, 46)
+test('services namespace retains its independent exact 47-key static allowlist', () => {
+  assert.equal(SERVICES_NAMESPACE_KEYS.length, 47)
   assert.deepEqual(SERVICES_NAMESPACE_KEYS, SERVICES_KEYS)
 })

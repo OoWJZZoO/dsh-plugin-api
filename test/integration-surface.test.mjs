@@ -229,10 +229,10 @@ test('host event contracts: all nine names are cataloged with the exact contract
   }
 })
 
-test('service definitions: 46 unique keys with exact reviewed member lists', () => {
-  assert.equal(CONTRACT_CARDINALITIES.finalServiceKeys, 46)
-  assert.equal(SERVICE_DEFINITIONS.length, 46)
-  assert.equal(new Set(SERVICES_NAMESPACE_KEYS).size, 46)
+test('service definitions: 47 unique keys with exact reviewed member lists', () => {
+  assert.equal(CONTRACT_CARDINALITIES.finalServiceKeys, 47)
+  assert.equal(SERVICE_DEFINITIONS.length, 47)
+  assert.equal(new Set(SERVICES_NAMESPACE_KEYS).size, 47)
   assert.deepEqual(SERVICE_DEFINITIONS.map((def) => def.key), SERVICES_NAMESPACE_KEYS)
 
   // The reviewed fragment (28 inputs incl. web) merges 1:1 into the central
@@ -244,11 +244,11 @@ test('service definitions: 46 unique keys with exact reviewed member lists', () 
   }
 })
 
-test('mounted services namespace: all 46 seams expose exact active member surfaces and receivers', () => {
+test('mounted services namespace: all 47 seams expose exact active member surfaces and receivers', () => {
   const { ctx, state, stubs, calls } = createHostCtx()
   assert.doesNotThrow(() => apply(ctx))
   const services = state.pluginApi.services
-  assert.deepEqual(Object.keys(services).slice(0, 46), SERVICES_NAMESPACE_KEYS, '46 seam keys in table order')
+  assert.deepEqual(Object.keys(services).slice(0, 47), SERVICES_NAMESPACE_KEYS, '47 seam keys in table order')
 
   for (const def of SERVICE_DEFINITIONS) {
     const face = services[def.key]

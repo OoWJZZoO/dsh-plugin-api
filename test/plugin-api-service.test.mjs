@@ -253,7 +253,7 @@ test('default services namespace exposes the approved disabled facades before mo
   const service = instantiate(ServiceClass, mockCtx())
 
   assert.equal(typeof service.services, 'object')
-  assert.equal(Object.keys(service.services).length, 46)
+  assert.equal(Object.keys(service.services).length, 47)
   assert.ok(Object.isFrozen(service.services))
   assert.equal(service.services.approval.isActive, false)
   assert.equal(service.services.jobs.isActive, false)

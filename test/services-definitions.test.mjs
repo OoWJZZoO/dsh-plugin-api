@@ -22,6 +22,7 @@ const EXPECTED_KEYS = [
   'web',
   'jobs',
   'shellEnv',
+  'appExit',
   'agentLoop',
   'agentPresets',
   'apiProxy',
@@ -51,9 +52,9 @@ const EXPECTED_KEYS = [
   'webServer',
 ]
 
-test('SERVICE_DEFINITIONS declares exactly the 46 capability namespace keys', () => {
+test('SERVICE_DEFINITIONS declares exactly the 47 capability namespace keys', () => {
   assert.deepEqual(SERVICES_NAMESPACE_KEYS, EXPECTED_KEYS)
-  assert.equal(SERVICE_DEFINITIONS.length, 46)
+  assert.equal(SERVICE_DEFINITIONS.length, 47)
   assert.equal(SERVICE_DEFINITIONS.some((d) => d.key === 'compaction'), false, 'compaction is removed with its replacement-owned semantics')
   assert.equal(SERVICE_DEFINITIONS.some((d) => d.key === 'workflows'), false, 'workflows is removed pending a future wrapped surface')
 })
@@ -91,7 +92,7 @@ test('optional members are declared only where a seam may legitimately be absent
   // Every optional member is an explicit, reviewed exception: `flush` on
   // sessionTelemetry, and the two deep apiProxy selection operations that are
   // addressed through the official sessions bus.
-  const allowed = new Set(['sessionTelemetry.flush', 'apiProxy.sessionsModels', 'apiProxy.sessionsSelectModel'])
+  const allowed = new Set(['sessionTelemetry.flush', 'apiProxy.sessionsModels', 'apiProxy.sessionsSelectModel', 'appExit.exit'])
   for (const def of SERVICE_DEFINITIONS) {
     for (const member of def.members) {
       if (!member.optional) continue

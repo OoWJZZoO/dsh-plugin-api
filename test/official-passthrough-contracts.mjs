@@ -459,6 +459,6 @@ export const CONTRACT_CARDINALITIES = freeze({
   clientEvents: 4,
   clientConnectionMembers: 3,
   serviceDefinitionInputs: 28,
-  additionalServiceKeys: 27,
-  finalServiceKeys: 46,
+  additionalServiceKeys: 28,
+  finalServiceKeys: 47,
 })

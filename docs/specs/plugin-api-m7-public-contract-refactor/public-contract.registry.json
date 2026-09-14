@@ -18034,6 +18034,14 @@
           "reason": "the official seam requires a complete provider/model pair, so a change that names only some fields is layered over the official current value; no value is invented (a field the current value cannot supply refuses the call)",
           "replacementShape": "frozen { ok:true, code:'committed', revision, view } | { ok:false, code:'conflict'|'rejected'|'unavailable', reason? }",
           "verification": "partial-change assertions (the unnamed fields come from the official current value)"
+        },
+        {
+          "memberPath": "sessions.selection.set",
+          "baseContract": "mutation",
+          "exception": "the committed result omits the commitState/generation fields the sister mutations carry",
+          "reason": "the official selection seam exposes neither a commit state nor a generation: the facade mints no second selection state and reports the official revision it observed, so there is nothing to publish in those fields",
+          "replacementShape": "frozen { ok:true, code:'committed', revision, view }",
+          "verification": "committed/revision assertions in test/sessions-selection.test.mjs plus the registry idiom-exception validation"
         }
       ],
       "eventSemantics": null,
@@ -18248,6 +18256,26 @@
       "composition": "pure",
       "channel": "passthrough",
       "status": "advanced"
+    },
+    {
+      "key": "appExit",
+      "capability": "services.appExit",
+      "members": "audited migrate member set: exit (optional official launcher process-exit seam)",
+      "composition": "pure",
+      "channel": "passthrough",
+      "status": "advanced",
+      "memberGrades": [
+        {
+          "member": "exit",
+          "grade": "advanced",
+          "effect": "execute",
+          "composableProfile": false,
+          "rationale": "a process-level exit is exclusive by nature: the official launcher owns the process lifecycle and the facade adds no brokerage",
+          "bypasses": [
+            "no facade-side shutdown orchestration: the call reaches the official launcher seam directly, so there is no facade quiescing, ordering, or confirmation guarantee above the official process lifecycle"
+          ]
+        }
+      ]
     },
     {
       "key": "agentLoop",
@@ -21676,6 +21704,48 @@
       "oldPath": "executions.recovery.checkpoints.availability",
       "targetPath": "executions.recovery.checkpoints.availability",
       "action": "retain"
+    },
+    {
+      "oldPath": "services.planMode.set",
+      "targetPath": "sessions.planMode.select",
+      "action": "rename",
+      "relation": "the deleted write path is replaced by the controlled plan-mode selection face"
+    },
+    {
+      "oldPath": "services.permissionPresets.set",
+      "targetPath": "sessions.permissionPresets.select",
+      "action": "rename",
+      "relation": "the deleted write path is replaced by the controlled permission-preset selection face"
+    },
+    {
+      "oldPath": "services.permissionPresets.selectFor",
+      "targetPath": "sessions.permissionPresets.select",
+      "action": "merge",
+      "relation": "both former selectors collapse into one controlled selection entry"
+    },
+    {
+      "oldPath": "services.credentials.set",
+      "targetPath": "credentials.set",
+      "action": "migrate",
+      "relation": "the deleted write path is replaced by the controlled credential mutation face"
+    },
+    {
+      "oldPath": "services.credentials.unset",
+      "targetPath": "credentials.unset",
+      "action": "migrate",
+      "relation": "the deleted write path is replaced by the controlled credential mutation face"
+    },
+    {
+      "oldPath": "services.compaction",
+      "targetPath": "sessions.compaction.run",
+      "action": "migrate",
+      "relation": "the whole deleted service key is replaced by the controlled compaction operation"
+    },
+    {
+      "oldPath": "services.workflows",
+      "targetPath": "workflows.start",
+      "action": "migrate",
+      "relation": "the whole deleted service key is replaced by the controlled workflow start entry"
     }
   ],
   "deletionReport": [
@@ -24858,6 +24928,26 @@
       "gapReason": null,
       "affectedConsumers": [
         "interactive-session-access"
+      ],
+      "verification": [
+        "registry-draft",
+        "capability-matrix"
+      ]
+    },
+    {
+      "capabilityCluster": "services.appExit",
+      "currentPaths": [
+        "services.appExit"
+      ],
+      "targetPaths": [
+        "services.appExit"
+      ],
+      "status": "retained",
+      "qualifiers": [],
+      "replacement": null,
+      "gapReason": null,
+      "affectedConsumers": [
+        "plugin-api-m10-contract-convergence"
       ],
       "verification": [
         "registry-draft",

@@ -25,6 +25,8 @@
 | scoped-agent-contributions | design §scope 表达与 scope-bound handle、§tools caller-bound 解析的复用判定与真实 fiber probe、§与 decision 线的组合边界 |
 | interactive-session-access | design §Architecture（四面拆线）、§Existing Owner Reuse Matrix、§attachmentRefs Durable Mapping Contract、§Model Selection Snapshot Contract、§R-Point Design Statements |
 
+> **Stage 4 现状注（键数）**：`servicesWhitelist` 由 53 键增至 **54** 键——本线按 §5.1 新增 `services.appExit`（A 类 advanced passthrough）。本文 §1.2/§1.5 中「白名单键数不变（apiProxy 已在白名单内）」的表述据此理解为「除本线新增的 `appExit` 外键数不变」。
+
 ## 1. 目标语义树（初版）
 
 ### 1.1 树的判据与输入
@@ -212,7 +214,7 @@ B4-1/6（approval.setPolicy、sessionProjectionCache.write）为纯删除裁决�
 | 只读事件流 | `sessions.channels.*` + `sessions.activity`（消费合同，不新增面） | — | 官方 session 事件顺序 | 载体 = 已交付 connection/gateway 替代行 owners；cursor/resume 语义沿用（interactive 线 Face 3） |
 | 事件参与（决策点） | 四个 decisions registry | — | 官方 waterfall 派发点（A 类）；`agent/turn-stopping` 为 R 点位（agent-loop owner 切片，替代行路由进参与链）；compaction/title 由已交付 replacement 承载 producer | 参与条目经 bus substrate 安装为官方 ctx 钩子（turn-stopping 经 R 切片路由，横切语义仍在门面 registry）；observe 面保持只读（decision 线机制设计） |
 | 事件生产 | `events.define`（owner-scoped 受限 publisher） | — | canonical 事件 producer 各归官方/替代行 | 订阅权 ≠ 生产权；扩决策参与不扩 fact 伪造权（goal Scope direction 4） |
-| 进程退出（OBS-14.1） | —（提案：`services.appExit`，§5.1） | 提案成员本体 | launcher `ctx.provide("appExit", host.exit)` | authority = 官方 launcher 进程生命周期；exclusive 本性，不进 Composable Profile |
+| 进程退出（OBS-14.1） | `services.appExit`（§5.1；**Stage 4 现状注：已交付**，A 类 advanced passthrough） | 该成员本体 | launcher `ctx.provide("appExit", host.exit)` | authority = 官方 launcher 进程生命周期；exclusive 本性，不进 Composable Profile |
 | 启动环境值（OBS-14.2） | —（等价路径判定，§5.2） | `services.credentials.resolve`（层模型同源） | `@deepseek-ai/dsh-launch-environment` 包 import（escape hatch 现状） | 统一 authority = 官方 credentials provider 层模型 |
 | 插件私有数据 | `pluginApi.storage`（owner-scoped 薄绑定） | `services.storage`/`services.storageDomain`（advanced） | 官方 storageDomain | 不作为共享 authority 旁路（durable-state §5） |
 
@@ -225,7 +227,7 @@ B4-1/6（approval.setPolicy、sessionProjectionCache.write）为纯删除裁决�
 ### 5.1 优雅 appExit —— 需要明确公共 seam（services 白名单候选）
 
 - **事实**：`dsh-web-ui/packages/dsh-desktop-launcher/src/index.ts:97–104` 优先 `ctx.get('appExit')` 否则 `process.exit`；官方证据：launcher 经 `dsh-cmdline/lib/index.js:29` 提供 `ctx.provide("appExit", host.exit)`，官方 headless/cmdline 组件同样消费该服务（同文件 :56、`dsh-headless/lib/index.js:106`）。优雅回收插件树后退出与立即退出不等价；`servicesWhitelist` 现无 `appExit`——等价路径不存在。
-- **判定**：按纲领方向「小型 runtime access 优先受限声明式/白名单面」，提出新增 `services.appExit` 白名单成员：A 类受支持 advanced passthrough（官方 service key 一比一、runtime-shaped、门面零附加状态）；组合分类 = exclusive 本性的进程级操作（不进 Composable Profile 组合保证）；authority = 官方 launcher 进程生命周期；服务缺席 → 成员 typed unavailable，门面 SHALL NOT 合成 `process.exit`（fallback 是消费者业务，如实保留）。满足 capability-strategy §6 新增 passthrough 四条件（明确第三方用例 = 桌面/自动化插件的有界退出；静态白名单；组合分类；authority map）。退役条件：官方提供一等受支持退出语义时，该成员保持直通或按减法规则处置。
+- **判定**：按纲领方向「小型 runtime access 优先受限声明式/白名单面」，提出新增 `services.appExit` 白名单成员：A 类受支持 advanced passthrough（官方 service key 一比一、runtime-shaped、门面零附加状态）；组合分类 = exclusive 本性的进程级操作（不进 Composable Profile 组合保证）；authority = 官方 launcher 进程生命周期；服务缺席 → typed unavailable，门面 SHALL NOT 合成 `process.exit`（fallback 是消费者业务，如实保留）。**Stage 4 现状注（缺席语义的精确形态）**：交付实现按既有装配机制呈现两种缺席——官方**服务**不存在 ⇒ `services.appExit` 面 disabled（`isActive:false`）、`exit()` 抛 typed `PluginApiFeatureDisabledError`；官方服务在场而**成员**缺失 ⇒ 面保持 active、`exit` 因 `optional` 不出现。两者都不合成 `process.exit`。满足 capability-strategy §6 新增 passthrough 四条件（明确第三方用例 = 桌面/自动化插件的有界退出；静态白名单；组合分类；authority map）。退役条件：官方提供一等受支持退出语义时，该成员保持直通或按减法规则处置。
 - **不做什么**：不包装、不排队、不拦截、不建设「优雅关机编排」平台；appExit 直通不授权 patch boot/launcher（观察报告 §5 OBS-14 边界）。
 
 ### 5.2 launchEnvironmentOf fallback —— 等价路径成立（附一项 Stage 4 probe）

@@ -106,7 +106,7 @@ test('combined host publishes additive immutable compat shapes once without synt
   for (const view of views) assert.ok(Object.isFrozen(view))
   // The passthrough definitions plus the eight migrate-target keys
   // (services.llm/agents/sessions/settings/prompts/tools/recovery/storage).
-  assert.equal(Object.keys(first.services).length, 53)
+  assert.equal(Object.keys(first.services).length, 54)
   assert.equal(first.services.jobs.isActive, true)
   assert.equal(first.services.shellEnv.isActive, true)
 })

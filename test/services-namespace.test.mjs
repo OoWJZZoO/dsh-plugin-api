@@ -31,7 +31,7 @@ const URI_HELPERS = {
 test('namespace exposes exactly the approved keys and nothing else', () => {
   const services = createServicesNamespace({ ctx: fullCtx(), active: true, uriHelpers: URI_HELPERS })
   assert.deepEqual(Object.keys(services), SERVICES_NAMESPACE_KEYS)
-  assert.equal(Object.keys(services).length, 46)
+  assert.equal(Object.keys(services).length, 47)
   assert.ok('jobs' in services)
   assert.ok('shellEnv' in services)
   assert.ok(!('compaction' in services), 'removed compaction key is absent from the namespace')
