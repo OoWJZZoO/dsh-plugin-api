@@ -134,7 +134,7 @@
 | 编号 | 公共 path | 证据锚点 | 当前实际形状 | 目标 | 处置 / 落点 |
 |---|---|---|---|---|---|
 | B1 | `sessions.request` | `lib/session-interaction-operation-normalize.js:337`、`lib/session-interaction-operation-authority.js:292` | `operation` 为 handle，`observe` 返回退订函数，`dispose()` 返回 `{ok, code:'accepted'|'stale'|'unavailable'}` | K6：`terminal` 缺失按 S13 的一般规则处理（**不新增例外**，与 `workflows.start` 的既有例外一并回收）；`dispose()` 改为「请求停止」码 `requested`/`stale` | 修复（轻）/ `lib/session-interaction-operation-authority.js` |
-| B1 | `workflows.start` | `lib/workflows-facade.js:135`、`lib/workflows-operation.js:60` | `handle` 承载句柄；`status()` 用 `state`；`dispose()` 返回 `Promise`；`cancel` 返回 `undefined` | K6/K2：字段名改 `operation`；`dispose()` 返回 `{ok, code:'requested'|'stale'}`；run authority 与 `meta`/`result`/`cancel` 扩展成员保留（按 S12 以成员行登记，原理外已回收；`terminal` 例外按 S13 回收） | 修复（轻）/ `lib/workflows-operation.js` |
+| B1 | `workflows.start` | `lib/workflows-facade.js:135`、`lib/workflows-operation.js:60` | `handle` 承载句柄；`status()` 用 `state`；`dispose()` 返回 `Promise`；`cancel` 返回 `undefined` | K6/K2：字段名改 `operation`；`dispose()` 返回 `{ok, code:'requested'|'stale'}`；run authority 与 `meta`/`result`/`cancel` 扩展成员保留（按 S12 以成员行登记，原例外已回收；`terminal` 例外按 S13 回收） | 修复（轻）/ `lib/workflows-operation.js` |
 | B1 | `executions.recovery.checkpoints.restore` | `lib/checkpoint-restore.js:366`、`:392`、`:411` | `handle` 为句柄、`operation` 为只读快照；成功码 `started`（登记为 `accepted|completed`）；`handle.observe` 返回 `{ok, current, subscribe, dispose}` 对象 | K6：字段名改 `operation`；快照并入 `status()`；成功码对齐；`observe` 返回退订函数；恢复阶段与资格控制保留 | 修复 / `lib/checkpoint-restore.js` |
 | B1 | `tasks.start` / `tasks.settle` / `tasks.attach` | `lib/task-execution-observation.js:511`、`:596`、`:916`、`:973`、`:1148`、`:1215` | `operation` 为动词字符串；无操作身份；结果含 `taskId` 与领域 payload | K6：动词串改名 `action`；归类为带例外的 operation（控制对象 = durable task/attempt，经 `tasks.get/observe` 观察） | 修复 + 例外 / `lib/task-execution-observation.js` |
 | B2 | 身份自报面（见 K3 清单） | 同 K3 各锚点 | 自报 owner / 自报 generation；跨 owner 同 id 静默覆盖（routing）或并存（security） | K3：派生 + 铸造 + 冲突判定 + `identitySource` 如实登记 | 修复 / 各属主模块 |
@@ -292,7 +292,7 @@
 | `packages/mcp/lib/catalog.js` | A5（mcp，**R 包**） |
 | `lib/settings.js` | C15（登记互指；实现不变） |
 | `docs/standards/*`（12 册） | §4-S1–S15（含 public-api-shape §5 示例修正 C16） |
-| `public-contract.registry.json` | 全部形状变更 + §2.4 的 R1–R5 缺口 |
+| `public-contract.registry.json` | 全部形状变更 + §2.4 的 R1–R6 缺口 |
 | `scripts/registry-validate.mjs`（扩展） | §8 的 entry 级机械校验 |
 | `docs/specs/plugin-api-features/feature-list.md`、`README.md`、`AGENTS.md` §4 | 登记与治理同步（S9/S10 确认后） |
 
@@ -317,7 +317,7 @@
 | 9 | 能力缺席/不支持/未知不报 active；协调 durability/operations 可达 | availability 矩阵测试（含 `unknown`/`unsupported` 映射与 detail 保留） |
 | 10 | 公共观察 handle 不暴露内部 listeners/可变状态 | 冻结与成员集断言（activity/executions） |
 | 11 | canonical 系统事实与第三方自定义事件生产角色明确 | producer denied 测试 + `events.define` 正向测试 |
-| 12 | C1–C14 每项都有处置结论 | 处置表（§2）与交付台账核对，无误报未标注 |
+| 12 | C1–C17（含 §2.3b）与 §2.4 的 R1–R6 每项都有处置结论 | 处置表（§2）与交付台账核对，无误报未标注 |
 
 **机械校验**：`scripts/registry-validate.mjs` 扩展 entry 级断言——入口动词与 idiom 一致、handle 成员集与所属 idiom 一致（policy / resourceRegistry 一律含 `generation`，S1 规则）、handle 扩展成员已按成员行登记（S12）、`dispose()` 结果形状与登记一致、`generation`/`seq`/`epoch` 未混用、每个 namespace 的 `availability` 存在性（`availabilityExemption` 除外）、失败呈现与 `failureSemantics` 一致、同步/异步语义已声明（S15）。不做反射式的全树运行时一致性引擎（避免过度设计）；运行时形状断言只覆盖本线触及成员。
 

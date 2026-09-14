@@ -50,7 +50,7 @@ M10 交付后，人类要求检验 host/client 的 `pluginApi` API 树是否满�
 
 **验收句**：开发者学会一种登记、贡献、观察或操作套路后，能在 host/client 的其他同类接口上直接复用，而不必重新学习身份、返回值和清理方式。
 
-以指引 §8 的有限场景证明完成（逐条映射证据见 design §8）：同一工具由全局改为 agent scope 后外层 handle 与清理方式不变；两个插件登记同名资源时 owner 冲突行为明确且旧 handle 不能撤销新资源；同一策略在 llm/prompts/security 以可迁移方式登记；host/client 建立事件或状态观察时公共对象与释放层次可预测；client remote/slot/settings 贡献遵守同一外层合同且 pending 阶段可撤销；session request、workflow start、checkpoint restore 取得控制对象的方式一致；真实工具视图槽位（`tool.call.toolview`）可经门面使用；channels 的快照、订阅与事件帧读取不因名称造成错误调用；能力缺席/不支持/未知时不报 active 且协调的 durability/operations 可达披露；公共观察 handle 不暴露内部 listeners 与可变状态；canonical 系统事实与第三方自定义事件的生产角色明确；C1–C14 每项都有处置结论。
+以指引 §8 的有限场景证明完成（逐条映射证据见 design §8）：同一工具由全局改为 agent scope 后外层 handle 与清理方式不变；两个插件登记同名资源时 owner 冲突行为明确且旧 handle 不能撤销新资源；同一策略在 llm/prompts/security 以可迁移方式登记；host/client 建立事件或状态观察时公共对象与释放层次可预测；client remote/slot/settings 贡献遵守同一外层合同且 pending 阶段可撤销；session request、workflow start、checkpoint restore 取得控制对象的方式一致；真实工具视图槽位（`tool.call.toolview`）可经门面使用；channels 的快照、订阅与事件帧读取不因名称造成错误调用；能力缺席/不支持/未知时不报 active 且协调的 durability/operations 可达披露；公共观察 handle 不暴露内部 listeners 与可变状态；canonical 系统事实与第三方自定义事件的生产角色明确；C1–C17（含 §2.3b 的子审追加线索）与 §2.4 的 R1–R6 每项都有处置结论。
 
 ## Stage boundary
 
