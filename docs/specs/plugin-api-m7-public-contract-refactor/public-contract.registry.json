@@ -17562,7 +17562,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "scope-bound handle registration: resolves the target through the official agents registry; unresolvable targets and malformed specs are discriminated typed results (unavailable/invalid-input) without global fallback, while an inactive core or an unmounted scoped feature is a typed disabled/inactive error (the member stays present); unresolvable targets and malformed specs are typed registration failures (PLUGIN_API_SCOPE_SPEC_INVALID / PLUGIN_API_SCOPE_OWNER_UNAVAILABLE / PLUGIN_API_SCOPE_BACKING_UNAVAILABLE / PLUGIN_API_SCOPE_TARGET_UNRESOLVED), never discriminated results",
+      "currentShape": "scope-bound handle registration: resolves the target through the official agents registry; unresolvable targets and malformed specs are typed throws (see the failure semantics of this idiom) without global fallback, while an inactive core or an unmounted scoped feature is a typed disabled/inactive error (the member stays present); unresolvable targets and malformed specs are typed registration failures (PLUGIN_API_SCOPE_SPEC_INVALID / PLUGIN_API_SCOPE_OWNER_UNAVAILABLE / PLUGIN_API_SCOPE_BACKING_UNAVAILABLE / PLUGIN_API_SCOPE_TARGET_UNRESOLVED), never discriminated results",
       "migrationAction": null,
       "status": "advanced",
       "verification": [

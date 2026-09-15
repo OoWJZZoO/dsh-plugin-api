@@ -62,6 +62,28 @@ test('storage.open forwards the caller context the owner label is derived from',
   assert.equal(received[1][1]?.fiber?.name, 'plugin-b', 'the second caller is not attributed to the first')
 })
 
+test('a namespace view taken by one caller keeps that caller identity when used later', async () => {
+  const service = createService()
+  const opened = []
+  service.mountFeature('storage', {
+    open: async (...args) => {
+      opened.push(args)
+      return { close: async () => {}, table: () => ({ keys: () => [], delete: async () => true }) }
+    },
+    availability: () => ({ status: 'active' }),
+  })
+
+  // A takes the namespace view, then B reads the same namespace, then both use
+  // their own views. The binding must live in the view, not in shared state.
+  const viewA = forCaller(service, 'plugin-a').storage
+  const viewB = forCaller(service, 'plugin-b').storage
+  await viewA.open({ scope: 'workspace', schema: 'com.example.todo', version: 1, name: 'alpha' })
+  await viewB.open({ scope: 'workspace', schema: 'com.example.todo', version: 1, name: 'beta' })
+
+  assert.equal(opened[0][1]?.fiber?.name, 'plugin-a', 'the earlier view keeps its own caller identity')
+  assert.equal(opened[1][1]?.fiber?.name, 'plugin-b', 'a later visitor never rewrites an earlier view')
+})
+
 test('security policy registration receives the caller-derived owner, not a caller-declared one', () => {
   const service = createService()
   const seen = []

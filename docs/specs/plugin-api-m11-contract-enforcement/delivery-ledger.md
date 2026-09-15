@@ -26,7 +26,7 @@
 
 | 项目 | 结果 |
 |---|---|
-| `npm test`（4G 内存护栏内） | **3519 / 3519 通过**（开工基线 3469；首轮交付 3514；本轮净增 5） |
+| `npm test`（4G 内存护栏内） | **3523 / 3523 通过**（开工基线 3469；首轮交付 3514；本轮净增 9，含 `test/caller-derived-owner.test.mjs` 的 5 条 owner 派生与别名回归断言） |
 | `node scripts/registry-validate.mjs <registry>` | `registry valid`（exit 0） |
 | `node scripts/convergence-verify.mjs` | `546 member rows, 37 behavior rows, 37 fully linked behavior rows`（exit 0；行数 538 → 539 是补入 `lifecycle.register` 现行 leaf 行，539 → 546 是补入七个缺失的 client 现行 leaf 行——`slots.contribute` / `slots.list` / `slots.observe` / `events.observe` / `events.list` / `remotes.contribute` / `settings.remote.contribute`；其中六个是**补登记已存在的公共成员**，`events.list` 是本轮按 Task 5.6「事件目录可查询」**新增**的成员，已按 Req 14.1 的「处置项明确要求并已登记」登记） |
 | `npm run build:client:check` | `client bundle is up to date with its sources`（exit 0；本轮 client 侧源码有改动——`client-generation-rebind`、`client-attention-face`、`client-slots`——bundle 已重建，产物 diff 仅含预期变更） |
@@ -59,7 +59,7 @@
 | 3.1（词表半，B17） | `vocabulary` 增 `identitySource`（含 `derived-caller`）与 `callShape` | registry |
 | 3.5 尾项（B15） | `bypasses` 字段首次落盘：`storage.open`、settings 五个成员行、`events.{emit,serial,parallel,bail,waterfall}` 共 11 行写明 transaction / security policy / audit / branch-routing 的旁路判定 | registry |
 | 5.12 / 8.5（C3 的准入半） | slots 准入门槛由前缀白名单改为**交官方声明判定**（真实官方槽位不再被门面拒绝） | `lib/client-slots.js` |
-| 5.1 / 5.2 / 5.4 / 5.5 / 5.6 / 8.6（B3 主臂） | client `slots.contribute`（判别式 + 标准 contribution handle）、`remotes.contribute`（**pending handle**：任一状态可安全撤销、迟到落地被回滚）、host `settings.remote.contribute`（判别式 + handle，官方同步挂载/租约逻辑不变）、client `attention.contribute`（外层结果冻结）、client `events.observe`（标准观察 handle + 可查询目录 + 未知名 typed 结果）、`connection.get` → `connection.api.settings`（与 `connection.api.llm` 对称） | `lib/{client-runtime,client-official-events,client-attention-face,settings-remote}.js` + client bundle 重建 |
+| 5.1 / 5.2 / 5.4 / 5.5 / 5.6 / 8.6（B3 主臂） | client `slots.contribute`（判别式 + 标准 contribution handle）、`remotes.contribute`（**pending handle**：任一状态可安全撤销、迟到落地被回滚）、host `settings.remote.contribute`（判别式 + handle，官方同步挂载/租约逻辑不变）、client `attention.contribute`（外层结果冻结）、client `events.observe`（标准观察 handle + 可查询目录 + 未知名 typed 结果）、`connection.api.settings` 恢复为 settings 命名空间访问器（与 `connection.api.llm` 对称，`connection.get` 名不再存在——这是对 M3 期 rename 的回滚，见 §3.0 取舍记录） | `lib/{client-runtime,client-official-events,client-attention-face,settings-remote}.js` + client bundle 重建 |
 | 3.2-R 系列（client 登记缺口） | 补入七个缺失的 client 现行 leaf 行（`slots.contribute` / `slots.list` / `slots.observe` / `events.observe` / `events.list` / `remotes.contribute` / `settings.remote.contribute`）；C7 的 `connection.api.settings` 行由 `removed` 改回 `advanced` | registry + 成员表（**546 行**） |
 | 3.5 / 3.6（登记同步） | 本轮全部实现改动同步 registry（B1/B2/B9/B10/B11/B14/B18/B19/B20/C3 的 `currentShape`、`identitySource`、`bypasses`）；成员表机械重建（**546 行**） | registry + `convergence/public-member-table.md` |
 | 全局终审修订（第一轮意见） | ① **实质缺陷**：`storage` / `workspaces` / `security` 三处 caller 捕获用的是箭头 getter（`get: () => {}`），闭包捕获门面服务自身——Cordis 只在**方法式** getter 上把访问上下文作为 receiver，三处已改为 `get() {}` 并以 `test/caller-derived-owner.test.mjs` 取证；② 登记修正：client `settings.remote.contribute` 行改回描述现状、host `events.observe` 两行改回 host 形状、`agents.scopes.register` 行补 typed-throw 现状、`connection.api.settings` 的 `targetPath` / `oldToTargetMapping` / `statusByPath` 三处随回滚同步（避免自环）、`sessions.activity.*` 行清除已不存在的 `absent`、`slots.observe` 行修正首参、新增 client 行的 `identitySource` 改为 `derived-caller (root-fallback)`；③ 代码修正：观察 handle 的 `dispose()` 在领域 teardown 抛错时返回 typed failure（与资源 handle 一致）、host `settings.remote.contribute` 的同 key 冲突返回稳定 `conflict` 码、删除一处死调试代码 | `lib/{plugin-api-service,contract-kernel,settings-remote}.js` + registry + `test/caller-derived-owner.test.mjs` |
@@ -77,6 +77,7 @@
 | 10.1(a)（B16a） | A1–A5 / B1–B3 / C1–C17 / R1–R6 的四态结论表 |
 | 4.14/4.15 余项（B2 余项） | registry 驱动的静态枚举未跑完；16 行 `currentShape: null` 未补；generation 校验未从「itemize 成员集」提升为覆盖全部 policy / resourceRegistry handle 行 |
 | 6.6 余项（B11 余项） | client `lifecycle.register({ownerId})`（`lib/client-generation-rebind.js`）仍接受调用方自报 ownerId，未改派生 |
+| 4.14 余项（冲突口径澄清） | `security.policy.register` 的 `conflictRule: owner-conflict` 与实测口径存在张力：实现为「同 owner 同 id latest-wins、跨 owner 同 id 两名 owner 并存」，而 `api-idioms` §3.2 的 policy 条目要求跨 owner 同 id 抛 typed conflict。需下一轮择一统一（改实现或改该行的 `conflictRule` 与分册措辞） |
 
 **8.4 的取舍记录**：本轮实现了「六个命名空间的 `availability()` + `capabilities` 按真实叶子状态报告」，但它与既有客户面契约的交互面比预期大（命名空间成员集合的精确断言、`services` 聚合状态、passthrough inventory 的成员清单、capability 探针语义），一次性改动触发 12 条既有验收失败。为避免在未充分设计的情况下改动客户面自描述语义，**该改动已整体回滚**（`lib/client-runtime.js` 回到 `d783539` 的形态），8.4 保持未完成并登记为下一轮的设计项——先定清「命名空间 availability 与 `capabilities.*` 的职责边界」，再落实现。
 
@@ -342,3 +343,27 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 - 终审另记一条**不构成偏差**的备注：B8 括注中关于 `attention.contribute` 失效形态的措辞略不精确（该 handle 的 dispose 已返回判别式结果，偏离在**码集**用了 `noop`/`withdrawn` 而非 K2 的 `stale`/`revoked`；client `attention.observe` 的 dispose 返回 `undefined` 未在该枚举中点名，但已落入 Task 4.14 的第二臂 → B2）。登记本身成立、无工作被隐匿，属措辞级；按收敛轮纪律不计偏差，随 B2/B8 的收口一并对齐。
 
 **终审范围声明**：本轮终审通过的是**已交付范围**（§1）与**登记面**（§3 的阻塞项穷尽性与诚实性）的一致性。本 feature **仍未达到完成判定**：Stage 4 的验收义务由 B1–B20 承载，其中 B2（K1/K2/K3 全树一致性收口）、B3（client 公共面）、B12（C 系列余项）、B13（组合验收与迁移切片）是范围最大的四项。**本线不声称 M11 已收口**。
+
+---
+
+### 7.9 第二轮交付的全局终审（第一轮，对象 `ab15065..a42481a`）
+
+结论 **有偏差**，6 条阻塞、4 条中度、3 条低度；四项机械门、版本冻结与官方包零修改成立。意见与处置：
+
+1. **B1（阻塞，实质缺陷）**：`storage` / `workspaces` / `security` 三处 facade getter 用的是**箭头函数**（`get: () => {}`），闭包捕获门面服务自身；Cordis 只在**方法式** getter 上把访问上下文作为 receiver，故三族的 owner 派生实际未接通。→ 三处改为 `get() {}`。
+2. **B2（阻塞）**：registry 的 `client|settings.remote.contribute` 行写成判别式 + handle，实现是 Promise。→ 改回描述现状并标注未交付。
+3. **B3（阻塞）**：`host|events.observe` 的 leaf 与 handle 行被写成 client 形状。→ 改回 host 形状。
+4. **B4（阻塞）**：`agents.scopes.register` 行未随实现（typed throw）更新。→ 更新（第二轮审查复验时又发现旧文本未删净，见 §7.10）。
+5. **B5（阻塞）**：C7 回滚的 registry 同步只做了一半（`targetPath` / `oldToTargetMapping` / `statusByPath`）。→ 三处同步，消除自环。
+6. **B6（阻塞）**：台账 §3 未更新（12 条已不成立 + 若干漏项），抬头「阻塞项」与新纪律口径冲突。→ §3 改为「未完成项登记」并加 B1–B20 状态索引；§3.0 未完成表补入 B2 余项与 client `lifecycle.register({ownerId})` 派生。
+7. 中度 M1–M4（`sessions.activity.*` 行残留 `absent`、`slots.observe` 首参、`events.list` 的新增属性措辞、新增 client 行的 `identitySource` 应记 root-fallback）与低度 L1–L3（host `settings.remote.contribute` 的冲突码、观察 handle teardown 失败的返回形状、一处死调试代码）全部处置。
+
+### 7.10 第二轮交付的全局终审（第二轮，收敛验证，对象至 `84fa236`）
+
+结论 **有偏差**：第一轮 6 条阻塞中 **5 条确认闭合**（B2/B3/B5/B6 完整、B4 部分），但 B1 的修复**引入新的阻塞级缺陷**：
+
+- **B1′（阻塞，别名）**：三处 getter 改为方法式后，仍以「共享可变字段 + 末次访问者胜」实现（`record.callerCtx = …` 在访问时写、在调用时读）。后果：(a) 先取面后使用的调用会被记到最后访问者的 owner；(b) 门面自身的内部挂载（`lib/index.js` 捕获的 `service.storage` 用于 checkpoint 记录、`service.workspaces?.transactions`）会被归因到"最后访问该命名空间的插件"，且随访问顺序漂移（修复前稳定为门面身份，属回归）。
+  → **已就地闭合**：三处改为 **per-caller 视图**（`_storageForCaller` / `_workspacesForCaller` / `_securityForCaller`，按派生身份缓存绑定成员），与既有的 `_routingForCaller`、`prompts` 的按 owner 缓存一致；slot surface 不再注入共享字段。`test/caller-derived-owner.test.mjs` 增加「先取面、后使用」的别名回归断言。
+- **中度（已闭合）**：`agents.scopes.register` 行的旧文本未删净（同一行既写 discriminated results 又写 never discriminated results）→ 删除旧文本；L1 的修复过宽（`PluginApiRemoteError` 一律映射为 `conflict`，语法校验也被误判）→ 收窄为「带 `serviceKey` 的冲突」，语法错误保持 `invalid-input`。
+- **低度（已闭合）**：§2 测试计数刷新为 3522；§3.0 中 `connection` 改名的措辞方向修正（回滚语义）；§7 补入本轮终审记录（本节）。
+- **低度（登记为下一轮项）**：`security.policy.register` 的 `conflictRule: owner-conflict` 与实测口径（同 owner latest-wins / 跨 owner 并存）存在张力，已记入 §3.0 未完成表待下一轮择一统一。
