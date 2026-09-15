@@ -388,3 +388,11 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
   → 已改为**复用同一 caller 接收者**取两次面（`test/caller-derived-owner.test.mjs` 的该用例），旧实现下 `viewAfter === viewBefore` 会失败，断言自此具备判别力。
 - **低度（既有缺陷，已登记为下一轮项）**：`prepareFeature(...).rollback()` 在 `storage` / `security` 上无法恢复禁用面——`_readSlot` 与 `unmountFeature` 都没有 `storage` 分支（rollback 静默 no-op），`createDisabledSecurityApi` 缺少 `egress.lease.release` / `egress.coverage` 导致 `_assignFeature('security')` 的挂载守卫抛错（异常在 apply 的 `close()` 中被吞，feature 已销毁而门面仍发布其 api）。经 `git show 75bbc91:lib/plugin-api-service.js` 比对确认**非本轮引入**，可达性窄（host 无 `unmountFeature('storage')` 调用点）。已记入 §3.0 未完成表。
 - **已确认无问题**：三处 getter 仍为方法式；`_callerView` 的三个字段无其他读写路径（无残留身份键缓存）；`slot.callerCtx` 的 4 处写点恰为 §3.0 已登记的下一轮四族，与三处 slot 无交集；`_promptsSurfaceCache` 有显式失效点、`_routingCallerSurfaceCache` 绑定 service-lifetime surface，均非同型问题；`Object.freeze` 与 `_decoratedNamespaces` 的装饰互不干扰。
+
+### 7.13 第二轮交付的全局终审（第五轮，收敛验证）—— **无偏差**
+
+**结论：无偏差（无阻塞、无中度）。** 第四轮的 1 条中度（重挂载断言不具判别力）经**回放实验**确认已建立判别力：审查代理以 data-URL loader 在内存中把三处 caller 视图替换为旧的身份键实现（worktree 零改动），`test/caller-derived-owner.test.mjs` 中「重挂载后视图跟随新 slot」一条**如实失败**（`assert.notEqual(viewAfter, viewBefore)`），其余四条只验身份绑定、本不承担该职责；反向对照探针显示 HEAD 下 `viewFollowsNewSlot: true` 且新 slot 收到调用，旧实现下为 `false` 且对活 slot 报 `disabled`——即 §7.11 阻塞语义确已消除。第四轮登记的既有低度缺陷（`prepareFeature(...).rollback()` 在 storage / security 上无法恢复禁用面）已入 §3.0 未完成表，其代码事实（`_readSlot` / `unmountFeature` 缺 `storage` 分支、`createDisabledSecurityApi` 缺 `egress.lease.release` / `coverage`、异常在 apply 的 `close()` 中被吞、`ab15065` 与 `75bbc91` 两版本均如此）经逐条核对成立；审查另说明「可达性窄」的准确依据是**影响面**而非零调用点（`ctx.effect` 的宿主拆除会调到 `rollback()`），登记已覆盖同一根因。
+
+本轮 diff（`59f273a..HEAD`）仅测试与台账，**实现零改动**；三处 getter 仍为方法式、`_callerView` 仍为 `WeakMap<slot, Map<identity, view>>`、无残留身份键 slot 缓存（其余按 identity 键控的缓存各有显式失效点或绑定 service-lifetime surface，均非同型问题）；六项机械门全绿；工作区干净。
+
+**终审范围声明（第五轮）**：本轮通过的是**第二轮交付的实现与登记面**同 `tasks.md` / `design.md` / `requirements.md` 的一致性，以及按 `docs/standards/` 适用分册的符合性。**M11 仍未收口**——交付义务由 §3.0 的未完成清单与 §3 的状态索引承载（最大余项：B3 的 client 自描述与贡献面余项、B12 的 C 系列余项、B4 的例外台账重分类与三条校验、B5 的 `async` 回填、B13 的组合验收与迁移切片、B16a 的四态结论表、以及 §3.0 新登记的三条既有缺陷）。
