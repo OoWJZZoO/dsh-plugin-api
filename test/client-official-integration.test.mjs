@@ -154,7 +154,7 @@ test('joined client surface exposes exact services, event, and llm faces with id
   const passthroughNames = CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => d.serviceName)
   assert.deepEqual(Object.keys(api.services), ['isActive', ...SERVICE_NAMES, ...passthroughNames])
   assert.equal(api.services.isActive, true)
-  assert.deepEqual(Object.keys(api.events), ['observe'])
+  assert.deepEqual(Object.keys(api.events), ['list', 'observe'])
 
   for (const name of SERVICE_NAMES) {
     const face = api.services[name]
@@ -172,7 +172,7 @@ test('joined client surface exposes exact services, event, and llm faces with id
     }
   }
 
-  assert.equal(typeof api.connection.get.describe, 'function')
+  assert.equal(typeof api.connection.api.settings.describe, 'function')
   const llm = api.connection.api.llm
   assert.deepEqual(Object.keys(llm), ['providers', 'models', 'discoverModels'])
   assert.equal(llm.isActive, undefined, 'the llm face carries only the approved members')
@@ -217,25 +217,34 @@ test('client events subscribe through the live source with identity, order, and 
   const delivered = []
   const first = { id: 1 }
   const second = { id: 2 }
-  const off = events.observe('locale/change', (...args) => delivered.push(['a', ...args]))
-  events.observe('theme/change', () => { throw new Error('observer failure must be contained') })
-  events.observe('theme/change', (...args) => delivered.push(['b', ...args]))
-  events.observe('locale/change', (...args) => delivered.push(['c', ...args]))
+  // Observation answers a standard handle; each subscriber carries its own
+  // containment, and releasing one handle never touches the others.
+  const observed = events.observe('locale/change')
+  assert.equal(observed.ok, true)
+  const firstHandle = observed.handle
+  firstHandle.subscribe((payload) => delivered.push(['a', payload]))
+  events.observe('theme/change').handle.subscribe(() => { throw new Error('observer failure must be contained') })
+  events.observe('theme/change').handle.subscribe((payload) => delivered.push(['b', payload]))
+  events.observe('locale/change').handle.subscribe((payload) => delivered.push(['c', payload]))
 
   ctx.emit('locale/change', first)
   ctx.emit('theme/change', second)
   assert.deepEqual(delivered, [['a', first], ['c', first], ['b', second]])
-  assert.equal(typeof off, 'function')
-  assert.equal(off(), true, 'the disposer unregisters only its own listener')
+  assert.equal(firstHandle.dispose().code, 'revoked', 'the handle releases only its own observation')
   ctx.emit('locale/change', first)
   assert.deepEqual(delivered, [['a', first], ['c', first], ['b', second], ['c', first]])
 
-  events.observe('command/executed', (sessionId, commandName, result) => {
-    delivered.push(['e', sessionId, commandName, result])
+  events.observe('command/executed').handle.subscribe((payload) => {
+    delivered.push(['e', ...(Array.isArray(payload) ? payload : [payload])])
   })
   ctx.emit('command/executed', 's-1', 'run', { ok: true })
   assert.deepEqual(delivered.at(-1), ['e', 's-1', 'run', { ok: true }])
-  assert.throws(() => events.observe('unsupported/event', () => {}), /unsupported client event/)
+  // An unknown name is a typed result naming the catalog, never a bare throw.
+  const unknown = events.observe('unsupported/event')
+  assert.equal(unknown.ok, false)
+  assert.equal(unknown.code, 'unsupported')
+  assert.ok(Array.isArray(unknown.names) && unknown.names.length > 0, 'the typed result carries the catalog')
+  assert.deepEqual(events.list(), unknown.names, 'the catalog is queryable through the same names')
   dispose()
 })
 
@@ -294,7 +303,7 @@ test('the joined facade degrades the connection face through its own path when t
   assert.throws(() => api.connection.rpc.call('/api', 'probe', { args: [] }),
     (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED',
     'the existing connection face degrades through its own path')
-  assert.throws(() => api.connection.get.describe(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'clientConnection')
+  assert.throws(() => api.connection.api.settings.describe(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'clientConnection')
   assert.throws(() => api.connection.api.llm.providers(), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.connection')
   dispose()
 })

@@ -88,8 +88,8 @@ test('official client artifact registers, composes all client leaves, and suppor
     'the published root carries the client brand symbol')
   assert.equal(api.codecValidateUnavailable, api.codecValidateUnavailable, 'one zod value is shared by the public bundle')
   assert.equal(typeof api.connection.rpc.call, 'function')
-  assert.equal(typeof api.connection.get.describe, 'function',
-    'the bundled connection read accessor rides the registered connection.get path')
+  assert.equal(typeof api.connection.api.settings.describe, 'function',
+    'the bundled connection settings accessor rides the registered connection.api.settings path')
   assert.equal(typeof api.slots.observe, 'function')
   assert.equal(artifact.apply(ctx), dispose, 'reapply reuses the active client facade')
   assert.equal(await dispose(), true)
@@ -145,10 +145,12 @@ test('bundle contribute mounts through gateway-style dynamic namespace publicati
   }
   // The bundle fixture's $mount publishes remote[namespace] as a dynamic
   // property (the gateway exposes Cordis dynamic services, not own properties).
-  const dispose = await api.remotes.contribute(contribution)
-  assert.equal(typeof dispose, 'function')
-  assert.equal(await dispose(), true)
-  assert.equal(await dispose(), false)
+  const contributed = await api.remotes.contribute(contribution)
+  assert.equal(contributed.ok, true, 'the remote contribution answers the discriminated result')
+  const handle = contributed.handle
+  assert.equal(handle.id, contribution.package)
+  assert.equal(handle.dispose().code, 'revoked', 'a pending contribution is safely withdrawable')
+  assert.equal(handle.dispose().code, 'stale')
 })
 
 const FEATURE_TO_LEAF = {
@@ -167,15 +169,30 @@ function probe(thunk) {
   try { thunk(); return true } catch (error) { return error.code === 'PLUGIN_API_FEATURE_DISABLED' || error.code === 'PLUGIN_API_INACTIVE' ? false : true }
 }
 
+/**
+ * Contribution members answer a discriminated result instead of throwing, so a
+ * disabled environment shows up as its code rather than as an exception.
+ */
+function probeContribution(thunk) {
+  try {
+    const outcome = thunk()
+    if (outcome === null || typeof outcome !== 'object') return true
+    if (outcome.ok === false && ['inactive', 'unavailable', 'disabled'].includes(outcome.code)) return false
+    return true
+  } catch (error) {
+    return error.code === 'PLUGIN_API_FEATURE_DISABLED' || error.code === 'PLUGIN_API_INACTIVE' ? false : true
+  }
+}
+
 function leafState(api) {
   const state = {}
   for (const leaf of ['inputTriggers', 'commandUi', 'modelDirectories', 'conversation', 'conversationEvents', 'conversationViews', 'timer']) {
     state[leaf] = leafProbe(api, `client.${leaf}`)
   }
   state.connection = probe(() => api.connection.rpc.call('/api', 'probe', { args: [] }))
-  state.remoteContribution = probe(() => api.remotes.contribute({ package: 'probe', descriptors: [] }))
+  state.remoteContribution = probeContribution(() => api.remotes.contribute({ package: 'probe', descriptors: [] }))
   state.settingsScope = api.settings.scope.isActive
-  state.slots = probe(() => api.slots.contribute({ name: 'details' }))
+  state.slots = probeContribution(() => api.slots.contribute({ name: 'details' }))
   state.remoteEvents = probe(() => api.remotes.observe('probe', () => {}))
   state.slotEvents = typeof api.slots.observe === 'function'
   state.settingsRemote = typeof api.settings.remote.contribute === 'function'
@@ -232,7 +249,7 @@ test('malformed or throwing optional services also disable only the owning leaf'
   const dispose = artifact.apply(ctx)
   const api = ctx.get('pluginApi')
   assert.ok(api)
-  assert.equal(probe(() => api.slots.contribute({ name: 'details' })), false,
+  assert.equal(probeContribution(() => api.slots.contribute({ name: 'details' })), false,
     'the slots face stays registered in its disabled shape when ctx.get throws')
   assert.equal(typeof api.connection.rpc.call, 'function')
   dispose()

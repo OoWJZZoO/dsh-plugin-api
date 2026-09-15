@@ -311,12 +311,13 @@ test('bundled client events: the four approved events with slim isActive/on face
     'connection/reset': 'connectionReset',
     'command/executed': 'commandExecuted',
   }
-  assert.deepEqual(Object.keys(events), ['observe'])
+  assert.deepEqual(Object.keys(events), ['list', 'observe'])
+  assert.deepEqual([...events.list()].sort(), Object.keys(faceNames).sort(), 'the catalog lists the approved events')
   for (const { name, args } of CLIENT_EVENT_CONTRACTS) {
     assert.equal(typeof args, 'string', `event ${name} documents call args`)
-    const off = events.observe(name, () => {})
-    assert.equal(typeof off, 'function', `event ${name} subscribes through the merged observe entry`)
-    off()
+    const observed = events.observe(name)
+    assert.equal(observed.ok, true, `event ${name} subscribes through the merged observe entry`)
+    assert.equal(observed.handle.dispose().code, 'revoked', `event ${name} handle releases its own observation`)
   }
   dispose()
 })

@@ -78,9 +78,13 @@ async function observeClientFaces(bundle, degrade) {
   const listSlots = (key) => (typeof slots.list === 'function' ? slots.list(key) : slots.entries(key))
   const contributeSlots = (spec) => (typeof slots.contribute === 'function' ? slots.contribute(spec) : slots.register(spec))
   const entriesBeforeRegister = listSlots('details')
-  const disposer = contributeSlots({ name: 'details' })
+  const contributed = contributeSlots({ name: 'details' })
   const entriesAfterRegister = listSlots('details')
-  const removed = disposer()
+  // Both eras normalize to "the slot was released": the boundary era answers a
+  // disposer function, the current era a discriminated result with a handle.
+  const removed = typeof contributed === 'function'
+    ? contributed() === true
+    : ['revoked', 'disposed'].includes(contributed?.handle?.dispose?.().code)
   const entriesAfterDispose = listSlots('details')
   const live = {
     mounterNames: bundle.CLIENT_MOUNTERS === undefined ? undefined : [...bundle.CLIENT_MOUNTERS],
