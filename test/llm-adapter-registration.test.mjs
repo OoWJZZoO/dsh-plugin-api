@@ -263,12 +263,12 @@ test('dispose revokes the route and is idempotent with a typed stale no-op', () 
   const { instance, routes, counts } = createRegistration()
   const handle = instance.register(makeSpec(), createCallerCtx())
   const outcome = handle.dispose()
-  assert.deepEqual(outcome, { status: 'ok' })
+  assert.deepEqual({ ...outcome }, { ok: true, code: 'revoked' })
   assert.equal(routes.has('vision-x'), false, 'route revoked from future selection')
   assert.equal(counts.updated, 1, 'exactly one official revocation event')
 
   const stale = handle.dispose()
-  assert.equal(stale.status, 'stale')
+  assert.equal(stale.code, 'stale')
   assert.equal(counts.updated, 1, 'stale disposal does not emit a second event')
 
   const rows = instance.list()
@@ -283,7 +283,7 @@ test('a stale disposer never revokes a newer generation', async () => {
   assert.equal(next.generation, 2)
 
   const outcome = old.dispose()
-  assert.equal(outcome.status, 'stale', 'old-generation disposer is a typed no-op')
+  assert.equal(outcome.code, 'stale', 'old-generation disposer is a typed no-op')
   const chunks = []
   for await (const chunk of adapters.get('vision-x').stream({})) chunks.push(chunk)
   assert.deepEqual(chunks, [{ delta: 'new' }], 'newer generation registration survives')
@@ -336,7 +336,7 @@ test('an in-flight stream runs to natural completion across revocation', async (
   const first = await iterator.next()
 
   // revoke while the stream is open
-  assert.deepEqual(handle.dispose(), { status: 'ok' })
+  assert.deepEqual({ ...handle.dispose() }, { ok: true, code: 'revoked' })
   assert.equal(adapters.has('vision-x'), false)
 
   // the already-open stream keeps pulling from its captured generator

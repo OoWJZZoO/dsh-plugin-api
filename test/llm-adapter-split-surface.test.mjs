@@ -124,7 +124,7 @@ test('revoking a real route does not tear down the decoration owner handle', asy
   const adapters = service.llm.adapters
   const realHandle = adapters.register(makeSpec())
   const decorationHandle = adapters.decorations.register({ id: 'deco-2', match: () => true, wrap: (next) => next })
-  assert.equal(realHandle.dispose().status, 'ok')
+  assert.equal(realHandle.dispose().code, 'revoked')
   const reclaimed = await decorationHandle.dispose()
   assert.equal(reclaimed?.status ?? 'ok', 'ok', 'decoration handle disposes through its own lifecycle')
 })

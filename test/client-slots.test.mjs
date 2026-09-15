@@ -37,10 +37,19 @@ test('slots preserve official ownership and emit changed after committed mutatio
   assert.deepEqual(changed, ['settings.panel', 'settings.panel', 'details'])
 })
 
-test('slots reject invalid keys and SlotEntryDef fields before official calls', () => {
-  const api = createClientSlots({ slots: { register() {}, inject() {}, entries() { return [] }, subscribe() {} } })
-  assert.throws(() => api.register({ name: 'arbitrary' }, {}), /canonical/)
+test('slots hand key admission to the official runtime and still validate their own declarations', () => {
+  const registered = []
+  const api = createClientSlots({
+    slots: { register(options) { registered.push(options.name); return () => {} }, inject() {}, entries() { return [] }, subscribe() {} },
+  })
+  // A real officially declared slot must reach the official runtime: the facade
+  // no longer rejects keys against a maintainer-guessed prefix set.
+  assert.doesNotThrow(() => api.register({ name: 'tool.call.toolview' }, {}))
+  assert.deepEqual(registered, ['tool.call.toolview'])
+  // Values that cannot be a slot key at all are still rejected up front.
+  assert.throws(() => api.register({ name: '' }, {}), /non-empty string/)
+  assert.throws(() => api.entries(''), /non-empty string/)
+  // The child-declaration grammar the facade owns is still validated.
   assert.throws(() => api.register({ name: 'details', children: { 'settings.panel': { kind: 'panel', scope: 'root' } } }, {}), /kind/)
   assert.throws(() => api.register({ name: 'details', children: { 'settings.panel': { kind: 'single', scope: 'global' } } }, {}), /scope/)
-  assert.throws(() => api.entries('x'), /canonical/)
 })

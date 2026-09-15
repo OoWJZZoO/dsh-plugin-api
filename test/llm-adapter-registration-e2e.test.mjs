@@ -210,7 +210,7 @@ test('decorate, route replace and dispose interleave across two owners without c
   assert.equal(official.counts.adaptersUpdated, 0, 'a facade CAS swap is not a topology commit: no synthetic event')
 
   // the old-generation disposer is a typed no-op
-  assert.equal(ownerHandle.dispose().status, 'stale', 'old-generation disposer does not revoke the newer registration')
+  assert.equal(ownerHandle.dispose().code, 'stale', 'old-generation disposer does not revoke the newer registration')
 
   // decoration disposes through its own lifecycle; the route stays callable
   assert.equal((decoHandle.dispose())?.status ?? 'ok', 'ok')
@@ -219,7 +219,7 @@ test('decorate, route replace and dispose interleave across two owners without c
   assert.deepEqual(after, ['v2'])
 
   // the current-generation disposer revokes the route (official event fires)
-  assert.equal(swapped.dispose().status, 'ok')
+  assert.equal(swapped.dispose().code, 'revoked')
   assert.equal(official.counts.adaptersUpdated, 1, 'exactly one official revocation event for the whole interleave')
   assert.throws(
     () => state.pluginApi.llm.stream({ provider: 'route-x', model: 'route-x-large' }),
@@ -256,7 +256,7 @@ test('in-flight streams finish naturally across revocation; cancellation propaga
     if (options?.signal?.aborted) return
     yield { delta: 'c' }
   }))
-  assert.equal(live.dispose().status, 'ok')
+  assert.equal(live.dispose().code, 'revoked')
 
   // the already-open stream keeps pulling from its captured implementation
   const rest = []
