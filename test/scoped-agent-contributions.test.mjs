@@ -130,16 +130,14 @@ test('scope handle carries the fixed shape plus the recorded target/status exten
   assert.ok(Object.isFrozen(handle.target))
 })
 
-test('unresolvable targets are typed unavailable without global fallback', () => {
+test('unresolvable targets are typed registration failures without global fallback', () => {
   const { registry, callerCtx } = createHarness()
-  const missing = registry.registerScope({ agent: 'nope' }, callerCtx())
-  assert.equal(missing.ok, false)
-  assert.equal(missing.code, 'unavailable')
-  assert.match(missing.reason, /cannot be resolved/)
-  const malformed = registry.registerScope({ agent: 42 }, callerCtx())
-  assert.equal(malformed.code, 'invalid-input')
-  const ownerless = registry.registerScope({ agent: 'agent-a' }, { owner: undefined })
-  assert.equal(ownerless.code, 'unavailable')
+  assert.throws(() => registry.registerScope({ agent: 'nope' }, callerCtx()),
+    (error) => error.code === 'PLUGIN_API_SCOPE_TARGET_UNRESOLVED' && /cannot be resolved/.test(error.message))
+  assert.throws(() => registry.registerScope({ agent: 42 }, callerCtx()),
+    (error) => error.code === 'PLUGIN_API_SCOPE_SPEC_INVALID')
+  assert.throws(() => registry.registerScope({ agent: 'agent-a' }, { owner: undefined }),
+    (error) => error.code === 'PLUGIN_API_SCOPE_OWNER_UNAVAILABLE')
 })
 
 test('status() reports usable and destroyed without resurrecting the target', () => {
@@ -266,9 +264,9 @@ test('handle dispose removes only its own installations (identity-bound)', () =>
   }, callerCtx('owner-b'))
   assert.equal(registry.inspection().records, 2)
 
-  assert.equal(handleA.dispose().status, 'ok')
+  assert.equal(handleA.dispose().code, 'revoked')
   assert.equal(registry.inspection().records, 1, 'only handle A record removed')
-  assert.equal(handleA.dispose().status, 'stale', 'dispose is idempotent via typed no-op')
+  assert.equal(handleA.dispose().code, 'stale', 'dispose is idempotent via typed no-op')
 })
 
 test('resume re-announcement re-installs dormant records into the new agent context', () => {
@@ -384,7 +382,7 @@ test('scope handles are owner-bound: caller teardown disposes the handle, its re
   assert.equal(after.scopes, 0)
   assert.equal(after.snapshotCells, 0, 'the per-target cell is released with its last handle')
   assert.equal(handle.status().status, 'usable', 'status reports official target liveness, not handle liveness')
-  assert.equal(handle.dispose().status, 'stale', 'the handle left with its owner')
+  assert.equal(handle.dispose().code, 'stale', 'the handle left with its owner')
 })
 
 test('target destruction evicts records to dormant bookkeeping; handle dispose clears it', () => {
@@ -412,7 +410,7 @@ test('target destruction evicts records to dormant bookkeeping; handle dispose c
   assert.equal(registry.inspection().dormant, 0, 'the record is live again after the re-installation')
 
   // disposing the live handle physically clears the evicted bookkeeping
-  assert.equal(handle.dispose().status, 'ok')
+  assert.equal(handle.dispose().code, 'revoked')
   const cleared = registry.inspection()
   assert.equal(cleared.records, 0)
   assert.equal(cleared.dormant, 0)

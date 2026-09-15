@@ -127,9 +127,9 @@ test('destroy cleanup, stale handles, and owner reload never cross-damage', asyn
   assert.equal(doomedContribution.code, 'unavailable')
 
   // scope handle dispose removes only its own records
-  assert.equal(doomedHandle.dispose().status, 'ok')
-  assert.equal(doomedHandle.dispose().status, 'stale')
-  assert.equal(survivorHandle.dispose().status, 'ok')
+  assert.equal(doomedHandle.dispose().code, 'revoked')
+  assert.equal(doomedHandle.dispose().code, 'stale')
+  assert.equal(survivorHandle.dispose().code, 'revoked')
   assert.deepEqual((await singletons.systemPrompt.assemble({ agent: 'survivor' })).sections, [], 'survivor records gone only via its own handle')
 })
 
@@ -343,18 +343,19 @@ test('two independent plugin fibers on one target: owner attribution and unload 
 
   // owner unload removes that plugin's contributions and handles only
   pluginA.teardown()
-  assert.equal(handleA.dispose().status, 'stale', 'the unloaded owner handle left with its fiber')
+  assert.equal(handleA.dispose().code, 'stale', 'the unloaded owner handle left with its fiber')
   assert.equal(handleB.status().status, 'usable', 'the other owner is untouched')
   assert.deepEqual((await singletons.systemPrompt.assemble({ agent: 'agent-shared' })).sections.map((section) => section.name), ['shared-id'])
-  assert.equal(handleB.dispose().status, 'ok')
+  assert.equal(handleB.dispose().code, 'revoked')
 })
 
 test('without the lifecycle substrate the feature degrades alone with typed errors', () => {
   const healthy = createHarness()
   assert.equal(healthy.state.pluginApi.capabilities.get('agents.scopes').status, 'active',
     'the healthy backing is reported as active')
-  assert.doesNotThrow(() => healthy.state.pluginApi.agents.scopes.register({ agent: 'missing-agent' }),
-    'a missing target is a typed result, not a capability failure')
+  assert.throws(() => healthy.state.pluginApi.agents.scopes.register({ agent: 'missing-agent' }),
+    (error) => error.code === 'PLUGIN_API_SCOPE_TARGET_UNRESOLVED',
+    'a missing target is a typed registration failure, never a capability fallback')
 
   const { state, makeAgent } = createHarness({ omitListenerSubstrate: true })
   const api = state.pluginApi
