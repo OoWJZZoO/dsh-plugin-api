@@ -180,7 +180,7 @@ test('adapters: per-view unavailable markers surface single-value source degrada
   assert.deepEqual(history.unavailable, ['tools:degraded'])
   assert.equal(history.items[0].terminal.outcome, 'success')
   const current = projection.api.current('s1')
-  assert.equal(current.code, 'absent')
+  assert.equal(current.code, 'missing')
 })
 
 test('adapters: dispose is idempotent and stops consumption', () => {

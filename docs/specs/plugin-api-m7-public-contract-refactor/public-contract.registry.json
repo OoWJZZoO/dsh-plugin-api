@@ -614,6 +614,12 @@
       "verification": [
         "member-inventory",
         "registry-validation"
+      ],
+      "bypasses": [
+        "transaction: not applicable (a dispatch carries no durable state)",
+        "security policy: not applicable (no egress or tool boundary is crossed)",
+        "audit: not applicable (dispatch is a bus fact, not an audited decision)",
+        "branch/routing: closed (canonical producer authority is decided before dispatch)"
       ]
     },
     {
@@ -647,6 +653,12 @@
       "verification": [
         "member-inventory",
         "registry-validation"
+      ],
+      "bypasses": [
+        "transaction: not applicable (a dispatch carries no durable state)",
+        "security policy: not applicable (no egress or tool boundary is crossed)",
+        "audit: not applicable (dispatch is a bus fact, not an audited decision)",
+        "branch/routing: closed (canonical producer authority is decided before dispatch)"
       ]
     },
     {
@@ -680,6 +692,12 @@
       "verification": [
         "member-inventory",
         "registry-validation"
+      ],
+      "bypasses": [
+        "transaction: not applicable (a dispatch carries no durable state)",
+        "security policy: not applicable (no egress or tool boundary is crossed)",
+        "audit: not applicable (dispatch is a bus fact, not an audited decision)",
+        "branch/routing: closed (canonical producer authority is decided before dispatch)"
       ]
     },
     {
@@ -713,6 +731,12 @@
       "verification": [
         "member-inventory",
         "registry-validation"
+      ],
+      "bypasses": [
+        "transaction: not applicable (a dispatch carries no durable state)",
+        "security policy: not applicable (no egress or tool boundary is crossed)",
+        "audit: not applicable (dispatch is a bus fact, not an audited decision)",
+        "branch/routing: closed (canonical producer authority is decided before dispatch)"
       ]
     },
     {
@@ -746,6 +770,12 @@
       "verification": [
         "member-inventory",
         "registry-validation"
+      ],
+      "bypasses": [
+        "transaction: not applicable (a dispatch carries no durable state)",
+        "security policy: not applicable (no egress or tool boundary is crossed)",
+        "audit: not applicable (dispatch is a bus fact, not an audited decision)",
+        "branch/routing: closed (canonical producer authority is decided before dispatch)"
       ]
     },
     {
@@ -9191,7 +9221,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "availability query",
+      "currentShape": "availability query; synchronous by contract: every input is resolved at mount time, so a general probe never reads a pending value",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -10298,7 +10328,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "availability getter throwing when inactive",
+      "currentShape": "availability getter throwing when inactive; reports the outer three-value status (active | degraded | unavailable) with the face/seam/audit detail kept below it",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -10568,6 +10598,12 @@
       "verification": [
         "member-inventory",
         "registry-validation"
+      ],
+      "bypasses": [
+        "transaction: closed (no second transaction wrapper; the official authority stays the state owner)",
+        "security policy: not applicable (the path crosses no egress or tool boundary)",
+        "audit: not applicable (not an audited decision point)",
+        "branch/routing: not applicable"
       ]
     },
     {
@@ -10601,6 +10637,12 @@
       "verification": [
         "member-inventory",
         "registry-validation"
+      ],
+      "bypasses": [
+        "transaction: closed (no second transaction wrapper; the official authority stays the state owner)",
+        "security policy: not applicable (the path crosses no egress or tool boundary)",
+        "audit: not applicable (not an audited decision point)",
+        "branch/routing: not applicable"
       ]
     },
     {
@@ -10733,6 +10775,12 @@
       "verification": [
         "member-inventory",
         "registry-validation"
+      ],
+      "bypasses": [
+        "transaction: closed (no second transaction wrapper; the official authority stays the state owner)",
+        "security policy: not applicable (the path crosses no egress or tool boundary)",
+        "audit: not applicable (not an audited decision point)",
+        "branch/routing: not applicable"
       ]
     },
     {
@@ -10898,6 +10946,12 @@
       "verification": [
         "member-inventory",
         "registry-validation"
+      ],
+      "bypasses": [
+        "transaction: closed (no second transaction wrapper; the official authority stays the state owner)",
+        "security policy: not applicable (the path crosses no egress or tool boundary)",
+        "audit: not applicable (not an audited decision point)",
+        "branch/routing: not applicable"
       ]
     },
     {
@@ -11600,6 +11654,12 @@
       "verification": [
         "member-inventory",
         "registry-validation"
+      ],
+      "bypasses": [
+        "transaction: closed (no second transaction wrapper; the official authority stays the state owner)",
+        "security policy: not applicable (the path crosses no egress or tool boundary)",
+        "audit: not applicable (not an audited decision point)",
+        "branch/routing: not applicable"
       ]
     },
     {
@@ -12689,6 +12749,12 @@
       "verification": [
         "member-inventory",
         "registry-validation"
+      ],
+      "bypasses": [
+        "transaction: closed (no second transaction wrapper; the official authority stays the state owner)",
+        "security policy: not applicable (the path crosses no egress or tool boundary)",
+        "audit: not applicable (not an audited decision point)",
+        "branch/routing: not applicable"
       ]
     },
     {
@@ -15455,7 +15521,7 @@
       "availabilityShape": "namespace availability member on sessions.activity",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "frozen { snapshot, sessionQueue, gap, unavailable } | typed absence { ok:false, code:'absent' }",
+      "currentShape": "frozen { snapshot, sessionQueue, gap, unavailable } | typed absence { ok:false, code:'absent' }; a definitely-absent subject answers the typed missing code and a malformed argument answers invalid-input",
       "migrationAction": "retain",
       "status": "recommended",
       "verification": [
@@ -15488,7 +15554,7 @@
       "availabilityShape": "namespace availability member on sessions.activity",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "frozen { snapshot, sessionQueue, gap, unavailable } | typed absence { ok:false, code:'absent' }",
+      "currentShape": "frozen { snapshot, sessionQueue, gap, unavailable } | typed absence { ok:false, code:'absent' }; a definitely-absent subject answers the typed missing code and a malformed argument answers invalid-input",
       "migrationAction": "retain",
       "status": "recommended",
       "verification": [

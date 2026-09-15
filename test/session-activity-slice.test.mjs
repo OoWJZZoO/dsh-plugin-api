@@ -41,7 +41,7 @@ test('slice: active slice facts produce observed-grade terminal and queue facts'
   // the activity closed: the frozen record lives in history, the current view
   // reports absence and the session-level queue marker is set
   const current = projection.api.current('s1')
-  assert.deepEqual(current, { ok: false, code: 'absent' })
+  assert.deepEqual(current, { ok: false, code: 'missing' })
   const history = projection.api.history('s1')
   const snapshot = history.items[0]
   assert.equal(snapshot.terminal.outcome, 'superseded')
@@ -62,7 +62,7 @@ test('slice: inactive slice refuses facts and never mislabels them observed', ()
   assert.equal(projection.ingestAttemptFact('agent/attempt/end', AT.end()), false)
   const view = projection.api.current('s1')
   assert.equal(view.ok, false)
-  assert.deepEqual(view, { ok: false, code: 'absent' })
+  assert.deepEqual(view, { ok: false, code: 'missing' })
   const availability = projection.api.availability()
   assert.equal(availability.status, 'degraded')
   assert.match(availability.reason, /terminal-evidence=reconstructed/)

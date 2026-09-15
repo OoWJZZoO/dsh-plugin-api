@@ -89,5 +89,5 @@ test('availability: owner initialization failure is contained, never throws, rep
   const projection = createSessionActivityProjection({ ctx, observe: true })
   const availability = projection.api.availability()
   assert.ok(['degraded', 'unavailable'].includes(availability.status))
-  assert.equal(projection.api.current('s1').code, 'absent')
+  assert.equal(projection.api.current('s1').code, 'missing')
 })

@@ -41,11 +41,12 @@ test('view: current returns a frozen snapshot for an open activity and typed abs
   assert.ok(Object.isFrozen(view.snapshot))
   assert.equal(view.snapshot.terminal, null)
   assert.equal(view.snapshot.status.phase, 'running')
-  // unknown session => typed absence
-  assert.deepEqual(projection.api.current('nope'), { ok: false, code: 'absent' })
-  // invalid session id => typed absence, never an exception
-  assert.deepEqual(projection.api.current(''), { ok: false, code: 'absent' })
-  assert.deepEqual(projection.api.current(undefined), { ok: false, code: 'absent' })
+  // unknown session => the subject is definitely missing
+  assert.deepEqual(projection.api.current('nope'), { ok: false, code: 'missing' })
+  // a malformed argument is invalid input, never an exception and never a
+  // missing subject
+  assert.deepEqual(projection.api.current(''), { ok: false, code: 'invalid-input', reason: 'a session id is required' })
+  assert.deepEqual(projection.api.current(undefined), { ok: false, code: 'invalid-input', reason: 'a session id is required' })
 })
 
 test('view: get returns the frozen record with full classification or typed absence', () => {
@@ -58,8 +59,8 @@ test('view: get returns the frozen record with full classification or typed abse
   assert.equal(fetched.snapshot.terminal.outcome, 'success')
   assert.equal(fetched.snapshot.terminal.confidence, 'observed')
   assert.equal(fetched.snapshot.execution.correlationConfidence, 'observed')
-  assert.deepEqual(projection.api.get('unknown-activity'), { ok: false, code: 'absent' })
-  assert.deepEqual(projection.api.get(''), { ok: false, code: 'absent' })
+  assert.deepEqual(projection.api.get('unknown-activity'), { ok: false, code: 'missing' })
+  assert.deepEqual(projection.api.get(''), { ok: false, code: 'invalid-input', reason: 'an activity id is required' })
 })
 
 test('view: list pages by stable order with cursor continuation', () => {
