@@ -91,13 +91,17 @@ test('capabilityMatrix is separate from capabilities and from availability', () 
   const matrix = api.capabilityMatrix()
   assert.ok(Object.isFrozen(matrix))
   assert.ok(Object.isFrozen(matrix.clusters))
-  assert.ok(matrix.clusters.length >= 70, 'the conservation matrix covers every capability cluster')
+  assert.ok(matrix.clusters.length >= 70, 'the projection covers every live capability cluster')
   for (const row of matrix.clusters) {
-    assert.ok(['retained', 'renamed', 'merged', 'migrated', 'deleted', 'gap'].includes(row.status), `${row.capabilityCluster}: closed conservation status`)
-    assert.ok(Array.isArray(row.qualifiers))
+    // The runtime projection speaks current state only: no migration action
+    // reaches a plugin, and the cluster carries its limitations and gap reason.
+    assert.ok(['active', 'degraded', 'unavailable'].includes(row.status), `${row.capabilityCluster}: current-state status`)
+    assert.ok(Array.isArray(row.limitations))
+    assert.equal('qualifiers' in row, false, `${row.capabilityCluster}: no migration qualifiers`)
+    assert.equal('replacement' in row, false, `${row.capabilityCluster}: no migration replacement note`)
   }
   const root = matrix.clusters.find((row) => row.capabilityCluster === 'facade.root')
-  assert.equal(root.status, 'retained')
+  assert.equal(root.status, 'active', 'the root capability cluster is live today')
   assert.equal(api.capabilities.get('llm').status, 'active', 'capabilities reports current presence')
   assert.equal(typeof api.capabilities, 'object')
   assert.equal(api.capabilities.list().includes('llm'), true)

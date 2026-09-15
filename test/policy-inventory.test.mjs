@@ -105,35 +105,32 @@ test('s6 reclassification: the registry no longer claims automatic probe executi
   assert.ok(/no facade automatic scheduler/i.test(reclassified.finding), 'the finding records the missing scheduler')
 })
 
-test('s6 reclassification: the generated capability matrix mirror stays in sync', () => {
+test('s6 reclassification: the generated capability matrix carries no migration claims', () => {
   const libSource = readFileSync(CAPABILITY_MATRIX_LIB_PATH, 'utf8')
   assert.ok(!/automatic probe execution/i.test(libSource), 'lib/capability-matrix.js must not claim automatic probe execution')
-  const healthRemovals = registry.capabilityMatrix.find((row) => row.capabilityCluster === 'llm.routing.health removals')
-  const quoted = healthRemovals.replacement.replaceAll('\\', '\\\\').replaceAll('"', '\\"')
-  assert.ok(libSource.includes(quoted), 'lib/capability-matrix.js replacement text mirrors the registry')
+  // The projection is current-capability only: the registry keeps the
+  // migration ledger (including the removal notes) on its registration face.
+  assert.ok(!/renamed|merged|migrated|internalized/.test(libSource),
+    'the runtime projection carries no migration vocabulary')
+  assert.ok(!/replacement:/.test(libSource), 'the runtime projection carries no replacement notes')
 })
 
-test('the capability matrix mirror is a full mechanical parity of every registry cluster', () => {
+test('the capability matrix projection stays derived from the registry', () => {
   const libSource = readFileSync(CAPABILITY_MATRIX_LIB_PATH, 'utf8')
-  for (const row of registry.capabilityMatrix) {
-    const fields = [
-      `"capabilityCluster": ${JSON.stringify(row.capabilityCluster)}`,
-      `"status": ${JSON.stringify(row.status)}`,
-    ]
-    for (const field of fields) {
-      assert.ok(libSource.includes(field), `lib/capability-matrix.js must carry ${field}`)
-    }
-    for (const key of ['qualifiers', 'replacement', 'gapReason']) {
-      const value = row[key]
-      const encoded = value === null ? 'null' : JSON.stringify(value)
-      assert.ok(
-        libSource.includes(`"${key}": ${encoded}`),
-        `lib/capability-matrix.js cluster ${row.capabilityCluster} must mirror ${key}`,
-      )
-    }
+  // Every live cluster is projected; the retired bookkeeping rows are not.
+  const live = registry.capabilityMatrix.filter((row) => row.status !== 'deleted' && !/ (internalized|removals)$/.test(row.capabilityCluster))
+  for (const row of live) {
+    assert.ok(libSource.includes(`capabilityCluster: ${JSON.stringify(row.capabilityCluster)}`),
+      `lib/capability-matrix.js must project cluster ${row.capabilityCluster}`)
+    const expectedStatus = row.status === 'gap' ? 'unavailable' : 'active'
+    const block = libSource.slice(libSource.indexOf(`capabilityCluster: ${JSON.stringify(row.capabilityCluster)}`))
+    assert.ok(block.includes(`status: ${JSON.stringify(expectedStatus)}`),
+      `cluster ${row.capabilityCluster} reports its current status`)
   }
-  const mirrowed = (libSource.match(/"capabilityCluster": "/g) ?? []).length
-  assert.equal(mirrowed, registry.capabilityMatrix.length, 'no cluster is missing or duplicated in the mirror')
+  const projected = (libSource.match(/capabilityCluster: "/g) ?? []).length
+  assert.equal(projected, live.length, 'no live cluster is missing and no retired row is projected')
+  const retired = registry.capabilityMatrix.filter((row) => row.status === 'deleted' || / (internalized|removals)$/.test(row.capabilityCluster))
+  assert.ok(retired.length > 0, 'the registry still carries the retired bookkeeping rows')
 })
 
 test('validator rejects an unregistered policy member', () => {
