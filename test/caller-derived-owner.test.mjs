@@ -225,6 +225,59 @@ test('tools.discovery.catalog.register carries the caller identity from the view
   assert.deepEqual(seen, ['plugin-a', 'plugin-b'], 'each face keeps the identity of the caller that took it')
 })
 
+test('executions.visibility.register derives the owner from the caller that reads the namespace', () => {
+  const service = createService()
+  const seen = []
+  service.mountFeature('execution', {
+    observe: () => () => {},
+    get: () => undefined,
+    history: () => ({ items: [] }),
+    visibility: {
+      register: (spec) => {
+        seen.push(spec.ownerId)
+        return () => true
+      },
+    },
+    availability: () => ({ status: 'active' }),
+  })
+
+  const first = forCaller(service, 'plugin-a').executions.visibility.register({ id: 'v-1', ownerId: 'someone-else', filter: () => true })
+  const second = forCaller(service, 'plugin-b').executions.visibility.register({ id: 'v-1', ownerId: 'someone-else', filter: () => true })
+
+  assert.deepEqual(seen, ['plugin-a', 'plugin-b'], 'each caller binds to its own derived identity')
+  assert.equal(first.ownerId, 'plugin-a')
+  assert.equal(second.ownerId, 'plugin-b')
+  assert.notEqual(first.generation, second.generation, 'each registration carries its own minted generation')
+  assert.equal(first.dispose().code, 'revoked')
+  assert.equal(first.dispose().code, 'stale')
+})
+
+test('prompts.provenance.contribute carries the caller identity of the view that took it', () => {
+  const service = createService()
+  const seen = []
+  service.mountFeature('context', {
+    contribute: (spec) => {
+      seen.push(spec.owner)
+      return { ok: true, handle: { id: spec.id, dispose: () => ({ ok: true, already: false }) } }
+    },
+    compose: () => ({ nodes: [] }),
+    inspect: () => ({}),
+    mapping: () => ({}),
+    policy: { register: () => ({ id: 'p', ownerId: 'o', generation: 'g', dispose: () => ({ ok: true, code: 'revoked' }) }) },
+    observe: () => () => {},
+    availability: () => ({ status: 'active' }),
+  })
+
+  // Each caller takes its own prompts view; the contribution owner must follow
+  // that view's identity rather than the facade's own.
+  const first = forCaller(service, 'plugin-a').prompts.provenance.contribute({ id: 'node-1', owner: 'someone-else', kind: 'section' })
+  const second = forCaller(service, 'plugin-b').prompts.provenance.contribute({ id: 'node-1', owner: 'someone-else', kind: 'section' })
+
+  assert.deepEqual(seen, ['plugin-a', 'plugin-b'], 'the engine receives each caller identity')
+  assert.equal(first.handle.ownerId, 'plugin-a')
+  assert.equal(second.handle.ownerId, 'plugin-b')
+})
+
 test('a taken registration view survives a later visitor and a remount', () => {
   const service = createService()
   const first = []

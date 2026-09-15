@@ -2758,6 +2758,14 @@
           "reason": "the member historically accepted provider claim input alongside agent definitions; the split leaves the definition registry as the primary contract",
           "replacementShape": "agents.providers.register({ kind }) carries the provider claim path separately",
           "verification": "member-inventory, registry-validation, composition matrix"
+        },
+        {
+          "memberPath": "agents.register",
+          "baseContract": "resourceRegistry",
+          "exception": "handle-shape-exception",
+          "reason": "the agent registration contract requires the official registration verb to be forwarded and its own disposer returned unchanged (no wrapping, no second identity), so this registration member mints no facade handle",
+          "replacementShape": "the official registration verb's own disposer, verbatim; the removal path is the official one",
+          "verification": "test/index-agent.test.mjs"
         }
       ],
       "eventSemantics": null,
@@ -3331,15 +3339,15 @@
       "scope": "facade",
       "resourceKey": "execution id",
       "identitySource": "derived-caller (root-fallback)",
-      "conflictRule": "owner-conflict",
-      "lifecycle": "latest generation replaces the previous; dispose is identity-bound",
+      "conflictRule": "content-conflict",
+      "lifecycle": "new lifecycle after dispose; a duplicate policy id is refused rather than superseded",
       "failureSemantics": "typed-throw",
-      "idempotency": "latest-wins",
+      "idempotency": "not idempotent",
       "retryLayer": null,
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": "visibility policy registration; the caller binding supplies the owner (a declared ownerId is ignored) and the answer is the standard resource handle, whose release delegates to the engine's own disposer",
+      "currentShape": "visibility policy registration; the caller binding supplies the owner (a declared ownerId is ignored, and omitting it is not a way around the engine), a duplicate id is refused with a typed error, and the answer is the standard resource handle whose release delegates to the engine's own disposer",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
