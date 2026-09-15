@@ -69,6 +69,17 @@ function walk(dir, out = []) {
   return out
 }
 
+/**
+ * Scope: code and code-bearing artifacts (`package.json`, the bundle patch, and
+ * every `.js` / `.mjs` / `.json` / `.yml` / `.yaml` file under `lib`,
+ * `packages`, `test` and `scripts`).
+ *
+ * Package-level `*.md` documents are deliberately outside this scope: they are
+ * documentation of the package they sit in (migration recipes and audit
+ * baselines) and cite the upstream specification's numbering as provenance,
+ * exactly as the governance documents under `docs/` do. They never reach a
+ * runtime surface, and no runtime-visible name is derived from them.
+ */
 function implementationFiles() {
   const files = [
     join(root, 'package.json'),

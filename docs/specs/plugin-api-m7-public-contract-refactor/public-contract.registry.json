@@ -18684,7 +18684,7 @@
       "conflictRule": "not-applicable",
       "lifecycle": "one dispatch has no independent operation identity and is never retried; the gateway owns dispatch eligibility and listener iteration",
       "failureSemantics": "discriminated-result",
-      "idempotency": "not-idempotent",
+      "idempotency": "not idempotent",
       "retryLayer": null,
       "availabilityShape": "namespace availability()",
       "concurrency": "deduplicate",

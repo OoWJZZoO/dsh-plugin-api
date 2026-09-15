@@ -158,6 +158,7 @@ test('the projected status follows the published paths, not the migration action
       { capabilityCluster: 'gamma', status: 'retained', currentPaths: [], targetPaths: [], gapReason: null },
       { capabilityCluster: 'delta removals', status: 'deleted', currentPaths: ['delta.old'], targetPaths: [], gapReason: null },
       { capabilityCluster: 'epsilon', status: 'retained', currentPaths: [], targetPaths: ['services.serviceA'], gapReason: null },
+      { capabilityCluster: 'zeta', status: 'retained', currentPaths: ['alpha.one'], targetPaths: ['alpha.one', 'zeta.two'], gapReason: null },
     ],
   })
   const byName = new Map(rows.map((row) => [row.capabilityCluster, row]))
@@ -168,6 +169,8 @@ test('the projected status follows the published paths, not the migration action
   assert.equal(byName.has('gamma'), false, 'a row with no path evidence is not claimed as a current capability')
   assert.equal(byName.has('delta removals'), false, 'the retired bookkeeping rows stay out of the runtime projection')
   assert.equal(byName.get('epsilon').status, 'active', 'a whitelisted passthrough path counts as published')
+  assert.deepEqual(byName.get('zeta'), { capabilityCluster: 'zeta', status: 'degraded', limitations: ['zeta.two'], gapReason: null },
+    'a partly published cluster is degraded and names exactly the paths it does not publish')
 })
 
 test('validator rejects an unregistered policy member', () => {
