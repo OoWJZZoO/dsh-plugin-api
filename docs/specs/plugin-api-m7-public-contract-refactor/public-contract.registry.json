@@ -158,6 +158,21 @@
       "aborted",
       "denied",
       "superseded"
+    ],
+    "identitySource": [
+      "derived-caller",
+      "derived-caller (root-fallback)",
+      "declared-resource-scope",
+      "not-applicable",
+      "parent handle generation",
+      "parent registration handle",
+      "caller plugin context",
+      "facade-derived caller owner",
+      "facade-minted operation identity"
+    ],
+    "callShape": [
+      "sync",
+      "async"
     ]
   },
   "hostDomainTree": [
@@ -1733,7 +1748,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "compare-and-swap",
       "reducer": "none",
-      "currentShape": "fixed registry handle { id, ownerId, generation, dispose() }; identity-bound caller teardown; stale disposer is a typed no-op",
+      "currentShape": "fixed registry handle { id, ownerId, generation, dispose() }; identity-bound caller teardown; stale disposer is a typed no-op; dispose() answers the frozen discriminated { ok, code }",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -1988,7 +2003,7 @@
       "authority": "llm domain authority",
       "scope": "facade",
       "resourceKey": "route key",
-      "identitySource": "derived-caller (root-fallback)",
+      "identitySource": "derived-caller",
       "conflictRule": "owner-conflict",
       "lifecycle": "latest generation replaces the previous; dispose is identity-bound",
       "failureSemantics": "typed-throw",
@@ -1997,7 +2012,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": "register(spec) returns the shared frozen handle; the registration table is keyed by (owner, id) and supports an injected caller-identity resolver, but the facade does not inject it yet, so a registration made through the public surface currently binds the root owner token",
+      "currentShape": "register(spec) returns the shared frozen handle; the registration table is keyed by (owner, id) and supports an injected caller-identity resolver, and the facade derives the caller identity and forwards it as the registration caller binding, so a definition never declares its owner",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -2021,7 +2036,7 @@
       "authority": "llm domain authority",
       "scope": "facade",
       "resourceKey": "registered id",
-      "identitySource": "derived-caller (root-fallback)",
+      "identitySource": "derived-caller",
       "conflictRule": "owner-conflict",
       "lifecycle": "new lifecycle after dispose; not a stale update",
       "failureSemantics": "typed-throw",
@@ -2030,7 +2045,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "register(spec) returns the shared frozen handle; the registration table is keyed by (owner, id) and supports an injected caller-identity resolver, but the facade does not inject it yet, so a registration made through the public surface currently binds the root owner token",
+      "currentShape": "register(spec) returns the shared frozen handle; the registration table is keyed by (owner, id) and supports an injected caller-identity resolver, and the facade derives the caller identity and forwards it as the registration caller binding, so a definition never declares its owner",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -8813,7 +8828,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "task definition registration",
+      "currentShape": "task definition registration; the outer result carries the action name in `action`",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -8846,7 +8861,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "exclusive",
       "reducer": "none",
-      "currentShape": "task start",
+      "currentShape": "task start; the outer result carries the action name in `action`, never the operation identity",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -8879,7 +8894,7 @@
       "availabilityShape": "availability(scope)",
       "concurrency": "exclusive",
       "reducer": "none",
-      "currentShape": "task claim",
+      "currentShape": "task claim; the outer result carries the action name in `action`",
       "migrationAction": "rename",
       "status": "removed",
       "verification": [
@@ -8912,7 +8927,7 @@
       "availabilityShape": "availability(scope)",
       "concurrency": "exclusive",
       "reducer": "none",
-      "currentShape": "task reassignment",
+      "currentShape": "task reassignment; the outer result carries the action name in `action`",
       "migrationAction": "rename",
       "status": "removed",
       "verification": [
@@ -8945,7 +8960,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "exclusive",
       "reducer": "none",
-      "currentShape": "task settlement",
+      "currentShape": "task settlement; the outer result carries the action name in `action`, never the operation identity",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -8978,7 +8993,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "exclusive",
       "reducer": "none",
-      "currentShape": "task attachment",
+      "currentShape": "task attachment; the outer result carries the action name in `action`, never the operation identity",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -9011,7 +9026,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "task query; a definitely-absent subject answers the typed missing code while an undeterminable one answers unavailable",
+      "currentShape": "task query; a definitely-absent subject answers the typed missing code while an undeterminable one answers unavailable; the outer result carries the action name in `action`",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -9110,7 +9125,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "task history query; a definitely-absent subject answers the typed missing code while an undeterminable one answers unavailable",
+      "currentShape": "task history query; a definitely-absent subject answers the typed missing code while an undeterminable one answers unavailable; the outer result carries the action name in `action`",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -9497,7 +9512,7 @@
       "authority": "workspace transaction authority",
       "scope": "workspace",
       "resourceKey": "transaction id",
-      "identitySource": "caller plugin context",
+      "identitySource": "derived-caller",
       "conflictRule": "not-applicable",
       "lifecycle": "identity survives internal attempts; terminal closes it",
       "failureSemantics": "discriminated-result",
@@ -9506,7 +9521,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "exclusive",
       "reducer": "none",
-      "currentShape": "transaction prepare",
+      "currentShape": "transaction prepare; the transaction owner is derived from the calling plugin; a caller-supplied ownerId is ignored",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -9794,7 +9809,7 @@
       "authority": "security authority",
       "scope": "facade",
       "resourceKey": "policy or rule key",
-      "identitySource": "caller plugin context",
+      "identitySource": "derived-caller",
       "conflictRule": "owner-conflict",
       "lifecycle": "latest generation replaces the previous; dispose is identity-bound",
       "failureSemantics": "typed-throw",
@@ -9803,7 +9818,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "fail-closed-reducer",
-      "currentShape": "security policy registration",
+      "currentShape": "security policy registration; the facade injects the derived caller identity as the owner argument; the public member takes only the spec, and the handle is frozen with a discriminated dispose()",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -9836,7 +9851,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "agents.decisions.register({ point, id, priority?, scope?, decide }) returns a frozen handle { id, ownerId, generation, dispose() }; decisions follow the per-point vocabulary and the value-aware waterfall semantics",
+      "currentShape": "agents.decisions.register({ point, id, priority?, scope?, decide }) returns a frozen handle { id, ownerId, generation, dispose() }; decisions follow the per-point vocabulary and the value-aware waterfall semantics; the handle is frozen and its dispose() answers the frozen discriminated { ok, code }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -9878,7 +9893,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "tools.executionPolicies.register({ point, id, priority?, scope?, decide }) returns a frozen handle; execute is the around-execution barrier and post-execute carries the official accept/block decision vocabulary",
+      "currentShape": "tools.executionPolicies.register({ point, id, priority?, scope?, decide }) returns a frozen handle; execute is the around-execution barrier and post-execute carries the official accept/block decision vocabulary; the handle is frozen and its dispose() answers the frozen discriminated { ok, code }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -9911,7 +9926,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "prompts.assemblyPolicies.register({ id, priority?, scope?, decide }) returns a frozen handle; the decide receives (assembly, context, next) and a record with a sections array is the whole-assembly replacement",
+      "currentShape": "prompts.assemblyPolicies.register({ id, priority?, scope?, decide }) returns a frozen handle; the decide receives (assembly, context, next) and a record with a sections array is the whole-assembly replacement; the handle is frozen and its dispose() answers the frozen discriminated { ok, code }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -9953,7 +9968,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "events.decisions.register(name, { id, priority?, scope?, decide }) returns a frozen handle; only the enumerated admitted points are accepted and every other name is a typed unsupported rejection naming the carrying face",
+      "currentShape": "events.decisions.register(name, { id, priority?, scope?, decide }) returns a frozen handle; only the enumerated admitted points are accepted and every other name is a typed unsupported rejection naming the carrying face; the handle is frozen and its dispose() answers the frozen discriminated { ok, code }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -9977,7 +9992,7 @@
       "authority": "security authority",
       "scope": "facade",
       "resourceKey": "policy or rule key",
-      "identitySource": "caller plugin context",
+      "identitySource": "derived-caller",
       "conflictRule": "owner-conflict",
       "lifecycle": "latest generation replaces the previous; dispose is identity-bound",
       "failureSemantics": "typed-throw",
@@ -9986,7 +10001,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "fail-closed-reducer",
-      "currentShape": "redaction policy registration",
+      "currentShape": "redaction policy registration; the facade injects the derived caller identity as the owner argument; the public member takes only the spec, and the handle is frozen with a discriminated dispose()",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -10010,7 +10025,7 @@
       "authority": "security authority",
       "scope": "facade",
       "resourceKey": "policy or rule key",
-      "identitySource": "caller plugin context",
+      "identitySource": "derived-caller",
       "conflictRule": "owner-conflict",
       "lifecycle": "latest generation replaces the previous; dispose is identity-bound",
       "failureSemantics": "typed-throw",
@@ -10019,7 +10034,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": "egress rule registration",
+      "currentShape": "egress rule registration; the facade injects the derived caller identity as the owner argument; the public member takes only the spec, and the handle is frozen with a discriminated dispose()",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -11570,7 +11585,7 @@
       "authority": "storage binding authority",
       "scope": "workspace",
       "resourceKey": "storage domain id",
-      "identitySource": "caller plugin context",
+      "identitySource": "derived-caller",
       "conflictRule": "not-applicable",
       "lifecycle": "identity survives internal attempts; terminal closes it",
       "failureSemantics": "discriminated-result",
@@ -11579,7 +11594,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "exclusive",
       "reducer": "none",
-      "currentShape": "storage binding open returning binding handle",
+      "currentShape": "storage binding open returning binding handle; the owner label is derived from the calling plugin; a caller-supplied owner is ignored",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -11612,7 +11627,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "availability() returning the frozen three-value status object; the domain detail fields (scope / durability / epoch) are not yet disclosed",
+      "currentShape": "availability() returning the frozen three-value status object; reports { status, scope, durability, epoch }",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -13097,7 +13112,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "face registration handle",
+      "currentShape": "face registration handle; handle carries id/ownerId plus generation/revision/availability extensions; dispose() answers the frozen discriminated { ok, code }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -13757,7 +13772,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "frozen { id, ownerId, generation, replace, dispose() }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -13790,7 +13805,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "frozen { id, ownerId, generation, dispose() }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -13889,7 +13904,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "frozen { id, ownerId, generation, dispose() }; dispose() answers the frozen discriminated { ok, code }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -13922,7 +13937,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": null,
+      "currentShape": "frozen { id, ownerId, generation, dispose() }; dispose() answers the frozen discriminated { ok, code }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -13955,7 +13970,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": null,
+      "currentShape": "frozen { id, ownerId, generation, dispose() }; dispose() answers the frozen discriminated { ok, code }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -13988,7 +14003,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": null,
+      "currentShape": "frozen { id, ownerId, generation, dispose() } with the root owner token",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14021,7 +14036,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "frozen { id, ownerId, generation, dispose() } with the root owner token",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14153,7 +14168,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": "frozen { id, ownerId, generation, dispose() }",
+      "currentShape": "frozen { id, ownerId, generation, dispose() }; dispose() answers the frozen discriminated { ok, code }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14186,7 +14201,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "frozen { id, ownerId, generation, dispose() }",
+      "currentShape": "frozen { id, ownerId, generation, dispose() }; dispose() answers the frozen discriminated { ok, code }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14285,7 +14300,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": null,
+      "currentShape": "frozen { id, ownerId, generation, dispose() }; dispose() answers the frozen discriminated { ok, code }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14318,7 +14333,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": null,
+      "currentShape": "frozen { id, ownerId, generation, dispose() }; dispose() answers the frozen discriminated { ok, code }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14351,7 +14366,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": null,
+      "currentShape": "frozen { id, ownerId, generation, dispose() }; dispose() answers the frozen discriminated { ok, code }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14516,7 +14531,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "deduplicate",
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "slot admission is the official runtime declaration answer; the facade no longer rejects keys by a prefix set",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14582,7 +14597,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "official directory registration handle",
+      "currentShape": "official directory registration handle; returns the standard resource handle { id, ownerId, generation, replace(...), dispose() } with the official replace kept as a registered extension member; the owner is derived per caller",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14615,7 +14630,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "official model discovery disposer",
+      "currentShape": "official model discovery disposer; returns the standard resource handle { id, ownerId, generation, dispose() }; the owner is derived per caller",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14672,7 +14687,7 @@
       "authority": "routing authority",
       "scope": "facade",
       "resourceKey": "circuit policy id",
-      "identitySource": "derived-caller (root-fallback)",
+      "identitySource": "derived-caller",
       "conflictRule": "owner-conflict",
       "lifecycle": "latest generation replaces the previous; dispose is identity-bound",
       "failureSemantics": "typed-throw",
@@ -14681,7 +14696,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": "register(spec) returns the shared frozen handle; the registration table is keyed by (owner, id) and supports an injected caller-identity resolver, but the facade does not inject it yet, so a registration made through the public surface currently binds the root owner token",
+      "currentShape": "register(spec) returns the shared frozen handle; the registration table is keyed by (owner, id) and supports an injected caller-identity resolver, and the facade derives the caller identity and forwards it as the registration caller binding, so a definition never declares its owner",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14705,7 +14720,7 @@
       "authority": "routing authority",
       "scope": "facade",
       "resourceKey": "probe id",
-      "identitySource": "derived-caller (root-fallback)",
+      "identitySource": "derived-caller",
       "conflictRule": "owner-conflict",
       "lifecycle": "new lifecycle after dispose; not a stale update",
       "failureSemantics": "typed-throw",
@@ -14714,7 +14729,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "register(spec) returns the shared frozen handle; the registration table is keyed by (owner, id) and supports an injected caller-identity resolver, but the facade does not inject it yet, so a registration made through the public surface currently binds the root owner token",
+      "currentShape": "register(spec) returns the shared frozen handle; the registration table is keyed by (owner, id) and supports an injected caller-identity resolver, and the facade derives the caller identity and forwards it as the registration caller binding, so a definition never declares its owner",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14813,7 +14828,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": "official verifier/authorizer registration disposer",
+      "currentShape": "official verifier/authorizer registration disposer; answers the standard resource handle { id, ownerId, generation, dispose() }; invalid input is a typed throw",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14846,7 +14861,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "official pairing provider registration disposer",
+      "currentShape": "official pairing provider registration disposer; answers the standard resource handle { id, ownerId, generation, dispose() }; invalid input is a typed throw",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14879,7 +14894,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "official redaction profile registration disposer",
+      "currentShape": "official redaction profile registration disposer; answers the standard resource handle { id, ownerId, generation, dispose() }; invalid input is a typed throw",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -15101,7 +15116,7 @@
       "authority": "prompts authority",
       "scope": "facade",
       "resourceKey": "contribution id",
-      "identitySource": "caller plugin context",
+      "identitySource": "derived-caller",
       "conflictRule": "owner-conflict",
       "lifecycle": "active until dispose or eviction; eviction observable",
       "failureSemantics": "discriminated-result",
@@ -15110,7 +15125,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "deduplicate",
       "reducer": "none",
-      "currentShape": "merged contribution entry with seq handle; scope-bearing specs (spec.scope bound to an agents.scopes.handle) install into the target agent scoped layer with (owner, target, id) conflict keys and never degrade to a global installation; the handle dispose() is a discriminated result (revoked / stale)",
+      "currentShape": "merged contribution entry with seq handle; scope-bearing specs (spec.scope bound to an agents.scopes.handle) install into the target agent scoped layer with (owner, target, id) conflict keys and never degrade to a global installation; the handle dispose() is a discriminated result (revoked / stale); the contribution owner is derived from the calling plugin; an explicit spec.ownerId is ignored",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -15209,7 +15224,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "register(spec) returns the shared frozen handle carrying a facade-minted slot token; the declared owner is the resource scope the transform lookup keys on, so registrations of different owners can never overwrite each other; identical content re-registration is idempotent",
+      "currentShape": "register(spec) returns the shared frozen handle carrying a facade-minted slot token; the declared owner is the resource scope the transform lookup keys on, so registrations of different owners can never overwrite each other; identical content re-registration is idempotent; registration failures (input validation, owner requirement, policy validation) are typed throws; the operational faces keep discriminated results",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -18129,6 +18144,39 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "frozen { status: active|degraded|unavailable, reason? } \u2014 degraded when only the submit seam is missing",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "lifecycle.register",
+      "targetPath": "lifecycle.register",
+      "capability": "client.lifecycle",
+      "kind": "leaf",
+      "idiom": "resourceRegistry",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "register",
+      "composition": "additive",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "client lifecycle authority",
+      "scope": "facade",
+      "resourceKey": "registered id",
+      "identitySource": "caller plugin context",
+      "conflictRule": "content-conflict",
+      "lifecycle": "new lifecycle after dispose; not a stale update",
+      "failureSemantics": "typed-throw",
+      "idempotency": "content-idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "latest-wins",
+      "reducer": "none",
+      "currentShape": "face registration returning the standard resource handle { id, ownerId, generation, revision, availability(), dispose() }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
