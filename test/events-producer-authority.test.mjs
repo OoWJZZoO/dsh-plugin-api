@@ -510,10 +510,10 @@ test('events.define keeps its owner-scoped publisher semantics beside the produc
   assert.deepEqual(first.emit({ seq: 1 }), { ok: true, code: 'dispatched', outcome: null })
   assert.deepEqual(seen, [{ seq: 1 }], 'the owner-scoped publisher dispatches its own custom event')
 
-  assert.equal(first.dispose(), true)
+  assert.equal(first.dispose().code, 'revoked')
   const stale = first.emit({ seq: 2 })
   assert.equal(stale.code, 'stale', 'the stale publisher result is unchanged')
-  assert.equal(first.dispose(), false, 'repeated disposal stays idempotent')
+  assert.equal(first.dispose().code, 'stale', 'repeated disposal stays idempotent')
 })
 
 test('a denied canonical dispatch never disturbs custom event publishing', () => {

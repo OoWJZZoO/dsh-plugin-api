@@ -13,12 +13,11 @@ import {
   CODE_INVALID_INPUT,
   CODE_INVOKED,
   CODE_NOT_FOUND,
-  CODE_NOOP,
   CODE_OWNER_CONFLICT,
   CODE_REGISTERED,
+  CODE_REVOKED,
   CODE_STALE,
   CODE_UNAVAILABLE,
-  CODE_WITHDRAWN,
   createAttentionHub,
 } from '../lib/attention-hub.js'
 
@@ -94,9 +93,9 @@ test('dispose withdraws the live item; double dispose is an idempotent no-op', (
   const alice = webCaller('alice')
   const bob = webCaller('bob')
   const { handle } = hub.contribute({ id: 'd-1', title: 'dispose me', level: 'info' }, alice)
-  assert.equal(handle.dispose().code, CODE_WITHDRAWN)
+  assert.equal(handle.dispose().code, CODE_REVOKED)
   assert.equal(hub.current(alice).length, 0)
-  assert.equal(handle.dispose().code, CODE_NOOP)
+  assert.equal(handle.dispose().code, CODE_STALE)
   // cross-owner handle attempt is rejected and must not remove newer items
   hub.contribute({ id: 'd-2', title: 'kept', level: 'info' }, alice)
   const attempt = hub.dispose('d-2', bob)
@@ -173,7 +172,7 @@ test('the public item shape is bounded, frozen and loses hub-private state', () 
   const oversized = hub.contribute({ id: 'big', title: '0123456789abcdef', level: 'info' }, alice)
   assert.equal(oversized.ok, false)
   assert.equal(oversized.code, CODE_INVALID_INPUT)
-  assert.equal(handle.dispose().code, CODE_WITHDRAWN)
+  assert.equal(handle.dispose().code, CODE_REVOKED)
 })
 
 test('redaction rejects secret-typed keys and credential material at the boundary', () => {
@@ -314,7 +313,7 @@ test('reloaded owner gets a new generation; stale disposers cannot remove newer 
   assert.equal(hub.current(alice(1)).length, 1)
   assert.equal(hub.current(alice(1))[0].id, 'g1')
   // the live (new-generation) handle still works
-  assert.equal(second.handle.dispose().code, CODE_WITHDRAWN)
+  assert.equal(second.handle.dispose().code, CODE_REVOKED)
 })
 
 test('dedupeKey duplicate inside the live window references the live item', () => {

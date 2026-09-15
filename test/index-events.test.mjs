@@ -161,8 +161,8 @@ test('apply mounts events.define as the cooperative custom publisher entry', () 
     () => events.define({ name: 'plugin-a.custom-event' }),
     (error) => error.code === 'PLUGIN_API_EVENT_DEFINITION_CONFLICT',
   )
-  assert.equal(publisher.dispose(), true)
-  assert.equal(publisher.dispose(), false, 'repeated disposal is idempotent')
+  assert.equal(publisher.dispose().code, 'revoked')
+  assert.equal(publisher.dispose().code, 'stale', 'repeated disposal is idempotent')
 })
 
 test('services.web passes providers through to the official web service unchanged', () => {

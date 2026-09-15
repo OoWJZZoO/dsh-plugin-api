@@ -92,8 +92,8 @@ test('define returns a frozen capability-limited publisher handle', () => {
   assert.equal(typeof handle.generation, 'string')
   const outcome = handle.emit({ n: 1 })
   assert.deepEqual(outcome, { ok: true, code: 'dispatched', outcome: null })
-  assert.equal(handle.dispose(), true)
-  assert.equal(handle.dispose(), false, 'disposal is idempotent')
+  assert.equal(handle.dispose().code, 'revoked')
+  assert.equal(handle.dispose().code, 'stale', 'disposal is idempotent')
 })
 
 test('validate rejects a payload before dispatch and contains validator failures', () => {
@@ -150,7 +150,7 @@ test('two normal plugins with the same custom identity conflict deterministicall
     () => bus.define({ name: 'shared.identity' }),
     (error) => error.code === 'PLUGIN_API_EVENT_DEFINITION_CONFLICT' && error.message.includes('already defined'),
   )
-  assert.equal(first.dispose(), true, 'the first owner stays untouched by the rejected registration')
+  assert.equal(first.dispose().code, 'revoked', 'the first owner stays untouched by the rejected registration')
   const second = bus.define({ name: 'shared.identity' })
   assert.notEqual(second.id, first.id)
   assert.equal(second.ownerId, 'root')
@@ -211,7 +211,7 @@ test('a stale publisher neither dispatches nor removes a newer definition', () =
     reason: 'custom event "plugin-a.replaced" publisher is stale after dispose or reload',
   })
   const second = bus.define({ name: 'plugin-a.replaced' })
-  assert.equal(first.dispose(), false, 'a stale disposer cannot remove the newer definition')
+  assert.equal(first.dispose().code, 'stale', 'a stale disposer cannot remove the newer definition')
   const observed = []
   const projection = bus.observe('plugin-a.replaced')
   projection.subscribe((payload) => observed.push(payload))
@@ -226,7 +226,7 @@ test('reload isolation invalidates publishers from a previous bus', () => {
   assert.equal(handle.emit({ seq: 1 }).ok, true)
   firstBus.dispose()
   assert.equal(handle.emit({ seq: 2 }).code, 'stale', 'the old handle cannot dispatch after bus teardown')
-  assert.equal(handle.dispose(), false)
+  assert.equal(handle.dispose().code, 'stale')
   const secondBus = createBus()
   const fresh = secondBus.define({ name: 'plugin-a.session' })
   assert.equal(fresh.emit({ seq: 3 }).ok, true, 'a fresh bus can redefine the freed identity')

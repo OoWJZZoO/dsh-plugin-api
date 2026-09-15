@@ -148,7 +148,7 @@ test('changes made through official paths reach subscribers, with containment an
 
   const firstCount = seenFirst.length
   const secondCount = seenSecond.length
-  assert.equal(first.dispose(), true)
+  assert.equal(first.dispose().code, 'revoked')
   first.subscribe(() => {})
   kit.presets.service.set(session, 'danger-full-access')
   kit.emitFact(session, 'permission/preset', { preset: 'danger-full-access' })
@@ -196,7 +196,7 @@ test('the disabled face returns typed results and never removes the namespace', 
   const seen = []
   handle.subscribe((payload) => seen.push(payload))
   assert.equal(seen.length, 1, 'the disabled handle reports its state once')
-  assert.equal(handle.dispose(), false)
+  assert.equal(handle.dispose().code, 'stale')
 })
 
 test('a missing projection carrier degrades options alone', async () => {

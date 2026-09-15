@@ -272,8 +272,8 @@ test('observation delivers changes only, per handle, verified against the offici
   })
   assert.equal(Object.isFrozen(seenFirst[0]), true)
 
-  assert.equal(first.dispose(), true)
-  assert.equal(first.dispose(), false)
+  assert.equal(first.dispose().code, 'revoked')
+  assert.equal(first.dispose().code, 'stale')
   authority.ingestSessionEvent({ id: 's2' }, { type: 'permission/preset' })
   assert.equal(seenSecond.length, 1, 'another target never reaches this handle')
 })
@@ -325,7 +325,7 @@ test('epochs: stale handles fail typed after the hub is disposed, unbound target
   const seen = []
   handle.subscribe((payload) => seen.push(payload))
   assert.equal(seen.length, 0)
-  assert.equal(handle.dispose(), false)
+  assert.equal(handle.dispose().code, 'stale')
 
   const unbound = harness().authority.observe({})
   assert.equal(unbound.current().source, 'unavailable')

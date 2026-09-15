@@ -178,14 +178,14 @@ test('events.observe dispose is idempotent, silences the handle, and leaves peer
   assert.equal(first.length, 1)
   assert.equal(second.length, 1)
 
-  assert.equal(a.dispose(), true, 'first dispose reports removal')
-  assert.equal(a.dispose(), false, 'second dispose is a no-op')
+  assert.equal(a.dispose().code, 'revoked', 'first dispose reports removal')
+  assert.equal(a.dispose().code, 'stale', 'second dispose is a no-op')
   ctx.emit('goal/changed', { change: 2 })
   assert.equal(first.length, 1, 'disposed handle is silent')
   assert.equal(second.length, 2, 'independent handle still observes')
   assert.equal(typeof offA, 'function')
 
-  assert.equal(b.dispose(), true)
+  assert.equal(b.dispose().code, 'revoked')
   ctx.emit('goal/changed', { change: 3 })
   assert.equal(second.length, 2)
 })
@@ -228,7 +228,7 @@ test('an observer registration grants no dispatch rights and define is a separat
     ['dispose', 'emit', 'generation', 'id', 'name', 'ownerId'],
     'define returns the capability-limited publisher handle, not an unrestricted emitter',
   )
-  assert.equal(publisher.dispose(), true)
+  assert.equal(publisher.dispose().code, 'revoked')
 })
 
 test('dispatch returns a frozen discriminated outcome and reports unsupported names', () => {

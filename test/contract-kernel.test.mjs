@@ -14,6 +14,7 @@ import {
   createContributionHandle,
   createObserverHandle,
   createOperationHandle,
+  createPendingContributionHandle,
   createResourceHandle,
   disposeResultOf,
   releasedResult,
@@ -196,6 +197,90 @@ test('observer handle runs its domain teardown once and contains a failing teard
   assert.equal(handle.dispose().code, STALE)
   assert.equal(teardowns, 1)
   assert.equal(reported.length, 1)
+})
+
+test('pending contribution handle walks pending -> active and reports it through status()', async () => {
+  let settles = 0
+  const { handle, live } = createPendingContributionHandle({
+    id: 'panel',
+    ownerId: 'owner-a',
+    seq: 4,
+    extensions: { face: Object.freeze({}) },
+    settle: () => {
+      settles += 1
+      return Promise.resolve()
+    },
+  })
+
+  assert.ok(Object.isFrozen(handle))
+  assert.deepEqual(Object.keys(handle).sort(), ['dispose', 'face', 'id', 'ownerId', 'seq', 'status'])
+  assert.deepEqual({ ...handle.status() }, { state: 'pending' }, 'status is reported, never a success flag')
+  assert.ok(Object.isFrozen(handle.status()))
+  assert.equal(live(), false)
+
+  await Promise.resolve()
+  await Promise.resolve()
+  assert.equal(settles, 1)
+  assert.deepEqual({ ...handle.status() }, { state: 'active' })
+  assert.equal(live(), true)
+  assert.equal(handle.dispose().code, REVOKED, 'releasing a live contribution reports the revocation')
+  assert.deepEqual({ ...handle.status() }, { state: 'revoked' }, 'a released handle stays revoked')
+  assert.equal(handle.dispose().code, STALE)
+})
+
+test('pending contribution handle reports a failed settlement and answers stale once failed', async () => {
+  const reported = []
+  const { handle } = createPendingContributionHandle({
+    id: 'panel',
+    ownerId: 'owner-a',
+    seq: 5,
+    settle: Promise.reject(new Error('mount refused')),
+    reportError: (error) => reported.push(error),
+  })
+
+  await Promise.resolve()
+  await Promise.resolve()
+  assert.deepEqual({ ...handle.status() }, { state: 'failed', reason: 'mount refused' })
+  assert.equal(reported.length, 1)
+  assert.equal(handle.dispose().code, STALE, 'a contribution that never took effect has nothing to revoke')
+  assert.deepEqual({ ...handle.status() }, { state: 'revoked' })
+})
+
+test('withdrawing a pending contribution rolls back a settlement that lands late', async () => {
+  let release
+  const rollbacks = []
+  const { handle } = createPendingContributionHandle({
+    id: 'panel',
+    ownerId: 'owner-a',
+    seq: 6,
+    settle: new Promise((resolve) => {
+      release = resolve
+    }),
+    revoke: () => rollbacks.push('rolled back'),
+  })
+
+  assert.equal(handle.dispose().code, REVOKED, 'withdrawing while pending is a completed action')
+  assert.equal(handle.dispose().code, STALE)
+  release()
+  await Promise.resolve()
+  await Promise.resolve()
+  assert.deepEqual(rollbacks, ['rolled back'], 'a late settlement is torn down instead of resurrecting the handle')
+  assert.deepEqual({ ...handle.status() }, { state: 'revoked' })
+})
+
+test('pending contribution handle can be driven by its controller when settlement is not a thenable', () => {
+  const { handle, activate, fail, live } = createPendingContributionHandle({
+    id: 'panel',
+    ownerId: 'owner-a',
+    seq: 7,
+  })
+
+  assert.equal(live(), false)
+  activate()
+  assert.deepEqual({ ...handle.status() }, { state: 'active' })
+  assert.equal(live(), true)
+  fail(new Error('ignored after activation'))
+  assert.deepEqual({ ...handle.status() }, { state: 'active' }, 'a late failure must not rewrite a settled lifecycle')
 })
 
 test('helper result builders stay aligned with the kernel code set', () => {

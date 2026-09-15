@@ -175,8 +175,8 @@ test('disposing the handle is idempotent, silences it, and leaves peers intact',
   assert.equal(first.length, 1)
   assert.equal(second.length, 1)
 
-  assert.equal(a.dispose(), true)
-  assert.equal(a.dispose(), false)
+  assert.equal(a.dispose().code, 'revoked')
+  assert.equal(a.dispose().code, 'stale')
   ctx.emit('goal/changed', { change: 2 })
   assert.equal(first.length, 1, 'disposed handle is silent')
   assert.equal(second.length, 2, 'independent handle still observes')

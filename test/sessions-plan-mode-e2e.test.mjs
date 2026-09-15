@@ -157,7 +157,7 @@ test('changes made through official paths reach subscribers, with containment an
 
   const release = second.subscribe(() => { throw new Error('released listener') })
   release()
-  assert.equal(first.dispose(), true)
+  assert.equal(first.dispose().code, 'revoked')
   official.service.set(agent, false)
   emitFact(session, { type: 'plan/mode', active: false })
   assert.equal(seenSecond.length, 2)
@@ -202,7 +202,7 @@ test('the disabled face returns typed results and never removes the namespace', 
   const seen = []
   handle.subscribe((payload) => seen.push(payload))
   assert.equal(seen.length, 1, 'the disabled handle reports its state once')
-  assert.equal(handle.dispose(), false)
+  assert.equal(handle.dispose().code, 'stale')
   assert.equal(state.pluginApi.sessions.planMode, face, 'the namespace member stays published')
 })
 

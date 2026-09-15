@@ -256,8 +256,8 @@ test('observation delivery: change-only, per-handle, verified against the offici
   assert.equal(seenSecond.length, before.second)
 
   // A disposed handle stops receiving; its disposer is an idempotent no-op.
-  assert.equal(first.dispose(), true)
-  assert.equal(first.dispose(), false)
+  assert.equal(first.dispose().code, 'revoked')
+  assert.equal(first.dispose().code, 'stale')
   authority.ingestSessionEvent({ id: 's1' }, { type: 'plan/mode' })
   assert.equal(seenSecond.length, before.second + 1, 'the surviving handle still receives the change')
   state.active = true
@@ -339,7 +339,7 @@ test('epochs: stale handles fail typed after the hub is disposed and remounted',
   const seen = []
   handle.subscribe((payload) => seen.push(payload))
   assert.equal(seen.length, 0, 'a stale handle accepts no new subscription')
-  assert.equal(handle.dispose(), false, 'the hub already released the handle; disposal stays an idempotent no-op')
+  assert.equal(handle.dispose().code, 'stale', 'the hub already released the handle; disposal stays an idempotent no-op')
 })
 
 test('the core-inactive gate is the single typed-throw path', () => {
@@ -472,8 +472,8 @@ test('an unresolvable target yields an unbound handle that reports the honest re
     const release = handle.subscribe((payload) => seen.push(payload))
     assert.equal(typeof release, 'function')
     assert.equal(seen.length, 0, 'an unusable target accepts no subscription')
-    assert.equal(handle.dispose(), true)
-    assert.equal(handle.dispose(), false)
+    assert.equal(handle.dispose().code, 'revoked')
+    assert.equal(handle.dispose().code, 'stale')
   }
   // The same target through the read/write faces reports the same reason family.
   assert.equal(authority.select(null, true, {}).code, 'invalid-target')
