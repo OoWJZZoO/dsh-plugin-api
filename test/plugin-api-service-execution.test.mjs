@@ -70,6 +70,19 @@ test('mount exposes the execution surface and delegates to the owner', () => {
   assert.equal(observer.dispose(), true)
   assert.equal(typeof service.executions.visibility.register, 'function')
   assert.equal(service.executions.availability().status, 'active')
+
+  // The registration carries the derived caller identity and answers the
+  // standard resource handle: a declared owner is ignored and the release is
+  // the frozen discriminated result, not the engine's bare boolean.
+  const registered = service.executions.visibility.register({
+    id: 'visibility-probe',
+    ownerId: 'someone-else',
+    filter: () => true,
+  })
+  assert.deepEqual(Object.keys(registered).sort(), ['dispose', 'generation', 'id', 'ownerId'])
+  assert.notEqual(registered.ownerId, 'someone-else', 'the owner derives from the calling context')
+  assert.equal(registered.dispose().code, 'revoked')
+  assert.equal(registered.dispose().code, 'stale')
 })
 
 test('unmount is token-bound, idempotent and restores the disabled surface', () => {

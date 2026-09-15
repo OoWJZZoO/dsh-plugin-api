@@ -129,16 +129,41 @@ test('context feature mounts through apply and serves the full lifecycle', () =>
   assert.ok(context, 'pluginApi.prompts.provenance exists')
   const registered = context.contribute(spec())
   assert.equal(registered.ok, true)
+  assert.equal(registered.code, 'contributed')
+  // The contribution enters through the standard contribution idiom: a frozen
+  // handle of the registered shape and an idempotent discriminated release.
+  assert.deepEqual(Object.keys(registered.handle).sort(), ['dispose', 'id', 'ownerId', 'seq'])
+  assert.equal(typeof registered.handle.ownerId, 'string')
+  assert.equal(typeof registered.handle.seq, 'number')
   const graph = context.compose({ sessionId: 'session-1' })
   assert.equal(graph.nodes.length, 1)
   assert.equal(graph.nodes[0].state, 'served')
   const availability = context.availability()
   assert.equal(availability.status, 'active')
+  assert.equal(registered.handle.dispose().code, 'revoked')
+  assert.equal(registered.handle.dispose().code, 'stale', 'the give-back is idempotent')
   // feature appears active in the registry snapshot
   const features = host.ctx.get('pluginApi')._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough')
   const contextState = features.find((feature) => feature.name === 'context')
   assert.ok(contextState)
   assert.equal(contextState.isActive, true)
+})
+
+test('the provenance contribution derives its owner and ignores a declared one', () => {
+  const host = createHost()
+  apply(host.ctx)
+  const context = host.ctx.get('pluginApi').prompts.provenance
+  const forged = context.contribute({ ...spec(), owner: 'someone-else', ownerId: 'someone-else' })
+  assert.equal(forged.ok, true)
+  assert.notEqual(forged.handle.ownerId, 'someone-else', 'the owner comes from the calling plugin, never from the spec')
+  // A duplicate id for the same owner is a typed conflict, not a silent overwrite.
+  const duplicate = context.contribute({ ...spec(), owner: 'someone-else' })
+  assert.equal(duplicate.ok, false)
+  assert.equal(duplicate.code, 'conflict')
+  const malformed = context.contribute('not-a-spec')
+  assert.equal(malformed.ok, false)
+  assert.equal(malformed.code, 'invalid-input')
+  assert.equal(forged.handle.dispose().code, 'revoked')
 })
 
 test('provenance policy registers through the public member with the standard handle', () => {
