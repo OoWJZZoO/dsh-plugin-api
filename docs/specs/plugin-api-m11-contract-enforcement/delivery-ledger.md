@@ -78,6 +78,7 @@
 | 4.14/4.15 余项（B2 余项） | registry 驱动的静态枚举未跑完；16 行 `currentShape: null` 未补；generation 校验未从「itemize 成员集」提升为覆盖全部 policy / resourceRegistry handle 行 |
 | 6.6 余项（B11 余项） | client `lifecycle.register({ownerId})`（`lib/client-generation-rebind.js`）仍接受调用方自报 ownerId，未改派生 |
 | 4.14 余项（callerAware 别名，既有缺陷） | `llm.requestTransforms` / `llm.admissionPolicies` / `tools.discovery.catalog` / `diagnostics.register` 四族仍以 `createFeatureSlot` 的 `callerAware` + 共享 `record.callerCtx` 绑定调用者（末次访问者胜），与 registry 声称的 `identitySource: caller plugin context` 不符——应同 storage / workspaces / security 一样改为按 (slot, identity) 键控的 per-caller 视图；同批处理「调用者 ctx 链上 `.loader` 不可解析时 root 回退被跨调用者共享」一条（正常 DSH profile 下不可复现） |
+| 3.4/prepareFeature 余项（既有缺陷） | `prepareFeature(...).rollback()` 在 `storage` / `security` 上无法恢复禁用面：`_readSlot` / `unmountFeature` 缺 `storage` 分支（rollback 静默 no-op），`createDisabledSecurityApi` 缺 `egress.lease.release` / `egress.coverage` 使挂载守卫抛错（异常在 apply 的 `close()` 中被吞）。非本轮引入、可达性窄，建议下一轮择一处理 |
 | 4.14 余项（冲突口径澄清） | `security.policy.register` 的 `conflictRule: owner-conflict` 与实测口径存在张力：实现为「同 owner 同 id latest-wins、跨 owner 同 id 两名 owner 并存」，而 `api-idioms` §3.2 的 policy 条目要求跨 owner 同 id 抛 typed conflict。需下一轮择一统一（改实现或改该行的 `conflictRule` 与分册措辞） |
 
 **8.4 的取舍记录**：本轮实现了「六个命名空间的 `availability()` + `capabilities` 按真实叶子状态报告」，但它与既有客户面契约的交互面比预期大（命名空间成员集合的精确断言、`services` 聚合状态、passthrough inventory 的成员清单、capability 探针语义），一次性改动触发 12 条既有验收失败。为避免在未充分设计的情况下改动客户面自描述语义，**该改动已整体回滚**（`lib/client-runtime.js` 回到 `d783539` 的形态），8.4 保持未完成并登记为下一轮的设计项——先定清「命名空间 availability 与 `capabilities.*` 的职责边界」，再落实现。
@@ -378,3 +379,12 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 - **中度（既有缺陷，登记为下一轮项）**：`llm.requestTransforms` / `llm.admissionPolicies` / `tools.discovery.catalog` / `diagnostics.register` 四族仍走 `createFeatureSlot` 的 `callerAware` + 共享 `record.callerCtx`（末次访问者胜），与 registry 声称的 `identitySource: caller plugin context` 不符。**这不是本轮引入的回归**（该机制自 M11 首轮交付起存在），已记入 §3.0 未完成表。
 - **中度（环境相关）**：调用者 ctx 链上 `.loader` 不可解析时，身份回退为 root token，per-caller 视图随之被跨调用者共享（先到者胜）。正常 DSH profile（官方 loader 在场）不可复现，已记入 §3.0 未完成表，与上一项同批处理（统一改为按 caller 视图 + 显式 root 回退登记）。
 - **已排除**：`Object.freeze` 后的视图仍可被 `_decoratedNamespaces` 正常装饰（`mergeSurface` 克隆到新对象，不写原对象）。
+
+### 7.12 第二轮交付的全局终审（第四轮，收敛验证，对象至 `59f273a`）
+
+结论 **有偏差**：§7.11 的阻塞回归经独立探针与**反例对照**（临时以旧的身份键实现回放，确认新实现不抛、旧实现抛 `disabled`）**确认闭合**；`storage` / `workspaces` / `security` 三处在重挂载与 disable→enable 循环后均跟随新 slot。新增 1 条中度与 1 条既有低度：
+
+- **中度（本轮新引入，已就地闭合）**：新增的「重挂载后视图跟随新 slot」断言**不具判别力**——测试的 `forCaller` 每次读取都新建接收者，旧的身份键实现把缓存在该一次性接收者上，因而同样通过（虚假保证）。
+  → 已改为**复用同一 caller 接收者**取两次面（`test/caller-derived-owner.test.mjs` 的该用例），旧实现下 `viewAfter === viewBefore` 会失败，断言自此具备判别力。
+- **低度（既有缺陷，已登记为下一轮项）**：`prepareFeature(...).rollback()` 在 `storage` / `security` 上无法恢复禁用面——`_readSlot` 与 `unmountFeature` 都没有 `storage` 分支（rollback 静默 no-op），`createDisabledSecurityApi` 缺少 `egress.lease.release` / `egress.coverage` 导致 `_assignFeature('security')` 的挂载守卫抛错（异常在 apply 的 `close()` 中被吞，feature 已销毁而门面仍发布其 api）。经 `git show 75bbc91:lib/plugin-api-service.js` 比对确认**非本轮引入**，可达性窄（host 无 `unmountFeature('storage')` 调用点）。已记入 §3.0 未完成表。
+- **已确认无问题**：三处 getter 仍为方法式；`_callerView` 的三个字段无其他读写路径（无残留身份键缓存）；`slot.callerCtx` 的 4 处写点恰为 §3.0 已登记的下一轮四族，与三处 slot 无交集；`_promptsSurfaceCache` 有显式失效点、`_routingCallerSurfaceCache` 绑定 service-lifetime surface，均非同型问题；`Object.freeze` 与 `_decoratedNamespaces` 的装饰互不干扰。

@@ -97,14 +97,18 @@ test('a namespace view follows a remounted slot instead of answering for the dea
   })
 
   const token = service.mountFeature('storage', spy(first))
-  const viewBefore = forCaller(service, 'plugin-a').storage
+  // One caller receiver reused across both reads: a fresh receiver per read
+  // would carry its own empty cache and let an identity-keyed (slot-less)
+  // cache pass this test by accident.
+  const caller = forCaller(service, 'plugin-a')
+  const viewBefore = caller.storage
   assert.equal(typeof viewBefore.open, 'function')
 
   // Remount: the facade replaces the slot object behind the same namespace.
   service.unmountFeature('storage', token)
   service.mountFeature('storage', spy(second))
 
-  const viewAfter = forCaller(service, 'plugin-a').storage
+  const viewAfter = caller.storage
   assert.notEqual(viewAfter, viewBefore, 'a view is bound to its slot, so a remount yields a fresh view')
   const outcome = await viewAfter.open({ scope: 'workspace', schema: 'com.example.todo', version: 1, name: 'todos' })
   assert.notEqual(outcome?.code, 'disabled', 'the remounted slot must not answer through the dead view')
