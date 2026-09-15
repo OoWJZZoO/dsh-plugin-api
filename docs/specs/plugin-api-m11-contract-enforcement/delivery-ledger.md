@@ -54,7 +54,7 @@
 | C1b `workspaces.transactions.availability` | 已修复（第三轮） | `lib/plugin-api-service.js` + registry 行 + 测试 |
 | C2 client 自描述失真 | 已修复（第三轮） | 七个 namespace 的 `availability()` 与 `capabilities.*` 同源 probe 表 |
 | C3 slots 白名单 + 投影 | 已修复（两轮） | 准入交官方声明判定（前轮）+ `declaration` / `list` 状态（第三轮） |
-| C4 client 面重复与语义 | 已修复 | `sessions.channels` 三成员语义（`current` / `observe` / `history`）在前轮交付；本轮复核成员集合一致 |
+| C4 client 面重复与语义 | **部分完成** | client 侧三成员语义前轮交付；host `sessions.channels` 的 `current` / `history` / `observe` 映射仍未收敛（见 §3.0.1 未完成清单） |
 | C5 client `remotes` / `slots` 观察面 | 已修复 | 标准观察 handle + `slots.observe` |
 | C6 `agents.providers.register` | 已修复 | 显式变体判别 + 标准 handle + 派生 owner |
 | C7 client `connection.get` | 修复（回滚） | 改回 `connection.api.settings`，三处登记同步（见 §3.0.1 回滚记录） |
@@ -64,9 +64,9 @@
 | C10b `admitted()` 登记 | 已修复（第三轮） | 四个 decision namespace 的 `admitted()` 补实现 + 补行 |
 | C10c `agents.scopes` | 已修复 | typed throw 失败呈现 + 判别式 dispose + 扩展成员改行登记 |
 | C11 缺位词汇 | 已修复 | `missing` / `unavailable` 分界落 `executions.get` / `tasks.*` / `sessions.activity.*` |
-| C12 settings mutation 呈现 | **未完成** | 见 §3.0.1 余项（登记 `discriminated-result` 与官方直通实现不符） |
+| C12 settings mutation 呈现 | **已修复**（第三轮） | `facadeSettingsMutation`：冻结判别式 + `commitState`，官方 revisions/CAS 与错误映射保留 |
 | C13 `storage.open.handle.domain` | 已修复（第三轮） | registry 行改回 retained + 理由；实现本就保留 |
-| C14 `capabilityMatrix` 内容模型 | **未完成** | 见 §3.0.1 余项 |
+| C14 `capabilityMatrix` 内容模型 | **已修复**（第三轮） | 当前能力投影 + 生成物重建入口 `scripts/capability-matrix-sync.mjs` |
 | C15 handle 行互指 | 已修复（第三轮） | 两行 `currentShape` 互指 |
 | C16 `events.compaction` 示例 | 已修复 | `public-api-shape` §5 示例改为真实 capability path |
 | C17 `async` 声明 | **未完成** | 依赖 §3.0.1 的 B5 |
@@ -108,7 +108,7 @@
 |---|---|
 | 4.14/4.15 余项（B2 余项 · generation 校验提升） | 「把 generation 校验提升为覆盖全部 policy / resourceRegistry handle 行」在实现时发现两个**委派型**注册仍无门面身份（`skills.activation.register.handle`、`skills.activation.policy.register.handle`；门面校验输入后委派给 activation owner）。提升该规则必须先关闭这两处，否则需要新增 2 条例外、把「带例外的成员行 / 公共 path」两口径顶到基线（17 / 16）。规则暂维持「itemize 成员集」形态；解除动作：为该 owner 契约补 unregister 语义并把两行包装为标准 handle |
 | 3.1（B5 · `async` 回填） | 546 行 `async` 字段仍未回填，validator 仍无该校验。上一轮已否决启发式回填；本轮评估的可行路径是「构建期 / 测试期采集入口（挂载门面后按 `constructor.name === 'AsyncFunction'` 逐叶判定）」，需要一套覆盖全部 owner 的挂载 harness，工作量与风险都大，尚未实施 |
-| 5.12 / C4/C5（通道半） | `sessions.channels` 三成员语义（快照 / 订阅 / 事件帧）的复核未单独留证 |
+| 5.12 / C4/C5（通道半） | `sessions.channels` 的成员语义仍未按 Task 5.12 收敛：公开面当前是 `list`（官方 `fetchEvents` 的事件帧拉取）与 `observe`（官方 `observe` 的一次性快照），而设计要求的映射是 `current()`（快照）/ `history({...})`（事件帧）/ `observe(listener)`（订阅，官方 `onChange`）。改名会波及 registry 行、`oldToTargetMapping` 与多个套件，本轮未动 |
 | 8.13（C17） | `tasks.*` 全域的 `async` 抽样复核依赖 B5，未做 |
 | 3.6（B6） | 行为表 / 装配表本轮未被触及（成员表已重建为 551 行）；历史现状注待与上述余项同批处理 |
 
@@ -185,7 +185,7 @@
 | B9（Task 8.1 域侧） | **已完成** — coordination `availability` 改同步、security `availability` 状态化 |
 | B10（Task 8.9 余项） | **已完成** — `sessions.activity.current/get` 的 `missing` / `invalid-input` 拆分 |
 | B11（Task 6.6 余项） | **已完成**（storage / transactions / prompts 三处派生；**注**：本轮修复了三处 getter 的 caller 捕获——必须是方法式 getter，箭头 getter 会闭包门面自身） |
-| B12（Task 8.x 余项） | **大部分完成**（第三轮）— 追加交付 C1b、C8、C9、C10b、C13、C15；**余项**：C4/C5 通道半复核、C10a 台账注、C12 settings mutation 包装、C14 capabilityMatrix 内容模型、C17 抽样复核 |
+| B12（Task 8.x 余项） | **大部分完成**（第三轮）— 追加交付 C1b、C8、C9、C10b、C12、C13、C14、C15（C10a 以「合理例外 + 内部回退分支」结论落台账）；**余项**：C4/C5 通道半（`current` / `history` / `observe` 成员映射）、C17 抽样复核（依赖 B5） |
 | B13（Task 9.1/9.2） | **已完成**（第三轮）— `test/dual-plugin-composition.test.mjs`（4 场景）与 `test/migration-slices.test.mjs`（2 切片，含「原行为 → 现行公共调用 → 运行结果」矩阵）交付，证据均来自真实公共入口执行 |
 | B14（Task 4.4） | **已完成** — `llm.providers.register` / `llm.models.register` 标准 handle（`.replace` 保留） |
 | B15（Task 3.5 尾项） | **已完成** — `bypasses` 首次落盘（11 行） |
