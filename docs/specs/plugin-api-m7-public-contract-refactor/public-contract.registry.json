@@ -11115,7 +11115,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "registration handle with read members",
+      "currentShape": "registration handle with read members; the shared field names with settings.scope.handle (generation, revision, lifecycle) are one contract \u2014 see that row for the scope side",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -11148,7 +11148,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "scope handle { get(), watch(callback), update(patch), replace(section), mutate(ops, expectedRevision) }",
+      "currentShape": "scope handle { get(), watch(callback), update(patch), replace(section), mutate(...) } carrying the same generation / revision / lifecycle field contract as settings.register.handle",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -11856,9 +11856,9 @@
       "availabilityShape": "none",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "official storage domain handle exposed on the binding handle",
-      "migrationAction": "migrate",
-      "status": "removed",
+      "currentShape": "the official storage domain handle carried as a registered domain extension member of the binding handle; it is the owner-scoped record access face (table access and the official domain close) and has no equivalent public replacement, so it is retained rather than migrated",
+      "migrationAction": "retain",
+      "status": "advanced",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -18465,6 +18465,171 @@
         "member-inventory",
         "registry-validation"
       ]
+    },
+    {
+      "publicPath": "agents.decisions.admitted",
+      "targetPath": "agents.decisions.admitted",
+      "capability": "agents",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "facade",
+      "scope": "profile",
+      "resourceKey": null,
+      "identitySource": "not-applicable",
+      "conflictRule": "none",
+      "lifecycle": "pure read; no lifecycle of its own",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "pure",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "the decision points the agents namespace admits as a frozen point-name list; the same names the register member admits, so a caller can plan before registering",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "tools.executionPolicies.admitted",
+      "targetPath": "tools.executionPolicies.admitted",
+      "capability": "tools",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "facade",
+      "scope": "profile",
+      "resourceKey": null,
+      "identitySource": "not-applicable",
+      "conflictRule": "none",
+      "lifecycle": "pure read; no lifecycle of its own",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "pure",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "the decision points the tools namespace admits as a frozen point-name list; the same names the register member admits, so a caller can plan before registering",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "prompts.assemblyPolicies.admitted",
+      "targetPath": "prompts.assemblyPolicies.admitted",
+      "capability": "prompts",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "facade",
+      "scope": "profile",
+      "resourceKey": null,
+      "identitySource": "not-applicable",
+      "conflictRule": "none",
+      "lifecycle": "pure read; no lifecycle of its own",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "pure",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "the decision points the prompts namespace admits as a frozen point-name list; the same names the register member admits, so a caller can plan before registering",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "events.decisions.admitted",
+      "targetPath": "events.decisions.admitted",
+      "capability": "events",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "facade",
+      "scope": "profile",
+      "resourceKey": null,
+      "identitySource": "not-applicable",
+      "conflictRule": "none",
+      "lifecycle": "pure read; no lifecycle of its own",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "pure",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "the decision points the events namespace admits as a frozen point-name list; the same names the register member admits, so a caller can plan before registering",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "workspaces.transactions.availability",
+      "targetPath": "workspaces.transactions.availability",
+      "capability": "workspaces",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "facade",
+      "scope": "workspace",
+      "resourceKey": null,
+      "identitySource": "not-applicable",
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "the transactions sub-namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the owner probe is used when present, otherwise the live state of the transaction slot decides, and a missing owner never reads as active",
+      "migrationAction": "retain",
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
     }
   ],
   "servicesWhitelist": [
@@ -20628,9 +20793,9 @@
     },
     {
       "oldPath": "storage.open.handle.domain",
-      "targetPath": "services.storage",
-      "action": "migrate",
-      "relation": "official domain facility handle without facade semantic guarantee; audited services passthrough"
+      "targetPath": "storage.open.handle.domain",
+      "action": "retain",
+      "relation": "retained: the official domain handle is the owner-scoped record access face and has no equivalent public replacement"
     },
     {
       "oldPath": "connection.dispose",
@@ -22121,6 +22286,36 @@
       "targetPath": null,
       "action": "delete",
       "relation": "retired: the official executionMode verb is a classification query, not a registration, so no handle ever existed"
+    },
+    {
+      "oldPath": "agents.decisions.admitted",
+      "targetPath": "agents.decisions.admitted",
+      "action": "retain",
+      "relation": "the admitted point list is a read-only projection of the decision namespaces point set"
+    },
+    {
+      "oldPath": "tools.executionPolicies.admitted",
+      "targetPath": "tools.executionPolicies.admitted",
+      "action": "retain",
+      "relation": "the admitted point list is a read-only projection of the decision namespaces point set"
+    },
+    {
+      "oldPath": "prompts.assemblyPolicies.admitted",
+      "targetPath": "prompts.assemblyPolicies.admitted",
+      "action": "retain",
+      "relation": "the admitted point list is a read-only projection of the decision namespaces point set"
+    },
+    {
+      "oldPath": "events.decisions.admitted",
+      "targetPath": "events.decisions.admitted",
+      "action": "retain",
+      "relation": "the admitted point list is a read-only projection of the decision namespaces point set"
+    },
+    {
+      "oldPath": "workspaces.transactions.availability",
+      "targetPath": "workspaces.transactions.availability",
+      "action": "retain",
+      "relation": "the transactions sub-namespace answers its own availability probe"
     }
   ],
   "deletionReport": [
@@ -22995,6 +23190,16 @@
         "interactive-session-access"
       ],
       "availabilityMember": "sessions.selection.availability",
+      "availabilityExemption": null
+    },
+    {
+      "namespace": "workspaces.transactions",
+      "runtime": "host",
+      "capabilityPath": "workspaces.transactions",
+      "contributingFeatures": [
+        "facade domain assembly"
+      ],
+      "availabilityMember": "workspaces.transactions.availability",
       "availabilityExemption": null
     }
   ],

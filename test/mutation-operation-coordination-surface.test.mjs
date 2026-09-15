@@ -1,6 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { apply } from '../lib/index.js'
+import { createFeatureRegistry } from '../lib/feature-registry.js'
+import { createPluginApiService } from '../lib/plugin-api-service.js'
 
 function createHarness(extraServices = {}) {
   const services = {
@@ -138,4 +140,35 @@ test('transaction operations carry discriminated results with commit state', asy
     // a successful record would carry the mutation commitState vocabulary
     assert.ok(!('commitState' in prepared), 'a failed mutation carries no commit state')
   }
+})
+test('the transactions sub-namespace answers a non-throwing availability probe', () => {
+  // A facade with no transaction owner: the namespace still answers, and a
+  // missing owner never reads as active.
+  const registry = createFeatureRegistry()
+  const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
+  const bare = new ServiceClass({ reflect: { provide() {} } })
+  const disabled = bare.workspaces.transactions
+  assert.equal(typeof disabled.availability, 'function')
+  assert.ok(Object.isFrozen(disabled.availability()))
+  assert.equal(disabled.availability().status, 'unavailable')
+  assert.equal(typeof disabled.availability().reason, 'string')
+
+  // A mounted owner that publishes its own probe is preferred, and the domain
+  // reason survives verbatim.
+  const owner = {
+    prepare: async () => ({ ok: true }), record: async () => ({ ok: true }), preview: async () => ({ ok: true }),
+    commit: async () => ({ ok: true }), rollback: async () => ({ ok: true }), recover: async () => ({ ok: true }),
+    get: async () => ({ ok: true }), observe: () => () => {},
+    availability: () => ({ status: 'degraded', reason: 'a backend path is offline' }),
+  }
+  bare.mountFeature('workspaceTransactions', owner)
+  assert.equal(bare.workspaces.transactions.availability().status, 'degraded')
+  assert.equal(bare.workspaces.transactions.availability().reason, 'a backend path is offline')
+
+  // Without an owner probe the live slot decides.
+  const { ctx, state } = createHarness()
+  apply(ctx)
+  const live = state.pluginApi.workspaces.transactions.availability()
+  assert.ok(Object.isFrozen(live))
+  assert.equal(live.status, 'active')
 })

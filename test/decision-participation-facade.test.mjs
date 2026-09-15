@@ -300,3 +300,25 @@ test('facade: compaction and title points are typed unavailable while their repl
   assert.ok(fsIntent.generation)
   fsIntent.dispose()
 })
+
+test('every decision namespace publishes the same member set, active and disabled', () => {
+  const { feature } = createFeature()
+  const calls = { agents: (ctx) => feature.providers.agents(ctx), tools: (ctx) => feature.providers.tools(ctx), prompts: (ctx) => feature.providers.prompts(ctx), events: (ctx) => feature.providers.events(ctx) }
+  const activeKeys = {}
+  for (const [name, build] of Object.entries(calls)) {
+    const member = build({})
+    activeKeys[name] = Object.keys(member).sort()
+    assert.deepEqual(activeKeys[name], ['admitted', 'availability', 'register'], `${name} publishes the participation member set`)
+    assert.ok(Object.isFrozen(member.admitted()), `${name}.admitted answers a frozen list`)
+    assert.ok(member.admitted().length > 0, `${name}.admitted names the admitted points`)
+  }
+
+  // The disabled form keeps exactly the same member set, so a caller can plan
+  // against one shape regardless of the backing state.
+  const disabled = createDisabledDecisionProviders()
+  for (const member of [disabled.agents({}), disabled.tools({}), disabled.prompts({}), disabled.events({})]) {
+    assert.deepEqual(Object.keys(member).sort(), ['admitted', 'availability', 'register'], 'the disabled form keeps the same members')
+    assert.deepEqual([...member.admitted()], [], 'a disabled namespace admits nothing rather than guessing')
+    assert.equal(member.availability().status, 'unavailable')
+  }
+})

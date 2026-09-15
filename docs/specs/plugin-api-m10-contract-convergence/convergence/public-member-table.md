@@ -5,7 +5,7 @@
 > 本表由 canonical registry 的 `members` **机械派生**（`scripts/convergence-verify.mjs` 逐字核对 idiom/effect/composition/runtime/authority/availabilityShape/currentShape），registry 是唯一事实源（Req 12.1），本表不得手工偏离；字段值不截断，以便逐字比对。
 > Req 2.1 的其余字段（owner、失败呈现、handle 形状、旧路径处理）在 registry 同名行的 `authority`/`failureSemantics`/`identitySource`/`currentShape` 与 `oldToTargetMapping` 中登记，本表以同源引用呈现。
 
-共 546 行（registry `members` 全量）。
+共 551 行（registry `members` 全量）。
 
 | publicPath | runtime | idiom | effect | composition | scope | authority | conflictRule | concurrency | availabilityShape | currentShape |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -334,8 +334,8 @@
 | settings.remote | host | contribution | register | additive | profile | settings authority | owner-conflict | deduplicate | namespace availability() | one-argument remote contribution mount function remote(namespace, serviceKey) |
 | settings.availability | host | selfDescription | read | pure | profile | settings authority | not-applicable | — | frozen { status } | the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active \| degraded \| unavailable, reason? }; the status is a field of the descriptor, never a success flag |
 | settings.dispose | host | — | read | pure | profile | settings authority | not-applicable | — | none | namespace disposer clearing the scope cache |
-| settings.register.handle | host | projection | read | pure | profile | settings authority | not-applicable | — | namespace availability() | registration handle with read members |
-| settings.scope.handle | host | projection | read | pure | profile | settings authority | not-applicable | — | namespace availability() | scope handle { get(), watch(callback), update(patch), replace(section), mutate(ops, expectedRevision) } |
+| settings.register.handle | host | projection | read | pure | profile | settings authority | not-applicable | — | namespace availability() | registration handle with read members; the shared field names with settings.scope.handle (generation, revision, lifecycle) are one contract — see that row for the scope side |
+| settings.scope.handle | host | projection | read | pure | profile | settings authority | not-applicable | — | namespace availability() | scope handle { get(), watch(callback), update(patch), replace(section), mutate(...) } carrying the same generation / revision / lifecycle field contract as settings.register.handle |
 | profiles.inspect | host | projection | read | pure | profile | profile authority | not-applicable | — | namespace availability() | profile inspection query |
 | profiles.health | host | projection | read | pure | profile | profile authority | not-applicable | — | namespace availability() | profile health query |
 | profiles.planDiff | host | projection | read | pure | profile | profile authority | not-applicable | — | namespace availability() | plan diff query |
@@ -356,7 +356,7 @@
 | storage.open.handle.close | host | — | read | pure | workspace | storage binding authority | not-applicable | — | none | handle close disposer returning a discriminated result |
 | storage.open.handle.purge | host | mutation | mutate | exclusive | workspace | storage binding authority | not-applicable | — | namespace availability() | handle purge action returning a discriminated result |
 | storage.open.handle.dispose | host | operation | execute | exclusive | workspace | storage binding authority | not-applicable | — | namespace availability() | handle dispose action returning a discriminated result |
-| storage.open.handle.domain | host | passthrough-exception | execute | pure | workspace | storage binding authority | not-applicable | — | none | official storage domain handle exposed on the binding handle |
+| storage.open.handle.domain | host | passthrough-exception | execute | pure | workspace | storage binding authority | not-applicable | — | none | the official storage domain handle carried as a registered domain extension member of the binding handle; it is the owner-scoped record access face (table access and the official domain close) and has no equivalent public replacement, so it is retained rather than migrated |
 | services | host | passthrough-exception | execute | pure | facade | official service authority | not-applicable | — | none | audited official service namespace |
 | isActive | client | selfDescription | read | pure | facade | facade root | not-applicable | — | none | frozen boolean state |
 | apiVersion | client | selfDescription | read | pure | facade | facade root | not-applicable | — | none | frozen string |
@@ -555,6 +555,11 @@
 | events.list | client | projection | read | additive | facade | slot assembly authority | not-applicable | deduplicate | namespace availability() | events.list() returns the frozen catalog of the approved client event names |
 | remotes.contribute | client | contribution | register | additive | facade | slot assembly authority | owner-conflict | deduplicate | namespace availability() | remotes.contribute(contribution) answers the frozen discriminated result { ok, code, handle } carrying the pending contribution handle { id, ownerId, seq, status(), dispose() }; status() reports pending \| active \| failed \| revoked and a settlement that lands after a withdrawal is rolled back |
 | settings.remote.contribute | client | contribution | register | additive | facade | slot assembly authority | owner-conflict | deduplicate | namespace availability() | client settings.remote.contribute(contribution, { namespace, render }) answers the frozen discriminated result { ok, code, handle } synchronously; the handle is a pending contribution handle whose status() reports pending \| active \| failed \| revoked, and the mounted face and its render projection are lazily resolved domain extension members (undefined until the settlement lands, gone after a revoke) |
+| agents.decisions.admitted | host | projection | read | pure | profile | facade | none | — | namespace availability() | the decision points the agents namespace admits as a frozen point-name list; the same names the register member admits, so a caller can plan before registering |
+| tools.executionPolicies.admitted | host | projection | read | pure | profile | facade | none | — | namespace availability() | the decision points the tools namespace admits as a frozen point-name list; the same names the register member admits, so a caller can plan before registering |
+| prompts.assemblyPolicies.admitted | host | projection | read | pure | profile | facade | none | — | namespace availability() | the decision points the prompts namespace admits as a frozen point-name list; the same names the register member admits, so a caller can plan before registering |
+| events.decisions.admitted | host | projection | read | pure | profile | facade | none | — | namespace availability() | the decision points the events namespace admits as a frozen point-name list; the same names the register member admits, so a caller can plan before registering |
+| workspaces.transactions.availability | host | selfDescription | read | pure | workspace | facade | not-applicable | — | namespace availability() | the transactions sub-namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active \| degraded \| unavailable, reason? }; the owner probe is used when present, otherwise the live state of the transaction slot decides, and a missing owner never reads as active |
 
 ## 附：namespace 导航记录（registry `namespaces`）
 
