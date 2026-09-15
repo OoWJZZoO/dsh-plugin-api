@@ -26,9 +26,9 @@
 
 | 项目 | 结果 |
 |---|---|
-| `npm test`（4G 内存护栏内） | **3524 / 3524 通过**（开工基线 3469；首轮交付 3514；本轮净增 10，含 `test/caller-derived-owner.test.mjs` 的 6 条 owner 派生、别名与 slot 重挂载回归断言） |
+| `npm test`（4G 内存护栏内） | **3549 / 3549 通过**（开工基线 3469；第二轮交付时 3524；第三轮 3549）。第三轮新增的断言集中在 `test/caller-derived-owner.test.mjs`、`test/feature-staging-contract.test.mjs`（新）、`test/client-self-description.test.mjs`（新）、`test/client-slots.test.mjs`、`test/client-settings-remote.test.mjs`、`test/client-generation-rebind.test.mjs`、`test/decision-participation-facade.test.mjs`、`test/mutation-operation-coordination-surface.test.mjs`、`test/registry-negative.test.mjs`、`test/dual-plugin-composition.test.mjs`（新）、`test/migration-slices.test.mjs`（新） |
 | `node scripts/registry-validate.mjs <registry>` | `registry valid`（exit 0） |
-| `node scripts/convergence-verify.mjs` | `546 member rows, 37 behavior rows, 37 fully linked behavior rows`（exit 0；行数 538 → 539 是补入 `lifecycle.register` 现行 leaf 行，539 → 546 是补入七个缺失的 client 现行 leaf 行——`slots.contribute` / `slots.list` / `slots.observe` / `events.observe` / `events.list` / `remotes.contribute` / `settings.remote.contribute`；其中六个是**补登记已存在的公共成员**，`events.list` 是本轮按 Task 5.6「事件目录可查询」**新增**的成员，已按 Req 14.1 的「处置项明确要求并已登记」登记） |
+| `node scripts/convergence-verify.mjs` | `551 member rows, 37 behavior rows, 37 fully linked behavior rows`（exit 0；行数演进 538 → 539 → 546 → 551：546 来自补入七个 client 现行 leaf 行，551 来自第三轮补入 four decision `admitted()` 行与 `workspaces.transactions.availability` 行；行为表 37 行冻结、装配表 token 未变） |
 | `npm run build:client:check` | `client bundle is up to date with its sources`（exit 0；本轮 client 侧源码有改动——`client-generation-rebind`、`client-attention-face`、`client-slots`——bundle 已重建，产物 diff 仅含预期变更） |
 | 治理 token 审计 | `node --test test/governance-token-audit.test.mjs` 2/2 通过（本轮修正了一处 `scripts/convergence-table-sync.mjs` 的 prose 泄漏） |
 | 版本冻结审计 | `package.json` 与 registry `contractBaseline` 零 diff |
@@ -36,6 +36,83 @@
 | R 落点契约复刻 / boot 自检 | `packages/agent-loop` 44/44、`packages/attachments` 39/39、`packages/mcp` 103/103 全绿 |
 
 **顺带修复（工程前置）**：`test/session-channel-rate-limit.test.mjs` 的 `windowMs: 1` 与调度器竞速，属**本线开工前既有的偶发失败**（同一提交上 3 次运行中 1 次失败）；已把窗口放宽到 100ms / 等待 200ms，语义不变。该项与本 feature 无关，仅用于保证交付门的可重复性。
+
+## 3.0.2 处置结论表（Task 10.1(a) / B16a）
+
+按输入编号全集逐项给出四态结论（**修复** / **合理例外** / **已修复（开工前即为正确形态）** / **误报**）与锚点。未闭合者指向 §3.0.1 的余项。
+
+| 编号 | 结论 | 证据锚点 |
+|---|---|---|
+| A1 同步 `llm/request` | 已修复（开工前） | `llm.requestTransforms.register` 返回标准 handle + 派生 owner；本轮把 caller 绑定从共享 slot 改为 per-caller leaf |
+| A2 `llm/admission` | 已修复（开工前） | `llm.admissionPolicies.register` 同上；`resolveModelInfo` 包装保留为隐藏实现 |
+| A3 / A4 / A5 Remote 与设置桥 | 已修复（开工前） | `remotes.register` / `settings.remote.contribute` / client `settings.remote.contribute`（本轮改为 pending handle + 惰性 `face`/`render`） |
+| A6 `routeOf` 深挖 | 已修复（开工前） | `exec.route` 经 `agent.session.requestContext()`；`executions.recovery.*` 与 routing 四类在本线收口 |
+| B1 `sessions.request` | 已修复 | 控制对象统一在 `operation`，`dispose()` 返回 `requested` / `stale` |
+| B2 `workflows.start` | 修复 + 合理例外 | 字段改名 + `dispose()` 判别式；`meta` / `result` / `cancel` 作为已登记领域扩展（例外已按 S12 回收，见 §3.0.1） |
+| B3 `executions.recovery.checkpoints.restore` | 已修复 | 字段名 `operation`、只读快照并入 `status()`、`observe` 返回退订函数 |
+| C1 availability 归一 | 已修复 | `lib/namespace-availability.js` 三值 + detail 保留；域侧 `coordination` / `security` / `storage` 均已状态化 |
+| C1b `workspaces.transactions.availability` | 已修复（第三轮） | `lib/plugin-api-service.js` + registry 行 + 测试 |
+| C2 client 自描述失真 | 已修复（第三轮） | 七个 namespace 的 `availability()` 与 `capabilities.*` 同源 probe 表 |
+| C3 slots 白名单 + 投影 | 已修复（两轮） | 准入交官方声明判定（前轮）+ `declaration` / `list` 状态（第三轮） |
+| C4 client 面重复与语义 | 已修复 | `sessions.channels` 三成员语义（`current` / `observe` / `history`）在前轮交付；本轮复核成员集合一致 |
+| C5 client `remotes` / `slots` 观察面 | 已修复 | 标准观察 handle + `slots.observe` |
+| C6 `agents.providers.register` | 已修复 | 显式变体判别 + 标准 handle + 派生 owner |
+| C7 client `connection.get` | 修复（回滚） | 改回 `connection.api.settings`，三处登记同步（见 §3.0.1 回滚记录） |
+| C8 `settings.scope` 双端套路 | 已修复（第三轮） | client `scope(spec)` 与 host 同套路，环境差异登记 |
+| C9 `prompts` 匿名 id 与错误词表 | 已修复（第三轮） | scoped kind 拒绝列出合法词表；匿名 id 规则两端一致 |
+| C10a `registerMinimalCatalogUpdate` | 合理例外 | 公开面已不含该名；内部回退分支保留并登记（删除会切断 tool-skill 替代行） |
+| C10b `admitted()` 登记 | 已修复（第三轮） | 四个 decision namespace 的 `admitted()` 补实现 + 补行 |
+| C10c `agents.scopes` | 已修复 | typed throw 失败呈现 + 判别式 dispose + 扩展成员改行登记 |
+| C11 缺位词汇 | 已修复 | `missing` / `unavailable` 分界落 `executions.get` / `tasks.*` / `sessions.activity.*` |
+| C12 settings mutation 呈现 | **未完成** | 见 §3.0.1 余项（登记 `discriminated-result` 与官方直通实现不符） |
+| C13 `storage.open.handle.domain` | 已修复（第三轮） | registry 行改回 retained + 理由；实现本就保留 |
+| C14 `capabilityMatrix` 内容模型 | **未完成** | 见 §3.0.1 余项 |
+| C15 handle 行互指 | 已修复（第三轮） | 两行 `currentShape` 互指 |
+| C16 `events.compaction` 示例 | 已修复 | `public-api-shape` §5 示例改为真实 capability path |
+| C17 `async` 声明 | **未完成** | 依赖 §3.0.1 的 B5 |
+| R1 `lifecycle.register` leaf 行 | 已修复 | registry 现行 leaf 行已补 |
+| R2 三个 domain namespace 的 `admitted()` | 已修复（第三轮） | 与 C10b 同一件工作 |
+| R3 `diagnostics.register.handle` | 已修复 | `currentShape` 随实现更新 |
+| R4 `events.emit` 等五行的 `currentShape` | 已修复 | 判别式结果 + producer 判定已登记 |
+| R5 `storage.availability` | 已修复 | 补 `scope` / `durability` / `epoch` |
+| R6 `capabilityMatrix` / client `events.observe` 行 | 部分完成 | client `events.observe` 现行行已补；`capabilityMatrix` 行随 C14（未完成） |
+
+## 3.0.1 第三轮（2026-09-15 续做）完成与未完成清单
+
+本轮自 `4d6d549`（第二轮交付的全局终审通过点）起连续执行。**已完成**（实现 + 测试 + registry/validator 同步）：
+
+| Task | 内容 | 落地 |
+|---|---|---|
+| 4.14 余项（B2 臂 · callerAware 别名） | `llm.requestTransforms` / `llm.admissionPolicies` 改为按派生身份键控的 leaf，且 leaf 在调用时解析当前 slot（保留「跨重挂载身份稳定」的既有契约）；`tools.discovery.catalog` / `diagnostics.register` 改为按 (slot, identity) 键控的 per-caller 视图。末次访问者胜的共享 `record.callerCtx` 已删除，`createFeatureSlot` 不再有 `callerAware` 选项 | `lib/plugin-api-service.js` + `test/caller-derived-owner.test.mjs`（新增 5 条：两族 leaf、两族视图、以及「同 id 不同 owner 不互相覆盖」的反例） |
+| 3.4 / prepareFeature 余项（B2 臂 · staged 回滚） | `_restoreDisabledSurface` 改为返回「是否真的恢复了」并新增 execRoute / typert / officialPassthrough 的退役路径；recovery / coordination / tasks / toolDiscovery / sessionChannel 的禁用候选改为 **owner 形状**（published 形状无法通过自己的挂载守卫）；`createDisabledSecurityApi` 补 `egress.lease.release` / `egress.coverage`；`_readSlot` 补 storage / execRoute；`unmountFeature` 补 storage 分支；无 slot 可替换的 8 个 feature 改为 `prepareFeature` 明确拒绝（`UNSTAGEABLE_FEATURES`）而非静默 no-op | `lib/plugin-api-service.js` + `test/feature-staging-contract.test.mjs`（全量 feature 契约测试：43 个 feature 逐个验证「可暂存且能恢复」或「带说明拒绝」） |
+| 4.14 余项（冲突口径，B2 臂） | `security.policy / redaction / egress` 四行改为 `conflictRule: owner-scoped`（实现按 (owner, id) 键控、跨 owner 并存），registry `vocabulary.conflictRule` 增该值，`api-idioms` §3.2 把「注册键决定冲突维度」写成分界（id 全局限定 ⇒ `owner-conflict`；(owner, id) 键控 ⇒ `owner-scoped`），两册一致 | registry + `docs/standards/api-idioms.md` |
+| 4.15（B2 臂） | `llm.adapters.decorations.register.handle` 补齐 `id` / `ownerId` / `generation`，`dispose()` 改判别式（`revoked` / `stale` / `unavailable`）且幂等，`snapshot()` 转为已登记领域扩展 | `lib/plugin-api-service.js` + 相关套件 |
+| 5.3（B3 余项） | client `settings.remote.contribute` 改为 contribution idiom：同步返回冻结判别式 + pending handle，`face` / `render` 作为**延迟解析**的领域扩展（内核的 extensions 改为按属性描述符复制，accessor 保持惰性），任一阶段可安全撤销、迟到落地被回滚 | `lib/{client-settings-remote,contract-kernel}.js` + client bundle 重建 + `test/client-settings-remote.test.mjs`（重写为 6 条） |
+| 8.4（B3 余项） | client 自描述收口：`connection` / `events` / `remotes` / `settings` / `slots` / `codec` / `lifecycle` 七个 namespace 提供零参 `availability()`；`capabilities.*` 与 namespace 成员读**同一张 probe 表**（不再「对象存在即 active」）；缺失 backing 报 `unavailable`、部分缺失报 `degraded` 且保留领域 reason；命名空间对象按底层对象缓存（身份稳定） | `lib/client-runtime.js` + `lib/client-generation-rebind.js` + client bundle + `test/client-self-description.test.mjs`（新增 3 条） |
+| 8.7（C8） | client `settings.scope(spec)` 与 host 同一调用套路（client 原样返回官方 scope 对象），环境差异显式登记 | `lib/client-settings-scope.js` + registry |
+| C3 投影半 | slots 暴露只读声明投影 `declaration(key)`（`status: declared / missing / unavailable` + 官方 `spec` / `specDynamic` / `declarationEpoch` / `snapshot` 事实），`list(key)` 回答同源 `{ key, status, entries }`，「未声明」与「已声明为空」不再同形 | `lib/client-slots.js` + client bundle + `test/client-slots.test.mjs`（新增 2 条） |
+| 6.6 余项（B11 余项） | client `lifecycle.register` 的 owner 改为派生（`callerOwnerOf`：loader entry name → fiber name → root），调用方自报 `ownerId` 被忽略；host 侧无调用者的内部面保留显式绑定并如实登记 | `lib/client-generation-rebind.js` + client bundle + `test/client-generation-rebind.test.mjs`（新增 1 条） |
+| 3.3 / 3.4（B4） | 例外台账重分类：回收 6 条记录 / 4 行（workflows 三处扩展成员、agent-scope 扩展成员、decoration handle、workflows.start 的 terminal），新增 4 条记录 / 4 行（`tasks.register` + 三个 durable-task 操作）；三条新的 entry 级校验（入口动词与 idiom 一致、注册类 leaf 的 typed-throw 失败呈现、已 itemize 的成员不得再消耗例外）落 validator，并补 4 条反例测试 | registry + `scripts/registry-validate.mjs` + `test/registry-negative.test.mjs` |
+| 3.2-R / B2 余项（登记面） | 24 行 `currentShape: null` 全部补齐（14 个 availability、9 个 handle、capabilityMatrix）；两处**幻影** handle 行退役（`tasks.register.handle`、`tools.executionMode.register.handle`，含 `oldToTargetMapping`）；C13 `storage.open.handle.domain` 改回 retained；C15 两行互指；C10b 四个 decision namespace 的 `admitted()` 补行 | registry + 成员表（**551 行**） |
+| 8.3 / C10b（代码半） | 三个 domain decision namespace（agents/tools/prompts）补 `admitted()`，四族的 active/disabled 成员集合一致 | `lib/decision-participation-facade.js` + `test/decision-participation-facade.test.mjs`（新增 1 条） |
+| 8.2 / C1b | `workspaces.transactions.availability()` 补齐（优先 owner probe 并保留其领域 detail，否则读 slot 活态；禁用形态同成员），namespace 记录落 registry | `lib/plugin-api-service.js` + registry + `test/mutation-operation-coordination-surface.test.mjs`（新增 1 条） |
+| 4.11（C9） | `prompts.contribute` scoped 路径的 kind 非法拒绝列出合法 kind 词表；全局 `anonymous:<seq>` 与 scoped `scoped:<kind>` 共用同一命名规则（已满足，复核通过） | `lib/plugin-api-service.js` |
+| 9.1 / 9.2（B13） | 双 synthetic 插件组合验收（加载顺序、同 key 各自登记、卸载隔离、**旧 handle 不得撤销新资源**、callback 失败隔离）与两个迁移切片（同一工具全局→agent scope 的 handle 与清理方式、同一策略跨 llm / prompts / security 的可迁移登记），文件头写明「原行为 → 现行公共调用 → 运行结果」矩阵，证据全部来自真实公共入口执行 | `test/dual-plugin-composition.test.mjs`、`test/migration-slices.test.mjs`（新增） |
+| client 侧登记同步 | `settings.remote.contribute`（client 行）、七个 `*.availability`（client 行）、`settings.scope`、`slots.list`、`lifecycle.register`、`lifecycle.availability` 的 `currentShape` 按实现改写；成员表随之重建 | registry + `convergence/public-member-table.md` |
+
+**本轮未完成**（**不是阻塞项**：无硬停机点、无环境 / 工具链 / 权限缺失，全部是同一工作序列中尚未执行的主体工作）：
+
+| Task | 未完成内容 |
+|---|---|
+| 4.14/4.15 余项（B2 余项 · generation 校验提升） | 「把 generation 校验提升为覆盖全部 policy / resourceRegistry handle 行」在实现时发现两个**委派型**注册仍无门面身份（`skills.activation.register.handle`、`skills.activation.policy.register.handle`；门面校验输入后委派给 activation owner）。提升该规则必须先关闭这两处，否则需要新增 2 条例外、把「带例外的成员行 / 公共 path」两口径顶到基线（17 / 16）。规则暂维持「itemize 成员集」形态；解除动作：为该 owner 契约补 unregister 语义并把两行包装为标准 handle |
+| 3.1（B5 · `async` 回填） | 546 行 `async` 字段仍未回填，validator 仍无该校验。上一轮已否决启发式回填；本轮评估的可行路径是「构建期 / 测试期采集入口（挂载门面后按 `constructor.name === 'AsyncFunction'` 逐叶判定）」，需要一套覆盖全部 owner 的挂载 harness，工作量与风险都大，尚未实施 |
+| 8.10（C12） | `settings.update / replace / mutate` 的登记为 `mutation` + `discriminated-result`，实现为官方直通（返回官方值、抛官方错误）：**登记与实现不符**。需要把三处包装为冻结 `{ ok, code, commitState, generation }` 并同步相关套件 |
+| 8.12（C14） | `capabilityMatrix` 的内容模型仍是迁移账本（`renamed` / `merged` / `migrated` / `deleted` + `replacement` 文本）：需要把运行时输出改为「当前能力簇 + 当前状态 + 限制 / 缺口原因」并重建 `lib/capability-matrix.js` |
+| 5.12 / C4/C5（通道半） | `sessions.channels` 三成员语义（快照 / 订阅 / 事件帧）的复核未单独留证 |
+| 8.13（C17） | `tasks.*` 全域的 `async` 抽样复核依赖 B5，未做 |
+| 3.6（B6） | 行为表 / 装配表本轮未被触及（成员表已重建为 551 行）；历史现状注待与上述余项同批处理 |
+
+**C7 回滚记录（Task 10.1(d)）**：client `connection.get` → `connection.api.settings` 的改名回滚已在上一轮交付（registry / `oldToTargetMapping` / `statusByPath` 三处同步，避免自环），本轮无新增回滚。
 
 ## 3.0 本轮（2026-09-15 续做）完成与未完成清单
 
@@ -60,8 +137,8 @@
 | 3.5 尾项（B15） | `bypasses` 字段首次落盘：`storage.open`、settings 五个成员行、`events.{emit,serial,parallel,bail,waterfall}` 共 11 行写明 transaction / security policy / audit / branch-routing 的旁路判定 | registry |
 | 5.12 / 8.5（C3 的准入半） | slots 准入门槛由前缀白名单改为**交官方声明判定**（真实官方槽位不再被门面拒绝） | `lib/client-slots.js` |
 | 5.1 / 5.2 / 5.4 / 5.5 / 5.6 / 8.6（B3 主臂） | client `slots.contribute`（判别式 + 标准 contribution handle）、`remotes.contribute`（**pending handle**：任一状态可安全撤销、迟到落地被回滚）、host `settings.remote.contribute`（判别式 + handle，官方同步挂载/租约逻辑不变）、client `attention.contribute`（外层结果冻结）、client `events.observe`（标准观察 handle + 可查询目录 + 未知名 typed 结果）、`connection.api.settings` 恢复为 settings 命名空间访问器（与 `connection.api.llm` 对称，`connection.get` 名不再存在——这是对 M3 期 rename 的回滚，见 §3.0 取舍记录） | `lib/{client-runtime,client-official-events,client-attention-face,settings-remote}.js` + client bundle 重建 |
-| 3.2-R 系列（client 登记缺口） | 补入七个缺失的 client 现行 leaf 行（`slots.contribute` / `slots.list` / `slots.observe` / `events.observe` / `events.list` / `remotes.contribute` / `settings.remote.contribute`）；C7 的 `connection.api.settings` 行由 `removed` 改回 `advanced` | registry + 成员表（**546 行**） |
-| 3.5 / 3.6（登记同步） | 本轮全部实现改动同步 registry（B1/B2/B9/B10/B11/B14/B18/B19/B20/C3 的 `currentShape`、`identitySource`、`bypasses`）；成员表机械重建（**546 行**） | registry + `convergence/public-member-table.md` |
+| 3.2-R 系列（client 登记缺口） | 补入七个缺失的 client 现行 leaf 行（`slots.contribute` / `slots.list` / `slots.observe` / `events.observe` / `events.list` / `remotes.contribute` / `settings.remote.contribute`）；C7 的 `connection.api.settings` 行由 `removed` 改回 `advanced` | registry + 成员表（**551 行**） |
+| 3.5 / 3.6（登记同步） | 本轮全部实现改动同步 registry（B1/B2/B9/B10/B11/B14/B18/B19/B20/C3 的 `currentShape`、`identitySource`、`bypasses`）；成员表机械重建（**551 行**） | registry + `convergence/public-member-table.md` |
 | 全局终审修订（第一轮意见） | ① **实质缺陷**：`storage` / `workspaces` / `security` 三处 caller 捕获用的是箭头 getter（`get: () => {}`），闭包捕获门面服务自身——Cordis 只在**方法式** getter 上把访问上下文作为 receiver，三处已改为 `get() {}` 并以 `test/caller-derived-owner.test.mjs` 取证；② 登记修正：client `settings.remote.contribute` 行改回描述现状、host `events.observe` 两行改回 host 形状、`agents.scopes.register` 行补 typed-throw 现状、`connection.api.settings` 的 `targetPath` / `oldToTargetMapping` / `statusByPath` 三处随回滚同步（避免自环）、`sessions.activity.*` 行清除已不存在的 `absent`、`slots.observe` 行修正首参、新增 client 行的 `identitySource` 改为 `derived-caller (root-fallback)`；③ 代码修正：观察 handle 的 `dispose()` 在领域 teardown 抛错时返回 typed failure（与资源 handle 一致）、host `settings.remote.contribute` 的同 key 冲突返回稳定 `conflict` 码、删除一处死调试代码 | `lib/{plugin-api-service,contract-kernel,settings-remote}.js` + registry + `test/caller-derived-owner.test.mjs` |
 
 **本轮未完成**（**不是阻塞项**：无硬停机点、无环境 / 工具链 / 权限缺失，全部是同一工作序列中尚未执行的主体工作；清单即下一轮的起点）：
@@ -98,21 +175,21 @@
 | 条目 | 状态 |
 |---|---|
 | B1（Task 6.4） | **已完成** — `tasks` 全域与 `workspaces.transactions` 的动作名字段改为 `action` |
-| B2（Task 4.14/4.15） | **部分完成** — `executions.recovery.*`、`decision-participation` 四族、`security.*.register`、`sessions.channels.auth.*`、`sessions.channels.redaction.register`、`llm.adapters.register.handle` 已收口；**余项**：registry 驱动的静态枚举未跑完、16 行 `currentShape: null`、generation 校验未提升为覆盖全部 policy/resourceRegistry handle 行 |
-| B3（Task 5.1–5.6、5.13 client 半、8.4–8.7） | **部分完成** — 5.1 / 5.2 / 5.4 / 5.5 / 5.6 / 8.6 已交付，C3 的准入半已交付；**余项**：5.3（client `settings.remote.contribute` 的 pending handle，其 `face`/`render` 需要延迟解析的扩展成员）、8.4（client 六个 `availability` 与 `capabilities.*`，本轮尝试后整体回滚，见 §3.0 取舍记录）、8.7（`settings.scope` 调用套路）、C3 的只读声明投影与 `list` 的「未声明 / 已声明为空」区分、client `lifecycle.register({ownerId})` 改派生 |
-| B4（Task 3.3/3.4/10.1(e)） | **未完成** — 例外台账重分类与三条 entry 级校验未动 |
-| B5（Task 3.1 registry 半） | **未完成** — `async` 回填未做（取舍见 §3.0） |
-| B6（Task 3.6 收尾） | **部分完成** — 成员表已随 registry 机械重建（**546 行**）并全链通过；行为表 / 装配表与历史现状注未重写 |
+| B2（Task 4.14/4.15） | **大部分完成**（第三轮）— 追加交付：callerAware 别名改为 per-caller leaf/view 四族、staged 回滚全树收口（含 storage/security/execRoute/typert/officialPassthrough 与 8 个拒绝暂存的 feature）、`llm.adapters.decorations.register.handle` 身份成员 + 判别式 dispose、`security.*` 冲突口径改 `owner-scoped`、24 行 `currentShape: null` 补齐、两处幻影 handle 行退役；**余项**：generation 校验提升（受阻于两处委派型注册，见 §3.0.1） |
+| B3（Task 5.1–5.6、5.13 client 半、8.4–8.7） | **已完成**（第三轮）— 5.3（pending handle + 惰性 `face`/`render`）、8.4（七个 namespace 的 `availability()` 与 `capabilities.*` 同源）、8.7（`settings.scope(spec)`）、C3 的投影半（`declaration` + `list` 状态）、client `lifecycle.register` 派生 owner 全部交付；8.4 上一轮的整体回滚已在本轮以「probe 表 + 身份稳定缓存」的方式落地 |
+| B4（Task 3.3/3.4/10.1(e)） | **已完成**（第三轮）— 回收 6 条 / 新增 4 条，净额 17 行 / 18 记录 / 16 path（≤ 基线 17/20/16）；三条 entry 级校验 + 4 条反例测试落盘 |
+| B5（Task 3.1 registry 半） | **未完成** — `async` 回填仍未做（第三轮评估的采集路径见 §3.0.1） |
+| B6（Task 3.6 收尾） | **部分完成** — 成员表已随 registry 机械重建（**551 行**）并全链通过；行为表 / 装配表本轮未被触及，历史现状注待与余项同批 |
 | B7（Task 1.6/1.7） | **已完成** — 异步 contribution 的 pending handle 状态机 |
 | B8（Task 5.13 host 半） | **已完成** — 含 disabled 安装态、client `attention.observe`、client `lifecycle.register.handle` |
 | B9（Task 8.1 域侧） | **已完成** — coordination `availability` 改同步、security `availability` 状态化 |
 | B10（Task 8.9 余项） | **已完成** — `sessions.activity.current/get` 的 `missing` / `invalid-input` 拆分 |
 | B11（Task 6.6 余项） | **已完成**（storage / transactions / prompts 三处派生；**注**：本轮修复了三处 getter 的 caller 捕获——必须是方法式 getter，箭头 getter 会闭包门面自身） |
-| B12（Task 8.x 余项） | **部分完成** — C3 准入半与 C7 的 registry 侧已做；C1b、C4/C5 通道半、C8、C9、C10a、C12、C13 保留判定、C14 内容模型、C15、C17 抽样复核未动 |
-| B13（Task 9.1/9.2） | **部分完成** — 新增 `test/caller-derived-owner.test.mjs` 作为 owner 派生的真实公共入口证据；双插件组合验收与迁移切片的其余要求未做 |
+| B12（Task 8.x 余项） | **大部分完成**（第三轮）— 追加交付 C1b、C8、C9、C10b、C13、C15；**余项**：C4/C5 通道半复核、C10a 台账注、C12 settings mutation 包装、C14 capabilityMatrix 内容模型、C17 抽样复核 |
+| B13（Task 9.1/9.2） | **已完成**（第三轮）— `test/dual-plugin-composition.test.mjs`（4 场景）与 `test/migration-slices.test.mjs`（2 切片，含「原行为 → 现行公共调用 → 运行结果」矩阵）交付，证据均来自真实公共入口执行 |
 | B14（Task 4.4） | **已完成** — `llm.providers.register` / `llm.models.register` 标准 handle（`.replace` 保留） |
 | B15（Task 3.5 尾项） | **已完成** — `bypasses` 首次落盘（11 行） |
-| B16（Task 10.1(a) / 3.2-R1） | **部分完成** — R1 的 `lifecycle.register` 现行 leaf 行已补（并补入七个 client 现行 leaf 行）；(a) 的四态结论表未做 |
+| B16（Task 10.1(a) / 3.2-R1） | **部分完成** — R1 已补；四态结论表见 §3.0.2（本轮落盘） |
 | B17（Task 3.1 词表半） | **已完成** — `vocabulary` 增 `identitySource` 与 `callShape` |
 | B18（Task 3.2-R5 / 8.11） | **已完成** — `storage.availability` 补 `scope` / `durability` / `epoch` |
 | B19（Task 4.5 R 包半） | **已完成** — attachments 注册类失败统一为 typed throw（方案 (a)），boot 自检随契约更新 |
