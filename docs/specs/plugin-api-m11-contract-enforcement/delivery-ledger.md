@@ -95,6 +95,14 @@
 | **L2（声明查询抛错被误判）** | client `slots.declaration` 原先吞掉 `slots.spec(key)` 的异常并报 `missing`（把「无法得知」说成「确定不存在」）：改为 `unavailable`，且失败查询不贡献任何官方事实 | `lib/client-slots.js` + `test/client-slots.test.mjs`（新增断言） |
 | **L4（matrix 状态是常量）** | `capabilityMatrix()` 的状态/限制改为**由已发布 path 派生**：簇的设计 path 全部已发布 ⇒ `active`；部分未发布 ⇒ `degraded` 且 `limitations` 精确列出未发布的 path；全部未发布 ⇒ `unavailable` 且带 `gapReason`；无任何 path 证据的簇不再冒充 `active`（不进入运行时投影）。同时补入 12 个已交付簇的空缺 path 证据（`sessions.request` / `sessions.cancel` / `attention` / `executions.recovery.checkpoints*` / `sessions.activity.attempt-facts` / `client.sessions` / `client.attention`），修正 `client.connection` 簇仍指向已退役 `connection.get` 的设计目标，并把 `connection.get → connection.api.settings` 补进 `oldToTargetMapping` / `statusByPath`；生成器补 main 守卫以便单测导入 | `lib/capability-matrix.js`（生成物，89 簇）+ `scripts/capability-matrix-sync.mjs` + `test/policy-inventory.test.mjs`（派生断言 + 合成 registry 的 degraded/unavailable 分支单测）+ registry |
 
+**同轮 spec 订正（Stage 4 发现 spec 与实测不符，按 §3.2 就地修订对应文档）**：
+
+| 文档 | 订正 |
+|---|---|
+| `docs/specs/plugin-api-m11-contract-enforcement/design.md` §3 净额段 | 例外台账的执行实测值与设计预测不同：实测为记录 20 − 6 + 4 = 18、成员行 17 − 4 + 4 = 17、公共 path 16 − 4 + 4 = 16（预测是 20 → 17 / 17 → 16 / 16 → 15）。多出的一条是 `tasks.register`——Task 3.4 新增的 entry 级校验要求注册类 leaf 的失败呈现为 typed throw，而它返回判别式结果且不铸造 handle，故与 `tasks.start`/`tasks.settle`/`tasks.attach` 同批登记；三口径仍**不高于** Req 11.5 上限（17 行 / 20 记录 / 16 path） |
+| `docs/specs/plugin-api-m11-contract-enforcement/tasks.md` Task 3.3 | 同步上述实测净额与「新增 4 条记录 / 4 行」 |
+| `docs/standards/api-idioms.md` §3.1 | 补一条呈现口径：同一订阅入口既要订阅、又要对「未知名」给出 typed 结果时（事件面的订阅入口），成功形状是承载标准 handle 的判别式信封 `{ ok, code, handle }`，未知名返回 typed `unsupported`（含可查询目录）而非裸 `TypeError`；两种呈现都以同一个四成员 handle 为契约本体，成员行按各运行时真实形状登记，不消耗例外。依据 Req 10.4 与 Req 5.1 在该成员上无法字面同时成立 |
+
 **本轮未完成**（**不是阻塞项**：无硬停机点、无环境 / 工具链 / 权限缺失，全部是同一工作序列中尚未执行的主体工作）：
 
 | Task | 未完成内容 |

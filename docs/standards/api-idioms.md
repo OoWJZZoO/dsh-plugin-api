@@ -48,6 +48,7 @@
 
 - 查询返回冻结只读视图；缺位或降级返回降级视图或 typed unavailable result，不抛穿调用方。**缺位词汇固定**：确定不存在 ⇒ `missing`；无法得知 ⇒ `unavailable`。成功只读视图不带 `ok` 字段是合法的（视图本身不是判别式结果）。
 - `observe` 返回 `{ current(), subscribe(listener), dispose(), epoch }`。`subscribe(listener)` 返回可用于退订的函数；handle 已释放时 `subscribe` 是 no-op（返回 no-op 退订函数）而非抛错；回调异常只降级该监听者；dispose 后不再回调且不影响其他订阅者。handle 只含这四个公共成员（冻结或等价不可变），内部可变记录（listener 集合、`disposed` / `stale` / `signal` / `abortHandler` 等）绝不外泄。
+- **同一入口既要订阅、又要对「未知名」给出 typed 结果时**（事件面的订阅入口），成功形状是承载该 handle 的判别式信封 `{ ok, code, handle }`：handle 本体仍是上面那四个成员，未知名返回 typed `unsupported` 结果（并给出可查询的目录）而不是裸 `TypeError`。两种呈现都以上述 handle 为契约本体，成员行按各自运行时的真实形状登记，不因此消耗例外。
 - 查询与订阅必须由不同成员表达：查询用 `get` / `list` / `inspect` / `history` / `current`，订阅用 `observe`；不得用一次调用同时充当快照与订阅。成员名须反映真实语义——拉取分页事件帧的成员不得占用 `list` 的资源枚举含义。
 - 查询天然幂等；订阅是 additive 或 pure，不以订阅注册顺序表达业务语义。
 
