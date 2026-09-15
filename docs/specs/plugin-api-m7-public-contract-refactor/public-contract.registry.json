@@ -10806,7 +10806,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "settings update write",
+      "currentShape": "settings update write; answers the frozen discriminated { ok, code: committed | invalid-input | error, commitState: committed, generation? }, awaiting the official call when it answers a thenable; the official revisions/CAS semantics and its error mapping are preserved, and namespace-state failures (inactive / disabled / service unavailable) stay typed throws",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -10845,7 +10845,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "settings replace write",
+      "currentShape": "settings replace write; answers the frozen discriminated { ok, code: committed | invalid-input | error, commitState: committed, generation? }, awaiting the official call when it answers a thenable; the official revisions/CAS semantics and its error mapping are preserved, and namespace-state failures (inactive / disabled / service unavailable) stay typed throws",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -10878,7 +10878,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "settings mutation write",
+      "currentShape": "settings mutate write; answers the frozen discriminated { ok, code: committed | invalid-input | error, commitState: committed, generation? }, awaiting the official call when it answers a thenable; the official revisions/CAS semantics and its error mapping are preserved, and namespace-state failures (inactive / disabled / service unavailable) stay typed throws",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [

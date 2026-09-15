@@ -328,9 +328,20 @@ test('integrated settings facade keeps document members under services.settings'
   assert.equal(servicesSettings.writable, true)
   assert.deepEqual(servicesSettings.prepareDocument(), { document: 'doc' })
   assert.deepEqual(servicesSettings.get('ns-a'), { ns: 'ns-a' })
-  assert.deepEqual(settings.update('ns-a', { patch: 1 }), { ns: 'ns-a', patch: { patch: 1 } })
-  assert.deepEqual(settings.replace('ns-a', { section: 1 }), { ns: 'ns-a', section: { section: 1 } })
-  assert.deepEqual(settings.mutate('ns-a', [{ op: 'set', path: ['a'] }]), { ns: 'ns-a', ops: [{ op: 'set', path: ['a'] }] })
+  // The retained mutation members answer the facade's mutation idiom: a frozen
+  // discriminated result whose commit state carries the outcome, not the
+  // official service's own return value.
+  for (const call of [
+    () => settings.update('ns-a', { patch: 1 }),
+    () => settings.replace('ns-a', { section: 1 }),
+    () => settings.mutate('ns-a', [{ op: 'set', path: ['a'] }]),
+  ]) {
+    const outcome = call()
+    assert.ok(Object.isFrozen(outcome))
+    assert.equal(outcome.ok, true)
+    assert.equal(outcome.code, 'committed')
+    assert.equal(outcome.commitState, 'committed')
+  }
   // Existing settings registration surface stays intact.
   assert.equal(typeof settings.register, 'function')
 })

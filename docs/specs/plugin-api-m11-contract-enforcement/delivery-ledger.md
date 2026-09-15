@@ -99,6 +99,7 @@
 | 4.11（C9） | `prompts.contribute` scoped 路径的 kind 非法拒绝列出合法 kind 词表；全局 `anonymous:<seq>` 与 scoped `scoped:<kind>` 共用同一命名规则（已满足，复核通过） | `lib/plugin-api-service.js` |
 | 9.1 / 9.2（B13） | 双 synthetic 插件组合验收（加载顺序、同 key 各自登记、卸载隔离、**旧 handle 不得撤销新资源**、callback 失败隔离）与两个迁移切片（同一工具全局→agent scope 的 handle 与清理方式、同一策略跨 llm / prompts / security 的可迁移登记），文件头写明「原行为 → 现行公共调用 → 运行结果」矩阵，证据全部来自真实公共入口执行 | `test/dual-plugin-composition.test.mjs`、`test/migration-slices.test.mjs`（新增） |
 | 8.12（C14） | `capabilityMatrix()` 改为**当前能力**投影：一行 = 能力簇 + 当前状态（`active` / `degraded` / `unavailable`）+ 限制 + 缺口原因；迁移词汇（`renamed` / `merged` / `migrated` / `deleted` / `internalized` 与 `replacement` 文本）不再出现在运行时输出（保留在 registry 登记面）。新增可检入的重建入口 `scripts/capability-matrix-sync.mjs`（`--check` 可校验），并在两处套件改为断言「由 registry 派生」而非逐字镜像 | `lib/capability-matrix.js`（生成物，89 簇）+ `scripts/capability-matrix-sync.mjs` + `test/{policy-inventory,read-surface-projection}.test.mjs` |
+| 8.10（C12） | `settings.update / replace / mutate` 改为门面 mutation idiom：冻结判别式 `{ ok, code, commitState, generation? }`（官方答复为 thenable 时 await），官方 revisions/CAS 语义与错误映射保留，namespace 级状态失败（inactive / disabled / service unavailable）仍为 typed throw；registry 三行与套件同步 | `lib/index.js`（`facadeSettingsMutation`）+ registry + `test/host-namespace-integration.test.mjs` |
 | client 侧登记同步 | `settings.remote.contribute`（client 行）、七个 `*.availability`（client 行）、`settings.scope`、`slots.list`、`lifecycle.register`、`lifecycle.availability` 的 `currentShape` 按实现改写；成员表随之重建 | registry + `convergence/public-member-table.md` |
 
 **本轮未完成**（**不是阻塞项**：无硬停机点、无环境 / 工具链 / 权限缺失，全部是同一工作序列中尚未执行的主体工作）：
@@ -107,7 +108,6 @@
 |---|---|
 | 4.14/4.15 余项（B2 余项 · generation 校验提升） | 「把 generation 校验提升为覆盖全部 policy / resourceRegistry handle 行」在实现时发现两个**委派型**注册仍无门面身份（`skills.activation.register.handle`、`skills.activation.policy.register.handle`；门面校验输入后委派给 activation owner）。提升该规则必须先关闭这两处，否则需要新增 2 条例外、把「带例外的成员行 / 公共 path」两口径顶到基线（17 / 16）。规则暂维持「itemize 成员集」形态；解除动作：为该 owner 契约补 unregister 语义并把两行包装为标准 handle |
 | 3.1（B5 · `async` 回填） | 546 行 `async` 字段仍未回填，validator 仍无该校验。上一轮已否决启发式回填；本轮评估的可行路径是「构建期 / 测试期采集入口（挂载门面后按 `constructor.name === 'AsyncFunction'` 逐叶判定）」，需要一套覆盖全部 owner 的挂载 harness，工作量与风险都大，尚未实施 |
-| 8.10（C12） | `settings.update / replace / mutate` 的登记为 `mutation` + `discriminated-result`，实现为官方直通（返回官方值、抛官方错误）：**登记与实现不符**。需要把三处包装为冻结 `{ ok, code, commitState, generation }` 并同步相关套件 |
 | 5.12 / C4/C5（通道半） | `sessions.channels` 三成员语义（快照 / 订阅 / 事件帧）的复核未单独留证 |
 | 8.13（C17） | `tasks.*` 全域的 `async` 抽样复核依赖 B5，未做 |
 | 3.6（B6） | 行为表 / 装配表本轮未被触及（成员表已重建为 551 行）；历史现状注待与上述余项同批处理 |
