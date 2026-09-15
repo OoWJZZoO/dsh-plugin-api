@@ -2,8 +2,9 @@
 
 > feature_name: `plugin-api-m11-contract-enforcement`
 > milestone: M11
-> 状态：**部分交付（in progress，未收口）**。Stage 3 审查门四轮闭合（见 `tasks.md`「Stage 3 审查门记录」）；Stage 4 按 `tasks.md` 顺序推进，**已完成范围见 §1，未完成项按 Task 编号在 §3 逐条登记为阻塞项**。本线**未达到 Stage 4 完成判定**；全局终审结论见 §7。
+> 状态：**Stage 4 续做中（in progress，未收口）**。Stage 3 审查门四轮闭合（见 `tasks.md`「Stage 3 审查门记录」）；Stage 4 按 `tasks.md` 顺序推进：§1 记第一轮交付范围，**§3.0 记本轮（2026-09-15 续做）的完成与未完成清单**，§3 的 B1–B20 逐条登记随之更新。本线**未达到 Stage 4 完成判定**；全局终审结论见 §7。
 > 执行口径：版本冻结基线内（runtime `0.1.0-rc.6`、包 `0.1.0-rc.6-0.1.0`、`dsh.api: 0.1`），**未步进任何版本字段**；未新增 R 点；官方包零修改。
+> 工作流纪律（`AGENTS.md` §3.2「Stage 4 连续执行纪律」，本轮落盘）：Stage 3 审查门通过后，除**硬停机点**与**环境 / 工具链 / 权限缺失**两类因素外，不得以批次边界、会话长度、上下文占用、任务规模或已交付部分成果为由终止未完成的主体工作；未完成项不得登记为「阻塞项」。
 
 ## 1. 已交付范围（本轮提交，逐项可复核）
 
@@ -25,16 +26,56 @@
 
 | 项目 | 结果 |
 |---|---|
-| `npm test`（4G 内存护栏内） | **3514 / 3514 通过**（开工基线 3469；内核批次后 3480；本线净增 45） |
+| `npm test`（4G 内存护栏内） | **3519 / 3519 通过**（开工基线 3469；首轮交付 3514；本轮净增 5） |
 | `node scripts/registry-validate.mjs <registry>` | `registry valid`（exit 0） |
-| `node scripts/convergence-verify.mjs` | `538 member rows, 37 behavior rows, 37 fully linked behavior rows`（exit 0） |
-| `npm run build:client:check` | `client bundle is up to date with its sources`（exit 0；`lib/client.js` 本轮零 diff，与 client 侧未触碰一致） |
+| `node scripts/convergence-verify.mjs` | `539 member rows, 37 behavior rows, 37 fully linked behavior rows`（exit 0；行数增至 539 是补入 `lifecycle.register` 现行 leaf 行，不新增公共能力） |
+| `npm run build:client:check` | `client bundle is up to date with its sources`（exit 0；本轮 client 侧源码有改动——`client-generation-rebind`、`client-attention-face`、`client-slots`——bundle 已重建，产物 diff 仅含预期变更） |
 | 治理 token 审计 | `node --test test/governance-token-audit.test.mjs` 2/2 通过（本轮修正了一处 `scripts/convergence-table-sync.mjs` 的 prose 泄漏） |
 | 版本冻结审计 | `package.json` 与 registry `contractBaseline` 零 diff |
 | 官方包零修改审计 | `/usr/lib/node_modules/@deepseek-ai/dsh/**` 本轮无修改 |
 | R 落点契约复刻 / boot 自检 | `packages/agent-loop` 44/44、`packages/attachments` 39/39、`packages/mcp` 103/103 全绿 |
 
 **顺带修复（工程前置）**：`test/session-channel-rate-limit.test.mjs` 的 `windowMs: 1` 与调度器竞速，属**本线开工前既有的偶发失败**（同一提交上 3 次运行中 1 次失败）；已把窗口放宽到 100ms / 等待 200ms，语义不变。该项与本 feature 无关，仅用于保证交付门的可重复性。
+
+## 3.0 本轮（2026-09-15 续做）完成与未完成清单
+
+本轮自 `ab15065` 起连续执行。**已完成**（实现 + 测试 + registry 登记同步）：
+
+| Task | 内容 | 落地 |
+|---|---|---|
+| 1.6 / 1.7（B7） | 异步 contribution 的 pending handle 状态机（`pending/active/failed/revoked`、任一状态安全 dispose、迟到的落地被回滚而非复活） | `lib/contract-kernel.js` + `test/contract-kernel.test.mjs` |
+| 5.13（host 半，B8） | host `events.observe` / `events.define.handle` / `sessions.planMode.observe` / `sessions.permissionPresets.observe` 及其 disabled 安装态、client `attention.observe`、client `lifecycle.register.handle` 的 `dispose()` 判别式收口 | `lib/{events-bus,sessions-plan-mode,sessions-permission-presets,plugin-api-service,client-attention-face,client-generation-rebind}.js` |
+| —（attention 码集） | `attention.contribute` 的 dispose 码集由 `noop`/`withdrawn` 收敛为 K2 的 `stale`/`revoked` | `lib/attention-hub.js` |
+| 6.4（B1） | `tasks` 全域与 `workspaces.transactions` 的动作名字段 `operation` → `action`（Req 6.3 的无条件条款，覆盖全树同类字段） | `lib/{task-execution-observation,workspace-mutation-transaction}.js` |
+| 6.6（B11） | `storage.open` 的 owner、`workspaces.transactions.prepare` 的 ownerId、`prompts.contribute`（全局与 scoped）的 ownerId 覆盖位改为**派生**；facade 侧 stamp callerCtx 并按 caller 注入 | `lib/{storage-binding,workspace-mutation-transaction,plugin-api-service}.js` |
+| 8.8（C10c） | `agents.scopes.register` 的失败改 typed throw（S2 注册类分界）、handle 冻结、`dispose()` 判别式、补 `id`/`ownerId` | `lib/scoped-agent-contributions.js` |
+| 4.3（B20） | `llm.routing` 四类注册的调用者绑定**接通**（facade 的 per-caller 视图注入派生身份）；registry 四行 `identitySource` 改回 `derived-caller` | `lib/plugin-api-service.js`（`_routingForCaller`）+ `test/route-policy-facade.test.mjs`（真实派生与跨 owner 冲突可达断言） |
+| 4.4（B14） | `llm.providers.register` / `llm.models.register` 包装为标准 handle（`.replace` 作为扩展成员保留），per-caller owner 派生 | `lib/{index,plugin-api-service}.js` |
+| 4.5（B19） | attachments 注册类失败呈现统一为 **typed throw**（选方案 (a)）；R 包 boot 自检随之校验「注册类抛 typed / 操作类判别式」 | `packages/attachments/lib/{pipeline-service,apply}.js` |
+| 4.14 / 4.15（B2 主臂） | `executions.recovery.*`、`decision-participation` 四族、`security.{policy,redaction,egress}`（含 facade 注入派生 owner）、`sessions.channels.auth.*`、`sessions.channels.redaction.register`、`tools.guard`/`presentation`（复核为已合格）、`llm.adapters.register.handle`（dispose 判别式）逐项收口 | `lib/{recovery-policy,decision-participation,security-owner,session-channel-auth,session-channel-redact,llm-adapter-registration}.js` |
+| 8.1 / 8.11（B9、B18） | `coordination.availability` 改同步（挂载期已解析，不再返回 Promise）；`security.availability` 补外层三值 `status`（领域 detail 保留）；`storage.availability` 补 `scope`/`durability`/`epoch` | `lib/{coordination-lease,security-owner,storage-binding}.js` |
+| 8.9（B10） | `sessions.activity.current`/`get` 的缺位词汇由 `absent` 拆为「确定不存在 ⇒ `missing`」与「非法输入 ⇒ `invalid-input`」 | `lib/session-activity-view.js` |
+| 3.2-R1（B16b） | 补 `lifecycle.register` 现行 leaf 行；client lifecycle handle 补 `id`/`ownerId` | registry + `lib/client-generation-rebind.js` |
+| 3.1（词表半，B17） | `vocabulary` 增 `identitySource`（含 `derived-caller`）与 `callShape` | registry |
+| 3.5 尾项（B15） | `bypasses` 字段首次落盘：`storage.open`、settings 五个成员行、`events.{emit,serial,parallel,bail,waterfall}` 共 11 行写明 transaction / security policy / audit / branch-routing 的旁路判定 | registry |
+| 5.12 / 8.5（C3 的准入半） | slots 准入门槛由前缀白名单改为**交官方声明判定**（真实官方槽位不再被门面拒绝） | `lib/client-slots.js` |
+| 3.5 / 3.6（登记同步） | 本轮全部实现改动同步 registry（B1/B2/B9/B10/B11/B14/B18/B19/B20/C3 的 `currentShape`、`identitySource`、`bypasses`）；成员表机械重建（**539 行**） | registry + `convergence/public-member-table.md` |
+
+**本轮未完成**（**不是阻塞项**：无硬停机点、无环境 / 工具链 / 权限缺失，全部是同一工作序列中尚未执行的主体工作；清单即下一轮的起点）：
+
+| Task | 未完成内容 |
+|---|---|
+| 5.1–5.6、5.13（client 半）、8.4–8.7（B3） | client 贡献面（`slots.contribute` / `remotes.contribute` / `settings.remote.contribute` / host `settings.remote.contribute`）的判别式结果与 pending handle；client `events.observe` 的观察 handle 与事件目录查询；client 六个 `availability` 与 `capabilities.*` 的真实叶子状态；`connection.get` → `connection.api.settings`；`settings.scope` 调用套路统一；slots 的只读声明投影与 `list` 的「未声明 / 已声明为空」区分 |
+| 3.3 / 3.4 / 10.1(e)（B4） | 例外台账重分类（回收 6 条记录 / 4 行、新增 3 条）与 validator 的三条 entry 级校验 |
+| 3.1（registry 半，B5） | 538 行 `async` 回填与 validator 校验 |
+| 3.6（B6） | M10 行为表 / 装配表与历史现状注（成员表已随 registry 重建并全链通过） |
+| 8.x 余项（B12） | C1b、C4/C5 通道半、C7、C8、C9、C10a、C12、C13 保留判定、C14 内容模型、C15、C17 抽样复核 |
+| 9.1 / 9.2（B13） | 双 synthetic 插件组合验收与迁移切片的新增证据 |
+| 10.1(a)（B16a） | A1–A5 / B1–B3 / C1–C17 / R1–R6 的四态结论表 |
+
+**B5 的取舍记录**：两条路径均已评估——运行时逐叶采集需完整 harness（(a) 方案的本意即为此建采集入口）；静态扫描对 471 个可判定成员命中 413（88%），其余 58 个为 getter、别名与 removed 行。**用启发式结果回填会产生与运行时不符的登记**，故本轮不落该字段，留待 (a) 的采集入口，避免以失实登记充数。
+
+---
 
 ## 3. 阻塞项登记（Req 13.6）
 
