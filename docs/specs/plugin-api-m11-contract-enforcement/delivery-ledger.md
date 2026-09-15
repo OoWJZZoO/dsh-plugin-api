@@ -26,7 +26,7 @@
 
 | 项目 | 结果 |
 |---|---|
-| `npm test`（4G 内存护栏内） | **3523 / 3523 通过**（开工基线 3469；首轮交付 3514；本轮净增 9，含 `test/caller-derived-owner.test.mjs` 的 5 条 owner 派生与别名回归断言） |
+| `npm test`（4G 内存护栏内） | **3524 / 3524 通过**（开工基线 3469；首轮交付 3514；本轮净增 10，含 `test/caller-derived-owner.test.mjs` 的 6 条 owner 派生、别名与 slot 重挂载回归断言） |
 | `node scripts/registry-validate.mjs <registry>` | `registry valid`（exit 0） |
 | `node scripts/convergence-verify.mjs` | `546 member rows, 37 behavior rows, 37 fully linked behavior rows`（exit 0；行数 538 → 539 是补入 `lifecycle.register` 现行 leaf 行，539 → 546 是补入七个缺失的 client 现行 leaf 行——`slots.contribute` / `slots.list` / `slots.observe` / `events.observe` / `events.list` / `remotes.contribute` / `settings.remote.contribute`；其中六个是**补登记已存在的公共成员**，`events.list` 是本轮按 Task 5.6「事件目录可查询」**新增**的成员，已按 Req 14.1 的「处置项明确要求并已登记」登记） |
 | `npm run build:client:check` | `client bundle is up to date with its sources`（exit 0；本轮 client 侧源码有改动——`client-generation-rebind`、`client-attention-face`、`client-slots`——bundle 已重建，产物 diff 仅含预期变更） |
@@ -367,3 +367,13 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 - **中度（已闭合）**：`agents.scopes.register` 行的旧文本未删净（同一行既写 discriminated results 又写 never discriminated results）→ 删除旧文本；L1 的修复过宽（`PluginApiRemoteError` 一律映射为 `conflict`，语法校验也被误判）→ 收窄为「带 `serviceKey` 的冲突」，语法错误保持 `invalid-input`。
 - **低度（已闭合）**：§2 测试计数刷新为 3522；§3.0 中 `connection` 改名的措辞方向修正（回滚语义）；§7 补入本轮终审记录（本节）。
 - **低度（登记为下一轮项）**：`security.policy.register` 的 `conflictRule: owner-conflict` 与实测口径（同 owner latest-wins / 跨 owner 并存）存在张力，已记入 §3.0 未完成表待下一轮择一统一。
+
+### 7.11 第二轮交付的全局终审（第三轮，收敛验证，对象至 `75bbc91`）
+
+结论 **有偏差**：§7.9 的 6 条阻塞与 §7.10 的别名缺陷经独立探针**确认闭合**（含真实 cordis 树的跨 caller 与 host→plugin 两条反例），两条中度与三条低度亦闭合；但本轮修复引入一条**新的阻塞回归**：
+
+- **阻塞（新回归）**：per-caller 视图缓存以 owner 身份为键、**无 slot 代次**且无失效点，slot 被替换后同一 caller 仍拿到旧视图，对活着的 feature 抛 `disabled`（storage / workspaces / security 三处；disable→enable 循环亦不自愈）。
+  → **已就地闭合**：三处视图缓存改为 **`WeakMap<slot, Map<identity, view>>`**（`_callerView` 统一实现），slot 被替换即自然失效，旧 slot 与其视图可被回收；`test/caller-derived-owner.test.mjs` 增加「重挂载后视图跟随新 slot」的回归断言。
+- **中度（既有缺陷，登记为下一轮项）**：`llm.requestTransforms` / `llm.admissionPolicies` / `tools.discovery.catalog` / `diagnostics.register` 四族仍走 `createFeatureSlot` 的 `callerAware` + 共享 `record.callerCtx`（末次访问者胜），与 registry 声称的 `identitySource: caller plugin context` 不符。**这不是本轮引入的回归**（该机制自 M11 首轮交付起存在），已记入 §3.0 未完成表。
+- **中度（环境相关）**：调用者 ctx 链上 `.loader` 不可解析时，身份回退为 root token，per-caller 视图随之被跨调用者共享（先到者胜）。正常 DSH profile（官方 loader 在场）不可复现，已记入 §3.0 未完成表，与上一项同批处理（统一改为按 caller 视图 + 显式 root 回退登记）。
+- **已排除**：`Object.freeze` 后的视图仍可被 `_decoratedNamespaces` 正常装饰（`mergeSurface` 克隆到新对象，不写原对象）。

@@ -84,6 +84,33 @@ test('a namespace view taken by one caller keeps that caller identity when used 
   assert.equal(opened[1][1]?.fiber?.name, 'plugin-b', 'a later visitor never rewrites an earlier view')
 })
 
+test('a namespace view follows a remounted slot instead of answering for the dead one', async () => {
+  const service = createService()
+  const first = []
+  const second = []
+  const spy = (sink) => ({
+    open: async (...args) => {
+      sink.push(args)
+      return { close: async () => {}, table: () => ({ keys: () => [], delete: async () => true }) }
+    },
+    availability: () => ({ status: 'active' }),
+  })
+
+  const token = service.mountFeature('storage', spy(first))
+  const viewBefore = forCaller(service, 'plugin-a').storage
+  assert.equal(typeof viewBefore.open, 'function')
+
+  // Remount: the facade replaces the slot object behind the same namespace.
+  service.unmountFeature('storage', token)
+  service.mountFeature('storage', spy(second))
+
+  const viewAfter = forCaller(service, 'plugin-a').storage
+  assert.notEqual(viewAfter, viewBefore, 'a view is bound to its slot, so a remount yields a fresh view')
+  const outcome = await viewAfter.open({ scope: 'workspace', schema: 'com.example.todo', version: 1, name: 'todos' })
+  assert.notEqual(outcome?.code, 'disabled', 'the remounted slot must not answer through the dead view')
+  assert.equal(second.length, 1, 'the remounted slot received the call')
+})
+
 test('security policy registration receives the caller-derived owner, not a caller-declared one', () => {
   const service = createService()
   const seen = []
