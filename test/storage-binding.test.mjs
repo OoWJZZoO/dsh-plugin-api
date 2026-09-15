@@ -41,14 +41,21 @@ function facilityCtx(facility) {
   }
 }
 
-const VALID = { scope: 'workspace', owner: 'pluginx', schema: 'com.example.todo', version: 1, name: 'todos', tables: { items: { valueSchema: 'zod-liked-schema' } } }
+const VALID = { scope: 'workspace', schema: 'com.example.todo', version: 1, name: 'todos', tables: { items: { valueSchema: 'zod-liked-schema' } } }
+/** Stand-in for the caller fiber: the owner label is derived from its name. */
+const CALLER = { fiber: { name: 'pluginx' } }
 
-test('binding publishes only the owner/scope envelope contract and namespaces the official unit', async () => {
+test('binding derives the owner label from the caller and namespaces the official unit', async () => {
   const { facility, domainStub, table } = fakeFacility()
   const binding = createStorageBinding({ ctx: facilityCtx(facility), active: true })
-  assert.equal(binding.availability().status, 'active')
+  const availability = binding.availability()
+  assert.equal(availability.status, 'active')
+  assert.deepEqual(availability.scope, ['profile', 'workspace', 'session'], 'the domain detail reports the supported scopes')
+  assert.equal(availability.durability, 'durable')
+  assert.equal(typeof availability.epoch, 'number')
 
-  const result = await binding.open(VALID)
+  // A caller-supplied owner is ignored: the label comes from the caller identity.
+  const result = await binding.open({ ...VALID, owner: 'someone-else' }, CALLER)
   assert.equal(result.ok, true)
   assert.equal(result.code, 'opened')
   assert.deepEqual(result.envelope, { scope: 'workspace', owner: 'pluginx', schema: 'com.example.todo', version: 1, name: 'todos' })
@@ -78,34 +85,27 @@ test('binding publishes only the owner/scope envelope contract and namespaces th
   assert.equal(table.records.has('k1'), false)
 })
 
-test('open validates the scope/owner/schema/version envelope before touching the facility', async () => {
+test('open validates the scope/schema/version envelope before touching the facility', async () => {
   const { facility } = fakeFacility()
   const binding = createStorageBinding({ ctx: facilityCtx(facility), active: true })
-  const cases = [
-    { ...VALID, scope: 'global' },
-    { ...VALID, scope: 'session' }, // scope is validated but 'session' is legal
-    { ...VALID, owner: 'pluginx' },
-  ]
   for (const bad of [
     { ...VALID, scope: 'global' },
     { ...VALID, scope: undefined },
-    { ...VALID, owner: 'PLUGINX' },
-    { ...VALID, owner: '' },
     { ...VALID, schema: '' },
     { ...VALID, version: -1 },
     { ...VALID, version: 1.5 },
     { ...VALID, name: 'Bad Name' },
   ]) {
-    const result = await binding.open(bad)
+    const result = await binding.open(bad, CALLER)
     assert.equal(result.ok, false, JSON.stringify(bad))
     assert.equal(result.code, 'invalid-input')
   }
   assert.equal(facility.opened.length, 0, 'invalid envelopes never reach the official facility')
 
-  const scoped = await binding.open({ ...VALID, scope: 'session' })
+  const scoped = await binding.open({ ...VALID, scope: 'session' }, CALLER)
   assert.equal(scoped.ok, true)
   assert.equal(facility.opened[0].name, 'session__pluginx__todos')
-  const profile = await binding.open({ ...VALID, scope: 'profile' })
+  const profile = await binding.open({ ...VALID, scope: 'profile' }, CALLER)
   assert.equal(profile.ok, true)
   assert.deepEqual(STORAGE_SCOPES, ['profile', 'workspace', 'session'])
 })

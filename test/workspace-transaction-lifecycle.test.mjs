@@ -161,6 +161,10 @@ function createOwner(options = {}) {
 }
 
 const workspace = { scope: 'workspace', key: 'repo-a' }
+// The transaction owner is derived from the caller identity, never from a
+// caller-supplied string; these stand in for the calling plugin fibers.
+const CALLER_1 = { fiber: { name: 'owner-1' } }
+const CALLER_2 = { fiber: { name: 'owner-2' } }
 
 async function prepareWorkspace(owner, services, input = {}) {
   const coordination = services.coordination
@@ -173,7 +177,6 @@ async function prepareWorkspace(owner, services, input = {}) {
   return owner.api.prepare({
     transactionId: input.transactionId ?? 'tx-1',
     workspace,
-    ownerId: 'owner-1',
     intent: { kind: 'edit', summary: 'fix tests' },
     resources: [
       { kind: 'file', key: 'a.txt', scope: 'workspace' },
@@ -181,10 +184,10 @@ async function prepareWorkspace(owner, services, input = {}) {
     ],
     lease: acquired.handle,
     ...input.extra,
-  })
+  }, CALLER_1)
 }
 
-test('prepare requires identity, single scope, non-empty resources, intent, owner, and lease', async () => {
+test('prepare requires identity, single scope, non-empty resources, intent, and lease', async () => {
   const { owner, services } = createOwner()
   const coordination = services.coordination
   const acquired = await coordination.acquire({
@@ -195,7 +198,6 @@ test('prepare requires identity, single scope, non-empty resources, intent, owne
   const base = {
     transactionId: 'tx-1',
     workspace,
-    ownerId: 'owner-1',
     intent: { kind: 'edit', summary: 'fix' },
     resources: [{ kind: 'file', key: 'a.txt', scope: 'workspace' }],
     lease: acquired.handle,
@@ -203,15 +205,19 @@ test('prepare requires identity, single scope, non-empty resources, intent, owne
   for (const [key, mutate] of [
     ['transactionId', (v) => ({ ...v, transactionId: undefined })],
     ['workspace', (v) => ({ ...v, workspace: undefined })],
-    ['ownerId', (v) => ({ ...v, ownerId: '' })],
     ['intent', (v) => ({ ...v, intent: { kind: 'edit' } })],
     ['resources', (v) => ({ ...v, resources: [] })],
     ['lease', (v) => ({ ...v, lease: { generation: 'g' } })],
   ]) {
-    const result = await owner.api.prepare(mutate(base))
+    const result = await owner.api.prepare(mutate(base), CALLER_1)
     assert.equal(result.ok, false, `${key} must be rejected`)
     assert.equal(result.code, 'invalid-input')
   }
+
+  // A caller-supplied ownerId is ignored: the owner is the calling plugin.
+  const ignored = await owner.api.prepare({ ...base, ownerId: 'someone-else' }, CALLER_1)
+  assert.equal(ignored.ok, true)
+  assert.equal(ignored.transaction.ownerId, 'owner-1')
 })
 
 test('prepare binds lease generation/fencing provenance and exposes an immutable prepared transaction', async () => {
@@ -248,7 +254,7 @@ test('reused transaction identity with conflicting owner/scope/intent fails clos
     intent: { kind: 'move', summary: 'other' },
     resources: [{ kind: 'file', key: 'a.txt', scope: 'workspace' }],
     lease: acquired.handle,
-  })
+  }, CALLER_2)
   assert.equal(conflict.ok, false)
   assert.equal(conflict.code, 'conflict')
   // the original record was not merged or overwritten
@@ -269,7 +275,7 @@ test('reused transaction identity with conflicting owner/scope/intent fails clos
       { kind: 'config', key: 'dsh.json', scope: 'workspace' },
     ],
     lease: { ...first.transaction.lease, fencingToken: 'tok-unused', ownerId: 'owner-1' },
-  })
+  }, CALLER_1)
   assert.equal(replay.ok, true)
   assert.equal(replay.code, 'prepared')
   assert.equal(replay.transaction.revision, 1)

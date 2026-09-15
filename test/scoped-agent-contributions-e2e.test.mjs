@@ -37,12 +37,16 @@ test('two agents, one plugin: each target sees only its own contributions', asyn
 })
 
 test('two contributors on one target coexist with owner attribution', async () => {
-  const { state, makeAgent, singletons } = createHarness()
+  const { state, makeAgent, singletons, createPluginContext } = createHarness()
   makeAgent('shared')
   const scopes = state.pluginApi.agents.scopes
   const handle = scopes.register({ agent: 'shared' }).handle
-  const first = state.pluginApi.prompts.contribute({ ...scopedSection('one', 'one'), scope: handle, ownerId: 'owner-1' })
-  const second = state.pluginApi.prompts.contribute({ ...scopedSection('two', 'two'), scope: handle, ownerId: 'owner-2' })
+  // Two independent synthetic plugins contribute to the same target; each
+  // owner identity is derived from its own calling fiber, never supplied.
+  const apiA = createPluginContext('owner-1').get('pluginApi')
+  const apiB = createPluginContext('owner-2').get('pluginApi')
+  const first = apiA.prompts.contribute({ ...scopedSection('one', 'one'), scope: handle })
+  const second = apiB.prompts.contribute({ ...scopedSection('two', 'two'), scope: handle })
   assert.equal(first.ok, true)
   assert.equal(second.ok, true)
   assert.equal(first.handle.ownerId, 'owner-1')
@@ -264,7 +268,7 @@ test('global prompt projections without a target scope exclude scoped contributi
 })
 
 test('the prompt conflict key is one id namespace per (owner, target)', async () => {
-  const { state, makeAgent, singletons } = createHarness()
+  const { state, makeAgent, singletons, createPluginContext } = createHarness()
   makeAgent('agent-c')
   const handle = state.pluginApi.agents.scopes.register({ agent: 'agent-c' }).handle
   assert.equal(state.pluginApi.prompts.contribute({ ...scopedSection('same-id', 's'), scope: handle }).ok, true)
@@ -273,7 +277,8 @@ test('the prompt conflict key is one id namespace per (owner, target)', async ()
   assert.equal(clash.ok, false, 'the kind is not part of the key: one id namespace per (owner, target)')
   assert.equal(clash.code, 'conflict')
 
-  const otherOwner = state.pluginApi.prompts.contribute({ ...scopedSection('same-id', 's2'), scope: handle, ownerId: 'owner-2' })
+  const apiB = createPluginContext('owner-2').get('pluginApi')
+  const otherOwner = apiB.prompts.contribute({ ...scopedSection('same-id', 's2'), scope: handle })
   assert.equal(otherOwner.ok, true, 'a different owner may reuse the id on the same target')
   const asm = await singletons.systemPrompt.assemble({ agent: 'agent-c' })
   assert.deepEqual(asm.sections.map((section) => section.name), ['same-id', 'same-id'])
