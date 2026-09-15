@@ -56,7 +56,7 @@
 用于声明在明确决策点由系统调用的纯决策。入口为 `register(spec)`；`spec` 明确含 `id`、`priority` 与 `decide(context)`。
 
 - handle 固定为 `{ id, ownerId, generation, dispose() }`；owner 由调用上下文派生，**generation 由门面按 owner 铸造，必含、不省略**。handle 上的领域扩展成员按 §1 单独登记，不消耗例外。
-- 同 owner 同 id 采用 latest-wins，跨 owner 同 id 抛 typed conflict；**注册错误以 typed error 表达，不返回 `ok:false` 或静默 no-op**（与 §3.3/§3.4/§3.5/§3.7 的判别式结果分界见 §2「失败呈现的分界」）。
+- 注册键决定冲突维度，且必须与 registry 的 `conflictRule` 一致。**(owner, id) 键控**的注册表：同 owner 同 id 为 latest-wins，不同 owner 的同名策略各自生效、在同一决策点共同参与收敛，允许并存——登记为 `owner-scoped`（如 `security.policy` / `security.redaction` / `security.egress`）。**id 全局限定**的注册表：同 owner 同 id 为 latest-wins，跨 owner 同 id 抛 typed conflict——登记为 `owner-conflict`（如 `llm.requestTransforms` / `llm.admissionPolicies` / `prompts.provenance.policy`）。两种形态都**以 typed error 表达注册错误，不返回 `ok:false` 或静默 no-op**（与 §3.3/§3.4/§3.5/§3.7 的判别式结果分界见 §2「失败呈现的分界」）。
 - `dispose()` 返回冻结 `{ ok, code, reason? }`，成功码 `revoked`、no-op 码 `stale`（§2）。
 - priority 词表固定为 `lowest | low | normal | high | highest | monitor`，同 priority 按成功注册顺序；未知 priority 必须报错，不得静默按默认档处理。领域 reducer 负责收敛策略结果并隔离策略回调错误。
 - 注册必须自动生效。没有系统决策点的策略不得暴露让调用方自行咨询的入口；应在 registry 记录不可用能力及所需决策点性质。

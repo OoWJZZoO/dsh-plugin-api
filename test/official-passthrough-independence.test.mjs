@@ -86,12 +86,16 @@ async function observeClientFaces(bundle, degrade) {
     ? contributed() === true
     : ['revoked', 'disposed'].includes(contributed?.handle?.dispose?.().code)
   const entriesAfterDispose = listSlots('details')
+  const slotEntriesOf = (value) => (Array.isArray(value) ? value : value?.entries)
   const live = {
     mounterNames: bundle.CLIENT_MOUNTERS === undefined ? undefined : [...bundle.CLIENT_MOUNTERS],
     connectionCall: typeof face.connection.rpc?.call,
     slotsMembers: [['register', 'contribute'], ['inject', 'contribute'], ['entries', 'list'], ['subscribe', 'observe']].map((pair) => pair.map((name) => typeof slots[name]).sort().join('/')),
     slotsEntriesIdentity: listSlots('details') === listSlots('details'),
-    slotsRegistration: [entriesBeforeRegister, entriesAfterRegister, entriesAfterDispose, typeof removed],
+    // The slot list moved from the raw entries array to a declaration-aware
+    // view ({ key, status, entries }); what this regression guard protects is
+    // that the same entries are reported across eras, so compare those.
+    slotsRegistration: [entriesBeforeRegister, entriesAfterRegister, entriesAfterDispose, typeof removed].map(slotEntriesOf),
     singleCodec: (face.codec?.zod ?? face.codec?.validate) === (face.codec?.zod ?? face.codec?.validate),
   }
   return { live, dispose }

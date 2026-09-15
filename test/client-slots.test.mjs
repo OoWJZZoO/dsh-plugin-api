@@ -53,3 +53,51 @@ test('slots hand key admission to the official runtime and still validate their 
   assert.throws(() => api.register({ name: 'details', children: { 'settings.panel': { kind: 'panel', scope: 'root' } } }, {}), /kind/)
   assert.throws(() => api.register({ name: 'details', children: { 'settings.panel': { kind: 'single', scope: 'global' } } }, {}), /scope/)
 })
+
+test('the declaration projection separates undeclared, declared-but-empty and unknowable keys', () => {
+  const specs = new Map([['details', { kind: 'list', scope: 'root', declaredBy: 'shell' }]])
+  const epochs = new Map([['details', 3]])
+  const api = createClientSlots({
+    slots: {
+      register() { return () => {} },
+      inject() {},
+      subscribe() {},
+      entries: (key) => (key === 'details' ? [] : []),
+      spec: (key) => specs.get(key),
+      specDynamic: (key) => specs.get(key),
+      declarationEpoch: (key) => epochs.get(key) ?? 0,
+      snapshot: (key) => (specs.has(key) ? [{ name: key, kind: 'list', scope: 'root' }] : []),
+    },
+  })
+
+  const declared = api.declaration('details')
+  assert.equal(declared.status, 'declared', 'a declared slot with no entries is still declared')
+  assert.deepEqual(declared.entries, [], 'declared but empty is not the same as undeclared')
+  assert.deepEqual(declared.spec, { kind: 'list', scope: 'root', declaredBy: 'shell' })
+  assert.equal(declared.declarationEpoch, 3)
+  assert.deepEqual(declared.snapshot, [{ name: 'details', kind: 'list', scope: 'root' }])
+  assert.ok(Object.isFrozen(declared) && Object.isFrozen(declared.spec) && Object.isFrozen(declared.snapshot))
+
+  assert.equal(api.declaration('never-declared').status, 'missing')
+  assert.equal(api.list('never-declared').status, 'missing')
+  assert.deepEqual(api.list('never-declared').entries, [])
+
+  // The list view answers the same status as the projection it derives from.
+  assert.equal(api.list('details').status, 'declared')
+  assert.equal(Object.isFrozen(api.list('details')), true)
+})
+
+test('a runtime that cannot answer declares the key unknowable instead of guessing', () => {
+  const api = createClientSlots({
+    slots: { register() { return () => {} }, inject() {}, subscribe() {}, entries: () => [] },
+  })
+  const view = api.declaration('details')
+  assert.equal(view.status, 'unavailable', 'without a declaration accessor the answer is unknowable, not "missing"')
+  assert.equal('spec' in view, false, 'no official fact is fabricated')
+  assert.equal(api.list('details').status, 'unavailable')
+
+  const withEntries = createClientSlots({
+    slots: { register() { return () => {} }, inject() {}, subscribe() {}, entries: (key) => (key === 'details' ? [{ name: 'one' }] : []) },
+  })
+  assert.equal(withEntries.declaration('details').status, 'declared', 'occupied entries prove a declaration exists')
+})

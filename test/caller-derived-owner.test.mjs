@@ -150,3 +150,110 @@ test('workspaces.transactions.prepare forwards the caller context it derives the
   await forCaller(service, 'plugin-b').workspaces.transactions.prepare({ transactionId: 'tx-2' })
   assert.equal(received[1][1]?.fiber?.name, 'plugin-b', 'the second caller is not attributed to the first')
 })
+
+/**
+ * The registration members below all derive their owner from the caller. Each
+ * view is bound to the caller that took it; a later visitor reading the same
+ * namespace must not rewrite an earlier view (the failure mode of binding the
+ * caller on the shared slot: last accessor wins).
+ */
+test('llm.requestTransforms.register carries the caller identity from the view that was taken', () => {
+  const service = createService()
+  const seen = []
+  service.mountFeature('llm/request', {
+    transform: (spec, callerCtx) => { seen.push(callerCtx?.fiber?.name); return { id: spec.id, ok: true } },
+  })
+
+  const leafA = forCaller(service, 'plugin-a').llm.requestTransforms
+  const leafB = forCaller(service, 'plugin-b').llm.requestTransforms
+  leafA.register({ id: 't-1' })
+  leafB.register({ id: 't-2' })
+
+  assert.deepEqual(seen, ['plugin-a', 'plugin-b'], 'each leaf keeps the identity of the caller that took it')
+})
+
+test('llm.admissionPolicies.register carries the caller identity from the view that was taken', () => {
+  const service = createService()
+  const seen = []
+  service.mountFeature('llm/admission', {
+    register: (policy, callerCtx) => { seen.push(callerCtx?.fiber?.name); return { id: policy.id, ok: true } },
+  })
+
+  const leafA = forCaller(service, 'plugin-a').llm.admissionPolicies
+  const leafB = forCaller(service, 'plugin-b').llm.admissionPolicies
+  leafA.register({ id: 'p-1' })
+  leafB.register({ id: 'p-2' })
+
+  assert.deepEqual(seen, ['plugin-a', 'plugin-b'], 'each leaf keeps the identity of the caller that took it')
+})
+
+test('diagnostics.register carries the caller identity from the view that was taken', () => {
+  const service = createService()
+  const seen = []
+  service.mountFeature('diagnostics', {
+    register: (spec, callerCtx) => { seen.push(callerCtx?.fiber?.name); return { id: spec.id, ok: true } },
+    get: () => undefined,
+    observe: () => () => {},
+  })
+
+  const faceA = forCaller(service, 'plugin-a').diagnostics
+  const faceB = forCaller(service, 'plugin-b').diagnostics
+  faceA.register({ id: 'check-1' })
+  faceB.register({ id: 'check-2' })
+
+  assert.deepEqual(seen, ['plugin-a', 'plugin-b'], 'each face keeps the identity of the caller that took it')
+})
+
+test('tools.discovery.catalog.register carries the caller identity from the view that was taken', () => {
+  const service = createService()
+  const seen = []
+  service.mountFeature('tools')
+  service.mountFeature('toolDiscovery', {
+    catalog: { register: (entry, callerCtx) => { seen.push(callerCtx?.fiber?.name); return { id: entry.id, ok: true } } },
+    list: () => [],
+    activate: () => ({ ok: true }),
+    deactivate: () => ({ ok: true }),
+    audit: { list: () => [] },
+    availability: () => ({ status: 'active' }),
+  })
+
+  const faceA = forCaller(service, 'plugin-a').tools.discovery
+  const faceB = forCaller(service, 'plugin-b').tools.discovery
+  faceA.catalog.register({ id: 'entry-1' })
+  faceB.catalog.register({ id: 'entry-2' })
+
+  assert.deepEqual(seen, ['plugin-a', 'plugin-b'], 'each face keeps the identity of the caller that took it')
+})
+
+test('a taken registration view survives a later visitor and a remount', () => {
+  const service = createService()
+  const first = []
+  const second = []
+  const catalog = (sink) => ({
+    catalog: { register: (entry, callerCtx) => { sink.push(callerCtx?.fiber?.name); return { id: entry.id, ok: true } } },
+    list: () => [],
+    activate: () => ({ ok: true }),
+    deactivate: () => ({ ok: true }),
+    audit: { list: () => [] },
+    availability: () => ({ status: 'active' }),
+  })
+
+  service.mountFeature('tools')
+  const token = service.mountFeature('toolDiscovery', catalog(first))
+  const caller = forCaller(service, 'plugin-a')
+  const viewBefore = caller.tools.discovery
+
+  // A later visitor must not steal the binding held by the earlier view.
+  forCaller(service, 'plugin-b').tools.discovery.catalog.register({ id: 'other' })
+  viewBefore.catalog.register({ id: 'alpha' })
+  assert.deepEqual(first.map((name, index) => [index, name]), [[0, 'plugin-b'], [1, 'plugin-a']],
+    'the earlier view still reports its own caller')
+
+  // A remounted slot yields a fresh view that answers for the live surface.
+  service.unmountFeature('toolDiscovery', token)
+  service.mountFeature('toolDiscovery', catalog(second))
+  const viewAfter = caller.tools.discovery
+  assert.notEqual(viewAfter, viewBefore, 'a view is bound to its slot, so a remount yields a fresh view')
+  viewAfter.catalog.register({ id: 'beta' })
+  assert.deepEqual(second, ['plugin-a'], 'the remounted slot receives the call')
+})

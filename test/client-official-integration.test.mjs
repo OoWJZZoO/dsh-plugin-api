@@ -154,7 +154,8 @@ test('joined client surface exposes exact services, event, and llm faces with id
   const passthroughNames = CLIENT_OFFICIAL_PASSTHROUGH_DESCRIPTORS.map((d) => d.serviceName)
   assert.deepEqual(Object.keys(api.services), ['isActive', ...SERVICE_NAMES, ...passthroughNames])
   assert.equal(api.services.isActive, true)
-  assert.deepEqual(Object.keys(api.events), ['list', 'observe'])
+  // The namespace probe is part of every self-describing namespace (Req 4.5).
+  assert.deepEqual(Object.keys(api.events), ['list', 'observe', 'availability'])
 
   for (const name of SERVICE_NAMES) {
     const face = api.services[name]

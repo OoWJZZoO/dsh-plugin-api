@@ -9,14 +9,14 @@ test('settings scope forwards the official binder and returns its exact scope id
   const service = { bind(spec) { receiver = this; input = spec; return scope } }
   const api = createClientSettingsScope({ settingsScope: service })
   const spec = { namespace: 'readImage' }
-  assert.equal(api.bind(spec), scope)
+  assert.equal(api.scope(spec), scope)
   assert.equal(receiver, service)
   assert.equal(input, spec)
 })
 
 test('settings scope rejects malformed official results and exposes disabled face', () => {
-  assert.throws(() => createClientSettingsScope({ settingsScope: { bind() { return {} } } }).bind({}), /namespace/)
-  assert.throws(() => createClientSettingsScope({ settingsScope: { bind() { return {} } } }).bind({ namespace: 'readImage', decode: true }), /decode/)
-  assert.throws(() => createClientSettingsScope({ settingsScope: { bind() { return {} } } }).bind({ namespace: 'readImage' }), /malformed scope/)
-  assert.throws(() => createDisabledClientSettingsScope().bind({}), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED')
+  assert.throws(() => createClientSettingsScope({ settingsScope: { bind() { return {} } } }).scope({}), /namespace/)
+  assert.throws(() => createClientSettingsScope({ settingsScope: { bind() { return {} } } }).scope({ namespace: 'readImage', decode: true }), /decode/)
+  assert.throws(() => createClientSettingsScope({ settingsScope: { bind() { return {} } } }).scope({ namespace: 'readImage' }), /malformed scope/)
+  assert.throws(() => createDisabledClientSettingsScope().scope({}), (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED')
 })

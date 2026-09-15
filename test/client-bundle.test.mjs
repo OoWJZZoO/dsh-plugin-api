@@ -191,7 +191,7 @@ function leafState(api) {
   }
   state.connection = probe(() => api.connection.rpc.call('/api', 'probe', { args: [] }))
   state.remoteContribution = probeContribution(() => api.remotes.contribute({ package: 'probe', descriptors: [] }))
-  state.settingsScope = api.settings.scope.isActive
+  state.settingsScope = probe(() => api.settings.scope({ namespace: 'probe' }))
   state.slots = probeContribution(() => api.slots.contribute({ name: 'details' }))
   state.remoteEvents = probe(() => api.remotes.observe('probe', () => {}))
   state.slotEvents = typeof api.slots.observe === 'function'

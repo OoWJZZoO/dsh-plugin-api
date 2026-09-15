@@ -596,6 +596,34 @@ test('caller-bound lifecycle cleanup owns only that caller registration and no g
   assert.equal(bCleanups, 1)
 })
 
+test('caller-bound lifecycle registration derives its owner and ignores a declared one', async () => {
+  const fixture = createFixture()
+  const { lifecycle } = createLifecycle(fixture)
+
+  const forPlugin = (name) => {
+    const fiber = { name }
+    return { fiber, loader: { entries: () => [{ fiber, options: { name } }] } }
+  }
+  const apiA = lifecycle.forCaller(forPlugin('client-plugin-a'))
+  const apiB = lifecycle.forCaller(forPlugin('client-plugin-b'))
+
+  // Both callers declare the same owner label; the binding value must come from
+  // the calling plugin instead, so the two faces stay distinct.
+  const a = apiA.register(remoteRegistration('same-face', 'declared-owner', () => () => {}))
+  const b = apiB.register(remoteRegistration('same-face', 'declared-owner', () => () => {}))
+  await tick()
+
+  assert.notEqual(a, b, 'two callers never share a face, even with the same declared owner')
+  assert.equal(a.ownerId, 'client-plugin-a', 'the owner is derived from the caller fiber')
+  assert.equal(b.ownerId, 'client-plugin-b', 'each caller binds to its own identity')
+  assert.equal(lifecycle.api.list().length, 2)
+
+  // An untraceable caller binds to the root token rather than to a declared one.
+  const anonymous = lifecycle.forCaller({ effect(execute) { return execute() } })
+  const orphan = anonymous.register(remoteRegistration('orphan-face', 'declared-owner', () => () => {}))
+  assert.equal(orphan.ownerId, 'root', 'the root token is the honest owner when the caller is untraceable')
+})
+
 test('contract and capability mismatches degrade only one face and diagnostics are fail-closed', async () => {
   const fixture = createFixture()
   const { lifecycle, diagnostics } = createLifecycle(fixture)
