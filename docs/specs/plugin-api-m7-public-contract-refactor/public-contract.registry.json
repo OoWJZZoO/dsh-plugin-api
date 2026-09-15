@@ -8996,7 +8996,7 @@
           "baseContract": "operation",
           "exception": "the accepted result carries the durable action name in `action` and no separate operation identity",
           "reason": "the control object of these operations is the durable task/attempt identity itself (registered through tasks.register and read through tasks.get / tasks.observe); minting a second operation identity would give one durable action two competing handles",
-          "replacementShape": "frozen discriminated result { ok:true, code:\"settled\", action } plus the task identity, or a typed refusal; the action is observed through tasks.get(handle) / tasks.observe(handle)",
+          "replacementShape": "frozen discriminated result { ok:true, code:\"settled\", action } plus the task identity, or a typed refusal; a settlement that arrives for an already-terminal task answers idempotently and reports the terminal word the task reached (settled | failed | unknown), and the action is observed through tasks.get(handle) / tasks.observe(handle)",
           "verification": "task execution observation suites assert the result fields, the durable identity and the refusal paths"
         }
       ],
@@ -18188,7 +18188,7 @@
           "baseContract": "projection",
           "exception": "the read is not side-effect free on the official carrier",
           "reason": "the official selection read resolves the session through the official resolver, which resumes a cold session and publishes a live agent; that is the official read entry contract (the same path the official UI uses), not a facade invention",
-          "replacementShape": "frozen { ok:true, view } | typed unavailable; the side effect belongs to the official resolver and is disclosed in availability/README",
+          "replacementShape": "frozen { ok:true, view } | typed { ok:false, code:\"rejected\" | \"unavailable\", reason? }; a malformed subject is refused as rejected input rather than answered, and the side effect belongs to the official resolver and is disclosed in availability/README",
           "verification": "the cold-session read case asserts the read travels through the official carrier and that the facade keeps no state of its own"
         }
       ],
