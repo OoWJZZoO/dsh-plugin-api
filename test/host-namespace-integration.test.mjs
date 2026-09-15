@@ -10,7 +10,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { apply } from '../lib/index.js'
-import { PluginApiFeatureDisabledError, PluginApiInactiveError, PluginApiServiceUnavailableError } from '../lib/errors.js'
+import { PluginApiFeatureDisabledError, PluginApiServiceUnavailableError } from '../lib/errors.js'
 
 function createMockCtx(options = {}) {
   const agents = options.agents === false
