@@ -77,6 +77,7 @@
 | 10.1(a)（B16a） | A1–A5 / B1–B3 / C1–C17 / R1–R6 的四态结论表 |
 | 4.14/4.15 余项（B2 余项） | registry 驱动的静态枚举未跑完；16 行 `currentShape: null` 未补；generation 校验未从「itemize 成员集」提升为覆盖全部 policy / resourceRegistry handle 行 |
 | 6.6 余项（B11 余项） | client `lifecycle.register({ownerId})`（`lib/client-generation-rebind.js`）仍接受调用方自报 ownerId，未改派生 |
+| 4.14 余项（callerAware 别名，既有缺陷） | `llm.requestTransforms` / `llm.admissionPolicies` / `tools.discovery.catalog` / `diagnostics.register` 四族仍以 `createFeatureSlot` 的 `callerAware` + 共享 `record.callerCtx` 绑定调用者（末次访问者胜），与 registry 声称的 `identitySource: caller plugin context` 不符——应同 storage / workspaces / security 一样改为按 (slot, identity) 键控的 per-caller 视图；同批处理「调用者 ctx 链上 `.loader` 不可解析时 root 回退被跨调用者共享」一条（正常 DSH profile 下不可复现） |
 | 4.14 余项（冲突口径澄清） | `security.policy.register` 的 `conflictRule: owner-conflict` 与实测口径存在张力：实现为「同 owner 同 id latest-wins、跨 owner 同 id 两名 owner 并存」，而 `api-idioms` §3.2 的 policy 条目要求跨 owner 同 id 抛 typed conflict。需下一轮择一统一（改实现或改该行的 `conflictRule` 与分册措辞） |
 
 **8.4 的取舍记录**：本轮实现了「六个命名空间的 `availability()` + `capabilities` 按真实叶子状态报告」，但它与既有客户面契约的交互面比预期大（命名空间成员集合的精确断言、`services` 聚合状态、passthrough inventory 的成员清单、capability 探针语义），一次性改动触发 12 条既有验收失败。为避免在未充分设计的情况下改动客户面自描述语义，**该改动已整体回滚**（`lib/client-runtime.js` 回到 `d783539` 的形态），8.4 保持未完成并登记为下一轮的设计项——先定清「命名空间 availability 与 `capabilities.*` 的职责边界」，再落实现。
