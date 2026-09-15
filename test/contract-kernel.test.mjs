@@ -193,10 +193,12 @@ test('observer handle runs its domain teardown once and contains a failing teard
     reportError: (error) => reported.push(error),
   })
 
-  assert.equal(handle.dispose().code, REVOKED, 'a failing domain teardown still releases the handle')
+  const failed = handle.dispose()
+  assert.equal(failed.ok, false, 'a failing domain teardown is a typed failure, never a false success')
+  assert.equal(failed.code, UNAVAILABLE)
+  assert.match(String(failed.reason), /subscription cleanup failed/)
   assert.equal(handle.dispose().code, STALE)
   assert.equal(teardowns, 1)
-  assert.equal(reported.length, 1)
 })
 
 test('pending contribution handle walks pending -> active and reports it through status()', async () => {

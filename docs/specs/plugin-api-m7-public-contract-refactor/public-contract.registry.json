@@ -803,7 +803,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "standard projection subscription handle; observes cataloged canonical events and separately defined custom events through the same contract; returns the frozen discriminated result carrying the standard observation handle { current(), subscribe(listener), dispose(), epoch }; an unknown name is a typed unsupported result naming the catalog",
+      "currentShape": "host events.observe(name, opts) returns the frozen four-member observation handle { current(), subscribe(listener), dispose(), epoch } directly, with per-listener containment and no-op-after-dispose subscriptions; the client face answers the discriminated result plus a queryable catalog",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -836,7 +836,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "bare disposer",
+      "currentShape": "frozen { current(), subscribe(listener), dispose(), epoch }; dispose() answers the frozen discriminated { ok, code }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -12126,7 +12126,7 @@
     },
     {
       "publicPath": "connection.api.settings",
-      "targetPath": "connection.get",
+      "targetPath": "connection.api.settings",
       "capability": "client.connection",
       "kind": "leaf",
       "idiom": "projection",
@@ -15521,7 +15521,7 @@
       "availabilityShape": "namespace availability member on sessions.activity",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "frozen { snapshot, sessionQueue, gap, unavailable } | typed absence { ok:false, code:'absent' }; a definitely-absent subject answers the typed missing code and a malformed argument answers invalid-input",
+      "currentShape": "frozen { snapshot, sessionQueue, gap, unavailable } | typed absence (a definitely-absent subject answers code 'missing'; a malformed argument answers code 'invalid-input'); a definitely-absent subject answers the typed missing code and a malformed argument answers invalid-input",
       "migrationAction": "retain",
       "status": "recommended",
       "verification": [
@@ -15554,7 +15554,7 @@
       "availabilityShape": "namespace availability member on sessions.activity",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "frozen { snapshot, sessionQueue, gap, unavailable } | typed absence { ok:false, code:'absent' }; a definitely-absent subject answers the typed missing code and a malformed argument answers invalid-input",
+      "currentShape": "frozen { snapshot, sessionQueue, gap, unavailable } | typed absence (a definitely-absent subject answers code 'missing'; a malformed argument answers code 'invalid-input'); a definitely-absent subject answers the typed missing code and a malformed argument answers invalid-input",
       "migrationAction": "retain",
       "status": "recommended",
       "verification": [
@@ -17562,7 +17562,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "scope-bound handle registration: resolves the target through the official agents registry; unresolvable targets and malformed specs are discriminated typed results (unavailable/invalid-input) without global fallback, while an inactive core or an unmounted scoped feature is a typed disabled/inactive error (the member stays present)",
+      "currentShape": "scope-bound handle registration: resolves the target through the official agents registry; unresolvable targets and malformed specs are discriminated typed results (unavailable/invalid-input) without global fallback, while an inactive core or an unmounted scoped feature is a typed disabled/inactive error (the member stays present); unresolvable targets and malformed specs are typed registration failures (PLUGIN_API_SCOPE_SPEC_INVALID / PLUGIN_API_SCOPE_OWNER_UNAVAILABLE / PLUGIN_API_SCOPE_BACKING_UNAVAILABLE / PLUGIN_API_SCOPE_TARGET_UNRESOLVED), never discriminated results",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -18266,7 +18266,7 @@
       "authority": "slot assembly authority",
       "scope": "facade",
       "resourceKey": "slot name",
-      "identitySource": "caller plugin context",
+      "identitySource": "derived-caller (root-fallback)",
       "conflictRule": "owner-conflict",
       "lifecycle": "one contribution per call; the returned handle releases only its own registration",
       "failureSemantics": "discriminated-result",
@@ -18341,7 +18341,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "deduplicate",
       "reducer": "none",
-      "currentShape": "slots.observe(key, listener) subscribes through the official slots change notification and answers its unsubscribe function",
+      "currentShape": "slots.observe(event, listener) subscribes through the official slots change notification (the event must be the slots/changed channel) and answers its unsubscribe function",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -18431,7 +18431,7 @@
       "authority": "slot assembly authority",
       "scope": "facade",
       "resourceKey": "slot name",
-      "identitySource": "caller plugin context",
+      "identitySource": "derived-caller (root-fallback)",
       "conflictRule": "owner-conflict",
       "lifecycle": "pending handle from the first call; dispose() is safe before the mount settles",
       "failureSemantics": "discriminated-result",
@@ -18464,7 +18464,7 @@
       "authority": "slot assembly authority",
       "scope": "facade",
       "resourceKey": "slot name",
-      "identitySource": "caller plugin context",
+      "identitySource": "derived-caller (root-fallback)",
       "conflictRule": "owner-conflict",
       "lifecycle": "one contribution per call; the returned handle releases only its own publication",
       "failureSemantics": "discriminated-result",
@@ -18473,7 +18473,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "deduplicate",
       "reducer": "none",
-      "currentShape": "settings.remote.contribute(namespace, serviceKey) answers the frozen discriminated result { ok, code, handle } carrying the standard contribution handle; the synchronous official mount / lease / rebinding work is unchanged and an unavailable environment is a code, not a throw",
+      "currentShape": "client settings.remote.contribute(contribution, { namespace, render }) returns a Promise resolving to { status: active|degraded, reason?, face, render, dispose() }; the discriminated result with a standard contribution handle (Task 5.3) is not delivered yet",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -20648,12 +20648,6 @@
       "relation": "official domain facility handle without facade semantic guarantee; audited services passthrough"
     },
     {
-      "oldPath": "connection.api.settings",
-      "targetPath": "connection.get",
-      "action": "rename",
-      "relation": "api accessor reads split from call surface; frozen projection"
-    },
-    {
       "oldPath": "connection.dispose",
       "targetPath": null,
       "action": "internalize",
@@ -22366,7 +22360,6 @@
     "remotes.dispose": "removed",
     "storage.open.handle.close": "removed",
     "storage.open.handle.domain": "removed",
-    "connection.api.settings": "removed",
     "connection.dispose": "removed",
     "events.localeChange.on": "removed",
     "events.themeChange.on": "removed",

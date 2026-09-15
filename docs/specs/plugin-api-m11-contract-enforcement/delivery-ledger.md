@@ -28,7 +28,7 @@
 |---|---|
 | `npm test`（4G 内存护栏内） | **3519 / 3519 通过**（开工基线 3469；首轮交付 3514；本轮净增 5） |
 | `node scripts/registry-validate.mjs <registry>` | `registry valid`（exit 0） |
-| `node scripts/convergence-verify.mjs` | `546 member rows, 37 behavior rows, 37 fully linked behavior rows`（exit 0；行数 538 → 539 是补入 `lifecycle.register` 现行 leaf 行，539 → 546 是补入七个缺失的 client 现行 leaf 行——`slots.contribute` / `slots.list` / `slots.observe` / `events.observe` / `events.list` / `remotes.contribute` / `settings.remote.contribute`——均为**补登记已存在的公共成员**，不新增公共能力） |
+| `node scripts/convergence-verify.mjs` | `546 member rows, 37 behavior rows, 37 fully linked behavior rows`（exit 0；行数 538 → 539 是补入 `lifecycle.register` 现行 leaf 行，539 → 546 是补入七个缺失的 client 现行 leaf 行——`slots.contribute` / `slots.list` / `slots.observe` / `events.observe` / `events.list` / `remotes.contribute` / `settings.remote.contribute`；其中六个是**补登记已存在的公共成员**，`events.list` 是本轮按 Task 5.6「事件目录可查询」**新增**的成员，已按 Req 14.1 的「处置项明确要求并已登记」登记） |
 | `npm run build:client:check` | `client bundle is up to date with its sources`（exit 0；本轮 client 侧源码有改动——`client-generation-rebind`、`client-attention-face`、`client-slots`——bundle 已重建，产物 diff 仅含预期变更） |
 | 治理 token 审计 | `node --test test/governance-token-audit.test.mjs` 2/2 通过（本轮修正了一处 `scripts/convergence-table-sync.mjs` 的 prose 泄漏） |
 | 版本冻结审计 | `package.json` 与 registry `contractBaseline` 零 diff |
@@ -61,7 +61,8 @@
 | 5.12 / 8.5（C3 的准入半） | slots 准入门槛由前缀白名单改为**交官方声明判定**（真实官方槽位不再被门面拒绝） | `lib/client-slots.js` |
 | 5.1 / 5.2 / 5.4 / 5.5 / 5.6 / 8.6（B3 主臂） | client `slots.contribute`（判别式 + 标准 contribution handle）、`remotes.contribute`（**pending handle**：任一状态可安全撤销、迟到落地被回滚）、host `settings.remote.contribute`（判别式 + handle，官方同步挂载/租约逻辑不变）、client `attention.contribute`（外层结果冻结）、client `events.observe`（标准观察 handle + 可查询目录 + 未知名 typed 结果）、`connection.get` → `connection.api.settings`（与 `connection.api.llm` 对称） | `lib/{client-runtime,client-official-events,client-attention-face,settings-remote}.js` + client bundle 重建 |
 | 3.2-R 系列（client 登记缺口） | 补入七个缺失的 client 现行 leaf 行（`slots.contribute` / `slots.list` / `slots.observe` / `events.observe` / `events.list` / `remotes.contribute` / `settings.remote.contribute`）；C7 的 `connection.api.settings` 行由 `removed` 改回 `advanced` | registry + 成员表（**546 行**） |
-| 3.5 / 3.6（登记同步） | 本轮全部实现改动同步 registry（B1/B2/B9/B10/B11/B14/B18/B19/B20/C3 的 `currentShape`、`identitySource`、`bypasses`）；成员表机械重建（**539 行**） | registry + `convergence/public-member-table.md` |
+| 3.5 / 3.6（登记同步） | 本轮全部实现改动同步 registry（B1/B2/B9/B10/B11/B14/B18/B19/B20/C3 的 `currentShape`、`identitySource`、`bypasses`）；成员表机械重建（**546 行**） | registry + `convergence/public-member-table.md` |
+| 全局终审修订（第一轮意见） | ① **实质缺陷**：`storage` / `workspaces` / `security` 三处 caller 捕获用的是箭头 getter（`get: () => {}`），闭包捕获门面服务自身——Cordis 只在**方法式** getter 上把访问上下文作为 receiver，三处已改为 `get() {}` 并以 `test/caller-derived-owner.test.mjs` 取证；② 登记修正：client `settings.remote.contribute` 行改回描述现状、host `events.observe` 两行改回 host 形状、`agents.scopes.register` 行补 typed-throw 现状、`connection.api.settings` 的 `targetPath` / `oldToTargetMapping` / `statusByPath` 三处随回滚同步（避免自环）、`sessions.activity.*` 行清除已不存在的 `absent`、`slots.observe` 行修正首参、新增 client 行的 `identitySource` 改为 `derived-caller (root-fallback)`；③ 代码修正：观察 handle 的 `dispose()` 在领域 teardown 抛错时返回 typed failure（与资源 handle 一致）、host `settings.remote.contribute` 的同 key 冲突返回稳定 `conflict` 码、删除一处死调试代码 | `lib/{plugin-api-service,contract-kernel,settings-remote}.js` + registry + `test/caller-derived-owner.test.mjs` |
 
 **本轮未完成**（**不是阻塞项**：无硬停机点、无环境 / 工具链 / 权限缺失，全部是同一工作序列中尚未执行的主体工作；清单即下一轮的起点）：
 
@@ -74,6 +75,8 @@
 | 8.x 余项（B12） | C1b、C4/C5 通道半、C7、C8、C9、C10a、C12、C13 保留判定、C14 内容模型、C15、C17 抽样复核 |
 | 9.1 / 9.2（B13） | 双 synthetic 插件组合验收与迁移切片的新增证据 |
 | 10.1(a)（B16a） | A1–A5 / B1–B3 / C1–C17 / R1–R6 的四态结论表 |
+| 4.14/4.15 余项（B2 余项） | registry 驱动的静态枚举未跑完；16 行 `currentShape: null` 未补；generation 校验未从「itemize 成员集」提升为覆盖全部 policy / resourceRegistry handle 行 |
+| 6.6 余项（B11 余项） | client `lifecycle.register({ownerId})`（`lib/client-generation-rebind.js`）仍接受调用方自报 ownerId，未改派生 |
 
 **8.4 的取舍记录**：本轮实现了「六个命名空间的 `availability()` + `capabilities` 按真实叶子状态报告」，但它与既有客户面契约的交互面比预期大（命名空间成员集合的精确断言、`services` 聚合状态、passthrough inventory 的成员清单、capability 探针语义），一次性改动触发 12 条既有验收失败。为避免在未充分设计的情况下改动客户面自描述语义，**该改动已整体回滚**（`lib/client-runtime.js` 回到 `d783539` 的形态），8.4 保持未完成并登记为下一轮的设计项——先定清「命名空间 availability 与 `capabilities.*` 的职责边界」，再落实现。
 
@@ -81,9 +84,38 @@
 
 ---
 
-## 3. 阻塞项登记（Req 13.6）
+## 3. 未完成项登记（Req 13.6；历史条目保留，状态见索引）
 
-按 `tasks.md` 的 **Task 编号**逐条登记。每条给出：未完成子项、解除所需的**具体可执行动作**、是否需要人类授权。**原因**在不言自明（单一未完成子项 + 明确动作）的条目中从略，在需要解释取舍或依赖关系的条目（B6、B9、B11、B12、B13）中写出。登记日期 2026-09-14（未变更）。
+按 `tasks.md` 的 **Task 编号**逐条登记。每条给出：未完成子项、解除所需的**具体可执行动作**、是否需要人类授权。**原因**在不言自明（单一未完成子项 + 明确动作）的条目中从略，在需要解释取舍或依赖关系的条目（B6、B9、B11、B12、B13）中写出。登记日期 2026-09-14；**本轮（2026-09-15）续做后的状态索引如下，各条正文保留其登记时的措辞**。
+
+> **口径**：本清单是**未完成项**登记，不是「阻塞项」——按 `AGENTS.md` §3.2 的连续执行纪律，阻塞项的判定标准是代理**无法**完成（硬停机点、环境 / 工具链 / 权限缺失），而非**尚未**完成。
+
+**本轮续做后的 B1–B20 状态索引**（正文见下，逐条按登记时措辞保留）：
+
+| 条目 | 状态 |
+|---|---|
+| B1（Task 6.4） | **已完成** — `tasks` 全域与 `workspaces.transactions` 的动作名字段改为 `action` |
+| B2（Task 4.14/4.15） | **部分完成** — `executions.recovery.*`、`decision-participation` 四族、`security.*.register`、`sessions.channels.auth.*`、`sessions.channels.redaction.register`、`llm.adapters.register.handle` 已收口；**余项**：registry 驱动的静态枚举未跑完、16 行 `currentShape: null`、generation 校验未提升为覆盖全部 policy/resourceRegistry handle 行 |
+| B3（Task 5.1–5.6、5.13 client 半、8.4–8.7） | **部分完成** — 5.1 / 5.2 / 5.4 / 5.5 / 5.6 / 8.6 已交付，C3 的准入半已交付；**余项**：5.3（client `settings.remote.contribute` 的 pending handle，其 `face`/`render` 需要延迟解析的扩展成员）、8.4（client 六个 `availability` 与 `capabilities.*`，本轮尝试后整体回滚，见 §3.0 取舍记录）、8.7（`settings.scope` 调用套路）、C3 的只读声明投影与 `list` 的「未声明 / 已声明为空」区分、client `lifecycle.register({ownerId})` 改派生 |
+| B4（Task 3.3/3.4/10.1(e)） | **未完成** — 例外台账重分类与三条 entry 级校验未动 |
+| B5（Task 3.1 registry 半） | **未完成** — `async` 回填未做（取舍见 §3.0） |
+| B6（Task 3.6 收尾） | **部分完成** — 成员表已随 registry 机械重建（**546 行**）并全链通过；行为表 / 装配表与历史现状注未重写 |
+| B7（Task 1.6/1.7） | **已完成** — 异步 contribution 的 pending handle 状态机 |
+| B8（Task 5.13 host 半） | **已完成** — 含 disabled 安装态、client `attention.observe`、client `lifecycle.register.handle` |
+| B9（Task 8.1 域侧） | **已完成** — coordination `availability` 改同步、security `availability` 状态化 |
+| B10（Task 8.9 余项） | **已完成** — `sessions.activity.current/get` 的 `missing` / `invalid-input` 拆分 |
+| B11（Task 6.6 余项） | **已完成**（storage / transactions / prompts 三处派生；**注**：本轮修复了三处 getter 的 caller 捕获——必须是方法式 getter，箭头 getter 会闭包门面自身） |
+| B12（Task 8.x 余项） | **部分完成** — C3 准入半与 C7 的 registry 侧已做；C1b、C4/C5 通道半、C8、C9、C10a、C12、C13 保留判定、C14 内容模型、C15、C17 抽样复核未动 |
+| B13（Task 9.1/9.2） | **部分完成** — 新增 `test/caller-derived-owner.test.mjs` 作为 owner 派生的真实公共入口证据；双插件组合验收与迁移切片的其余要求未做 |
+| B14（Task 4.4） | **已完成** — `llm.providers.register` / `llm.models.register` 标准 handle（`.replace` 保留） |
+| B15（Task 3.5 尾项） | **已完成** — `bypasses` 首次落盘（11 行） |
+| B16（Task 10.1(a) / 3.2-R1） | **部分完成** — R1 的 `lifecycle.register` 现行 leaf 行已补（并补入七个 client 现行 leaf 行）；(a) 的四态结论表未做 |
+| B17（Task 3.1 词表半） | **已完成** — `vocabulary` 增 `identitySource` 与 `callShape` |
+| B18（Task 3.2-R5 / 8.11） | **已完成** — `storage.availability` 补 `scope` / `durability` / `epoch` |
+| B19（Task 4.5 R 包半） | **已完成** — attachments 注册类失败统一为 typed throw（方案 (a)），boot 自检随契约更新 |
+| B20（Task 4.3 接线半） | **已完成** — routing 四类注册接通调用者绑定，跨 owner 冲突在公共面可达（`test/route-policy-facade.test.mjs`） |
+
+> 上述每条正文的「人类授权」字段均保持登记时取值（全部为**否**）；本轮没有新增需要人类裁决的项。
 
 ### B1 Task 6.4 —— `tasks` 动词串字段改名与三个例外
 - **未完成子项**：`tasks.start` / `settle` / `attach` 的外层结果字段仍为 `operation`（承载动作名）；三条新增例外（`baseContract: operation`）六项未落 registry。
