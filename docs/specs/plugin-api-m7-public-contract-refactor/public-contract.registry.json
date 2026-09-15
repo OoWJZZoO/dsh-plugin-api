@@ -8846,7 +8846,7 @@
           "baseContract": "resourceRegistry",
           "exception": "the registration answers a discriminated result carrying the durable task identity instead of a typed throw plus a handle",
           "reason": "the registered record is durable and outlives the process, so an in-memory handle would claim a lifetime the record does not have; the identity is the taskId, read back through tasks.get and tasks.observe, and the registration is idempotent for identical immutable metadata and a typed identity conflict otherwise",
-          "replacementShape": "frozen discriminated result { ok:true, code:\"registered\", taskId, action:\"register\", task, idempotent? } on success, or a frozen refusal { ok:false, code:\"invalid-input\" | \"identity-conflict\" | \"inactive\" | \"unavailable\", taskId?, reason?, observed? } where an identity conflict reports the observed state it conflicted with",
+          "replacementShape": "frozen discriminated result { ok:true, code:\"registered\", taskId, action:\"register\", task, idempotent? } on success, or a frozen refusal { ok:false, code:\"invalid-input\" | \"identity-conflict\" | \"inactive\" | \"unavailable\", taskId?, reason?, observed? }; an identity conflict found by the read check carries the observed state it conflicted with, while a compare-and-swap race reports the conflict without it",
           "verification": "task execution lifecycle suites assert the registration result fields, the idempotent replay and the identity-conflict refusal"
         }
       ],
@@ -17336,7 +17336,7 @@
           "baseContract": "projection",
           "exception": "verb-name-exception",
           "reason": "planRestore is the pre-announced plan verb of the checkpoints contract; the closed projection verb list (get/list/inspect/current/history/observe) is not extended, the plan shape is a pure frozen projection",
-          "replacementShape": "frozen plan { checkpointId, generatedAt, epoch, fingerprint, slices, liveState, stopThenRestore, claims, externalEffects, overallRestoreability } | typed unavailable; each slice carries its steps with the owning authority's expected effect, its restoreability verdict and the bounded reasons (an unconfirmed anchor appears there, not as a plan field)",
+          "replacementShape": "frozen plan { checkpointId, generatedAt, epoch, fingerprint, slices, liveState, stopThenRestore, claims, externalEffects, overallRestoreability } plus, on the branch that recognizes no restorable authority, the plan-level reasons that say so; each slice carries its steps with the owning authority's expected effect, its restoreability verdict and the bounded reasons (an unconfirmed anchor appears there, not as a plan field). Refusals answer typed { ok:false, code: 'invalid-input' | 'missing' | 'unsupported-schema' | 'unavailable', reason? }",
           "verification": "surface-consistency"
         }
       ],
@@ -18113,7 +18113,7 @@
           "baseContract": "operation",
           "exception": "the accepted result carries no operation handle or terminal",
           "reason": "the answered interaction is not an operation the caller owns: the official approval authority adjudicates the decision and the facade only relays the caller action, so there is no operation identity or terminal to publish",
-          "replacementShape": "frozen { ok:true, code:'accepted' } | { ok:false, code:'stale'|'rejected'|'denied'|'unavailable', reason? }",
+          "replacementShape": "frozen { ok:true, code:'accepted' } | { ok:false, code:'stale'|'rejected'|'unavailable', reason? }; the answer stays inside the domain's published respond vocabulary (accepted | stale | rejected | denied | unavailable), of which the host face produces the first, second, third and last",
           "verification": "respond outcome assertions plus the first-writer-wins stale case"
         }
       ],
