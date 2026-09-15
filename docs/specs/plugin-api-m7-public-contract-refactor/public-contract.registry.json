@@ -18188,7 +18188,7 @@
           "baseContract": "projection",
           "exception": "the read is not side-effect free on the official carrier",
           "reason": "the official selection read resolves the session through the official resolver, which resumes a cold session and publishes a live agent; that is the official read entry contract (the same path the official UI uses), not a facade invention",
-          "replacementShape": "frozen { ok:true, view } | typed { ok:false, code:\"rejected\" | \"unavailable\", reason? }; a malformed subject is refused as rejected input rather than answered, and the side effect belongs to the official resolver and is disclosed in availability/README",
+          "replacementShape": "frozen { ok:true, view } | typed { ok:false, code:\"rejected\" | \"unavailable\", reason? }; a malformed subject is refused as rejected input rather than answered, and the side effect belongs to the official resolver and is documented in the README (the availability member reports the seam state, not the side effect)",
           "verification": "the cold-session read case asserts the read travels through the official carrier and that the facade keeps no state of its own"
         }
       ],
@@ -18237,7 +18237,7 @@
           "memberPath": "sessions.selection.set",
           "baseContract": "mutation",
           "exception": "the committed result omits the commitState/generation fields the sister mutations carry",
-          "reason": "the official selection seam exposes neither a commit state nor a generation: the facade mints no second selection state and reports the official revision it observed, so there is nothing to publish in those fields",
+          "reason": "the official selection seam exposes neither a commit state nor a generation: the facade mints no second selection state, and the revision it reports is the owner-local commit counter that advances only on the facade's own successful submissions, so there is nothing to publish in those fields",
           "replacementShape": "frozen { ok:true, code:'committed', revision, view }",
           "verification": "committed/revision assertions in test/sessions-selection.test.mjs plus the registry idiom-exception validation"
         }

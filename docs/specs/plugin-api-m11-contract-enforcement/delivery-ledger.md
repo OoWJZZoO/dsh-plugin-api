@@ -105,7 +105,14 @@
 | `public-contract.registry.json`（`executions.recovery.checkpoints.planRestore`、`tasks.register` 两条例外记录） | `replacementShape` 与实现对齐：planRestore 的形状改为计划对象真实字段（`slices` 携带每片的 steps / restoreability / bounded reasons，锚点未确认经 reasons 呈现，不存在 `anchorStatus` 字段）；`tasks.register` 的拒绝枚举补上可达的 `unavailable`（registry 写回失败）与身份冲突携带的 `observed` |
 | `public-contract.registry.json`（`tasks.settle`、`sessions.selection.get` 两条例外记录） | 同批收紧：`tasks.settle` 说明「已终态任务的重复结算按幂等回答并报出终态词（settled / failed / unknown）」；`sessions.selection.get` 补上非法主体按 `rejected` 拒绝（不裁剪为「| typed unavailable」） |
 | `public-contract.registry.json`（`executions.recovery.checkpoints.planRestore`、`tasks.register`、`sessions.interactions.respond` 三条例外记录） | 第三批复核的细节订正：planRestore 补全拒绝码（`invalid-input` / `missing` / `unsupported-schema` / `unavailable`）与「无 restorable authority」分支的计划级 `reasons`；`tasks.register` 说明身份冲突只在读检分支携带 `observed`（CAS 竞态分支不带）；`sessions.interactions.respond` 的拒绝枚举改为该面真实产出的 `stale` / `rejected` / `unavailable`，并注明 `denied` 仍属领域发布的 respond 词表（本面无产者） |
+| `public-contract.registry.json`（`sessions.selection.set`、`sessions.selection.get` 两条例外记录） | 第四批复核的细节订正：`set` 的 `reason` 由「报告观察到的官方 revision」改为「报告门面 owner-local 的提交计数」（revision 仅随门面自身成功提交步进，官方 seam 不暴露 revision）；`get` 的形状说明收窄为「副作用在 README 记录；availability 成员报告的是 seam 状态，不是该副作用」 |
 | `docs/standards/api-idioms.md` §3.1 | 补一条呈现口径：同一订阅入口既要订阅、又要对「未知名」给出 typed 结果时（事件面的订阅入口），成功形状是承载标准 handle 的判别式信封 `{ ok, code, handle }`，未知名返回 typed `unsupported`（含可查询目录）而非裸 `TypeError`；两种呈现都以同一个四成员 handle 为契约本体，成员行按各运行时真实形状登记，不消耗例外。依据 Req 10.4 与 Req 5.1 在该成员上无法字面同时成立 |
+
+**本线登记的外部差异（不属本线待办，供后续处理）**：
+
+| 位置 | 差异 |
+|---|---|
+| `docs/specs/interactive-session-access/tasks.md` 5.6 / `design.md` §3 第 7 条 | 该条要求 `selection.get` 的官方 resume 副作用「在 availability **与** README 披露」。实测：README 已披露（`README.md` 的 `pluginApi.sessions.selection` 段），`sessions.selection.availability()` 只报告 seam 状态（`active` / `degraded` / `unavailable` + `reason`），不含该副作用。本线按「登记必须与实现一致」把 registry 措辞收窄为 README，并在此登记该差异；若要兑现该条的 availability 披露，应作为 `interactive-session-access` 线的形状增补（会涉及该行的 `availabilityShape` 与套件断言），不在本线的收敛范围内 |
 
 **本轮未完成**（**不是阻塞项**：无硬停机点、无环境 / 工具链 / 权限缺失，全部是同一工作序列中尚未执行的主体工作）：
 
