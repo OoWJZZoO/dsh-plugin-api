@@ -102,7 +102,11 @@ test('the two registries keep structurally independent handles', () => {
     ['dispose', 'generation', 'id', 'ownerId'],
     'real handle is the fixed registry shape',
   )
-  assert.ok(!('generation' in decorationHandle), 'decoration handle does not expose a generation field')
+  assert.deepEqual(
+    Object.keys(decorationHandle).sort(),
+    ['dispose', 'generation', 'id', 'ownerId', 'snapshot'],
+    'decoration handle carries the resource identity members plus its snapshot extension',
+  )
   assert.equal(typeof decorationHandle.snapshot, 'function')
   assert.notEqual(realHandle.dispose, decorationHandle.dispose)
 })
@@ -113,7 +117,8 @@ test('disposing a decoration leaves the underlying route registered', () => {
   adapters.register(makeSpec())
   const decorationHandle = adapters.decorations.register({ id: 'deco-route', match: () => true, wrap: (next) => next })
   const outcome = decorationHandle.dispose()
-  assert.equal(outcome?.status ?? 'ok', 'ok')
+  assert.equal(outcome.code, 'revoked', 'dispose answers the discriminated result')
+  assert.equal(decorationHandle.dispose().code, 'stale', 'dispose is idempotent')
   const real = adapters.list()
   assert.equal(real.length, 1, 'real route survives decoration disposal')
   assert.equal(real[0].id, 'vision-x')

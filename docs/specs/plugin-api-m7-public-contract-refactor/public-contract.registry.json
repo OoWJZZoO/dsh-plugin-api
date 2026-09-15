@@ -345,7 +345,7 @@
       "availabilityShape": "none",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "capabilityMatrix() reports the current capability clusters with their current status and limitation / gap reasons; it carries no migration bookkeeping (rename / merge / migrate / delete / internalize stay in the registry registration face)",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -1218,7 +1218,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -4758,7 +4758,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -5715,7 +5715,7 @@
       "availabilityShape": "availability(scope)",
       "concurrency": "exclusive",
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the acquisition result is the official channel record returned verbatim (channelId, sessionId, deviceLabel, deviceId, scope, capabilities, generation, lifecycleState, createdAt, lastHeartbeatAt, expiresAt); channelId plus generation is the identity, heartbeat() renews the same channel and release() is the identity-bound give-back; an unknown or released channel answers a typed code",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -6351,7 +6351,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -6813,7 +6813,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -7935,7 +7935,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -8826,7 +8826,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -8840,7 +8840,16 @@
       "capability": "tasks",
       "kind": "leaf",
       "idiom": "resourceRegistry",
-      "idiomExceptions": [],
+      "idiomExceptions": [
+        {
+          "memberPath": "tasks.register",
+          "baseContract": "resourceRegistry",
+          "exception": "the registration answers a discriminated result carrying the durable task identity instead of a typed throw plus a handle",
+          "reason": "the registered record is durable and outlives the process, so an in-memory handle would claim a lifetime the record does not have; the identity is the taskId, read back through tasks.get and tasks.observe, and the registration is idempotent for identical immutable metadata and a typed identity conflict otherwise",
+          "replacementShape": "frozen discriminated result { ok:true, code:\"registered\", taskId, action:\"register\", task, idempotent? } on success, or a frozen refusal { ok:false, code:\"invalid-input\" | \"identity-conflict\" | \"inactive\", taskId?, reason? }",
+          "verification": "task execution lifecycle suites assert the registration result fields, the idempotent replay and the identity-conflict refusal"
+        }
+      ],
       "eventSemantics": null,
       "semanticFace": null,
       "effect": "register",
@@ -8873,7 +8882,16 @@
       "capability": "tasks",
       "kind": "leaf",
       "idiom": "operation",
-      "idiomExceptions": [],
+      "idiomExceptions": [
+        {
+          "memberPath": "tasks.start",
+          "baseContract": "operation",
+          "exception": "the accepted result carries the durable action name in `action` and no separate operation identity",
+          "reason": "the control object of these operations is the durable task/attempt identity itself (registered through tasks.register and read through tasks.get / tasks.observe); minting a second operation identity would give one durable action two competing handles",
+          "replacementShape": "frozen discriminated result { ok:true, code:\"accepted\", action } plus the task identity, or a typed refusal; the action is observed through tasks.get(handle) / tasks.observe(handle)",
+          "verification": "task execution observation suites assert the result fields, the durable identity and the refusal paths"
+        }
+      ],
       "eventSemantics": null,
       "semanticFace": null,
       "effect": "execute",
@@ -8972,7 +8990,16 @@
       "capability": "tasks",
       "kind": "leaf",
       "idiom": "operation",
-      "idiomExceptions": [],
+      "idiomExceptions": [
+        {
+          "memberPath": "tasks.settle",
+          "baseContract": "operation",
+          "exception": "the accepted result carries the durable action name in `action` and no separate operation identity",
+          "reason": "the control object of these operations is the durable task/attempt identity itself (registered through tasks.register and read through tasks.get / tasks.observe); minting a second operation identity would give one durable action two competing handles",
+          "replacementShape": "frozen discriminated result { ok:true, code:\"accepted\", action } plus the task identity, or a typed refusal; the action is observed through tasks.get(handle) / tasks.observe(handle)",
+          "verification": "task execution observation suites assert the result fields, the durable identity and the refusal paths"
+        }
+      ],
       "eventSemantics": null,
       "semanticFace": null,
       "effect": "execute",
@@ -9005,7 +9032,16 @@
       "capability": "tasks",
       "kind": "leaf",
       "idiom": "operation",
-      "idiomExceptions": [],
+      "idiomExceptions": [
+        {
+          "memberPath": "tasks.attach",
+          "baseContract": "operation",
+          "exception": "the accepted result carries the durable action name in `action` and no separate operation identity",
+          "reason": "the control object of these operations is the durable task/attempt identity itself (registered through tasks.register and read through tasks.get / tasks.observe); minting a second operation identity would give one durable action two competing handles",
+          "replacementShape": "frozen discriminated result { ok:true, code:\"accepted\", action } plus the task identity, or a typed refusal; the action is observed through tasks.get(handle) / tasks.observe(handle)",
+          "verification": "task execution observation suites assert the result fields, the durable identity and the refusal paths"
+        }
+      ],
       "eventSemantics": null,
       "semanticFace": null,
       "effect": "execute",
@@ -9189,7 +9225,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -10527,7 +10563,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -11451,7 +11487,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -13410,7 +13446,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -13443,7 +13479,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -13542,7 +13578,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -13575,7 +13611,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -13608,7 +13644,7 @@
       "availabilityShape": "frozen { status }",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -13905,7 +13941,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "frozen { id, ownerId, generation, dispose() } from the shared resource handle factory; the generation is minted as owner:kind:sequence and dispose() answers the frozen discriminated { ok, code: revoked | stale, reason? }, never touching another owner or a newer generation",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -13938,7 +13974,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": null,
+      "currentShape": "frozen { id, ownerId, generation, dispose() } from the shared participation registry; dispose() answers the frozen discriminated { ok: code: revoked } once and stale thereafter, and a superseded registration is stale rather than revoked",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14136,7 +14172,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "frozen { id, ownerId, generation, dispose() } from the shared resource handle factory; the registration owner is the facade channel-registration owner token and dispose() answers the frozen discriminated { ok, code: revoked | stale, reason? }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14169,7 +14205,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": null,
+      "currentShape": "the activation owner's policy registration handle, returned verbatim: the facade delegates to policy.register (or the historical registerMinimalCatalogUpdate fallback) and mints no identity of its own, so the handle shape and the failure presentation are the owner's",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14293,17 +14329,17 @@
       "scope": "facade",
       "resourceKey": "registered id",
       "identitySource": "parent registration handle",
-      "conflictRule": "content-conflict",
-      "lifecycle": "handle { id, ownerId, generation, dispose() }; new lifecycle after dispose",
+      "conflictRule": null,
+      "lifecycle": "no handle lifecycle: the member mints no handle",
       "failureSemantics": "typed-throw",
-      "idempotency": "content-idempotent",
+      "idempotency": null,
       "retryLayer": null,
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": null,
-      "migrationAction": null,
-      "status": "advanced",
+      "currentShape": "no handle exists: the official executionMode verb is a classification query answering the execution kind for one exec, not a registration, so the facade publishes it verbatim with no lifecycle of its own",
+      "migrationAction": "delete",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -14326,17 +14362,17 @@
       "scope": "facade",
       "resourceKey": "registered id",
       "identitySource": "parent registration handle",
-      "conflictRule": "content-conflict",
-      "lifecycle": "handle { id, ownerId, generation, dispose() }; new lifecycle after dispose",
+      "conflictRule": null,
+      "lifecycle": "no handle lifecycle: the member mints no handle",
       "failureSemantics": "typed-throw",
-      "idempotency": "content-idempotent",
+      "idempotency": null,
       "retryLayer": null,
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": null,
-      "migrationAction": null,
-      "status": "advanced",
+      "currentShape": "no handle is minted: the durable task registration answers a discriminated result carrying the task identity, which is read back through tasks.get and tasks.observe; the deviation is recorded as the leaf row idiom exception",
+      "migrationAction": "delete",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -14499,7 +14535,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "deduplicate",
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "frozen { id, ownerId, seq, dispose() } from the shared contribution handle factory; the contribution is additive and ordered by seq, dispose() answers the frozen discriminated { ok, code: revoked | stale, reason? }, and the domain codes of the outer result are the provenance engine's own (CONTRIBUTION_INVALID / CONTRIBUTION_CONFLICT on refusal)",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -15456,7 +15492,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "exclusive",
       "reducer": "none",
-      "currentShape": null,
+      "currentShape": "the acquisition answers the frozen discriminated result carrying the attempt identity and its lease generation (action: claim); the lease expires on its own and release is idempotent, and the durable task/attempt identity is read through tasks.get / tasks.observe rather than a handle",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -16271,16 +16307,7 @@
       "capability": "workflows",
       "kind": "leaf",
       "idiom": "operation",
-      "idiomExceptions": [
-        {
-          "memberPath": "workflows.start",
-          "baseContract": "operation",
-          "exception": "the outer result omits the terminal member",
-          "reason": "a cannot-begin refusal has no operation instance to carry a terminal (no run identity is minted); the real operation terminal is delivered exactly once by the holder-owned run through its result promise",
-          "replacementShape": "frozen { ok:true, code:'started', handle } | frozen { ok:false, code: <official WorkflowError code passed through, open mapping> | 'invalid-request' | 'parent-unresolved' | 'internal', reason }",
-          "verification": "handle/result shape assertions plus the registry idiom-exception validation"
-        }
-      ],
+      "idiomExceptions": [],
       "eventSemantics": null,
       "semanticFace": null,
       "effect": "execute",
@@ -16299,7 +16326,7 @@
       "availabilityShape": "namespace availability member on workflows",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "frozen synchronous discriminated result: {ok:true, code:started, operation} where operation is the run control handle, or a no-run refusal (official codes passed through unchanged; facade codes invalid-request / parent-unresolved / internal); terminal is absent because the run may still be in flight at return \u2014 its terminal source is operation.status()",
+      "currentShape": "frozen synchronous discriminated result: {ok:true, code:started, operation} where operation is the run control handle, or a no-run refusal (official codes passed through unchanged; facade codes invalid-request / parent-unresolved / internal); terminal appears only when the terminal is already adjudicable at return, so an accepted run carries none and reads its terminal from operation.status()",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -16313,32 +16340,7 @@
       "capability": "workflows",
       "kind": "handle",
       "idiom": "operation",
-      "idiomExceptions": [
-        {
-          "memberPath": "workflows.start.handle.meta",
-          "baseContract": "operation",
-          "exception": "the handle carries the engine-validated meta block",
-          "reason": "the meta block is available before the script runs (official contract) and is what a holder renders or links",
-          "replacementShape": "frozen engine-validated meta block",
-          "verification": "handle/result shape assertions plus the registry idiom-exception validation"
-        },
-        {
-          "memberPath": "workflows.start.handle.result",
-          "baseContract": "operation",
-          "exception": "the handle carries the result promise",
-          "reason": "the official result promise (never rejects) is the single terminal delivery point and cannot be translated",
-          "replacementShape": "Promise resolving once to the frozen discriminated terminal { ok, terminal: success|aborted|error, stopReason, value?, error?, agentsStarted? }",
-          "verification": "handle/result shape assertions plus the registry idiom-exception validation"
-        },
-        {
-          "memberPath": "workflows.start.handle.cancel",
-          "baseContract": "operation",
-          "exception": "the handle carries the cancel action",
-          "reason": "cancel is a first-class action of the official seam (cancellation is a signal, the engine adjudicates the terminal)",
-          "replacementShape": "cancel(reason?): void, delegated verbatim; a no-op after settlement",
-          "verification": "handle/result shape assertions plus the registry idiom-exception validation"
-        }
-      ],
+      "idiomExceptions": [],
       "eventSemantics": null,
       "semanticFace": null,
       "effect": "execute",
@@ -17469,16 +17471,7 @@
       "capability": "llm.adapters",
       "kind": "handle",
       "idiom": "resourceRegistry",
-      "idiomExceptions": [
-        {
-          "memberPath": "llm.adapters.decorations.register.handle",
-          "baseContract": "resourceRegistry",
-          "exception": "caller-bound facet handle ({ dispose(), snapshot() })",
-          "reason": "the delivered decoration registry keeps its mechanism and independent identity; caller-fiber owner derivation and registry-internal generation bookkeeping already provide identity-bound disposal and stale semantics, so the handle face does not repeat them",
-          "replacementShape": "{ dispose(), snapshot() } (snapshot is a read-only projection of the registration, not a mutation face)",
-          "verification": "existing decoration suites stay green plus stale-disposer and identity-bound disposal assertions"
-        }
-      ],
+      "idiomExceptions": [],
       "eventSemantics": null,
       "semanticFace": null,
       "effect": "register",
@@ -17497,7 +17490,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "caller-bound facet handle { dispose(), snapshot() } (idiom exception recorded)",
+      "currentShape": "caller-bound facet handle { id, ownerId, generation, snapshot(), dispose() }; snapshot() is the registered domain extension member (a read-only projection of the registration) and dispose() is an idempotent identity-bound discriminated result { ok, code: revoked | stale | unavailable, reason? }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -17577,16 +17570,7 @@
       "capability": "agents.scopes",
       "kind": "handle",
       "idiom": "resourceRegistry",
-      "idiomExceptions": [
-        {
-          "memberPath": "agents.scopes.register.handle",
-          "baseContract": "resourceRegistry",
-          "exception": "scope-bound handle extension members target / status()",
-          "reason": "target is the identity projection of the scoped resource (scope binding requires it) and status() is the read-only usability member of the bound agent (typed refusal of unusable targets depends on it); neither introduces write authority or lease semantics",
-          "replacementShape": "{ id, ownerId, generation, target, status(), dispose() }",
-          "verification": "handle member registry assertions plus stale no-op and identity-bound disposal assertions"
-        }
-      ],
+      "idiomExceptions": [],
       "eventSemantics": null,
       "semanticFace": null,
       "effect": "register",
@@ -17605,7 +17589,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "scope-bound handle { id, ownerId, generation, target, status(), dispose() } (idiom exception recorded); dispose is an identity-bound discriminated no-op result (stale after dispose or owner unload)",
+      "currentShape": "scope-bound handle { id, ownerId, generation, target, status(), dispose() }; target and status() are registered domain extension members, and dispose() is an identity-bound discriminated result (stale after dispose or owner unload)",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -22125,6 +22109,18 @@
       "targetPath": "workflows.start",
       "action": "migrate",
       "relation": "the whole deleted service key is replaced by the controlled workflow start entry"
+    },
+    {
+      "oldPath": "tasks.register.handle",
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired: the durable task registration mints no in-memory handle; the task identity is read through tasks.get and tasks.observe"
+    },
+    {
+      "oldPath": "tools.executionMode.register.handle",
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired: the official executionMode verb is a classification query, not a registration, so no handle ever existed"
     }
   ],
   "deletionReport": [

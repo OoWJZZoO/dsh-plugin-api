@@ -25,6 +25,19 @@ const EVENT_SEMANTICS = ['decision', 'fact', 'observation', 'notification']
 const DISPATCH_VERBS = ['emit', 'serial', 'parallel', 'bail', 'waterfall']
 const DISPATCH_MEMBERS = new Set(DISPATCH_VERBS.map((verb) => `events.${verb}`))
 const EXCEPTION_FIELDS = ['memberPath', 'baseContract', 'exception', 'reason', 'replacementShape', 'verification']
+/**
+ * Idioms whose leaf members answer exactly one entry verb. The other idioms
+ * expose multi-verb member sets (queries, subscriptions, domain verbs), so a
+ * single entry verb cannot be asserted for them.
+ */
+const IDIOM_ENTRY_VERBS = Object.freeze({ policy: 'register', resourceRegistry: 'register' })
+/**
+ * Registered non-entry leaves of the idioms above: the custom-event definition
+ * verb (also covered by its own idiom exception), the tool-construction helper,
+ * and the codec member leaves. Listed explicitly so a new non-entry leaf has to
+ * be reviewed here instead of slipping through.
+ */
+const IDIOM_ENTRY_ALLOWANCES = new Set(['events.define', 'tools.defineTool', 'codec.json', 'codec.strict', 'codec.invocation'])
 const MEMBER_FIELDS = [
   'publicPath', 'targetPath', 'capability', 'kind', 'idiom', 'idiomExceptions', 'eventSemantics',
   'semanticFace', 'effect', 'composition', 'runtime', 'implementationChannel', 'authority', 'scope',
@@ -187,6 +200,8 @@ export function validateRegistry(registry) {
         }
       }
 
+      const acknowledged = Array.isArray(member.idiomExceptions) && member.idiomExceptions.length > 0
+
       // Policy and registry handles always carry a generation: it is the
       // owner-minted slot token that makes stale / superseded decidable, so it
       // is required regardless of composition mode and never omitted for an
@@ -200,7 +215,6 @@ export function validateRegistry(registry) {
       if (member.kind === 'handle' && (idiom === 'policy' || idiom === 'resourceRegistry')) {
         const shape = typeof member.currentShape === 'string' ? member.currentShape : ''
         const itemizesMembers = shape.includes('{')
-        const acknowledged = Array.isArray(member.idiomExceptions) && member.idiomExceptions.length > 0
         if (itemizesMembers && !/generation/.test(shape) && !acknowledged) {
           errors.push(`${where}: a ${idiom} handle that itemizes its members must record the required generation member, got ${JSON.stringify(member.currentShape)}`)
         }
@@ -211,6 +225,46 @@ export function validateRegistry(registry) {
         for (const [eindex, exception] of member.idiomExceptions.entries()) {
           if (!IDIOMS.includes(exception?.baseContract)) {
             errors.push(`${where}.idiomExceptions[${eindex}].baseContract ${JSON.stringify(exception?.baseContract)} is not one of the eight idioms`)
+          }
+        }
+      }
+
+      // A registration-idiom leaf answers failures as typed throws. A row
+      // that presents its refusals as a discriminated result must say so
+      // through an idiom exception rather than quietly contradicting the
+      // registered failureSemantics.
+      if (member.kind === 'leaf' && member.status !== 'removed'
+        && (idiom === 'policy' || idiom === 'resourceRegistry')
+        && member.failureSemantics !== 'typed-throw' && !acknowledged) {
+        errors.push(`${where}: a ${idiom} leaf answers failures as typed throws, got failureSemantics ${JSON.stringify(member.failureSemantics)} without an idiom exception`)
+      }
+
+      // Entry verb per idiom: the idioms whose leaf members answer exactly one
+      // entry verb are enumerated here. `IDIOM_ENTRY_ALLOWANCES` names the
+      // registered non-entry leaves of those idioms — listed explicitly rather
+      // than inferred, so a new non-entry leaf has to be declared.
+      if (member.kind === 'leaf' && member.status !== 'removed'
+        && IDIOM_ENTRY_VERBS[idiom] !== undefined && !acknowledged
+        && !IDIOM_ENTRY_ALLOWANCES.has(member.publicPath)) {
+        const verb = member.publicPath.split('.').pop()
+        if (verb !== IDIOM_ENTRY_VERBS[idiom]) {
+          errors.push(`${where}: a ${idiom} leaf is entered through ${JSON.stringify(IDIOM_ENTRY_VERBS[idiom])}, got ${JSON.stringify(verb)}`)
+        }
+      }
+
+      // A domain extension member is registered by the member row that
+      // carries it, never by consuming an idiom exception. An exception that
+      // names a member the row's own shape already itemizes is the two
+      // registration styles claiming the same member.
+      if (Array.isArray(member.idiomExceptions)) {
+        const shape = typeof member.currentShape === 'string' ? member.currentShape : ''
+        for (const [eindex, exception] of member.idiomExceptions.entries()) {
+          const named = typeof exception?.memberPath === 'string' ? exception.memberPath : ''
+          if (named === '' || named === member.publicPath) continue
+          const leafName = named.slice(member.publicPath.length + 1)
+          if (leafName === '' || !named.startsWith(`${member.publicPath}.`)) continue
+          if (new RegExp(`[{,]\\s*${leafName}\\s*[(,}]`).test(shape)) {
+            errors.push(`${where}.idiomExceptions[${eindex}]: member ${JSON.stringify(leafName)} is itemized by the row's own shape and cannot also consume an exception`)
           }
         }
       }

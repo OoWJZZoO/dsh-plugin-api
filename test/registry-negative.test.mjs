@@ -158,3 +158,33 @@ test('rejects an event whose dispatch verb is outside the registered verbs', () 
   copy.eventCatalog[0].dispatch = 'broadcast'
   expectErrors(copy, 'is not a registered dispatch verb')
 })
+
+test('rejects an entry verb that does not match the idiom entry', () => {
+  const copy = structuredClone(registry)
+  const row = copy.members.find((member) => member.publicPath === 'security.policy.register')
+  row.publicPath = 'security.policy.install'
+  row.targetPath = 'security.policy.install'
+  expectErrors(copy, 'is entered through "register", got "install"')
+})
+
+test('rejects a registration leaf that presents refusals as results without an exception', () => {
+  const copy = structuredClone(registry)
+  const row = copy.members.find((member) => member.publicPath === 'security.policy.register')
+  row.failureSemantics = 'discriminated-result'
+  expectErrors(copy, 'answers failures as typed throws')
+})
+
+test('rejects an exception that claims a member the row already itemizes', () => {
+  const copy = structuredClone(registry)
+  const row = copy.members.find((member) => member.publicPath === 'workflows.start.handle')
+  row.currentShape = 'frozen { id, ownerId, meta, status(), dispose() }'
+  row.idiomExceptions = [{
+    memberPath: 'workflows.start.handle.meta',
+    baseContract: 'operation',
+    exception: 'the handle carries the meta block',
+    reason: 'the meta block is available before the script runs',
+    replacementShape: 'frozen meta block',
+    verification: 'shape assertions',
+  }]
+  expectErrors(copy, 'cannot also consume an exception')
+})
