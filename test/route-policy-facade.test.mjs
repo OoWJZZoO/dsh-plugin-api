@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { createFeatureRegistry } from '../lib/feature-registry.js'
 import { PluginApiFeatureDisabledError } from '../lib/errors.js'
 import { createPluginApiService } from '../lib/plugin-api-service.js'
+import { createRoutePolicyOwner } from '../packages/agent-loop/lib/route-policy.js'
 
 function createOwner() {
   const policy = { register() { return () => {} } }
@@ -39,4 +40,37 @@ test('route policy facade is additive and typed-unavailable until replacement ga
   assert.equal(typeof service.llm.routing.health.observe, 'function')
   assert.equal(typeof service.llm.routing.circuit.inspect, 'function')
   assert.equal(typeof service.llm.routing.decisions.history, 'function')
+})
+
+test('routing registrations derive their owner from the calling plugin', () => {
+  const registry = createFeatureRegistry()
+  const owner = createRoutePolicyOwner({})
+  const ServiceClass = createPluginApiService({
+    apiVersion: '0.1',
+    registry,
+    coreActive: true,
+    routePolicyProvider: () => owner.api,
+  })
+  const service = new ServiceClass({ reflect: { provide() {} } })
+  const forCaller = (name) => {
+    const shadow = Object.create(service)
+    Object.defineProperty(shadow, 'ctx', { value: { fiber: { name } }, enumerable: true })
+    return shadow
+  }
+  const definition = { id: 'route-a', decide: () => null }
+  const first = forCaller('plugin-a').llm.routing.policies.register(definition)
+  assert.equal(first.ownerId, 'plugin-a', 'the owner is derived from the calling plugin, never declared')
+  assert.equal(first.id, 'route-a')
+
+  // Same owner and id is latest-wins; another owner on the same id is a typed
+  // conflict the public path can now reach.
+  const replaced = forCaller('plugin-a').llm.routing.policies.register(definition)
+  assert.equal(replaced.ownerId, 'plugin-a')
+  assert.throws(
+    () => forCaller('plugin-b').llm.routing.policies.register(definition),
+    (error) => error.code === 'ROUTE_POLICY_OWNER_CONFLICT',
+  )
+  assert.equal(first.dispose().code, 'stale', 'a superseded handle answers a typed stale no-op')
+  assert.equal(replaced.dispose().code, 'revoked')
+  owner.dispose()
 })

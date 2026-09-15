@@ -742,12 +742,19 @@ export class AttachmentPipelineService extends Service {
    * @throws {TransformRegistrationError} when the slot is claimed with different content.
    */
   registerTransform(capability) {
-    const inactive = this._unavailableIfDisposed()
-    if (inactive) return inactive
+    // Registration failures are typed throws (one rule source per idiom); the
+    // operational faces keep answering discriminated results.
+    if (this.disposed) {
+      throw new TransformRegistrationError('ATTACHMENT_PIPELINE_UNAVAILABLE', 'attachment pipeline is unavailable')
+    }
     const invalid = validateTransformRegistration(capability)
-    if (invalid) return invalid
+    if (invalid) {
+      throw new TransformRegistrationError(invalid.error?.code ?? 'ATTACHMENT_TRANSFORM_INVALID', invalid.error?.message ?? 'transform capability is invalid')
+    }
     const policy = effectiveTransformPolicy({ maxBytes: this.config.maxBytes, deadlineMs: this.config.deadlineMs, concurrency: this.config.maxConcurrency, maxDurationMs: this.config.maxDurationMs }, capability.policy ?? {})
-    if (!policy) return transformPolicyFailure()
+    if (!policy) {
+      throw new TransformRegistrationError('ATTACHMENT_POLICY_INVALID', 'transform policy is invalid')
+    }
     const key = registrationKey(capability.ownerId, capability.id)
     const prepared = {
       ...capability,

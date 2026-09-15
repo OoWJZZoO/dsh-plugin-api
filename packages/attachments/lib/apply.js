@@ -145,10 +145,17 @@ async function pipelineContract(service, { probeDisposal = false } = {}) {
   try {
     const capabilities = pipeline.capabilities()
     const availability = projection.availability()
-    const invalidRegistration = pipeline.registerTransform({})
+    // Registration answers failures with a typed throw, while the operational
+    // faces keep answering discriminated results; both are exercised here.
+    let registrationTyped = false
+    try {
+      pipeline.registerTransform({})
+    } catch (error) {
+      registrationTyped = typeof error?.code === 'string' && error.code.length > 0
+    }
     const invalidReference = await projection.resolve({})
     const shapeValid = capabilities?.status === 'active' && availability?.status === 'active' &&
-      invalidRegistration?.status === 'unavailable' && invalidReference?.status === 'unavailable' &&
+      registrationTyped && invalidReference?.status === 'unavailable' &&
       Object.isFrozen(pipeline) && Object.isFrozen(projection) && service.disposed === false
     if (!shapeValid) return { ok: false, disposalProbed: false }
     if (!probeDisposal || !service.ownerToken) return { ok: true, disposalProbed: false }

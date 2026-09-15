@@ -95,8 +95,17 @@ function createMockCtx(options = {}) {
       prepareCall() {},
       stream() {},
       registerAdapter() {},
-      registerConfigurableProviders() {},
-      registerModelDiscovery() {},
+      // The official registrations answer with a callable handle (`providers`
+      // also carries `.replace`); the facade wraps them, so the stub mirrors
+      // that shape instead of returning nothing.
+      registerConfigurableProviders() {
+        const handle = () => {}
+        handle.replace = () => {}
+        return handle
+      },
+      registerModelDiscovery() {
+        return () => {}
+      },
       listProviders() {
         return ['provider-a']
       },
@@ -196,10 +205,17 @@ test('integrated llm facade exposes the six official directory methods and three
   const { ctx, state } = createMockCtx()
   apply(ctx)
   const llm = state.pluginApi.llm
-assert.equal(llm.availability().status, 'active')
-  assert.deepEqual(llm.providers.register('./a'), undefined ?? undefined)
-  assert.equal(typeof llm.providers.register, 'function')
-  assert.equal(typeof llm.models.register, 'function')
+  assert.equal(llm.availability().status, 'active')
+
+  // Both official registrations are wrapped into the standard resource handle;
+  // the official `.replace` capability stays an explicit extension member.
+  const providers = llm.providers.register([{ provider: 'provider-a' }])
+  assert.deepEqual(Object.keys(providers).sort(), ['dispose', 'generation', 'id', 'ownerId', 'replace'])
+  assert.equal(providers.id, 'provider-a')
+  assert.equal(providers.dispose().code, 'revoked')
+  const models = llm.models.register('plug-a', () => {})
+  assert.deepEqual(Object.keys(models).sort(), ['dispose', 'generation', 'id', 'ownerId'])
+  assert.equal(models.dispose().code, 'revoked')
   assert.equal(typeof state.pluginApi.services.llm.listProviders, 'function', 'official leaves ride under services.llm')
   assert.equal(typeof state.pluginApi.services.llm.discoverModels, 'function')
 })
