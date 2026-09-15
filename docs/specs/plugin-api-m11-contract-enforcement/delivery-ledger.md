@@ -101,6 +101,7 @@
 |---|---|
 | `docs/specs/plugin-api-m11-contract-enforcement/design.md` §3 净额段 | 例外台账的执行实测值与设计预测不同：实测为记录 20 − 6 + 4 = 18、成员行 17 − 4 + 4 = 17、公共 path 16 − 4 + 4 = 16（预测是 20 → 17 / 17 → 16 / 16 → 15）。多出的一条是 `tasks.register`——Task 3.4 新增的 entry 级校验要求注册类 leaf 的失败呈现为 typed throw，而它返回判别式结果且不铸造 handle，故与 `tasks.start`/`tasks.settle`/`tasks.attach` 同批登记；三口径仍**不高于** Req 11.5 上限（17 行 / 20 记录 / 16 path） |
 | `docs/specs/plugin-api-m11-contract-enforcement/tasks.md` Task 3.3 | 同步上述实测净额与「新增 4 条记录 / 4 行」 |
+| `public-contract.registry.json`（`tasks.start` / `tasks.settle` / `tasks.attach` 三条例外记录） | `replacementShape` 的成功码由 `accepted` 订正为各成员真实的领域码 `started` / `settled` / `attached`（实现 `lib/task-execution-observation.js` 的 `succeeded('started' \| 'settled' \| 'attached', …)`；公开面不重写码）。例外的实质（不铸造 operation 身份、动作名走 `action`、控制对象是 durable task/attempt、经 `tasks.get`/`tasks.observe` 观察）不变，六项字段齐全 |
 | `docs/standards/api-idioms.md` §3.1 | 补一条呈现口径：同一订阅入口既要订阅、又要对「未知名」给出 typed 结果时（事件面的订阅入口），成功形状是承载标准 handle 的判别式信封 `{ ok, code, handle }`，未知名返回 typed `unsupported`（含可查询目录）而非裸 `TypeError`；两种呈现都以同一个四成员 handle 为契约本体，成员行按各运行时真实形状登记，不消耗例外。依据 Req 10.4 与 Req 5.1 在该成员上无法字面同时成立 |
 
 **本轮未完成**（**不是阻塞项**：无硬停机点、无环境 / 工具链 / 权限缺失，全部是同一工作序列中尚未执行的主体工作）：

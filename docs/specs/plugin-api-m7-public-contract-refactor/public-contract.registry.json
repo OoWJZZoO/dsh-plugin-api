@@ -8888,7 +8888,7 @@
           "baseContract": "operation",
           "exception": "the accepted result carries the durable action name in `action` and no separate operation identity",
           "reason": "the control object of these operations is the durable task/attempt identity itself (registered through tasks.register and read through tasks.get / tasks.observe); minting a second operation identity would give one durable action two competing handles",
-          "replacementShape": "frozen discriminated result { ok:true, code:\"accepted\", action } plus the task identity, or a typed refusal; the action is observed through tasks.get(handle) / tasks.observe(handle)",
+          "replacementShape": "frozen discriminated result { ok:true, code:\"started\", action } plus the task identity, or a typed refusal; the action is observed through tasks.get(handle) / tasks.observe(handle)",
           "verification": "task execution observation suites assert the result fields, the durable identity and the refusal paths"
         }
       ],
@@ -8996,7 +8996,7 @@
           "baseContract": "operation",
           "exception": "the accepted result carries the durable action name in `action` and no separate operation identity",
           "reason": "the control object of these operations is the durable task/attempt identity itself (registered through tasks.register and read through tasks.get / tasks.observe); minting a second operation identity would give one durable action two competing handles",
-          "replacementShape": "frozen discriminated result { ok:true, code:\"accepted\", action } plus the task identity, or a typed refusal; the action is observed through tasks.get(handle) / tasks.observe(handle)",
+          "replacementShape": "frozen discriminated result { ok:true, code:\"settled\", action } plus the task identity, or a typed refusal; the action is observed through tasks.get(handle) / tasks.observe(handle)",
           "verification": "task execution observation suites assert the result fields, the durable identity and the refusal paths"
         }
       ],
@@ -9038,7 +9038,7 @@
           "baseContract": "operation",
           "exception": "the accepted result carries the durable action name in `action` and no separate operation identity",
           "reason": "the control object of these operations is the durable task/attempt identity itself (registered through tasks.register and read through tasks.get / tasks.observe); minting a second operation identity would give one durable action two competing handles",
-          "replacementShape": "frozen discriminated result { ok:true, code:\"accepted\", action } plus the task identity, or a typed refusal; the action is observed through tasks.get(handle) / tasks.observe(handle)",
+          "replacementShape": "frozen discriminated result { ok:true, code:\"attached\", action } plus the task identity, or a typed refusal; the action is observed through tasks.get(handle) / tasks.observe(handle)",
           "verification": "task execution observation suites assert the result fields, the durable identity and the refusal paths"
         }
       ],
