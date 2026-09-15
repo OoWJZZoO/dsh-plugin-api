@@ -49,19 +49,25 @@ test('client event facade exposes exact leaves and preserves argument identity a
     },
   })
   assert.deepEqual(Object.keys(result.api).sort(), [
-    'commandExecuted', 'connectionReset', 'dispose', 'localeChange', 'observe', 'on', 'themeChange',
+    'catalog', 'commandExecuted', 'connectionReset', 'dispose', 'localeChange', 'observe', 'on', 'themeChange',
   ])
 
   const first = {}
   const second = Symbol('second')
   const received = []
-  const dispose = result.api.observe('command/executed', (...args) => received.push(args))
+  const observed = result.api.observe('command/executed')
+  assert.equal(observed.ok, true, 'a catalog event answers the observation handle')
+  const handle = observed.handle
+  // An observer receives the delivered payload (the same value `current()`
+  // reports), not the raw argument list.
+  handle.subscribe((payload) => received.push(payload))
   source.emit('command/executed', first, second, 3)
   assert.deepEqual(received, [[first, second, 3]])
   assert.equal(received[0][0], first)
   assert.equal(received[0][1], second)
-  assert.equal(dispose(), true)
-  assert.equal(dispose(), false)
+  assert.deepEqual(handle.current(), [first, second, 3], 'the handle reports the last delivered payload')
+  assert.equal(handle.dispose().code, 'revoked')
+  assert.equal(handle.dispose().code, 'stale')
   source.emit('command/executed', first, second, 4)
   assert.deepEqual(received, [[first, second, 3]])
 })
@@ -81,11 +87,11 @@ test('event source resolution is lazy and one absent source does not disable oth
   assert.equal(reads, 1)
   assert.equal(result.api.themeChange.isActive, false)
   assert.throws(
-    () => result.api.observe('theme/change', () => {}),
+    () => result.api.observe('theme/change'),
     (error) => error.code === 'PLUGIN_API_FEATURE_DISABLED' && error.feature === 'client.themeChange',
   )
   let delivered = 0
-  result.api.observe('locale/change', () => { delivered += 1 })
+  result.api.observe('locale/change').handle.subscribe(() => { delivered += 1 })
   source.emit('locale/change', {})
   assert.equal(delivered, 1)
 })
@@ -100,8 +106,8 @@ test('listener failures and rejected thenables are contained while later listene
   const thrown = new Error('sync listener failure')
   const rejected = new Error('async listener failure')
   const delivered = []
-  result.api.observe('locale/change', () => { throw thrown })
-  result.api.observe('locale/change', (value) => delivered.push(value))
+  result.api.observe('locale/change').handle.subscribe(() => { throw thrown })
+  result.api.observe('locale/change').handle.subscribe((value) => delivered.push(value))
   result.api.localeChange.on(() => Promise.reject(rejected))
   const payload = { locale: 'en' }
   source.emit('locale/change', payload)
