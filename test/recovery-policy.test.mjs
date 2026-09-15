@@ -50,8 +50,8 @@ test('capability registration validates declarations and old disposer cannot rem
   assert.equal(oldHandle.id, 'operation-1')
   assert.equal(oldHandle.ownerId, 'owner-1')
   assert.equal(typeof oldHandle.generation, 'string')
-  assert.equal(oldHandle.dispose(), false)
-  assert.equal(newHandle.dispose(), true)
+  assert.equal(oldHandle.dispose().code, 'stale')
+  assert.equal(newHandle.dispose().code, 'revoked')
   assert.throws(
     () => owner.api.capability.register({ operationId: 'x', ownerId: 'o', generation: '1', scope: 'bad' }),
     RecoveryPolicyRegistrationError,

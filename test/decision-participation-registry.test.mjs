@@ -57,7 +57,7 @@ test('registry: same owner same id follows latest-wins and the old handle become
   const first = registry.register({}, { id: 'p', decide: () => 'first' })
   const second = registry.register({}, { id: 'p', decide: () => 'second', priority: 'high' })
   assert.notEqual(first.generation, second.generation)
-  assert.equal(first.dispose(), false, 'the old handle is a stale no-op')
+  assert.equal(first.dispose().code, 'stale', 'the old handle is a stale no-op')
   assert.equal(registry.entries().length, 1)
   assert.equal(registry.entries()[0].decide(), 'second')
   assert.equal(registry.entries()[0].priority, 'high')
@@ -86,9 +86,9 @@ test('registry: disposal is idempotent and identity-bound', () => {
   const { registry } = createRegistry()
   const first = registry.register({}, { id: 'p', decide: () => undefined })
   const second = registry.register({}, { id: 'p', decide: () => undefined })
-  assert.equal(first.dispose(), false, 'a replaced handle cannot revoke the newer generation')
-  assert.equal(second.dispose(), true)
-  assert.equal(second.dispose(), false, 'disposal is idempotent')
+  assert.equal(first.dispose().code, 'stale', 'a replaced handle cannot revoke the newer generation')
+  assert.equal(second.dispose().code, 'revoked')
+  assert.equal(second.dispose().code, 'stale', 'disposal is idempotent')
   assert.equal(registry.entries().length, 0)
 })
 
@@ -117,7 +117,7 @@ test('registry: install failure leaves the registry and any previous entry untou
   assert.throws(() => registry.register({}, { id: 'p', decide: () => 'second' }), PluginApiError)
   assert.equal(registry.entries().length, 1)
   assert.equal(registry.entries()[0].decide(), 'first')
-  assert.equal(first.dispose(), true, 'the previous handle still governs its own entry')
+  assert.equal(first.dispose().code, 'revoked', 'the previous handle still governs its own entry')
 })
 
 test('registry: spec validation rejects malformed registrations with typed errors', () => {

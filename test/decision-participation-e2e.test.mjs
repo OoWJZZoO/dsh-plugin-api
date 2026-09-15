@@ -438,8 +438,8 @@ test('a throwing or rejecting participant is contained; a stale disposer is neve
     id: 'stale',
     decide: () => ({ kind: 'reject', reason: 'must-not-run' }),
   })
-  assert.equal(stale.dispose(), true)
-  assert.equal(stale.dispose(), false, 'double disposal is a no-op')
+  assert.equal(stale.dispose().code, 'revoked')
+  assert.equal(stale.dispose().code, 'stale', 'double disposal is a no-op')
   const after = await officialPreStep(ctx, { claimed: ['user-input'], turn: 2, step: 0, signal: new AbortController().signal })
   assert.deepEqual(after, { kind: 'enter', messages: ['user-input', 'official-context'] }, 'a stale disposer never affects later dispatches')
 })

@@ -107,7 +107,8 @@ test('a registered policy enforces through the mounted facade and creates audite
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
   const policy = state.pluginApi.security.policy
-  assert.doesNotThrow(() => policy.register('tester', {
+  // The public member takes only the spec: the owner is derived from the caller.
+  assert.doesNotThrow(() => policy.register({
     id: 'deny-bash',
     point: 'approval-before',
     match: (context) => context.toolName === 'bash',
@@ -132,7 +133,7 @@ test('a registered policy enforces through the mounted facade and creates audite
 test('redaction rules apply at the mounted post-execute seam', async () => {
   const { ctx, state } = createMockCtx()
   assert.doesNotThrow(() => apply(ctx))
-  state.pluginApi.security.redaction.register('tester', {
+  state.pluginApi.security.redaction.register({
     id: 'hide-key',
     audiences: ['model'],
     match: (value) => value.includes('api_key='),

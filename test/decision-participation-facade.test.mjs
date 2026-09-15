@@ -120,7 +120,7 @@ test('facade: same-owner latest-wins and cross-owner conflict on the public memb
   const member = feature.providers.agents({})
   const first = member.register({ point: 'request', id: 'p', decide: () => undefined })
   const second = member.register({ point: 'request', id: 'p', decide: () => ({ provider: 'x', model: 'y' }) })
-  assert.equal(first.dispose(), false)
+  assert.equal(first.dispose().code, 'stale')
   assert.notEqual(first.generation, second.generation)
 })
 

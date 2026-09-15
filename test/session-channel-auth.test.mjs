@@ -95,10 +95,12 @@ test('auth: pairing initiate/approve/reject flow', () => {
   assert.doesNotThrow(() => auth.rejectPairing('tok-1'))
 })
 
-test('auth: disposers remove registrations', () => {
+test('auth: the registration handle removes its registration', () => {
   const auth = createAuthRegistry()
-  const disposer = auth.registerVerifier({ id: 'v1', verify: () => ({ deviceId: 'dev1' }) })
+  const handle = auth.registerVerifier({ id: 'v1', verify: () => ({ deviceId: 'dev1' }) })
   assert.ok(auth.hasVerifier())
-  assert.ok(disposer())
+  assert.equal(handle.id, 'v1')
+  assert.equal(handle.dispose().code, 'revoked')
   assert.ok(!auth.hasVerifier())
+  assert.equal(handle.dispose().code, 'stale', 'disposal is idempotent')
 })

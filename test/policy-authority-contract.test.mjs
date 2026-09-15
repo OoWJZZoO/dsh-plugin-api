@@ -285,8 +285,8 @@ test('policy registration handles carry owner-bound id, ownerId, generation and 
   assert.equal(policyHandle.ownerId, 'acme')
   assert.equal(typeof policyHandle.generation, 'string')
   assert.equal(typeof policyHandle.dispose, 'function')
-  assert.equal(policyHandle.dispose(), true)
-  assert.equal(policyHandle.dispose(), false, 'dispose is identity-bound and idempotent')
+  assert.equal(policyHandle.dispose().code, 'revoked')
+  assert.equal(policyHandle.dispose().code, 'stale', 'dispose is identity-bound and idempotent')
 
   const recovery = createRecoveryPolicyOwner({ logger: { warn() {} } })
   const capabilityHandle = recovery.api.capability.register({
@@ -303,8 +303,8 @@ test('policy registration handles carry owner-bound id, ownerId, generation and 
   assert.equal(policyRecoveryHandle.id, 'p-h')
   assert.equal(policyRecoveryHandle.ownerId, 'o-h')
   assert.equal(policyRecoveryHandle.generation, 'g-h')
-  assert.equal(policyRecoveryHandle.dispose(), true)
-  assert.equal(policyRecoveryHandle.dispose(), false)
+  assert.equal(policyRecoveryHandle.dispose().code, 'revoked')
+  assert.equal(policyRecoveryHandle.dispose().code, 'stale')
 })
 
 test('egress grant audit records the cooperative channel', async () => {

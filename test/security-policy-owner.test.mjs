@@ -398,8 +398,8 @@ test('generation handles dispose policies when the policy is replaced', () => {
   const { owner } = ownerWith()
   const first = owner.api.policy.register('owner', { id: 'p', point: 'approval-before', decide: () => ({ outcome: 'allow' }) })
   const second = owner.api.policy.register('owner', { id: 'p', point: 'approval-before', decide: () => ({ outcome: 'deny' }) })
-  assert.equal(first.dispose(), false, 'replaced generation no longer owns the slot')
-  assert.equal(second.dispose(), true)
+  assert.equal(first.dispose().code, 'stale', 'replaced generation no longer owns the slot')
+  assert.equal(second.dispose().code, 'revoked')
 })
 
 test('redaction with a secret gate denial keeps the secret redacted and audits a bounded note', async () => {
