@@ -29,6 +29,15 @@ const BANNED_TOKENS = [
 /** Labels used by the governance documents, not by runtime contracts. */
 const GOVERNANCE_LABEL_PATTERN = /\b(?:ST|SV|AC|CL|WMT|TEO|PPM|PD|EO)-?\d+(?:\.\d+)?[a-z]?\b|\b[ABCRMDLTWFSUP]\d+(?:\.\d+)?[a-z]?\b|\b[ABCR]-class\b/g
 
+/**
+ * Governance numbering written as prose: the workflow's stage and artifact
+ * numbers ("the third requirement", a task number) belong to the spec
+ * documents, never to implementation or test sources. The bare workflow names
+ * are matched too, because they are orchestration codenames rather than
+ * capability names.
+ */
+const GOVERNANCE_NUMBER_PATTERN = /\b(?:Req|Requirement|Task|Stage|Milestone|SPEC\d*)\s*\.?\s*\d+(?:\.\d+)*[a-z]?\b/g
+
 /** The only implementation labels intentionally retained for control syntax. */
 const CONTROL_LABEL_EXEMPTIONS = new Set([
   `packages/session-title/lib/event-contract.js:136:${'C' + '0'}`,
@@ -77,7 +86,7 @@ function relativePath(file) {
   return (file.startsWith(prefix) ? file.slice(prefix.length) : file).replaceAll('\\', '/')
 }
 
-function governanceLabels(source, rel) {
+function governanceLabels(source, rel, { prose = true } = {}) {
   const violations = []
   for (const [lineIndex, line] of source.split('\n').entries()) {
     const lineNumber = lineIndex + 1
@@ -93,6 +102,7 @@ function governanceLabels(source, rel) {
     }
     const labels = new Set([
       ...line.matchAll(GOVERNANCE_LABEL_PATTERN),
+      ...(prose ? [...line.matchAll(GOVERNANCE_NUMBER_PATTERN)] : []),
       ...identifiers.flatMap((value) => [...value.matchAll(GOVERNANCE_LABEL_PATTERN)]),
     ].map((match) => match[0]))
     for (const label of labels) {
@@ -103,12 +113,20 @@ function governanceLabels(source, rel) {
   return violations
 }
 
-function scanArtifact(source, rel) {
+/**
+ * Scan one artifact.
+ *
+ * `prose` controls the workflow-numbering pattern: implementation and test
+ * sources must not cite requirement, task or stage numbers at all, while the
+ * registry is itself a governance artifact whose provenance fields
+ * (`$comment`, `inventory`) cite them deliberately.
+ */
+function scanArtifact(source, rel, { prose = true } = {}) {
   const violations = []
   for (const token of BANNED_TOKENS) {
     if (source.includes(token)) violations.push(`${rel}: banned token ${JSON.stringify(token)}`)
   }
-  violations.push(...governanceLabels(source, rel))
+  violations.push(...governanceLabels(source, rel, { prose }))
   for (const pattern of GOVERNANCE_FIELD_PATTERNS) {
     if (pattern.test(source)) violations.push(`${rel}: governance catalog field ${pattern}`)
   }
@@ -133,7 +151,7 @@ test('implementation artifacts contain no governance magic tokens, labels, or ca
  */
 test('the public contract registry and generated snapshots stay neutral', async () => {
   const registryPath = join(root, 'docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json')
-  const violations = scanArtifact(readFileSync(registryPath, 'utf8'), 'public-contract.registry.json')
+  const violations = scanArtifact(readFileSync(registryPath, 'utf8'), 'public-contract.registry.json', { prose: false })
   const { buildSnapshots } = await import('../scripts/registry-snapshot.mjs')
   const registry = JSON.parse(readFileSync(registryPath, 'utf8'))
   for (const [name, value] of Object.entries(buildSnapshots(registry))) {

@@ -4,7 +4,7 @@
  * Composes the owner surface with a contract-faithful host ctx fixture and
  * proves reverse-registration-order consumer independence
  * (two synthetic plugins see equivalent semantics regardless of registration
- * order) and Requirement 1 append provenance.
+ * order) and append provenance on the durable boundary.
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'

@@ -2,10 +2,9 @@
  * Focused tests for the shared loop boundary interaction slice
  * (admission/cancel boundary + attempt lifecycle facts).
  *
- * Contract anchors:
- * - `docs/specs/session-interaction-operation/requirements.md` Requirement 11
- * - `docs/specs/session-activity-projection/requirements.md` Requirement 9
- * - ability to pause/verify the payload fields frozen by both lines.
+ * Contract anchors: the payload fields frozen by the session interaction
+ * operation line and the session activity projection line, and the ability to
+ * pause and verify both.
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'

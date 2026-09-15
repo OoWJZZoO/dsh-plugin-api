@@ -89,11 +89,14 @@ test('slice 2: one policy registers through llm, prompts and security with the s
   const service = createService()
   const revoked = []
   service.mountFeature('llm/request', {
-    transform: (spec) => {
+    // The facade passes the caller context as the trailing binding; the stub
+    // reads the owner from it instead of echoing a constant, so a broken
+    // caller derivation shows up as the wrong owner rather than passing.
+    transform: (spec, callerCtx) => {
       let released = false
       return {
         id: spec.id,
-        ownerId: 'slice-plugin',
+        ownerId: callerCtx?.fiber?.name,
         generation: 'g-1',
         dispose() {
           if (released) return { ok: false, code: 'stale', reason: 'the registration is already released' }
@@ -140,4 +143,16 @@ test('slice 2: one policy registers through llm, prompts and security with the s
     assert.equal(handle.dispose().code, 'stale', 'dispose is idempotent in both domains')
   }
   assert.deepEqual(revoked, ['llm', 'security'])
+
+  // A second plugin identity on the same entries answers its own owner, so the
+  // binding is a derivation from the caller and not a constant the first call
+  // happened to match.
+  const other = plugin(service, 'other-plugin')
+  assert.equal(other.llm.requestTransforms.register({ id: 'portable-policy' }).ownerId, 'other-plugin')
+  assert.equal(other.security.policy.register({ id: 'portable-policy' }).ownerId, 'other-plugin')
+  // A caller that declares an owner is ignored: the identity comes from the
+  // calling fiber, never from the registration definition.
+  const forged = plugin(service, 'forging-plugin')
+  assert.equal(forged.llm.requestTransforms.register({ id: 'portable-policy', ownerId: 'slice-plugin' }).ownerId, 'forging-plugin')
+  assert.equal(forged.security.policy.register({ id: 'portable-policy', ownerId: 'slice-plugin' }).ownerId, 'forging-plugin')
 })

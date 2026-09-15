@@ -1,5 +1,5 @@
 /**
- * Consumer migration slices for scoped agent contributions (Task 6.6).
+ * Consumer migration slices for scoped agent contributions.
  *
  * The original consumers register per-agent prompt sections and tools
  * directly on the official runtime inside their own packages, and that

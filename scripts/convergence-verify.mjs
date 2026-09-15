@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Whole-tree convergence verifier (public API convergence line, Task 1.2).
+ * Whole-tree convergence verifier (public API convergence line).
  *
  * Mechanically checks the connection between the delivered convergence tables
  * and the canonical registry, so the tables can never drift from the single

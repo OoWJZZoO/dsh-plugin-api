@@ -1,5 +1,5 @@
 /**
- * Constitution-consumer equivalence for the convergence line (Task 4.8).
+ * Constitution-consumer equivalence for the convergence line.
  *
  * The constitution names two real consumers whose migration is the acceptance
  * object of this repository: `dsh-read-image` and `dsh-pro-ex-ability-anchor`.
@@ -14,7 +14,7 @@
  * | A | the plugin monkey-patched the official model info resolver so an image-bearing call reaches a text-only model | `llm.admissionPolicies.register` (policy) + `llm.modelInfo` (projection) | 真实挂载面（`apply`）上的官方 `apiProxy.sessions.selectModel` 边界 | the registered policy governs the official refusal inside the official scope, the public model-info entry still reads the official artifact, and disposing the policy restores the official refusal |
  * | B | the plugin's policy only covers some inputs | `llm.admissionPolicies.register` (policy) | 同一官方 `apiProxy.sessions.selectModel` 边界 | a policy that never matches leaves the official refusal exactly as the official layer decided it |
  *
- * Evidence discipline (Task 4): the policy is registered through the *public*
+ * Evidence discipline: the policy is registered through the *public*
  * facade member the consumer calls, the decision is driven through the official
  * `apiProxy` check the facade scopes, and the boundary is the official refusal
  * itself — no same-process double is injected straight into an internal

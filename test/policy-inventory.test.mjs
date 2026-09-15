@@ -10,6 +10,13 @@ const REGISTRY_PATH = fileURLToPath(new URL('../docs/specs/plugin-api-m7-public-
 const INVENTORY_PATH = fileURLToPath(new URL('../docs/specs/plugin-api-policy-enforcement-closure/policy-inventory.json', import.meta.url))
 const CAPABILITY_MATRIX_LIB_PATH = fileURLToPath(new URL('../lib/capability-matrix.js', import.meta.url))
 
+/** The paths the facade publishes today: member rows plus the audited services whitelist. */
+function matrixPublishedPaths(registryData) {
+  const published = new Set(registryData.members.filter((member) => member.status !== 'removed').map((member) => member.publicPath))
+  for (const entry of registryData.servicesWhitelist) published.add(`services.${entry.key}`)
+  return published
+}
+
 const registry = JSON.parse(readFileSync(REGISTRY_PATH, 'utf8'))
 const inventory = JSON.parse(readFileSync(INVENTORY_PATH, 'utf8'))
 
@@ -117,20 +124,50 @@ test('s6 reclassification: the generated capability matrix carries no migration 
 
 test('the capability matrix projection stays derived from the registry', () => {
   const libSource = readFileSync(CAPABILITY_MATRIX_LIB_PATH, 'utf8')
-  // Every live cluster is projected; the retired bookkeeping rows are not.
-  const live = registry.capabilityMatrix.filter((row) => row.status !== 'deleted' && !/ (internalized|removals)$/.test(row.capabilityCluster))
+  const publishedPaths = matrixPublishedPaths(registry)
+  // Every current cluster is projected; the retired bookkeeping rows are not.
+  const live = registry.capabilityMatrix.filter((row) => !/ (internalized|removals)$/.test(row.capabilityCluster))
+  const projected = (libSource.match(/capabilityCluster: "/g) ?? []).length
+  assert.equal(projected, live.length, 'no current cluster is missing and no retired row is projected')
   for (const row of live) {
     assert.ok(libSource.includes(`capabilityCluster: ${JSON.stringify(row.capabilityCluster)}`),
       `lib/capability-matrix.js must project cluster ${row.capabilityCluster}`)
-    const expectedStatus = row.status === 'gap' ? 'unavailable' : 'active'
+    const unpublished = row.targetPaths.filter((path) => !publishedPaths.has(path)).sort()
+    const expectedStatus = unpublished.length === 0
+      ? 'active'
+      : unpublished.length === row.targetPaths.length ? 'unavailable' : 'degraded'
     const block = libSource.slice(libSource.indexOf(`capabilityCluster: ${JSON.stringify(row.capabilityCluster)}`))
     assert.ok(block.includes(`status: ${JSON.stringify(expectedStatus)}`),
-      `cluster ${row.capabilityCluster} reports its current status`)
+      `cluster ${row.capabilityCluster} reports the status its published paths justify`)
+    assert.ok(block.includes(`limitations: ${JSON.stringify(unpublished)}`),
+      `cluster ${row.capabilityCluster} names exactly the paths it does not publish`)
   }
-  const projected = (libSource.match(/capabilityCluster: "/g) ?? []).length
-  assert.equal(projected, live.length, 'no live cluster is missing and no retired row is projected')
   const retired = registry.capabilityMatrix.filter((row) => row.status === 'deleted' || / (internalized|removals)$/.test(row.capabilityCluster))
   assert.ok(retired.length > 0, 'the registry still carries the retired bookkeeping rows')
+})
+
+test('the projected status follows the published paths, not the migration action', async () => {
+  const { buildRows } = await import('../scripts/capability-matrix-sync.mjs')
+  const member = (publicPath) => ({ publicPath, status: 'advanced', runtime: 'host', kind: 'leaf' })
+  const rows = buildRows({
+    members: [member('alpha.one')],
+    servicesWhitelist: [{ key: 'serviceA' }],
+    capabilityMatrix: [
+      { capabilityCluster: 'alpha', status: 'renamed', currentPaths: ['alpha.one'], targetPaths: ['alpha.one'], gapReason: null },
+      { capabilityCluster: 'beta', status: 'retained', currentPaths: [], targetPaths: ['beta.one', 'beta.two'], gapReason: 'the official seam has no dispatch point yet' },
+      { capabilityCluster: 'gamma', status: 'retained', currentPaths: [], targetPaths: [], gapReason: null },
+      { capabilityCluster: 'delta removals', status: 'deleted', currentPaths: ['delta.old'], targetPaths: [], gapReason: null },
+      { capabilityCluster: 'epsilon', status: 'retained', currentPaths: [], targetPaths: ['services.serviceA'], gapReason: null },
+    ],
+  })
+  const byName = new Map(rows.map((row) => [row.capabilityCluster, row]))
+  assert.deepEqual(byName.get('alpha'), { capabilityCluster: 'alpha', status: 'active', limitations: [], gapReason: null },
+    'a cluster whose designated paths are published is active whatever its migration action was')
+  assert.deepEqual(byName.get('beta'), { capabilityCluster: 'beta', status: 'unavailable', limitations: ['beta.one', 'beta.two'], gapReason: 'the official seam has no dispatch point yet' },
+    'a cluster whose designated paths are published nowhere carries the gap reason')
+  assert.equal(byName.has('gamma'), false, 'a row with no path evidence is not claimed as a current capability')
+  assert.equal(byName.has('delta removals'), false, 'the retired bookkeeping rows stay out of the runtime projection')
+  assert.equal(byName.get('epsilon').status, 'active', 'a whitelisted passthrough path counts as published')
 })
 
 test('validator rejects an unregistered policy member', () => {

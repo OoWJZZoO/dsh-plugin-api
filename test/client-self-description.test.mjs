@@ -1,5 +1,5 @@
 /**
- * Client self-description (Req 4.5 / Task 8.4).
+ * Client self-description.
  *
  * Every public namespace answers a frozen three-value `availability()`, and the
  * root `capabilities.*` query reads the same leaf state — a namespace is never
@@ -10,6 +10,7 @@ import assert from 'node:assert/strict'
 import { bootFixture, settleAll } from './official-passthrough-fixture.mjs'
 import { apply } from '../lib/client-runtime.js'
 import { CLIENT_CAPABILITY_PATHS } from '../lib/client-runtime.js'
+import { PluginApiCapabilityUnavailableError } from '../lib/errors.js'
 
 const STATUSES = ['active', 'degraded', 'unavailable']
 const SELF_DESCRIBING = ['connection', 'events', 'remotes', 'settings', 'slots', 'codec', 'lifecycle']
@@ -35,6 +36,33 @@ test('every self-describing client namespace answers a frozen three-value availa
     assert.equal(api.capabilities.get(name).status, api[name].availability().status, `${name}: the two views agree`)
   }
   assert.equal(api.capabilities.list().length, CLIENT_CAPABILITY_PATHS.length)
+  await dispose()
+})
+
+test('capabilities accept member-level client paths and refuse unknown members', async () => {
+  const { ctx } = bootFixture()
+  const dispose = apply(ctx)
+  const api = ctx.get('pluginApi')
+  await settleAll()
+
+  // A member-level path answers the same state as the namespace that owns it:
+  // the member has no separate lifecycle and is never reported active on its
+  // own account.
+  for (const [path, root] of [['slots.contribute', 'slots'], ['slots.declaration', 'slots'], ['remotes.observe', 'remotes'],
+    ['lifecycle.register', 'lifecycle'], ['lifecycle.observe', 'lifecycle'], ['codec.validate', 'codec'], ['settings.scope', 'settings']]) {
+    const descriptor = api.capabilities.get(path)
+    assert.equal(descriptor.capability, path, 'the query echoes the requested path')
+    assert.equal(descriptor.status, api[root].availability().status, `${path} answers the state of ${root}`)
+  }
+  // The roots stay addressable, and the inventory still enumerates them.
+  assert.equal(api.capabilities.list().length, CLIENT_CAPABILITY_PATHS.length)
+  assert.equal(api.capabilities.require(['slots.contribute', 'remotes.observe', 'codec.validate']), true)
+
+  // A path that is not a member of the namespace is refused rather than
+  // answered with the namespace's status.
+  for (const unknown of ['slots.not-a-member', 'connection.api.deep', 'nope', 'slots.contribute.deep', 'services.locale']) {
+    assert.throws(() => api.capabilities.get(unknown), PluginApiCapabilityUnavailableError, `${unknown} is not an addressable capability path`)
+  }
   await dispose()
 })
 

@@ -11,6 +11,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createFeatureRegistry } from '../lib/feature-registry.js'
 import { createPluginApiService } from '../lib/plugin-api-service.js'
+import { createDiagnosticsOwner } from '../lib/diagnostics.js'
 
 function createService() {
   const registry = createFeatureRegistry()
@@ -120,30 +121,53 @@ test('a stale handle never revokes the newer resource', () => {
   assert.equal(second.dispose().code, 'revoked')
 })
 
-test('a failing callback is contained to its own registration', () => {
+test('a failing check callback is contained to its own registration', async () => {
   const service = createService()
-  const containers = []
-  service.mountFeature('diagnostics', {
-    register: (spec, callerCtx) => {
-      const ownerId = callerCtx?.fiber?.name ?? 'root'
-      return {
-        id: spec.id,
-        ownerId,
-        dispose: () => ({ ok: true, code: 'revoked' }),
-      }
-    },
-    get: (id) => containers.find((entry) => entry.id === id),
-    observe: () => () => {},
-  })
+  // The real diagnostics owner: the facade is what invokes the contributed
+  // checks, so this is the boundary that has to contain a throwing callback.
+  const owner = createDiagnosticsOwner({ coreActive: () => true })
+  service.mountFeature('diagnostics', owner.api)
+  try {
+    const failing = plugin(service, 'plugin-a').diagnostics.register({
+      checkId: 'failing',
+      scope: 'host',
+      run() { throw new Error('plugin-a callback failed') },
+    })
+    const healthy = plugin(service, 'plugin-b').diagnostics.register({
+      checkId: 'healthy',
+      scope: 'host',
+      run: () => ({ health: 'healthy', availability: 'active', severity: 'info', blocking: 'non-blocking' }),
+    })
+    assert.equal(failing.ownerId, 'plugin-a')
+    assert.equal(healthy.ownerId, 'plugin-b')
+    await settle()
 
-  const failing = plugin(service, 'plugin-a').diagnostics.register({ id: 'failing' })
-  const healthy = plugin(service, 'plugin-b').diagnostics.register({ id: 'healthy' })
-  containers.push({ id: 'failing' }, { id: 'healthy' })
+    // The throwing check settles as a failed report instead of escaping the
+    // facade, and the other plugin's check keeps its own real result.
+    const view = service.diagnostics.get({ scope: 'host' })
+    const byCheck = new Map(view.checks.map((check) => [check.checkId, check]))
+    assert.equal(byCheck.get('failing').health, 'failed', 'the failing check is reported, not rethrown')
+    assert.equal(byCheck.get('failing').reason.code, 'probe-failed', 'the report names the probe failure')
+    assert.equal(byCheck.get('failing').ownerId, 'plugin-a')
+    assert.equal(byCheck.get('healthy').health, 'healthy', 'the healthy check keeps its own result')
+    assert.equal(byCheck.get('healthy').availability, 'active')
+    assert.equal(byCheck.get('healthy').ownerId, 'plugin-b')
 
-  // The failing plugin's callback throws; the healthy registration is untouched
-  // and stays readable through the public entry.
-  try { throw new Error('plugin-a callback failed') } catch { /* contained by the caller */ }
-  assert.equal(service.diagnostics.get('healthy').id, 'healthy')
-  assert.equal(healthy.dispose().code, 'revoked')
-  assert.equal(failing.ownerId, 'plugin-a')
+    // Unloading the failing plugin leaves the healthy registration readable and
+    // releasable: containment is per registration, not per scope.
+    assert.equal(failing.dispose().code, 'revoked')
+    await settle()
+    const afterRelease = service.diagnostics.get({ scope: 'host' })
+    const remaining = afterRelease.checks.filter((check) => check.checkId !== 'plugin-api-facade').map((check) => check.checkId)
+    assert.deepEqual(remaining, ['healthy'], 'only the released check is gone')
+    assert.equal(afterRelease.state, 'healthy', 'the scope state follows the surviving check')
+    assert.equal(healthy.dispose().code, 'revoked')
+  } finally {
+    owner.dispose()
+  }
 })
+
+async function settle() {
+  await new Promise((resolve) => setImmediate(resolve))
+  await new Promise((resolve) => setImmediate(resolve))
+}

@@ -1,5 +1,5 @@
 /**
- * Member-level capability self-description sweep (Req 10, Task 5).
+ * Member-level capability self-description sweep.
  *
  * Every capability namespace the registry records must publish an availability
  * member that is a `selfDescription` leaf, must be reachable through the

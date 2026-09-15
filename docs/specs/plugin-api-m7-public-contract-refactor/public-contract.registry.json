@@ -345,7 +345,7 @@
       "availabilityShape": "none",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "capabilityMatrix() reports the current capability clusters with their current status and limitation / gap reasons; it carries no migration bookkeeping (rename / merge / migrate / delete / internalize stay in the registry registration face)",
+      "currentShape": "capabilityMatrix() reports one row per current capability cluster as { capabilityCluster, status, limitations, gapReason }: the status is derived from the paths the facade actually publishes today (active / degraded / unavailable), the limitations name the designated paths that are not published, and the gap reason explains an unavailable cluster; migration bookkeeping (rename / merge / migrate / delete / internalize) stays in the registry registration face",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -10668,7 +10668,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "settings.scope(spec) is the same call pattern the host namespace offers; the client answers the official settings scope object verbatim (the browser-side settings service owns that binding) rather than a facade handle, an environment difference registered as such",
+      "currentShape": "scope binding query returning the scope handle the facade registered for that namespace; an unknown namespace is refused with the typed namespace error instead of a fresh binding",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -12021,7 +12021,7 @@
       "availabilityShape": "none",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "status object per capability path",
+      "currentShape": "capabilities.get(path) answers the frozen { capability, status } descriptor for a namespace root or a member-level path (namespace plus one member that exists on that namespace live surface); an unknown path is refused with the typed capability-unavailable error instead of inheriting a status, and the status is the namespace own three-value state, never an object-existence claim",
       "migrationAction": null,
       "status": "recommended",
       "verification": [
@@ -12054,7 +12054,7 @@
       "availabilityShape": "none",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "frozen path list",
+      "currentShape": "capabilities.list({prefix}) returns the frozen namespace-root inventory, filterable by prefix; member-level paths are addressable through get/require and are inventoried by the published contract registry",
       "migrationAction": null,
       "status": "recommended",
       "verification": [
@@ -12087,7 +12087,7 @@
       "availabilityShape": "none",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "typed throw on missing",
+      "currentShape": "capabilities.require(paths) accepts the same root and member-level paths, answers true when every path is available or degraded, and throws the typed capability-unavailable error naming the first unavailable path",
       "migrationAction": null,
       "status": "recommended",
       "verification": [
@@ -12780,7 +12780,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "scope binding returning official scope",
+      "currentShape": "scope(spec) binds the official settings scope from the spec and answers the official scope object verbatim (the browser-side settings service owns that binding); a malformed spec is refused with a typed TypeError, and the host/client shape difference here is an environment difference registered as such",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -13711,6 +13711,39 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "codec.validate",
+      "targetPath": "codec.validate",
+      "capability": "client.codec",
+      "kind": "leaf",
+      "idiom": "resourceRegistry",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "client codec authority",
+      "scope": "facade",
+      "resourceKey": "invocation descriptor",
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "pure read; no lifetime",
+      "failureSemantics": "typed-throw",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "codec.validate(descriptor) is the pure direct-invocation validator: it answers true for a descriptor built from this bundle strict codecs and throws a typed TypeError for a malformed one; it registers nothing and holds no state",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -15484,17 +15517,17 @@
       "scope": "facade",
       "resourceKey": "task id",
       "identitySource": "parent handle generation",
-      "conflictRule": "fencing",
-      "lifecycle": "claim validates an input lease credential; the claim result is the task operation outcome, not a returned lease handle; lease give-back is the release(handle) verb",
+      "conflictRule": null,
+      "lifecycle": "no handle lifecycle: the member mints no handle; the lease give-back verb is release(handle)",
       "failureSemantics": "discriminated-result",
-      "idempotency": "release-idempotent",
+      "idempotency": null,
       "retryLayer": "operation",
       "availabilityShape": "namespace availability()",
       "concurrency": "exclusive",
       "reducer": "none",
-      "currentShape": "the acquisition answers the frozen discriminated result carrying the attempt identity and its lease generation (action: claim); the lease expires on its own and release is idempotent, and the durable task/attempt identity is read through tasks.get / tasks.observe rather than a handle",
-      "migrationAction": null,
-      "status": "advanced",
+      "currentShape": "no handle exists: the acquisition answers the frozen discriminated result carrying the attempt identity and its lease generation (action: claim), the lease expires on its own and release is idempotent, and the durable task/attempt identity is read through tasks.get / tasks.observe rather than a handle",
+      "migrationAction": "delete",
+      "status": "removed",
       "verification": [
         "member-inventory",
         "registry-validation"
@@ -17160,6 +17193,39 @@
       ]
     },
     {
+      "publicPath": "attention.availability",
+      "targetPath": "attention.availability",
+      "capability": "client.attention",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "attention hub (host)",
+      "scope": "facade",
+      "resourceKey": null,
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "leaf",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
       "publicPath": "executions.recovery.checkpoints.create",
       "targetPath": "executions.recovery.checkpoints.create",
       "capability": "executions.recovery.checkpoints",
@@ -17871,6 +17937,39 @@
       ]
     },
     {
+      "publicPath": "sessions.availability",
+      "targetPath": "sessions.availability",
+      "capability": "client.sessions",
+      "kind": "leaf",
+      "idiom": "selfDescription",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "session authority",
+      "scope": "session",
+      "resourceKey": "session id",
+      "identitySource": "caller plugin context",
+      "conflictRule": "not-applicable",
+      "lifecycle": "facade lifetime",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "frozen { status }",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "the namespace answers a zero-argument availability() returning the frozen three-value descriptor { status: active | degraded | unavailable, reason? }; the status is a field of the descriptor, never a success flag",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
       "publicPath": "sessions.interactions",
       "targetPath": "sessions.interactions",
       "capability": "sessions.interactions",
@@ -18236,6 +18335,72 @@
       ]
     },
     {
+      "publicPath": "lifecycle.observe",
+      "targetPath": "lifecycle.observe",
+      "capability": "client.lifecycle",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "subscribe",
+      "composition": "additive",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "client lifecycle authority",
+      "scope": "facade",
+      "resourceKey": "registered id",
+      "identitySource": "caller plugin context",
+      "conflictRule": "not-applicable",
+      "lifecycle": "observation handle; released by dispose() or by the caller fiber unload",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "lifecycle.observe() answers the standard observation handle { current(), subscribe(listener), dispose(), epoch }; current() reads the same frozen face set as lifecycle.list(), subscribe() delivers the face changes and rebind transitions the former change/rebind subscriptions carried, and epoch is the change epoch captured when the observation was created",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "lifecycle.list",
+      "targetPath": "lifecycle.list",
+      "capability": "client.lifecycle",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "additive",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "client lifecycle authority",
+      "scope": "facade",
+      "resourceKey": "registered id",
+      "identitySource": "caller plugin context",
+      "conflictRule": "not-applicable",
+      "lifecycle": "read-time snapshot; valid for the read only",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "deduplicate",
+      "reducer": "none",
+      "currentShape": "lifecycle.list() returns the frozen face snapshot list; an inactive facade answers an empty frozen list rather than throwing",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
       "publicPath": "slots.contribute",
       "targetPath": "slots.contribute",
       "capability": null,
@@ -18302,6 +18467,39 @@
       ]
     },
     {
+      "publicPath": "slots.declaration",
+      "targetPath": "slots.declaration",
+      "capability": null,
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "additive",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "slot assembly authority",
+      "scope": "facade",
+      "resourceKey": "slot name",
+      "identitySource": "caller plugin context",
+      "conflictRule": "not-applicable",
+      "lifecycle": "read-time snapshot; valid for the read only",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "deduplicate",
+      "reducer": "none",
+      "currentShape": "slots.declaration(key) returns the frozen declaration view { key, status: declared | missing | unavailable, spec?, specDynamic?, declarationEpoch?, snapshot?, entries }; the official declaration facts are cloned read-only and appear only when the official service exposes them, and status separates a key the runtime declares, a key the runtime declares nothing for, and a runtime that cannot answer",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
       "publicPath": "slots.observe",
       "targetPath": "slots.observe",
       "capability": null,
@@ -18319,14 +18517,14 @@
       "resourceKey": "slot name",
       "identitySource": "caller plugin context",
       "conflictRule": "not-applicable",
-      "lifecycle": "subscription until unsubscribed or the owner unloads",
+      "lifecycle": "observation handle; released by dispose() or by the caller fiber unload",
       "failureSemantics": "discriminated-result",
       "idempotency": "not idempotent",
       "retryLayer": null,
       "availabilityShape": "namespace availability()",
       "concurrency": "deduplicate",
       "reducer": "none",
-      "currentShape": "slots.observe(event, listener) subscribes through the official slots change notification (the event must be the slots/changed channel) and answers its unsubscribe function",
+      "currentShape": "slots.observe(event) answers the standard observation handle { current(), subscribe(listener), dispose(), epoch }: only the slots/changed channel is observable, current() is the most recent changed key, the native slot change source is bound for the handle lifetime and released by dispose(), and a namespace without its official slots service refuses the entry with the typed namespace state instead of handing out an observation that can never deliver",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -18426,6 +18624,72 @@
       "concurrency": "deduplicate",
       "reducer": "none",
       "currentShape": "remotes.contribute(contribution) answers the frozen discriminated result { ok, code, handle } carrying the pending contribution handle { id, ownerId, seq, status(), dispose() }; status() reports pending | active | failed | revoked and a settlement that lands after a withdrawal is rolled back",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "remotes.observe",
+      "targetPath": "remotes.observe",
+      "capability": null,
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "subscribe",
+      "composition": "additive",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "remote event gateway authority",
+      "scope": "facade",
+      "resourceKey": "forwarded event name",
+      "identitySource": "caller plugin context",
+      "conflictRule": "not-applicable",
+      "lifecycle": "observation handle; released by dispose() or by the caller fiber unload",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "deduplicate",
+      "reducer": "none",
+      "currentShape": "remotes.observe(event) answers the standard observation handle { current(), subscribe(listener), dispose(), epoch } for one forwarded remote event; the gateway allowlist decides admission (an event the gateway does not forward is refused, never silently subscribed), current() is the most recent delivered payload, and a delivery carrying more than one argument is published as the argument tuple",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ]
+    },
+    {
+      "publicPath": "remotes.dispatch",
+      "targetPath": "remotes.dispatch",
+      "capability": null,
+      "kind": "leaf",
+      "idiom": "operation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "execute",
+      "composition": "exclusive",
+      "runtime": "client",
+      "implementationChannel": "facade",
+      "authority": "remote event gateway authority",
+      "scope": "facade",
+      "resourceKey": "forwarded event name",
+      "identitySource": null,
+      "conflictRule": "not-applicable",
+      "lifecycle": "one dispatch has no independent operation identity and is never retried; the gateway owns dispatch eligibility and listener iteration",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "not-idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": "deduplicate",
+      "reducer": "none",
+      "currentShape": "remotes.dispatch(event, args) hands the frame to the official host-frame carrier and answers the frozen discriminated result { ok, code: dispatched | error, outcome?, reason? }: the official outcome rides outcome, a refusing carrier is reported as a typed code rather than thrown, and a malformed argument list is refused before anything is sent",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -22316,6 +22580,18 @@
       "targetPath": "workspaces.transactions.availability",
       "action": "retain",
       "relation": "the transactions sub-namespace answers its own availability probe"
+    },
+    {
+      "oldPath": "tasks.acquire.handle",
+      "targetPath": null,
+      "action": "delete",
+      "relation": "retired: the claim answers the task operation outcome and mints no lease handle; the durable identity is read through tasks.get and tasks.observe"
+    },
+    {
+      "oldPath": "connection.get",
+      "targetPath": "connection.api.settings",
+      "action": "rename",
+      "relation": "the settings accessor is registered as a namespace under connection.api, symmetric with connection.api.llm"
     }
   ],
   "deletionReport": [
@@ -22598,7 +22874,8 @@
     "sessions.isSessionEventType": "removed",
     "sessions.isSurfaceEventType": "removed",
     "sessions.sessionEventTypes": "removed",
-    "sessions.surfaceEventTypes": "removed"
+    "sessions.surfaceEventTypes": "removed",
+    "connection.get": "removed"
   },
   "inventory": {
     "completedAt": "Task 1.4, Stage 4",
@@ -23129,8 +23406,8 @@
       "contributingFeatures": [
         "client-attention-contribution"
       ],
-      "availabilityMember": null,
-      "availabilityExemption": "client root availability()"
+      "availabilityMember": "attention.availability",
+      "availabilityExemption": null
     },
     {
       "namespace": "executions.recovery.checkpoints",
@@ -23149,8 +23426,8 @@
       "contributingFeatures": [
         "session-interaction-operation"
       ],
-      "availabilityMember": null,
-      "availabilityExemption": "client root availability()"
+      "availabilityMember": "sessions.availability",
+      "availabilityExemption": null
     },
     {
       "namespace": "sessions.interactions",
@@ -24802,8 +25079,8 @@
       ],
       "targetPaths": [
         "connection.api.llm",
+        "connection.api.settings",
         "connection.availability",
-        "connection.get",
         "connection.rpc.call"
       ],
       "status": "renamed",
@@ -24925,6 +25202,7 @@
       "targetPaths": [
         "slots.availability",
         "slots.contribute",
+        "slots.declaration",
         "slots.list",
         "slots.observe"
       ],
@@ -25242,8 +25520,12 @@
     },
     {
       "capabilityCluster": "sessions.activity.attempt-facts",
-      "currentPaths": [],
-      "targetPaths": [],
+      "currentPaths": [
+        "sessions.activity.observe"
+      ],
+      "targetPaths": [
+        "sessions.activity.observe"
+      ],
       "status": "retained",
       "qualifiers": [
         "split"
@@ -25262,8 +25544,14 @@
     },
     {
       "capabilityCluster": "sessions.request",
-      "currentPaths": [],
-      "targetPaths": [],
+      "currentPaths": [
+        "sessions.cancel",
+        "sessions.request"
+      ],
+      "targetPaths": [
+        "sessions.cancel",
+        "sessions.request"
+      ],
       "status": "retained",
       "qualifiers": [],
       "replacement": null,
@@ -25278,8 +25566,12 @@
     },
     {
       "capabilityCluster": "sessions.cancel",
-      "currentPaths": [],
-      "targetPaths": [],
+      "currentPaths": [
+        "sessions.cancel"
+      ],
+      "targetPaths": [
+        "sessions.cancel"
+      ],
       "status": "retained",
       "qualifiers": [],
       "replacement": null,
@@ -25295,8 +25587,26 @@
     },
     {
       "capabilityCluster": "attention",
-      "currentPaths": [],
-      "targetPaths": [],
+      "currentPaths": [
+        "attention.availability",
+        "attention.contribute",
+        "attention.current",
+        "attention.dismiss",
+        "attention.invoke",
+        "attention.list",
+        "attention.observe",
+        "attention.observe.handle"
+      ],
+      "targetPaths": [
+        "attention.availability",
+        "attention.contribute",
+        "attention.current",
+        "attention.dismiss",
+        "attention.invoke",
+        "attention.list",
+        "attention.observe",
+        "attention.observe.handle"
+      ],
       "status": "retained",
       "qualifiers": [],
       "replacement": null,
@@ -25311,8 +25621,22 @@
     },
     {
       "capabilityCluster": "executions.recovery.checkpoints",
-      "currentPaths": [],
-      "targetPaths": [],
+      "currentPaths": [
+        "executions.recovery.checkpoints.availability",
+        "executions.recovery.checkpoints.create",
+        "executions.recovery.checkpoints.inspect",
+        "executions.recovery.checkpoints.list",
+        "executions.recovery.checkpoints.planRestore",
+        "executions.recovery.checkpoints.restore"
+      ],
+      "targetPaths": [
+        "executions.recovery.checkpoints.availability",
+        "executions.recovery.checkpoints.create",
+        "executions.recovery.checkpoints.inspect",
+        "executions.recovery.checkpoints.list",
+        "executions.recovery.checkpoints.planRestore",
+        "executions.recovery.checkpoints.restore"
+      ],
       "status": "retained",
       "qualifiers": [],
       "replacement": null,
@@ -25327,8 +25651,12 @@
     },
     {
       "capabilityCluster": "executions.recovery.checkpoints.capture.branch",
-      "currentPaths": [],
-      "targetPaths": [],
+      "currentPaths": [
+        "executions.recovery.checkpoints.create"
+      ],
+      "targetPaths": [
+        "executions.recovery.checkpoints.create"
+      ],
       "status": "retained",
       "qualifiers": [],
       "replacement": null,
@@ -25343,8 +25671,12 @@
     },
     {
       "capabilityCluster": "executions.recovery.checkpoints.capture.workspace-journal",
-      "currentPaths": [],
-      "targetPaths": [],
+      "currentPaths": [
+        "executions.recovery.checkpoints.create"
+      ],
+      "targetPaths": [
+        "executions.recovery.checkpoints.create"
+      ],
       "status": "retained",
       "qualifiers": [],
       "replacement": null,
@@ -25359,8 +25691,12 @@
     },
     {
       "capabilityCluster": "executions.recovery.checkpoints.capture.workspace-snapshot",
-      "currentPaths": [],
-      "targetPaths": [],
+      "currentPaths": [
+        "executions.recovery.checkpoints.create"
+      ],
+      "targetPaths": [
+        "executions.recovery.checkpoints.create"
+      ],
       "status": "retained",
       "qualifiers": [],
       "replacement": null,
@@ -25375,8 +25711,12 @@
     },
     {
       "capabilityCluster": "executions.recovery.checkpoints.restore",
-      "currentPaths": [],
-      "targetPaths": [],
+      "currentPaths": [
+        "executions.recovery.checkpoints.restore"
+      ],
+      "targetPaths": [
+        "executions.recovery.checkpoints.restore"
+      ],
       "status": "retained",
       "qualifiers": [],
       "replacement": null,
@@ -25391,8 +25731,12 @@
     },
     {
       "capabilityCluster": "executions.recovery.checkpoints.restore.stop-then-restore",
-      "currentPaths": [],
-      "targetPaths": [],
+      "currentPaths": [
+        "executions.recovery.checkpoints.restore"
+      ],
+      "targetPaths": [
+        "executions.recovery.checkpoints.restore"
+      ],
       "status": "retained",
       "qualifiers": [],
       "replacement": null,
@@ -25407,8 +25751,32 @@
     },
     {
       "capabilityCluster": "client.sessions",
-      "currentPaths": [],
-      "targetPaths": [],
+      "currentPaths": [
+        "sessions",
+        "sessions.availability",
+        "sessions.cancel",
+        "sessions.interactions.availability",
+        "sessions.interactions.get",
+        "sessions.interactions.list",
+        "sessions.interactions.respond",
+        "sessions.request",
+        "sessions.selection.availability",
+        "sessions.selection.get",
+        "sessions.selection.set"
+      ],
+      "targetPaths": [
+        "sessions",
+        "sessions.availability",
+        "sessions.cancel",
+        "sessions.interactions.availability",
+        "sessions.interactions.get",
+        "sessions.interactions.list",
+        "sessions.interactions.respond",
+        "sessions.request",
+        "sessions.selection.availability",
+        "sessions.selection.get",
+        "sessions.selection.set"
+      ],
       "status": "retained",
       "qualifiers": [],
       "replacement": null,
@@ -25423,8 +25791,28 @@
     },
     {
       "capabilityCluster": "client.attention",
-      "currentPaths": [],
-      "targetPaths": [],
+      "currentPaths": [
+        "attention",
+        "attention.availability",
+        "attention.contribute",
+        "attention.current",
+        "attention.dismiss",
+        "attention.invoke",
+        "attention.list",
+        "attention.observe",
+        "attention.observe.handle"
+      ],
+      "targetPaths": [
+        "attention",
+        "attention.availability",
+        "attention.contribute",
+        "attention.current",
+        "attention.dismiss",
+        "attention.invoke",
+        "attention.list",
+        "attention.observe",
+        "attention.observe.handle"
+      ],
       "status": "retained",
       "qualifiers": [],
       "replacement": null,

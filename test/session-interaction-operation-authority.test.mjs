@@ -1,7 +1,7 @@
 /**
  * Authority tests for the single session request operation owner.
  *
- * Covers Requirements 1–6, 8, 10 acceptance behaviors: outcome vocabulary,
+ * Covers the acceptance behaviors: outcome vocabulary,
  * dedupe/already-running, admission/append failure paths, handle lifecycle,
  * cancel-as-signal and adjudication (pending / live / superseded / stale),
  * activity correlation on attempt facts, availability and bounded audit.
@@ -74,7 +74,7 @@ test('accepted request returns a frozen discriminated outcome with a handle and 
   assert.equal(out.activity.executionId.slice(0, 3), 'ex_')
   // No projection reader is wired in this standalone fixture: the projection
   // is unreachable, so the correlation says `unavailable` rather than
-  // pretending evidence was awaited from a healthy source (Requirement 6).
+  // pretending evidence was awaited from a healthy source.
   assert.equal(out.activity.confidence, 'unavailable')
   assert.equal(out.activity.activityId, null)
   assert.ok(Object.isFrozen(out))

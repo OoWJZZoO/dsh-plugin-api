@@ -10,6 +10,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { apply } from '../lib/index.js'
+import { PluginApiSettingsNamespaceError } from '../lib/errors.js'
 import { PluginApiFeatureDisabledError, PluginApiInactiveError, PluginApiServiceUnavailableError } from '../lib/errors.js'
 
 function createMockCtx(options = {}) {
@@ -341,6 +342,22 @@ test('integrated settings facade keeps document members under services.settings'
     assert.equal(outcome.ok, true)
     assert.equal(outcome.code, 'committed')
     assert.equal(outcome.commitState, 'committed')
+  }
+  // A write the official authority refuses for an unknown namespace is the
+  // caller's input error: it keeps its own code instead of collapsing into the
+  // generic error outcome, and the refusal is reported rather than thrown.
+  const update = ctx.get('settings').update
+  ctx.get('settings').update = () => {
+    throw new PluginApiSettingsNamespaceError('unregistered-namespace')
+  }
+  try {
+    const refused = settings.update('unregistered-namespace', { patch: 1 })
+    assert.ok(Object.isFrozen(refused))
+    assert.equal(refused.ok, false)
+    assert.equal(refused.code, 'invalid-input')
+    assert.equal(typeof refused.reason, 'string')
+  } finally {
+    ctx.get('settings').update = update
   }
   // Existing settings registration surface stays intact.
   assert.equal(typeof settings.register, 'function')

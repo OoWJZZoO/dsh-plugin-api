@@ -1,7 +1,7 @@
 /**
  * Client-face tests for the session request/cancel operation.
  *
- * Covers Requirement 9: same-shaped typed outcomes over the transport, offline
+ * Covers same-shaped typed outcomes over the transport, offline
  * / rebind typed unavailable, no silent queue/drop, stale generation guards,
  * host-side redaction assumption (client validates shape only) and client
  * availability that never affects the host authority.

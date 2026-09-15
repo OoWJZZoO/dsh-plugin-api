@@ -100,4 +100,19 @@ test('a runtime that cannot answer declares the key unknowable instead of guessi
     slots: { register() { return () => {} }, inject() {}, subscribe() {}, entries: (key) => (key === 'details' ? [{ name: 'one' }] : []) },
   })
   assert.equal(withEntries.declaration('details').status, 'declared', 'occupied entries prove a declaration exists')
+
+  // A declaration accessor that throws is a runtime that cannot answer, not a
+  // runtime that answered "nothing is declared for this key".
+  const failing = createClientSlots({
+    slots: {
+      register() { return () => {} },
+      inject() {},
+      subscribe() {},
+      entries: () => [],
+      spec() { throw new Error('declaration source is broken') },
+    },
+  })
+  assert.equal(failing.declaration('details').status, 'unavailable', 'a throwing declaration query is unknowable, never "missing"')
+  assert.equal('spec' in failing.declaration('details'), false, 'a failed query contributes no official fact')
+  assert.equal(failing.list('details').status, 'unavailable', 'the list view carries the same status')
 })

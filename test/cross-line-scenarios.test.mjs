@@ -3,9 +3,9 @@
  *
  * The delivered lines each ship their own single-line evidence; these scenarios
  * run *combinations* of them through public entries inside one test, which is
- * what the convergence line owes (Req 5: single-line acceptance does not stand
- * in for combination acceptance). Every scenario keeps the evidence discipline
- * of Task 4: real public entries, at least one real boundary (durable write,
+ * what the convergence line owes: single-line acceptance does not stand in for
+ * combination acceptance. Every scenario keeps the evidence discipline: real
+ * public entries, at least one real boundary (durable write,
  * official authority, wire projection), official-side doubles only where the
  * delivering line's own kit already uses them.
  *

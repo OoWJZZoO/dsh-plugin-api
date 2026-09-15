@@ -482,7 +482,7 @@ test('stale bind settlement is cleaned without publishing as current or touching
   let secondCleanup = 0
   const notifications = []
   const { lifecycle } = createLifecycle(fixture)
-  lifecycle.api.observe((notification) => notifications.push(notification))
+  lifecycle.api.observe().subscribe((notification) => notifications.push(notification))
   const handle = lifecycle.api.register(remoteRegistration('face', 'owner', () => {
     bindCount += 1
     if (bindCount === 1) return firstGate.promise.then(() => () => { firstCleanup += 1 })
@@ -648,9 +648,9 @@ test('listener, subscriber, disposer and diagnostic failures remain contained', 
     logger: { error(message) { logs.push(message) } },
     publishDiagnostic() { throw new Error('diagnostic sink failed') },
   })
-  lifecycle.api.observe(() => { throw new Error('listener failed') })
-  lifecycle.api.observe(() => Promise.reject(new Error('listener rejected')))
-  lifecycle.api.observe(() => { throw new Error('rebind listener failed') })
+  lifecycle.api.observe().subscribe(() => { throw new Error('listener failed') })
+  lifecycle.api.observe().subscribe(() => Promise.reject(new Error('listener rejected')))
+  lifecycle.api.observe().subscribe(() => { throw new Error('rebind listener failed') })
   const first = lifecycle.api.register(remoteRegistration('first', 'owner', () => () => { throw new Error('cleanup failed') }))
   const second = lifecycle.api.register(remoteRegistration('second', 'owner', () => () => {}, { remote: { namespace: 'other' } }))
   await tick()

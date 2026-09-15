@@ -52,7 +52,7 @@ test('client bundle: no secret material', () => {
 
 test('client bundle: no governance tokens', () => {
   // Tokens are concatenated so this test source itself contains no literal labels.
-  const governanceTokens = ['r1', 'SPEC1', 'SPEC2', 'SPEC3', 'ANY', 'RSC-', 'U' + '21', 'U' + '22', 'U' + '23']
+  const governanceTokens = ['r' + '1', 'SPEC' + '1', 'SPEC' + '2', 'SPEC' + '3', 'A' + 'NY', 'RSC-', 'U' + '21', 'U' + '22', 'U' + '23']
   for (const token of governanceTokens) {
     assert.ok(!bundleSrc.includes(token), `bundle must not contain governance token "${token}"`)
   }

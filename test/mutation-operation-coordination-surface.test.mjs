@@ -67,6 +67,7 @@ test('mutation writes return frozen discriminated results with commit state', as
   assert.equal(typeof api.settings.mutate, 'function')
   assert.equal(typeof api.settings.update, 'function')
   assert.equal(typeof api.settings.replace, 'function')
+
 })
 
 test('coordination outcomes stay discriminated with the closed code vocabulary and handle shape', async () => {

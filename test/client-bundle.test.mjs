@@ -193,8 +193,8 @@ function leafState(api) {
   state.remoteContribution = probeContribution(() => api.remotes.contribute({ package: 'probe', descriptors: [] }))
   state.settingsScope = probe(() => api.settings.scope({ namespace: 'probe' }))
   state.slots = probeContribution(() => api.slots.contribute({ name: 'details' }))
-  state.remoteEvents = probe(() => api.remotes.observe('probe', () => {}))
-  state.slotEvents = typeof api.slots.observe === 'function'
+  state.remoteEvents = probe(() => api.remotes.observe('llm/adapters-updated'))
+  state.slotEvents = probe(() => api.slots.observe('slots/changed'))
   state.settingsRemote = typeof api.settings.remote.contribute === 'function'
   return state
 }
@@ -205,7 +205,7 @@ test('missing an optional browser service disables only its owning leaf while th
     { service: 'connection', leaf: 'connection' },
     { service: 'remote', leaf: 'remoteContribution', extraDisabled: ['remoteEvents'] },
     { service: 'settingsScope', leaf: 'settingsScope' },
-    { service: 'slots', leaf: 'slots' },
+    { service: 'slots', leaf: 'slots', extraDisabled: ['slotEvents'] },
   ]
   for (const { service, leaf, extraDisabled = [] } of cases) {
     const ctx = createCtx({ omit: [service] })
@@ -230,7 +230,7 @@ test('malformed or throwing optional services also disable only the owning leaf'
     connection: ['connection'],
     remote: ['remoteContribution', 'remoteEvents'],
     settingsScope: ['settingsScope'],
-    slots: ['slots'],
+    slots: ['slots', 'slotEvents'],
   }
   for (const [service, value] of Object.entries(malformed)) {
     const ctx = createCtx()

@@ -1,5 +1,5 @@
 /**
- * Assembly and compatibility acceptance (Req 11, Task 6).
+ * Assembly and compatibility acceptance.
  *
  * The whole-tree convergence owes evidence that the two supported installation
  * modes assemble the same thing, that removing a replacement package restores

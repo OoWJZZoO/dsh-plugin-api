@@ -37,7 +37,7 @@ const IDIOM_ENTRY_VERBS = Object.freeze({ policy: 'register', resourceRegistry: 
  * and the codec member leaves. Listed explicitly so a new non-entry leaf has to
  * be reviewed here instead of slipping through.
  */
-const IDIOM_ENTRY_ALLOWANCES = new Set(['events.define', 'tools.defineTool', 'codec.json', 'codec.strict', 'codec.invocation'])
+const IDIOM_ENTRY_ALLOWANCES = new Set(['events.define', 'tools.defineTool', 'codec.json', 'codec.strict', 'codec.invocation', 'codec.validate'])
 const MEMBER_FIELDS = [
   'publicPath', 'targetPath', 'capability', 'kind', 'idiom', 'idiomExceptions', 'eventSemantics',
   'semanticFace', 'effect', 'composition', 'runtime', 'implementationChannel', 'authority', 'scope',
