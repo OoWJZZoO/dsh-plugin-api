@@ -8846,7 +8846,7 @@
           "baseContract": "resourceRegistry",
           "exception": "the registration answers a discriminated result carrying the durable task identity instead of a typed throw plus a handle",
           "reason": "the registered record is durable and outlives the process, so an in-memory handle would claim a lifetime the record does not have; the identity is the taskId, read back through tasks.get and tasks.observe, and the registration is idempotent for identical immutable metadata and a typed identity conflict otherwise",
-          "replacementShape": "frozen discriminated result { ok:true, code:\"registered\", taskId, action:\"register\", task, idempotent? } on success, or a frozen refusal { ok:false, code:\"invalid-input\" | \"identity-conflict\" | \"inactive\", taskId?, reason? }",
+          "replacementShape": "frozen discriminated result { ok:true, code:\"registered\", taskId, action:\"register\", task, idempotent? } on success, or a frozen refusal { ok:false, code:\"invalid-input\" | \"identity-conflict\" | \"inactive\" | \"unavailable\", taskId?, reason?, observed? } where an identity conflict reports the observed state it conflicted with",
           "verification": "task execution lifecycle suites assert the registration result fields, the idempotent replay and the identity-conflict refusal"
         }
       ],
@@ -17336,7 +17336,7 @@
           "baseContract": "projection",
           "exception": "verb-name-exception",
           "reason": "planRestore is the pre-announced plan verb of the checkpoints contract; the closed projection verb list (get/list/inspect/current/history/observe) is not extended, the plan shape is a pure frozen projection",
-          "replacementShape": "frozen plan { steps, fingerprint, per-slice restoreability, external-effects, anchorStatus } | typed unavailable",
+          "replacementShape": "frozen plan { checkpointId, generatedAt, epoch, fingerprint, slices, liveState, stopThenRestore, claims, externalEffects, overallRestoreability } | typed unavailable; each slice carries its steps with the owning authority's expected effect, its restoreability verdict and the bounded reasons (an unconfirmed anchor appears there, not as a plan field)",
           "verification": "surface-consistency"
         }
       ],
