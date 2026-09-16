@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { createChannelRpcDispatch, createChannelRemoteNamespace, attachGatewaySlices } from '../lib/slices.js'
 import { CONTRACT_SYMBOL, CODE_INTERNAL } from '../lib/shared-vocab.js'
 
-test('channel RPC: isChannelMethod recognizes all five endpoints', () => {
+test('channel RPC: isChannelMethod recognizes the channel endpoints', () => {
   const rpc = createChannelRpcDispatch({ connection: { rpc: { handle() {} } } })
   assert.ok(rpc.isChannelMethod('sessionChannel/open'))
   assert.ok(rpc.isChannelMethod('sessionChannel/subscribe'))
