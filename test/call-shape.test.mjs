@@ -15,13 +15,16 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { apply } from '../lib/index.js'
+import { apply, mountSessionRouteFeature } from '../lib/index.js'
 
 const REGISTRY_PATH = new URL('../docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json', import.meta.url)
 const registry = JSON.parse(readFileSync(REGISTRY_PATH, 'utf8'))
 
 function createHarness() {
   const services = {
+    // A live storage facility: the facade's storage binding needs a domain to
+    // publish its own (in-repo) members instead of the disabled surface.
+    storage: { domain: { open() { return Promise.resolve({ store: {} }) } } },
     llm: { resolveModelInfo() {}, prepareCall() {}, stream() {}, registerAdapter() {}, registerConfigurableProviders() {}, registerModelDiscovery() {} },
     tools: { register() {}, restrict() { return () => {} }, guard() { return () => {} }, get() {}, schemas() { return [] }, execute() {}, presentAs() {} },
     agents: { get() {}, list() {}, roots() {} },
@@ -43,6 +46,14 @@ function createHarness() {
     model() { return { name: 'x' } },
     runtime: { name: 'test', version: '0.1.0-rc.6' },
   }
+  // The routing plane's own owner (session route) mounts on top of the facade,
+  // so `llm.routing.*` is published by its in-repo implementation.
+  mountSessionRouteFeature({
+    ctx,
+    service: state.pluginApi,
+    featureRegistry: { isActive: () => false, mount() {} },
+    logger: { warn() {} },
+  })
   return { ctx, state }
 }
 
@@ -67,12 +78,37 @@ function resolveMember(root, path) {
  * the owning implementation and recorded in the delivery ledger; asserting it
  * against a harness stub would only re-echo the stub.
  */
-const OWNER_BACKED_ROOTS = new Set([
-  'llm', 'tools', 'sessions', 'settings', 'agents', 'web', 'apiProxy',
-  'credentials', 'workflows', 'profiles', 'storage', 'remotes', 'mcp',
-  'attachments', 'skills', 'services',
-])
+const OFFICIAL_SEAM_ROOTS = new Set(['llm', 'tools', 'sessions', 'settings', 'agents', 'web', 'apiProxy'])
 
+/**
+ * Families under those roots whose owner is implemented in this repo: their
+ * members are published by in-repo code (the facade itself or a module it
+ * mounts), so the harness below observes the real implementation and the
+ * declaration is asserted. Everything else under the official-seam roots hands
+ * the call to an official runtime service this workspace cannot stand up, and
+ * the replacement-backed families stay disabled here, so both are collected as
+ * unobservable instead.
+ */
+const IN_REPO_PREFIXES = [
+  'llm.routing', 'sessions.channels', 'sessions.activity', 'sessions.planMode',
+  'sessions.permissionPresets', 'sessions.views', 'sessions.durable', 'sessions.selection',
+  'sessions.interactions', 'sessions.compaction',
+  'settings.register', 'settings.scope', 'settings.inspect',
+]
+
+function isUnobservableFamily(path) {
+  const root = path.split('.')[0]
+  if (!OFFICIAL_SEAM_ROOTS.has(root)) return false
+  return !IN_REPO_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}.`))
+}
+
+/**
+ * Observe one member's answer. A promise answer is direct evidence of `async`
+ * and a direct answer is evidence of `sync`; a synchronous refusal is *not*
+ * evidence either way (a member may refuse invalid input synchronously and
+ * still answer a promise on its success path), and a disabled surface reports
+ * nothing about the live shape.
+ */
 function observeShape(value, receiver) {
   try {
     const returned = value.call(receiver)
@@ -82,10 +118,33 @@ function observeShape(value, receiver) {
     }
     return 'sync'
   } catch (error) {
-    const disabled = error?.name === 'PluginApiFeatureDisabledError' || error?.name === 'PluginApiInactiveError'
-    if (disabled) return 'unobservable'
-    return 'sync'
+    return 'unobservable'
   }
+}
+
+/** Whether a namespace reports itself live on the mounted surface. */
+function namespaceIsLive(api, path) {
+  const segments = path.split('.')
+  for (const depth of [2, 1]) {
+    if (segments.length <= depth) continue
+    const node = resolveMember(api, segments.slice(0, depth).join('.'))
+    if (node === undefined || node === null) continue
+    let availability
+    try {
+      availability = node.availability
+    } catch {
+      continue
+    }
+    if (typeof availability !== 'function') continue
+    try {
+      const value = availability()
+      const status = typeof value === 'object' && value !== null ? value.status : value
+      if (typeof status === 'string') return status === 'active' || status === 'degraded'
+    } catch {
+      return false
+    }
+  }
+  return true
 }
 
 test('every observable host member answers the call shape the registry declares', () => {
@@ -98,11 +157,14 @@ test('every observable host member answers the call shape the registry declares'
   let checked = 0
   for (const member of registry.members) {
     if (member.runtime !== 'host' || member.status === 'removed') continue
-    const root = member.publicPath.split('.')[0]
     const value = resolveMember(api, member.publicPath)
     // A value row (a handle, a data leaf) has no call to observe.
     if (typeof value !== 'function') continue
-    if (OWNER_BACKED_ROOTS.has(root)) {
+    if (isUnobservableFamily(member.publicPath)) {
+      unobservable.push(member.publicPath)
+      continue
+    }
+    if (!namespaceIsLive(api, member.publicPath)) {
       unobservable.push(member.publicPath)
       continue
     }
@@ -160,4 +222,49 @@ test('value rows declare not-applicable and callable rows never do', () => {
   for (const row of handles) {
     assert.equal(row.callShape, 'not-applicable', `${row.publicPath} is a handle row`)
   }
+})
+
+test('every observable client member answers the call shape the registry declares', async () => {
+  const vm = await import('node:vm')
+  let handoff
+  const sandbox = {
+    window: { __ModuleLoader__: { load(value) { handoff = value } } },
+    console, setTimeout, clearTimeout, AbortController, TextEncoder, TextDecoder,
+  }
+  sandbox.globalThis = sandbox
+  vm.runInNewContext(readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8'), sandbox, { filename: 'client.js' })
+  const artifact = handoff.factory(() => { throw new Error('the bundled facade has no cross-plugin runtime imports') })
+
+  // Client providers answer plainly; the client members under test are the
+  // facade's own (slots, remotes, lifecycle, settings, attention, sessions).
+  const provider = () => new Proxy({}, { get: (target, key) => (key === 'then' ? undefined : (target[key] ??= (...args) => ({ member: String(key), args }))) })
+  const services = new Map()
+  for (const name of ['llm', 'agents', 'sessions', 'tools', 'settings', 'slots', 'remote', 'clientModules', 'modules', 'events', 'lifecycle', 'remotes', 'attention', 'codec', 'skills']) services.set(name, provider())
+  services.set('connection', { rpc: { call: () => Promise.resolve({}) }, api: { settings: { describe: () => 'settings' }, llm: provider() } })
+  const listeners = new Map()
+  const ctx = {
+    logger: { error() {}, warn() {} },
+    get: (name) => services.get(name),
+    on(name, listener) { const bucket = listeners.get(name) ?? new Set(); bucket.add(listener); listeners.set(name, bucket); return () => bucket.delete(listener) },
+    emit(name, ...args) { for (const listener of [...(listeners.get(name) ?? [])]) listener(...args) },
+    reflect: { provide(name, value) { services.set(name, value); return () => services.delete(name) } },
+  }
+  artifact.apply(ctx)
+  const api = services.get('pluginApi')
+
+  const mismatches = []
+  let checked = 0
+  for (const member of registry.members) {
+    if (member.runtime !== 'client' || member.status === 'removed') continue
+    const value = resolveMember(api, member.publicPath)
+    if (typeof value !== 'function') continue
+    if (!namespaceIsLive(api, member.publicPath)) continue
+    const receiver = resolveMember(api, member.publicPath.split('.').slice(0, -1).join('.')) ?? api
+    const observed = observeShape(value, receiver)
+    if (observed === 'unobservable') continue
+    checked += 1
+    if (member.callShape !== observed) mismatches.push(`${member.publicPath}: declared ${member.callShape}, observed ${observed}`)
+  }
+  assert.deepEqual(mismatches, [], `declared client call shapes must match the mounted surface:\n${mismatches.join('\n')}`)
+  assert.ok(checked >= 10, `the client harness must observe a meaningful share of the client surface, observed ${checked}`)
 })

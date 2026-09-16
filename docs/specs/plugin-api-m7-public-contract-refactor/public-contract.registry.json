@@ -2070,7 +2070,7 @@
         "member-inventory",
         "registry-validation"
       ],
-      "callShape": "sync"
+      "callShape": "async"
     },
     {
       "publicPath": "llm.routing.policies.register",
@@ -12151,7 +12151,7 @@
         "audit: not applicable (not an audited decision point)",
         "branch/routing: not applicable"
       ],
-      "callShape": "sync"
+      "callShape": "async"
     },
     {
       "publicPath": "storage.availability",
@@ -15754,7 +15754,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "merged skill/descriptor registration answering the standard resource handle { id, ownerId, generation, dispose() }: the caller-derived owner replaces a declared one (the spec owner is overwritten, not trusted) and the facade mints the generation; the registered skill id and the activation reads (skillId, activate, deactivate, exposure) stay as registered extension members, so unifying the shape removes no capability. The registration keeps its async call shape: a malformed spec is refused synchronously with a typed error and an owner refusal rejects with the owner's typed code. dispose() delegates to the owner's own unregister, naming the generation the registration was issued for, and answers the frozen discriminated { ok, code } (revoked / stale) \u2014 a superseded handle can never revoke its replacement",
+      "currentShape": "merged skill/descriptor registration answering the standard resource handle { id, ownerId, generation, dispose() }: the caller-derived owner replaces a declared one (the spec owner is overwritten, not trusted) and the facade mints the generation; the registered skill id and the activation reads (skillId, activate, deactivate, exposure) stay as registered extension members, so unifying the shape removes no capability. The registration keeps its async call shape: a spec the facade itself cannot read (no kind, or a kind without a usable skill id) is refused synchronously with a typed error, while everything the owner then judges \u2014 including a well-formed kind whose id the owner rejects \u2014 answers a rejection carrying the owner's typed code. dispose() delegates to the owner's own unregister, naming the generation the registration was issued for, and answers the frozen discriminated { ok, code } (revoked / stale) \u2014 a superseded handle can never revoke its replacement",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
