@@ -4,7 +4,7 @@
 >
 > | 本制品使用的旧 path | 现行 path |
 > |---|---|
-> | `pluginApi.sessionChannel`（B 门面：`open/subscribe/fetchEvents/heartbeat/ack/resume/revoke` + `observe/onChange` + `auth.*`） | `pluginApi.sessions.channels`（`subscribe` 现由 `sessions.channels.subscriptions.acquire` 承载；`onChange` 已退役，订阅语义由标准投影观察 handle `observe(listener)` 与快照 `current()` 承载；其余叶名不变。详见本目录 `tasks.md` 的 2026-09-16 现状注） |
+> | `pluginApi.sessionChannel`（B 门面：`open/subscribe/fetchEvents/heartbeat/ack/resume/revoke` + `observe/onChange` + `auth.*`） | `pluginApi.sessions.channels`（叶名以 registry 为准：`open`→`acquire`、`fetchEvents`→`history`、`revoke`→`release`、`subscribe`→`subscriptions.acquire`、`onChange`→标准投影观察 handle `observe(listener)` + 快照 `current()`、`auth.registerVerifier`/`auth.registerAuthorizer`→`auth.register`、`auth.registerPairingProvider`→`auth.pairingProvider.register`、`redaction.registerProfile`→`redaction.register`；`heartbeat`/`ack`/`resume`/`observe` 与 `auth.initiatePairing`/`approvePairing`/`rejectPairing` 保持原名。详见本目录 `tasks.md` 的 2026-09-16 现状注） |
 >
 > 现行契约基线：包版本 `0.1.0-rc.6-0.1.0`（runtime `0.1.0-rc.6` / `dsh.api` `0.1`）；本制品中出现的 `0.1.0-rc.6-0.x` 为历史交付边界记录，不代表现行版本。本注只更新命名与版本指针，不改动本制品已获批的 Goal / Requirements 验收边界。
 

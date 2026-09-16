@@ -5865,7 +5865,7 @@
     },
     {
       "publicPath": "sessions.channels.acquire.handle",
-      "targetPath": "sessions.channels.acquire.handle",
+      "targetPath": null,
       "capability": "sessions.channels",
       "kind": "handle",
       "idiom": "coordination",
@@ -14473,7 +14473,7 @@
     },
     {
       "publicPath": "agents.register.handle",
-      "targetPath": "agents.register.handle",
+      "targetPath": null,
       "capability": "agents",
       "kind": "handle",
       "idiom": "resourceRegistry",
@@ -14881,7 +14881,7 @@
     },
     {
       "publicPath": "tools.executionMode.register.handle",
-      "targetPath": "tools.executionMode.register.handle",
+      "targetPath": null,
       "capability": "tools",
       "kind": "handle",
       "idiom": "resourceRegistry",
@@ -14915,7 +14915,7 @@
     },
     {
       "publicPath": "tasks.register.handle",
-      "targetPath": "tasks.register.handle",
+      "targetPath": null,
       "capability": "tasks",
       "kind": "handle",
       "idiom": "resourceRegistry",
@@ -16105,7 +16105,7 @@
     },
     {
       "publicPath": "tasks.acquire.handle",
-      "targetPath": "tasks.acquire.handle",
+      "targetPath": null,
       "capability": "tasks",
       "kind": "handle",
       "idiom": "coordination",

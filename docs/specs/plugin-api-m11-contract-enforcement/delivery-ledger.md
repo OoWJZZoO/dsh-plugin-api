@@ -37,6 +37,43 @@
 
 **顺带修复（工程前置）**：`test/session-channel-rate-limit.test.mjs` 的 `windowMs: 1` 与调度器竞速，属**本线开工前既有的偶发失败**（同一提交上 3 次运行中 1 次失败）；已把窗口放宽到 100ms / 等待 200ms，语义不变。该项与本 feature 无关，仅用于保证交付门的可重复性。
 
+## 3.0.1 第三轮（2026-09-15 续做）完成与未完成清单
+
+本轮自 `4d6d549`（第二轮交付的全局终审通过点）起连续执行。**已完成**（实现 + 测试 + registry/validator 同步）：
+
+| Task | 内容 | 落地 |
+|---|---|---|
+| 4.14 余项（B2 臂 · callerAware 别名） | `llm.requestTransforms` / `llm.admissionPolicies` 改为按派生身份键控的 leaf，且 leaf 在调用时解析当前 slot（保留「跨重挂载身份稳定」的既有契约）；`tools.discovery.catalog` / `diagnostics.register` 改为按 (slot, identity) 键控的 per-caller 视图。末次访问者胜的共享 `record.callerCtx` 已删除，`createFeatureSlot` 不再有 `callerAware` 选项 | `lib/plugin-api-service.js` + `test/caller-derived-owner.test.mjs`（新增 5 条：两族 leaf、两族视图、以及「同 id 不同 owner 不互相覆盖」的反例） |
+| 3.4 / prepareFeature 余项（B2 臂 · staged 回滚） | `_restoreDisabledSurface` 改为返回「是否真的恢复了」并新增 execRoute / typert / officialPassthrough 的退役路径；recovery / coordination / tasks / toolDiscovery / sessionChannel 的禁用候选改为 **owner 形状**（published 形状无法通过自己的挂载守卫）；`createDisabledSecurityApi` 补 `egress.lease.release` / `egress.coverage`；`_readSlot` 补 storage / execRoute；`unmountFeature` 补 storage 分支；无 slot 可替换的 9 个 feature 改为 `prepareFeature` 明确拒绝（`UNSTAGEABLE_FEATURES`）而非静默 no-op | `lib/plugin-api-service.js` + `test/feature-staging-contract.test.mjs`（全量 feature 契约测试：43 个 feature 逐个验证「可暂存且能恢复」或「带说明拒绝」） |
+| 4.14 余项（冲突口径，B2 臂） | `security.policy / redaction / egress` 三族的 6 行（3 leaf + 3 handle）改为 `conflictRule: owner-scoped`（实现按 (owner, id) 键控、跨 owner 并存），registry `vocabulary.conflictRule` 增该值，`api-idioms` §3.2 把「注册键决定冲突维度」写成分界（id 全局限定 ⇒ `owner-conflict`；(owner, id) 键控 ⇒ `owner-scoped`），两册一致 | registry + `docs/standards/api-idioms.md` |
+| 4.15（B2 臂） | `llm.adapters.decorations.register.handle` 补齐 `id` / `ownerId` / `generation`，`dispose()` 改判别式（`revoked` / `stale` / `unavailable`）且幂等，`snapshot()` 转为已登记领域扩展 | `lib/plugin-api-service.js` + 相关套件 |
+| 5.3（B3 余项） | client `settings.remote.contribute` 改为 contribution idiom：同步返回冻结判别式 + pending handle，`face` / `render` 作为**延迟解析**的领域扩展（内核的 extensions 改为按属性描述符复制，accessor 保持惰性），任一阶段可安全撤销、迟到落地被回滚 | `lib/{client-settings-remote,contract-kernel}.js` + client bundle 重建 + `test/client-settings-remote.test.mjs`（重写为 6 条） |
+| 8.4（B3 余项） | client 自描述收口：`connection` / `events` / `remotes` / `settings` / `slots` / `codec` / `lifecycle` 七个 namespace 提供零参 `availability()`；`capabilities.*` 与 namespace 成员读**同一张 probe 表**（不再「对象存在即 active」）；缺失 backing 报 `unavailable`、部分缺失报 `degraded` 且保留领域 reason；命名空间对象按底层对象缓存（身份稳定） | `lib/client-runtime.js` + `lib/client-generation-rebind.js` + client bundle + `test/client-self-description.test.mjs`（新增 3 条） |
+| 8.7（C8） | client `settings.scope(spec)` 与 host 同一调用套路（client 原样返回官方 scope 对象），环境差异显式登记 | `lib/client-settings-scope.js` + registry |
+| C3 投影半 | slots 暴露只读声明投影 `declaration(key)`（`status: declared / missing / unavailable` + 官方 `spec` / `specDynamic` / `declarationEpoch` / `snapshot` 事实），`list(key)` 回答同源 `{ key, status, entries }`，「未声明」与「已声明为空」不再同形 | `lib/client-slots.js` + client bundle + `test/client-slots.test.mjs`（新增 2 条） |
+| 6.6 余项（B11 余项） | client `lifecycle.register` 的 owner 改为派生（`callerOwnerOf`：loader entry name → fiber name → root），调用方自报 `ownerId` 被忽略；host 侧无调用者的内部面保留显式绑定并如实登记 | `lib/client-generation-rebind.js` + client bundle + `test/client-generation-rebind.test.mjs`（新增 1 条） |
+| 3.3 / 3.4（B4） | 例外台账重分类：回收 6 条记录 / 4 行（workflows 三处扩展成员、agent-scope 扩展成员、decoration handle、workflows.start 的 terminal），新增 4 条记录 / 4 行（`tasks.register` + 三个 durable-task 操作）；三条新的 entry 级校验（入口动词与 idiom 一致、注册类 leaf 的 typed-throw 失败呈现、已 itemize 的成员不得再消耗例外）落 validator，并补 3 条反例测试 | registry + `scripts/registry-validate.mjs` + `test/registry-negative.test.mjs` |
+| 3.2-R / B2 余项（登记面） | 24 行 `currentShape: null` 全部补齐（14 个 availability、9 个 handle、capabilityMatrix）；两处**幻影** handle 行退役（`tasks.register.handle`、`tools.executionMode.register.handle`，含 `oldToTargetMapping`）；C13 `storage.open.handle.domain` 改回 retained；C15 两行互指；C10b 四个 decision namespace 的 `admitted()` 补行 | registry + 成员表（**551 行**） |
+| 8.3 / C10b（代码半） | 三个 domain decision namespace（agents/tools/prompts）补 `admitted()`，四族的 active/disabled 成员集合一致 | `lib/decision-participation-facade.js` + `test/decision-participation-facade.test.mjs`（新增 1 条） |
+| 8.2 / C1b | `workspaces.transactions.availability()` 补齐（优先 owner probe 并保留其领域 detail，否则读 slot 活态；禁用形态同成员），namespace 记录落 registry | `lib/plugin-api-service.js` + registry + `test/mutation-operation-coordination-surface.test.mjs`（新增 1 条） |
+| 4.11（C9） | `prompts.contribute` scoped 路径的 kind 非法拒绝列出合法 kind 词表；全局 `anonymous:<seq>` 与 scoped `scoped:<kind>` 共用同一命名规则（已满足，复核通过） | `lib/plugin-api-service.js` |
+| 9.1 / 9.2（B13） | 双 synthetic 插件组合验收（加载顺序、同 key 各自登记、卸载隔离、**旧 handle 不得撤销新资源**、callback 失败隔离）与两个迁移切片（同一工具全局→agent scope 的 handle 与清理方式、同一策略跨 llm / prompts / security 的可迁移登记），文件头写明「原行为 → 现行公共调用 → 运行结果」矩阵，证据全部来自真实公共入口执行 | `test/dual-plugin-composition.test.mjs`、`test/migration-slices.test.mjs`（新增） |
+| 8.12（C14） | `capabilityMatrix()` 改为**当前能力**投影：一行 = 能力簇 + 当前状态（`active` / `degraded` / `unavailable`）+ 限制 + 缺口原因；迁移词汇（`renamed` / `merged` / `migrated` / `deleted` / `internalized` 与 `replacement` 文本）不再出现在运行时输出（保留在 registry 登记面）。新增可检入的重建入口 `scripts/capability-matrix-sync.mjs`（`--check` 可校验），并在两处套件改为断言「由 registry 派生」而非逐字镜像 | `lib/capability-matrix.js`（生成物，89 簇）+ `scripts/capability-matrix-sync.mjs` + `test/{policy-inventory,read-surface-projection}.test.mjs` |
+| 8.10（C12） | `settings.update / replace / mutate` 改为门面 mutation idiom：冻结判别式 `{ ok, code, commitState, generation? }`（官方答复为 thenable 时 await），官方 revisions/CAS 语义与错误映射保留，namespace 级状态失败（inactive / disabled / service unavailable）仍为 typed throw；registry 三行与套件同步 | `lib/index.js`（`facadeSettingsMutation`）+ registry + `test/host-namespace-integration.test.mjs` |
+| client 侧登记同步 | `settings.remote.contribute`（client 行）、七个 `*.availability`（client 行）、`settings.scope`、`slots.list`、`lifecycle.register`、`lifecycle.availability` 的 `currentShape` 按实现改写；成员表随之重建 | registry + `convergence/public-member-table.md` |
+
+**本轮未完成**（**不是阻塞项**：无硬停机点、无环境 / 工具链 / 权限缺失，全部是同一工作序列中尚未执行的主体工作）：
+
+| Task | 未完成内容 |
+|---|---|
+| 3.6（B6） | M10 三表中，行为表与装配表在第十五轮按受影响面就地复核（见下）；两表均保持冻结行数与 token 可解析，无需改写内容 |
+
+**第十五轮（续做，2026-09-15/16）已完成**：§3.0.4 表列的五项余项全部收口（逐项见 §3.0.4）；本表当时所余的 `3.6（B6）` 一行亦在同轮按受影响面复核（见 §3.0.4 表末行）。
+
+**C7 回滚记录（Task 10.1(d)）**：client `connection.get` → `connection.api.settings` 的改名回滚已在上一轮交付（registry / `oldToTargetMapping` / `statusByPath` 三处同步，避免自环），本轮无新增回滚。
+
+> **§3.0.2 口径注（第十六轮）**：该四态表的 C4 记「部分完成」、C17 记「未完成」，是**落盘当时的快照**；两项均已由第十五轮交付（见 §3.0.4），以本节与 §3.0.5 为准。
+
 ## 3.0.2 处置结论表（Task 10.1(a) / B16a）
 
 按输入编号全集逐项给出四态结论（**修复** / **合理例外** / **已修复（开工前即为正确形态）** / **误报**）与锚点。未闭合者指向 §3.0.1 的余项。
@@ -54,7 +91,7 @@
 | C1b `workspaces.transactions.availability` | 已修复（第三轮） | `lib/plugin-api-service.js` + registry 行 + 测试 |
 | C2 client 自描述失真 | 已修复（第三轮） | 七个 namespace 的 `availability()` 与 `capabilities.*` 同源 probe 表 |
 | C3 slots 白名单 + 投影 | 已修复（两轮） | 准入交官方声明判定（前轮）+ `declaration` / `list` 状态（第三轮） |
-| C4 client 面重复与语义 | **部分完成** | client 侧三成员语义前轮交付；host `sessions.channels` 的 `current` / `history` / `observe` 映射仍未收敛（见 §3.0.1 未完成清单） |
+| C4 client 面重复与语义 | **部分完成** | client 侧三成员语义前轮交付；host `sessions.channels` 的 `current` / `history` / `observe` 映射仍未收敛（见 §3.0.4 五项余项表的通道映射行） |
 | C5 client `remotes` / `slots` 观察面 | 已修复 | 标准观察 handle + `slots.observe` |
 | C6 `agents.providers.register` | 已修复 | 显式变体判别 + 标准 handle + 派生 owner |
 | C7 client `connection.get` | 修复（回滚） | 改回 `connection.api.settings`，三处登记同步（见 §3.0.1 回滚记录） |
@@ -65,11 +102,11 @@
 | C10c `agents.scopes` | 已修复 | typed throw 失败呈现 + 判别式 dispose + 扩展成员改行登记 |
 | C11 缺位词汇 | 已修复 | `missing` / `unavailable` 分界落 `executions.get` / `tasks.*` / `sessions.activity.*` |
 | C12 settings mutation 呈现 | **已修复**（第三轮） | `facadeSettingsMutation`：冻结判别式 + `commitState`，官方 revisions/CAS 与错误映射保留 |
-| C13 `storage.open.handle.domain` | 已修复（第三轮） | registry 行改回 retained + 理由；实现本就保留。**第二十四轮补**：该行在 `b3cba10` 由 `removed/migrate` 翻为 `advanced/retain` 时漏删 `statusByPath` 的残留键，形成「在册行却记 `removed`」的自环，已删除该键（现 `statusByPath` 177 键、值全为 `removed`、不含任何在册 path） |
+| C13 `storage.open.handle.domain` | 已修复（第三轮） | registry 行改回 retained + 理由；实现本就保留。**第二十四轮补**：该行在 `b3cba10` 由 `removed/migrate` 翻为 `advanced/retain` 时漏删 `statusByPath` 的残留键，形成「在册行却记 `removed`」的自环，已删除该键（现 `statusByPath` 177 键、值全为 `removed`、不含任何在册 path）。**第二十五轮复核**：该行的 `targetPath: "services.storage"` **不是**迁移去向而是 **validator 强制**——`passthrough-exception` 行必须落在 `services.*` 路径上（`scripts/registry-validate.mjs` 的该条规则），改成自指会被机械门拒绝；故 192 条 `retain` 行中它是唯一 targetPath 不自指的一行，其 `oldToTargetMapping` 条目仍记 `retain` + 自指 |
 | C14 `capabilityMatrix` 内容模型 | **已修复**（第三轮） | 当前能力投影 + 生成物重建入口 `scripts/capability-matrix-sync.mjs` |
 | C15 handle 行互指 | 已修复（第三轮） | 两行 `currentShape` 互指 |
 | C16 `events.compaction` 示例 | 已修复 | `public-api-shape` §5 示例改为真实 capability path |
-| C17 `async` 声明 | **未完成** | 依赖 §3.0.1 的 B5 |
+| C17 `async` 声明 | **未完成** | 依赖 §3.0.4 五项余项表的 B5（S15 回填） |
 | R1 `lifecycle.register` leaf 行 | 已修复 | registry 现行 leaf 行已补 |
 | R2 三个 domain namespace 的 `admitted()` | 已修复（第三轮） | 与 C10b 同一件工作 |
 | R3 `diagnostics.register.handle` | 已修复 | `currentShape` 随实现更新 |
@@ -142,43 +179,6 @@
 | 5.12 / C4/C5（通道半） | `sessions.channels` 的 `current` / `history` / `observe` 成员映射仍未收敛（公开面现状是 `list` + `observe`） |
 | 8.13（C17） | `tasks.*` 全域的 `async` 抽样复核依赖 B5，未做 |
 | 3.6（B6） | 行为表 / 装配表本轮未被触及（成员表已重建为 **559 行**）；历史现状注待与上述余项同批处理 |
-
-## 3.0.1 第三轮（2026-09-15 续做）完成与未完成清单
-
-本轮自 `4d6d549`（第二轮交付的全局终审通过点）起连续执行。**已完成**（实现 + 测试 + registry/validator 同步）：
-
-| Task | 内容 | 落地 |
-|---|---|---|
-| 4.14 余项（B2 臂 · callerAware 别名） | `llm.requestTransforms` / `llm.admissionPolicies` 改为按派生身份键控的 leaf，且 leaf 在调用时解析当前 slot（保留「跨重挂载身份稳定」的既有契约）；`tools.discovery.catalog` / `diagnostics.register` 改为按 (slot, identity) 键控的 per-caller 视图。末次访问者胜的共享 `record.callerCtx` 已删除，`createFeatureSlot` 不再有 `callerAware` 选项 | `lib/plugin-api-service.js` + `test/caller-derived-owner.test.mjs`（新增 5 条：两族 leaf、两族视图、以及「同 id 不同 owner 不互相覆盖」的反例） |
-| 3.4 / prepareFeature 余项（B2 臂 · staged 回滚） | `_restoreDisabledSurface` 改为返回「是否真的恢复了」并新增 execRoute / typert / officialPassthrough 的退役路径；recovery / coordination / tasks / toolDiscovery / sessionChannel 的禁用候选改为 **owner 形状**（published 形状无法通过自己的挂载守卫）；`createDisabledSecurityApi` 补 `egress.lease.release` / `egress.coverage`；`_readSlot` 补 storage / execRoute；`unmountFeature` 补 storage 分支；无 slot 可替换的 9 个 feature 改为 `prepareFeature` 明确拒绝（`UNSTAGEABLE_FEATURES`）而非静默 no-op | `lib/plugin-api-service.js` + `test/feature-staging-contract.test.mjs`（全量 feature 契约测试：43 个 feature 逐个验证「可暂存且能恢复」或「带说明拒绝」） |
-| 4.14 余项（冲突口径，B2 臂） | `security.policy / redaction / egress` 三族的 6 行（3 leaf + 3 handle）改为 `conflictRule: owner-scoped`（实现按 (owner, id) 键控、跨 owner 并存），registry `vocabulary.conflictRule` 增该值，`api-idioms` §3.2 把「注册键决定冲突维度」写成分界（id 全局限定 ⇒ `owner-conflict`；(owner, id) 键控 ⇒ `owner-scoped`），两册一致 | registry + `docs/standards/api-idioms.md` |
-| 4.15（B2 臂） | `llm.adapters.decorations.register.handle` 补齐 `id` / `ownerId` / `generation`，`dispose()` 改判别式（`revoked` / `stale` / `unavailable`）且幂等，`snapshot()` 转为已登记领域扩展 | `lib/plugin-api-service.js` + 相关套件 |
-| 5.3（B3 余项） | client `settings.remote.contribute` 改为 contribution idiom：同步返回冻结判别式 + pending handle，`face` / `render` 作为**延迟解析**的领域扩展（内核的 extensions 改为按属性描述符复制，accessor 保持惰性），任一阶段可安全撤销、迟到落地被回滚 | `lib/{client-settings-remote,contract-kernel}.js` + client bundle 重建 + `test/client-settings-remote.test.mjs`（重写为 6 条） |
-| 8.4（B3 余项） | client 自描述收口：`connection` / `events` / `remotes` / `settings` / `slots` / `codec` / `lifecycle` 七个 namespace 提供零参 `availability()`；`capabilities.*` 与 namespace 成员读**同一张 probe 表**（不再「对象存在即 active」）；缺失 backing 报 `unavailable`、部分缺失报 `degraded` 且保留领域 reason；命名空间对象按底层对象缓存（身份稳定） | `lib/client-runtime.js` + `lib/client-generation-rebind.js` + client bundle + `test/client-self-description.test.mjs`（新增 3 条） |
-| 8.7（C8） | client `settings.scope(spec)` 与 host 同一调用套路（client 原样返回官方 scope 对象），环境差异显式登记 | `lib/client-settings-scope.js` + registry |
-| C3 投影半 | slots 暴露只读声明投影 `declaration(key)`（`status: declared / missing / unavailable` + 官方 `spec` / `specDynamic` / `declarationEpoch` / `snapshot` 事实），`list(key)` 回答同源 `{ key, status, entries }`，「未声明」与「已声明为空」不再同形 | `lib/client-slots.js` + client bundle + `test/client-slots.test.mjs`（新增 2 条） |
-| 6.6 余项（B11 余项） | client `lifecycle.register` 的 owner 改为派生（`callerOwnerOf`：loader entry name → fiber name → root），调用方自报 `ownerId` 被忽略；host 侧无调用者的内部面保留显式绑定并如实登记 | `lib/client-generation-rebind.js` + client bundle + `test/client-generation-rebind.test.mjs`（新增 1 条） |
-| 3.3 / 3.4（B4） | 例外台账重分类：回收 6 条记录 / 4 行（workflows 三处扩展成员、agent-scope 扩展成员、decoration handle、workflows.start 的 terminal），新增 4 条记录 / 4 行（`tasks.register` + 三个 durable-task 操作）；三条新的 entry 级校验（入口动词与 idiom 一致、注册类 leaf 的 typed-throw 失败呈现、已 itemize 的成员不得再消耗例外）落 validator，并补 3 条反例测试 | registry + `scripts/registry-validate.mjs` + `test/registry-negative.test.mjs` |
-| 3.2-R / B2 余项（登记面） | 24 行 `currentShape: null` 全部补齐（14 个 availability、9 个 handle、capabilityMatrix）；两处**幻影** handle 行退役（`tasks.register.handle`、`tools.executionMode.register.handle`，含 `oldToTargetMapping`）；C13 `storage.open.handle.domain` 改回 retained；C15 两行互指；C10b 四个 decision namespace 的 `admitted()` 补行 | registry + 成员表（**551 行**） |
-| 8.3 / C10b（代码半） | 三个 domain decision namespace（agents/tools/prompts）补 `admitted()`，四族的 active/disabled 成员集合一致 | `lib/decision-participation-facade.js` + `test/decision-participation-facade.test.mjs`（新增 1 条） |
-| 8.2 / C1b | `workspaces.transactions.availability()` 补齐（优先 owner probe 并保留其领域 detail，否则读 slot 活态；禁用形态同成员），namespace 记录落 registry | `lib/plugin-api-service.js` + registry + `test/mutation-operation-coordination-surface.test.mjs`（新增 1 条） |
-| 4.11（C9） | `prompts.contribute` scoped 路径的 kind 非法拒绝列出合法 kind 词表；全局 `anonymous:<seq>` 与 scoped `scoped:<kind>` 共用同一命名规则（已满足，复核通过） | `lib/plugin-api-service.js` |
-| 9.1 / 9.2（B13） | 双 synthetic 插件组合验收（加载顺序、同 key 各自登记、卸载隔离、**旧 handle 不得撤销新资源**、callback 失败隔离）与两个迁移切片（同一工具全局→agent scope 的 handle 与清理方式、同一策略跨 llm / prompts / security 的可迁移登记），文件头写明「原行为 → 现行公共调用 → 运行结果」矩阵，证据全部来自真实公共入口执行 | `test/dual-plugin-composition.test.mjs`、`test/migration-slices.test.mjs`（新增） |
-| 8.12（C14） | `capabilityMatrix()` 改为**当前能力**投影：一行 = 能力簇 + 当前状态（`active` / `degraded` / `unavailable`）+ 限制 + 缺口原因；迁移词汇（`renamed` / `merged` / `migrated` / `deleted` / `internalized` 与 `replacement` 文本）不再出现在运行时输出（保留在 registry 登记面）。新增可检入的重建入口 `scripts/capability-matrix-sync.mjs`（`--check` 可校验），并在两处套件改为断言「由 registry 派生」而非逐字镜像 | `lib/capability-matrix.js`（生成物，89 簇）+ `scripts/capability-matrix-sync.mjs` + `test/{policy-inventory,read-surface-projection}.test.mjs` |
-| 8.10（C12） | `settings.update / replace / mutate` 改为门面 mutation idiom：冻结判别式 `{ ok, code, commitState, generation? }`（官方答复为 thenable 时 await），官方 revisions/CAS 语义与错误映射保留，namespace 级状态失败（inactive / disabled / service unavailable）仍为 typed throw；registry 三行与套件同步 | `lib/index.js`（`facadeSettingsMutation`）+ registry + `test/host-namespace-integration.test.mjs` |
-| client 侧登记同步 | `settings.remote.contribute`（client 行）、七个 `*.availability`（client 行）、`settings.scope`、`slots.list`、`lifecycle.register`、`lifecycle.availability` 的 `currentShape` 按实现改写；成员表随之重建 | registry + `convergence/public-member-table.md` |
-
-**本轮未完成**（**不是阻塞项**：无硬停机点、无环境 / 工具链 / 权限缺失，全部是同一工作序列中尚未执行的主体工作）：
-
-| Task | 未完成内容 |
-|---|---|
-| 3.6（B6） | M10 三表中，行为表与装配表在第十五轮按受影响面就地复核（见下）；两表均保持冻结行数与 token 可解析，无需改写内容 |
-
-**第十五轮（续做，2026-09-15/16）已完成**：上表五项余项全部收口（逐项见 §3.0.4）。
-
-**C7 回滚记录（Task 10.1(d)）**：client `connection.get` → `connection.api.settings` 的改名回滚已在上一轮交付（registry / `oldToTargetMapping` / `statusByPath` 三处同步，避免自环），本轮无新增回滚。
-
-> **§3.0.2 口径注（第十六轮）**：该四态表的 C4 记「部分完成」、C17 记「未完成」，是**落盘当时的快照**；两项均已由第十五轮交付（见 §3.0.4），以本节与 §3.0.5 为准。
 
 ## 3.0.4 第十五轮（续做收口轮，2026-09-15/16）—— 上一轮清单的五项余项全部交付
 
@@ -691,3 +691,14 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 - **低级 L-5**：上游 `remote-session-channel` 的机制措辞只改到 4.3 / 7.1，同制品内任务 2.4 / 7.4 与文末「命名/边界速查」仍在讲已退役的 `onChange` 机制，`requirements.md` / `design.md` 的现状注表又写「叶子名不变」（`subscribe` 已改名）。
 
 **处置（第二十四轮，本节之后的提交）**：① §3.0.3 该行改标为「登记时的状态」并写明该差异现已不成立（第十五轮收敛 + `82e2ccf` 改名）；② §3.0.5 的第十七轮注补上「先以 `sessions.channels.subscribe` 复活、`82e2ccf` 改名并新增」的准确表述；③ §4 抬头加「项序口径注」（六项自第二十三轮起；旧「第 3 条」= 现行第 6 项）；④ 删除 registry `statusByPath` 的残留键（现 177 键、值全为 `removed`、不含任何在册 path），并在 C13 行登记该清理；⑤ 上游 `remote-session-channel` 的 2026-09-16 现状注扩展到任务 2.4 / 7.4 与命名速查（机制描述以注为准、任务文本按历史制品惯例保留），`requirements.md` / `design.md` 的现状注表改准叶名。
+
+### 7.26 第三交付批的全局终审（第十三轮，收口验证，对象至 `de7619f`）—— **有偏差（0 阻塞 / 0 中级）**
+
+结论 **有偏差（0 阻塞 / 0 中级 / 4 低级）**：第十二轮五条修订经逐条复核**全部属实**（§3.0.3 表的「登记时的状态」改准、§3.0.5 的第十七轮注改准、§4 项序口径注可解析、`statusByPath` 自环键已清除且 177 键全 `removed`、上游现状注已扩到 2.4 / 7.4 / 命名速查且注内三条断言为真）；§7.25 落盘；registry 计数、call-shape 面（host 107 / 167 = 68 + 55 + 44 / 19 根、client 24、零 mismatch）、例外额度、首交付批 57 行、validator 六条计数、机械门与纪律全部复算相符。新发现四条**登记面与文字**（均不触及实现、测试、机械门与已交付验收边界）：
+
+- **低级 F-1**：5 条 `migrationAction: delete` 的退役 handle 行（`sessions.channels.acquire.handle`、`agents.register.handle`、`tools.executionMode.register.handle`、`tasks.register.handle`、`tasks.acquire.handle`）的 `targetPath` 写成**自身**，而同 path 的 `oldToTargetMapping` 条目记 `targetPath: null`——两个登记面对同一 path 给出不同去向；同族既有先例（`storage.open.handle.close`）与其余 24 条 delete 行均为 `null`。引入点在本评审区间内（`6f62bd9` +2、`64136c5` +1、`51ae81d` +2），基线 `4d6d549` 上此类为 0；无机械门覆盖该字段。
+- **低级 F-2**：`storage.open.handle.domain` 的 retain 行 `targetPath` 为 `services.storage`（其余 191 条 retain 行均自指）。**第二十五轮复核结论：这不是缺陷而是机械门强制**——`passthrough-exception` 行必须落在 `services.*` 路径上，改自指会被 validator 拒绝（实测报「passthrough-exception is only valid on a services.* path」）。已在 C13 行如实登记该字段的双重含义，不改动其取值。
+- **低级 F-3**：上游两份现状注表新写的「其余叶名不变」仍失实——registry 实测该门面多数叶名已随公共面重命名（`open`→`acquire`、`fetchEvents`→`history`、`revoke`→`release`、`subscribe`→`subscriptions.acquire`、`onChange`→观察 handle、`auth.registerVerifier`/`registerAuthorizer`→`auth.register`、`auth.registerPairingProvider`→`auth.pairingProvider.register`、`redaction.registerProfile`→`redaction.register`；仅 `heartbeat`/`ack`/`resume`/`observe` 与 `auth.initiatePairing`/`approvePairing`/`rejectPairing` 保持原名）。
+- **低级 F-4**：§3.0.2 四态表的 C4 / C17 两处指针写「见 / 依赖 §3.0.1 未完成清单」，而 §3.0.1 的未完成表只剩 `3.6（B6）` 一行（该两项的落点在 §3.0.4 的五项余项表）；§3.0.1 尾句「上表五项余项全部收口」的「上表」也只有 1 行；§3.0.x 的物理顺序仍为 3.0.2 → 3.0.3 → 3.0.1 → 3.0.4（§7 曾按同类意见重排，§3.0.x 未重排）。
+
+**处置（第二十五轮，本节之后的提交）**：① 5 条 delete 行的 `targetPath` 改为 `null`（与 `oldToTargetMapping` 及同族先例一致；29 条 delete 行现全部为 `null`），并在 §7.26 登记该修正；② F-2 经复核为机械门强制，取值不变，改在 C13 行写明该字段的双重含义与 191/192 自指的实测口径；③ 上游 `requirements.md` / `design.md` 的现状注表改列全部实测改名与保持原名的叶，删去失实的「其余叶名不变」；④ §3.0.2 的 C4 / C17 指针改为指向 §3.0.4 的五项余项表，§3.0.1 尾句的「上表」改为「§3.0.4 表列的五项余项」并把 `3.6（B6）` 的去向写清，§3.0.x 小节按编号重排为 3.0.1 → 3.0.2 → 3.0.3 → 3.0.4 → 3.0.5 → 3.0.6。
