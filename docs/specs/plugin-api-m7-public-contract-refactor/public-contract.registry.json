@@ -10637,7 +10637,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "settings section registration",
+      "currentShape": "settings section registration forwarded to the official authority; the answer is the official settings scope object for that namespace (its members are get / watch / update / replace / mutate), not a facade-minted handle",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -11114,7 +11114,7 @@
       "authority": "settings authority",
       "scope": "profile",
       "resourceKey": "settings namespace",
-      "identitySource": "parent handle generation",
+      "identitySource": "parent registration identity",
       "conflictRule": "not-applicable",
       "lifecycle": "valid while the namespace backing is active",
       "failureSemantics": "discriminated-result",
@@ -11123,7 +11123,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "registration handle with read members; the shared field names with settings.scope.handle (generation, revision, lifecycle) are one contract \u2014 see that row for the scope side",
+      "currentShape": "the registration answer is the official settings scope object for that namespace, whose own members are the domain read and write entries { get(), watch(callback), update(patch), replace(section), mutate(ops) }; the handle is the scope the official authority keeps, so it mints no separate facade identity",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -11147,7 +11147,7 @@
       "authority": "settings authority",
       "scope": "profile",
       "resourceKey": "settings namespace",
-      "identitySource": "parent handle generation",
+      "identitySource": "parent registration identity",
       "conflictRule": "not-applicable",
       "lifecycle": "valid while the namespace backing is active",
       "failureSemantics": "discriminated-result",
@@ -11156,7 +11156,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "scope handle { get(), watch(callback), update(patch), replace(section), mutate(...) } carrying the same generation / revision / lifecycle field contract as settings.register.handle",
+      "currentShape": "the same official settings scope object settings.register answered for that namespace: the members are the domain read and write entries { get(), watch(callback), update(patch), replace(section), mutate(ops) }, and the object is the official authority's own handle rather than a facade-minted one",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -14213,7 +14213,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "frozen { id, ownerId, generation, dispose() } from the shared resource handle factory; the registration owner is the facade channel-registration owner token and dispose() answers the frozen discriminated { ok, code: revoked | stale, reason? }",
+      "currentShape": "frozen { id, ownerId, generation, dispose() } from the shared resource handle factory; the registration owner is the root owner token and dispose() answers the frozen discriminated { ok, code: revoked | stale, reason? }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
