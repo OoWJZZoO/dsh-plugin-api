@@ -201,17 +201,20 @@
 
 **保留（14 条记录，均为真实外层合同偏离）**：`events.define`、`events.define.handle`、`agents.register`、`sessions.channels.ack`（结果同时承载 ack 与终态）、`tools.executionPolicies.register`（`execute` 点是 around 屏障）、`events.decisions.register`（fs 意图异步屏障）、`profiles.snapshot.validate`（验证兼作后续 apply 决策准备）、`sessions.compaction.run`（外层结果缺 operation 身份）、`executions.recovery.checkpoints.planRestore`（动词名例外）、`sessions.interactions.respond`（host/client 各 1 条：接受结果不带 handle 与 terminal）、`sessions.selection.set`（2 条：完成语义 + 缺 `commitState`/`generation`，两条为不同偏差，分别标注）、`sessions.selection.get`（读非纯）。
 
-**新增（3 条记录 / 3 行）**：
+**新增（4 条记录 / 4 行）**：
 
 | 成员 | 六项（摘要） |
 |---|---|
 | `tasks.start` / `tasks.settle` / `tasks.attach` 各 1 条 | `memberPath`: 三者各自；`baseContract: operation`；`exception`: 外层结果不含 `operation` handle 与 `terminal`；`reason`: 控制对象是 durable task/attempt 身份，经 `tasks.get`/`tasks.observe` 观察，门面不铸造第二套操作身份；`replacementShape`: `{ ok, code, action, taskId, task, terminal? }`；`verification`: 任务语义分类测试 + 双插件组合测试 |
+| `tasks.register` 1 条 | 同批登记：Task 3.4 的 entry 级校验要求注册类 leaf 的失败呈现为 typed throw，而该成员返回判别式结果且不铸造 handle，故按 `resourceRegistry` 的外层偏离补一条六项例外 |
 
 异步 contribution 的 `status()` 扩展**不在此列**：按 S14 它被写入 api-idioms §3.5 成为**通用规则**而非个别例外；`sessions.request` 亦因 S13 而无需新增例外（同一事实不再两套登记）。
 
-**净额（执行后的实测值，本节按 Stage 4 的实测结果订正）**：记录口径 20 − 6 + 4 = **18**；成员行口径 17 − 4 + 4 = **17**；公共 path 口径 16 − 4 + 4 = **16**。上限为 17 行 / 20 记录 / 16 path，三口径均**不高于**上限。
+**净额（执行后的实测值，本节按 Stage 4 的实测结果订正）**：重分类本身为记录口径 20 − 6 + 4 = **18**；成员行口径 17 − 4 + 4 = **17**；公共 path 口径 16 − 4 + 4 = **16**。上限为 17 行 / 20 记录 / 16 path，三口径均**不高于**上限。
 
 与设计时的预测（20 → 17 / 17 → 16 / 16 → 15，新增 3 条）相比，实际多出一条新增记录：`tasks.register`。原因是 Task 3.4 新增的 entry 级校验要求注册类 leaf 的失败呈现为 typed throw，而 `tasks.register` 返回判别式结果且不铸造 handle，故与 `tasks.start` / `tasks.settle` / `tasks.attach` 同批按六项字段登记例外；回收侧 6 条记录 / 4 行与设计一致。
+
+**HEAD 实测**：后续复核轮又为 `agents.register` 追加一条记录（该注册按上游要求原样转发官方注册动词、原样返回官方 disposer、门面不铸第二身份，属 `resourceRegistry` idiom 的外层偏离；此前只在台账披露，现按六项例外登记，行 / path 两口径不变）。故 HEAD 实测为记录 **19**、成员行 **17**、公共 path **16**，三口径仍**不高于**上限。
 
 ---
 
