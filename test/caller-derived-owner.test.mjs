@@ -249,9 +249,13 @@ test('executions.visibility.register derives the owner from the caller that read
   assert.deepEqual(seen, ['plugin-a', 'plugin-b', 'plugin-a'], 'each caller binds to its own derived identity')
   assert.equal(first.ownerId, 'plugin-a')
   assert.equal(second.ownerId, 'plugin-b')
-  // The generation sequence is the service's, not the view's: two
-  // registrations from the same caller still carry different generations.
-  assert.notEqual(first.generation, third.generation, 'the generation sequence keeps advancing across reads')
+  // The generation sequence is the service's, not the view's: consecutive
+  // registrations across two views advance 1 → 2 → 3. A per-view counter
+  // would hand out 1 → 1 → 2 and fail here.
+  const sequence = [first, second, third].map((handle) => Number(`${handle.generation}`.split(':').pop()))
+  assert.deepEqual(sequence, [1, 2, 3], 'the service keeps one advancing generation sequence')
+  const later = forCaller(service, 'plugin-a').executions.visibility.register({ id: 'v-3', filter: () => true })
+  assert.equal(Number(`${later.generation}`.split(':').pop()), 4, 'a fresh view continues the service sequence')
   assert.equal(first.dispose().code, 'revoked')
   assert.equal(first.dispose().code, 'stale')
 })
