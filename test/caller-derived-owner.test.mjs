@@ -318,3 +318,34 @@ test('a taken registration view survives a later visitor and a remount', () => {
   viewAfter.catalog.register({ id: 'beta' })
   assert.deepEqual(second, ['plugin-a'], 'the remounted slot receives the call')
 })
+
+test('the recovery policy entries derive the owner and refuse another owner id', () => {
+  const service = createService()
+  const seen = []
+  service.mountFeature('recovery', {
+    capability: { register: (spec) => ({ id: spec.operationId, scopeOwner: spec.scopeOwner, scopeGeneration: spec.scopeGeneration, dispose: () => ({ ok: true, code: 'revoked' }) }) },
+    policy: { register: (spec) => { seen.push(['policy', spec.ownerId]); return { id: spec.id, ownerId: spec.ownerId, generation: spec.generation, dispose: () => ({ ok: true, code: 'revoked' }) } } },
+    visibility: { register: (spec) => { seen.push(['visibility', spec.ownerId]); return { id: spec.id, ownerId: spec.ownerId, generation: spec.generation, dispose: () => ({ ok: true, code: 'revoked' }) } } },
+    evaluate: () => ({ ok: true }),
+    coverage: () => ({}),
+    availability: () => ({ status: 'active' }),
+  })
+
+  const a = forCaller(service, 'plugin-a')
+  const policyHandle = a.executions.recovery.policy.register({ id: 'p-1', ownerId: 'someone-else', generation: 'forged', decide: () => ({}) })
+  const visibilityHandle = a.executions.recovery.visibility.register({ id: 'v-1', ownerId: 'someone-else', generation: 'forged', fields: [] })
+  assert.equal(policyHandle.ownerId, 'plugin-a', 'the declared owner is replaced by the derived caller identity')
+  assert.equal(visibilityHandle.ownerId, 'plugin-a')
+  assert.notEqual(policyHandle.generation, 'forged', 'the generation is the facade-minted one')
+  assert.notEqual(visibilityHandle.generation, 'forged')
+  assert.deepEqual(seen, [['policy', 'plugin-a'], ['visibility', 'plugin-a']])
+
+  forCaller(service, 'plugin-b').executions.recovery.policy.register({ id: 'p-2', decide: () => ({}) })
+  assert.deepEqual(seen.at(-1), ['policy', 'plugin-b'], 'each caller binds to its own identity')
+
+  // The capability declaration keeps its own scope vocabulary: the operation
+  // under recovery is not the declaring plugin, so nothing is derived there.
+  const capability = a.executions.recovery.capability.register({ operationId: 'op', scopeOwner: 'op-owner', scopeGeneration: 'gen-1', scope: 'session', idempotent: true, retryable: true, allowedActions: ['stop'], sideEffectClass: 'none' })
+  assert.equal(capability.scopeOwner, 'op-owner')
+  assert.equal(capability.scopeGeneration, 'gen-1')
+})

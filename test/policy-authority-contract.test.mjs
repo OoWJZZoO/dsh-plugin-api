@@ -120,7 +120,7 @@ test('recovery coverage reports per-path automatic status and registration avail
 test('recovery decide and commit form a single-consumption automatic authority', async () => {
   const owner = createRecoveryPolicyOwner({ logger: { warn() {} } })
   owner.api.capability.register({
-    operationId: 'op-1', ownerId: 'o1', generation: 'g1', scope: 'session',
+    operationId: 'op-1', scopeOwner: 'o1', scopeGeneration: 'g1', scope: 'session',
     idempotent: true, retryable: true, allowedActions: ['retry'], sideEffectClass: 'none',
   })
   owner.api.policy.register({
@@ -138,7 +138,7 @@ test('recovery decide and commit form a single-consumption automatic authority',
   })
   const input = {
     execution: { executionId: 'e1', attemptId: 'a1' },
-    capability: { operationId: 'op-1', ownerId: 'o1', generation: 'g1' },
+    capability: { operationId: 'op-1', scopeOwner: 'o1', scopeGeneration: 'g1' },
     failure: new Error('transient'),
     attemptsRemaining: 2,
     ownerId: 'o1',
@@ -167,7 +167,7 @@ test('recovery decide and commit form a single-consumption automatic authority',
 test('recovery commit rejects identity mismatches and terminal operations', async () => {
   const owner = createRecoveryPolicyOwner({ logger: { warn() {} } })
   owner.api.capability.register({
-    operationId: 'op-2', ownerId: 'o2', generation: 'g2', scope: 'session',
+    operationId: 'op-2', scopeOwner: 'o2', scopeGeneration: 'g2', scope: 'session',
     idempotent: true, retryable: true, allowedActions: ['retry'], sideEffectClass: 'none',
   })
   owner.api.policy.register({
@@ -184,7 +184,7 @@ test('recovery commit rejects identity mismatches and terminal operations', asyn
   })
   const decided = await owner.api._internal.decide({
     execution: { executionId: 'e2', attemptId: 'a2' },
-    capability: { operationId: 'op-2', ownerId: 'o2', generation: 'g2' },
+    capability: { operationId: 'op-2', scopeOwner: 'o2', scopeGeneration: 'g2' },
     failure: new Error('boom'),
     attemptsRemaining: 2,
     ownerId: 'o2',
@@ -214,7 +214,7 @@ test('recovery commit rejects identity mismatches and terminal operations', asyn
 test('cooperative evaluate and automatic decide share the same generation and decision', async () => {
   const owner = createRecoveryPolicyOwner({ logger: { warn() {} } })
   owner.api.capability.register({
-    operationId: 'op-3', ownerId: 'o3', generation: 'g3', scope: 'session',
+    operationId: 'op-3', scopeOwner: 'o3', scopeGeneration: 'g3', scope: 'session',
     idempotent: true, retryable: true, allowedActions: ['retry'], sideEffectClass: 'none',
   })
   owner.api.policy.register({
@@ -223,7 +223,7 @@ test('cooperative evaluate and automatic decide share the same generation and de
   })
   const input = {
     execution: { executionId: 'e3', attemptId: 'a3' },
-    capability: { operationId: 'op-3', ownerId: 'o3', generation: 'g3' },
+    capability: { operationId: 'op-3', scopeOwner: 'o3', scopeGeneration: 'g3' },
     failure: new Error('x'),
     attemptsRemaining: 2,
     ownerId: 'o3',
@@ -264,12 +264,12 @@ test('multiple recovery owners converge deterministically by precedence', async 
   owner.api.policy.register({ id: 'low', ownerId: 'a', generation: 'g', priority: 'low', decide: () => ({ action: 'retry', reason: { code: 'immediate' } }) })
   owner.api.policy.register({ id: 'high', ownerId: 'b', generation: 'g', priority: 'high', decide: () => ({ action: 'abort' }) })
   owner.api.capability.register({
-    operationId: 'op-5', ownerId: 'a', generation: 'g', scope: 'session',
+    operationId: 'op-5', scopeOwner: 'a', scopeGeneration: 'g', scope: 'session',
     idempotent: true, retryable: true, allowedActions: ['retry', 'abort'], sideEffectClass: 'none',
   })
   const decision = await owner.api.evaluate({
     execution: { executionId: 'e5', attemptId: 'a5', active: true, cancellable: true },
-    capability: { operationId: 'op-5', ownerId: 'a', generation: 'g' },
+    capability: { operationId: 'op-5', scopeOwner: 'a', scopeGeneration: 'g' },
     failure: new Error('x'),
     attemptsRemaining: 1,
   })
@@ -290,12 +290,12 @@ test('policy registration handles carry owner-bound id, ownerId, generation and 
 
   const recovery = createRecoveryPolicyOwner({ logger: { warn() {} } })
   const capabilityHandle = recovery.api.capability.register({
-    operationId: 'op-h', ownerId: 'o-h', generation: 'g-h', scope: 'session',
+    operationId: 'op-h', scopeOwner: 'o-h', scopeGeneration: 'g-h', scope: 'session',
     idempotent: true, retryable: true, allowedActions: ['stop'], sideEffectClass: 'none',
   })
   assert.equal(capabilityHandle.id, 'op-h')
-  assert.equal(capabilityHandle.ownerId, 'o-h')
-  assert.equal(capabilityHandle.generation, 'g-h')
+  assert.equal(capabilityHandle.scopeOwner, 'o-h', 'the declaration identity is the recovered operation scope, under its own name')
+  assert.equal(capabilityHandle.scopeGeneration, 'g-h')
   assert.equal(typeof capabilityHandle.dispose, 'function')
   const policyRecoveryHandle = recovery.api.policy.register({
     id: 'p-h', ownerId: 'o-h', generation: 'g-h', decide: () => ({ action: 'stop' }),

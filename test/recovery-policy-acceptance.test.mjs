@@ -23,8 +23,8 @@ function owner(options = {}) {
 function declareCapability(recovery, overrides = {}) {
   return recovery.api.capability.register({
     operationId: 'operation-1',
-    ownerId: 'consumer-1',
-    generation: '1',
+    scopeOwner: 'consumer-1',
+    scopeGeneration: '1',
     scope: 'session',
     idempotent: true,
     retryable: true,
@@ -71,7 +71,7 @@ test('explicit public projections interoperate without ownership or mutation', a
   let actionExecutions = 0
   const decision = await recovery.api.evaluate({
     failure: { class: 'transient', code: 'provider-timeout' },
-    capability: { operationId: 'operation-1', ownerId: 'consumer-1', generation: '1' },
+    capability: { operationId: 'operation-1', scopeOwner: 'consumer-1', scopeGeneration: '1' },
     execution: execution(),
     scope: 'session',
     evidence,
@@ -167,7 +167,7 @@ test('route, billing, approval, replay, budget, and abort attempts remain outsid
     },
   })
   const routeDecision = await routeRecovery.api.evaluate({
-    failure: { class: 'transient' }, capability: { operationId: 'operation-1', ownerId: 'consumer-1', generation: '1' },
+    failure: { class: 'transient' }, capability: { operationId: 'operation-1', scopeOwner: 'consumer-1', scopeGeneration: '1' },
     execution: execution(), scope: 'session', decisionWindowId: 'route-selection',
   })
   assert.equal(routeDecision.reason.code, 'fallback-route-selection-forbidden')
@@ -180,7 +180,7 @@ test('route, billing, approval, replay, budget, and abort attempts remain outsid
     },
   })
   const replayDecision = await nonIdempotent.api.evaluate({
-    failure: { class: 'transient' }, capability: { operationId: 'operation-1', ownerId: 'consumer-1', generation: '1' },
+    failure: { class: 'transient' }, capability: { operationId: 'operation-1', scopeOwner: 'consumer-1', scopeGeneration: '1' },
     execution: execution(), scope: 'session', decisionWindowId: 'non-idempotent',
   })
   assert.equal(replayDecision.reason.code, 'retry-non-idempotent')
@@ -189,7 +189,7 @@ test('route, billing, approval, replay, budget, and abort attempts remain outsid
   declareCapability(approval, { allowedActions: ['fork', 'stop'], forkRequiresApproval: true })
   approval.api.policy.register({ id: 'fork', ownerId: 'p', generation: '1', decide() { return { action: 'fork' } } })
   const approvalDecision = await approval.api.evaluate({
-    failure: { class: 'transient' }, capability: { operationId: 'operation-1', ownerId: 'consumer-1', generation: '1' },
+    failure: { class: 'transient' }, capability: { operationId: 'operation-1', scopeOwner: 'consumer-1', scopeGeneration: '1' },
     execution: execution(), scope: 'session', approvalGranted: false, decisionWindowId: 'approval-bypass',
   })
   assert.equal(approvalDecision.reason.code, 'fork-approval-required')
@@ -200,7 +200,7 @@ test('route, billing, approval, replay, budget, and abort attempts remain outsid
     return { action: 'retry', bounds: { attemptsRemaining: 1, deadlineAt: '2999-01-01T00:00:00.000Z', backoff: { kind: 'immediate' } } }
   } })
   const budgetDecision = await budget.api.evaluate({
-    failure: { class: 'transient' }, capability: { operationId: 'operation-1', ownerId: 'consumer-1', generation: '1' },
+    failure: { class: 'transient' }, capability: { operationId: 'operation-1', scopeOwner: 'consumer-1', scopeGeneration: '1' },
     execution: execution(), scope: 'session', attemptsRemaining: 0, decisionWindowId: 'budget-exhausted',
   })
   assert.equal(budgetDecision.reason.code, 'retry-budget-exhausted')

@@ -33,7 +33,7 @@ function baseInput(overrides = {}) {
     generation: 'gen-op-1',
     scope: 'session',
     execution: { executionId: 'exec-1', attemptId: 'attempt-1', active: true, cancellable: true },
-    capability: { operationId: 'op-1', ownerId: 'op-owner', generation: 'gen-op-1' },
+    capability: { operationId: 'op-1', scopeOwner: 'op-owner', scopeGeneration: 'gen-op-1' },
     failure: { code: 'provider-error', message: 'temporary' },
     attemptsRemaining: 1,
     ...overrides,
@@ -63,8 +63,8 @@ test('registered policy is evaluated and consumed exactly once per window', asyn
   const owner = createOwner()
   owner.api.capability.register({
     operationId: 'op-1',
-    ownerId: 'op-owner',
-    generation: 'gen-op-1',
+    scopeOwner: 'op-owner',
+    scopeGeneration: 'gen-op-1',
     scope: 'session',
     idempotent: true,
     retryable: true,
@@ -97,8 +97,8 @@ test('cancellation and terminal outcomes never produce an automatic retry', asyn
   const owner = createOwner()
   owner.api.capability.register({
     operationId: 'op-1',
-    ownerId: 'op-owner',
-    generation: 'gen-op-1',
+    scopeOwner: 'op-owner',
+    scopeGeneration: 'gen-op-1',
     scope: 'session',
     idempotent: true,
     retryable: true,
@@ -127,8 +127,8 @@ test('cooperative evaluate keeps the safe-default outcome and shares the same ge
   assert.equal(plain.reason.code, 'safe-default')
   owner.api.capability.register({
     operationId: 'op-1',
-    ownerId: 'op-owner',
-    generation: 'gen-op-1',
+    scopeOwner: 'op-owner',
+    scopeGeneration: 'gen-op-1',
     scope: 'session',
     idempotent: true,
     retryable: true,
@@ -149,8 +149,8 @@ test('recovery-visibility policies are consumed by the public decision projectio
   const owner = createOwner()
   owner.api.capability.register({
     operationId: 'op-1',
-    ownerId: 'op-owner',
-    generation: 'gen-op-1',
+    scopeOwner: 'op-owner',
+    scopeGeneration: 'gen-op-1',
     scope: 'session',
     idempotent: true,
     retryable: true,
@@ -274,8 +274,8 @@ test('task settlement consults the shared authority and a retry decision withhol
   const recoveryOwner = createOwner()
   recoveryOwner.api.capability.register({
     operationId: 'task-settlement',
-    ownerId: 'facade-task-owner',
-    generation: 'gen-any',
+    scopeOwner: 'facade-task-owner',
+    scopeGeneration: 'gen-any',
     scope: 'workspace',
     idempotent: false,
     retryable: true,

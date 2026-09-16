@@ -19,8 +19,8 @@ function createOwner() {
 function capability(owner, overrides = {}) {
   return owner.api.capability.register({
     operationId: 'operation-1',
-    ownerId: 'owner-1',
-    generation: '1',
+    scopeOwner: 'owner-1',
+    scopeGeneration: '1',
     scope: 'session',
     idempotent: true,
     retryable: true,
@@ -35,7 +35,7 @@ function capability(owner, overrides = {}) {
 function input(overrides = {}) {
   return {
     failure: { class: 'transient', code: 'provider-timeout' },
-    capability: { operationId: 'operation-1', ownerId: 'owner-1', generation: '1' },
+    capability: { operationId: 'operation-1', scopeOwner: 'owner-1', scopeGeneration: '1' },
     execution: { executionId: 'execution-1', attemptId: 'attempt-1', active: true, cancellable: true },
     scope: 'session',
     evidence: { source: { kind: 'test', observedAt: '2026-08-25T00:00:00.000Z', certainty: 'observed' } },
@@ -43,17 +43,34 @@ function input(overrides = {}) {
   }
 }
 
+test('a registration id is global to the plane: another owner is a typed conflict, the same owner is latest-wins', () => {
+  const owner = createOwner()
+  owner.api.policy.register({ id: 'shared', ownerId: 'owner-a', generation: '1', decide: () => ({ action: 'stop', reason: { code: 'x' } }) })
+  assert.throws(
+    () => owner.api.policy.register({ id: 'shared', ownerId: 'owner-b', generation: '1', decide: () => ({ action: 'stop', reason: { code: 'x' } }) }),
+    /another owner/,
+    'a second owner cannot take over a registration id',
+  )
+  const replaced = owner.api.policy.register({ id: 'shared', ownerId: 'owner-a', generation: '2', decide: () => ({ action: 'stop', reason: { code: 'x' } }) })
+  assert.equal(replaced.ownerId, 'owner-a', 'the registering owner keeps latest-wins')
+  owner.api.visibility.register({ id: 'vis', ownerId: 'owner-a', generation: '1', fields: [] })
+  assert.throws(
+    () => owner.api.visibility.register({ id: 'vis', ownerId: 'owner-b', generation: '1', fields: [] }),
+    /another owner/,
+  )
+})
+
 test('capability registration validates declarations and old disposer cannot remove a newer generation', () => {
   const owner = createOwner()
   const oldHandle = capability(owner)
   const newHandle = capability(owner, { generation: '2' })
   assert.equal(oldHandle.id, 'operation-1')
-  assert.equal(oldHandle.ownerId, 'owner-1')
-  assert.equal(typeof oldHandle.generation, 'string')
+  assert.equal(oldHandle.scopeOwner, 'owner-1', 'the declaration identity is the operation scope, under its own name')
+  assert.equal(typeof oldHandle.scopeGeneration, 'string')
   assert.equal(oldHandle.dispose().code, 'stale')
   assert.equal(newHandle.dispose().code, 'revoked')
   assert.throws(
-    () => owner.api.capability.register({ operationId: 'x', ownerId: 'o', generation: '1', scope: 'bad' }),
+    () => owner.api.capability.register({ operationId: 'x', scopeOwner: 'o', scopeGeneration: '1', scope: 'bad' }),
     RecoveryPolicyRegistrationError,
   )
 })

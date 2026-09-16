@@ -61,7 +61,7 @@ test('mounted recovery evaluates and consumes a bounded policy decision without 
   apply(ctx)
   const recovery = state.pluginApi.executions.recovery
   recovery.capability.register({
-    operationId: 'op', ownerId: 'owner', generation: '1', scope: 'session',
+    operationId: 'op', scopeOwner: 'owner', scopeGeneration: '1', scope: 'session',
     idempotent: true, retryable: true, allowedActions: ['retry', 'stop'],
     sideEffectClass: 'read-only', retryBudget: { maxAttempts: 1 }, deadlineMs: 60_000,
   })
@@ -72,7 +72,7 @@ test('mounted recovery evaluates and consumes a bounded policy decision without 
   } })
   const decision = await recovery.evaluate({
     failure: { class: 'transient', code: 'temporary' },
-    capability: { operationId: 'op', ownerId: 'owner', generation: '1' },
+    capability: { operationId: 'op', scopeOwner: 'owner', scopeGeneration: '1' },
     execution: { executionId: 'e-1', attemptId: 'a-1', active: true },
     scope: 'session', decisionWindowId: 'window-1',
   })
