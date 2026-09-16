@@ -173,7 +173,8 @@
     ],
     "callShape": [
       "sync",
-      "async"
+      "async",
+      "not-applicable"
     ]
   },
   "hostDomainTree": [
@@ -252,7 +253,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "apiVersion",
@@ -285,7 +287,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "assertCompatible",
@@ -318,7 +321,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "capabilityMatrix",
@@ -351,7 +355,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "capabilities",
@@ -384,7 +389,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "capabilities.get",
@@ -417,7 +423,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "capabilities.list",
@@ -450,7 +457,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "capabilities.require",
@@ -483,7 +491,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "events.catalog",
@@ -516,7 +525,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "events.on",
@@ -549,7 +559,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "events.once",
@@ -582,7 +593,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "events.emit",
@@ -621,7 +633,8 @@
         "security policy: not applicable (no egress or tool boundary is crossed)",
         "audit: not applicable (dispatch is a bus fact, not an audited decision)",
         "branch/routing: closed (canonical producer authority is decided before dispatch)"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "events.serial",
@@ -660,7 +673,8 @@
         "security policy: not applicable (no egress or tool boundary is crossed)",
         "audit: not applicable (dispatch is a bus fact, not an audited decision)",
         "branch/routing: closed (canonical producer authority is decided before dispatch)"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "events.parallel",
@@ -699,7 +713,8 @@
         "security policy: not applicable (no egress or tool boundary is crossed)",
         "audit: not applicable (dispatch is a bus fact, not an audited decision)",
         "branch/routing: closed (canonical producer authority is decided before dispatch)"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "events.bail",
@@ -738,7 +753,8 @@
         "security policy: not applicable (no egress or tool boundary is crossed)",
         "audit: not applicable (dispatch is a bus fact, not an audited decision)",
         "branch/routing: closed (canonical producer authority is decided before dispatch)"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "events.waterfall",
@@ -777,7 +793,8 @@
         "security policy: not applicable (no egress or tool boundary is crossed)",
         "audit: not applicable (dispatch is a bus fact, not an audited decision)",
         "branch/routing: closed (canonical producer authority is decided before dispatch)"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "events.observe",
@@ -810,7 +827,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "events.observe.handle",
@@ -843,7 +861,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "events.define",
@@ -885,7 +904,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "events.define.handle",
@@ -927,7 +947,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "events.availability",
@@ -960,7 +981,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.isActive",
@@ -993,7 +1015,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.modelInfo",
@@ -1026,7 +1049,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "llm.prepareCall",
@@ -1059,7 +1083,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "llm.stream",
@@ -1092,7 +1117,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.registerAdapter",
@@ -1125,7 +1151,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.registerConfigurableProviders",
@@ -1158,7 +1185,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.registerModelDiscovery",
@@ -1191,7 +1219,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.availability",
@@ -1224,7 +1253,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.listProviders",
@@ -1257,7 +1287,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.listConfigurableProviders",
@@ -1290,7 +1321,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.discoverModels",
@@ -1323,7 +1355,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.providerRetryPolicy",
@@ -1356,7 +1389,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.listModels",
@@ -1389,7 +1423,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.resolveCallConfig",
@@ -1422,7 +1457,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.contentHasImage",
@@ -1455,7 +1491,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.createUserMessage",
@@ -1488,7 +1525,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.BlockAssembler",
@@ -1521,7 +1559,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.requestTransforms.transform",
@@ -1554,7 +1593,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.requestTransforms.register.handle",
@@ -1587,7 +1627,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.admissionPolicies.register",
@@ -1620,7 +1661,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.admissionPolicies.register.handle",
@@ -1653,7 +1695,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.adapters.decorate",
@@ -1686,7 +1729,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.adapters.snapshot",
@@ -1719,7 +1763,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.adapters.list",
@@ -1752,7 +1797,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.adapters.register.handle",
@@ -1785,7 +1831,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.routing.forExecution",
@@ -1818,7 +1865,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.current",
@@ -1851,7 +1899,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.on",
@@ -1884,7 +1933,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.routing.observe",
@@ -1917,7 +1967,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.observe.handle",
@@ -1950,7 +2001,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.routing.once",
@@ -1983,7 +2035,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.routing.wait",
@@ -2016,7 +2069,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.policies.register",
@@ -2049,7 +2103,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.candidates.register",
@@ -2082,7 +2137,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.candidates.list",
@@ -2115,7 +2171,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.health.observe",
@@ -2148,7 +2205,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.health.get",
@@ -2181,7 +2239,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.health.history",
@@ -2214,7 +2273,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.health.registerCircuitPolicy",
@@ -2247,7 +2307,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.routing.health.registerProbe",
@@ -2280,7 +2341,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.routing.health.probe",
@@ -2313,7 +2375,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.routing.health.startProbe",
@@ -2346,7 +2409,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.routing.health.completeProbe",
@@ -2379,7 +2443,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.routing.circuit.status",
@@ -2412,7 +2477,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.routing.circuit.inspect",
@@ -2445,7 +2511,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.decisions.get",
@@ -2478,7 +2545,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.decisions.history",
@@ -2511,7 +2579,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.availability",
@@ -2544,7 +2613,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "agents.isActive",
@@ -2577,7 +2647,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "agents.get",
@@ -2610,7 +2681,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "agents.list",
@@ -2643,7 +2715,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "agents.roots",
@@ -2676,7 +2749,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "agents.create",
@@ -2709,7 +2783,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "agents.resume",
@@ -2742,7 +2817,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "agents.register",
@@ -2792,7 +2868,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "agents.providers.enter",
@@ -2825,7 +2902,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "agents.providers.announce",
@@ -2858,7 +2936,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "agents.providers.setFactory",
@@ -2891,7 +2970,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "agents.providers.isActive",
@@ -2924,7 +3004,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "agents.availability",
@@ -2957,7 +3038,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "agents.providers.register.handle",
@@ -2990,7 +3072,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "agents.currentInitiator",
@@ -3023,7 +3106,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "agents.requireInitiator",
@@ -3056,7 +3140,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "agents.withInitiator",
@@ -3089,7 +3174,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "agents.withoutInitiator",
@@ -3122,7 +3208,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "agents.isOwnedBy",
@@ -3155,7 +3242,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "agents.options",
@@ -3188,7 +3276,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "executions.observe",
@@ -3221,7 +3310,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "executions.get",
@@ -3254,7 +3344,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "executions.history",
@@ -3287,7 +3378,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "executions.onChange",
@@ -3320,7 +3412,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "executions.visibility.register",
@@ -3353,7 +3446,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "executions.availability",
@@ -3386,7 +3480,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "executions.observe.handle",
@@ -3419,7 +3514,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "executions.recovery.classify",
@@ -3452,7 +3548,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "executions.recovery.capability.declare",
@@ -3485,7 +3582,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "executions.recovery.policy.register",
@@ -3518,7 +3616,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "executions.recovery.evaluate",
@@ -3551,7 +3650,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "executions.recovery.consume",
@@ -3584,7 +3684,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "executions.recovery.adapters.fromAgentRequestError",
@@ -3617,7 +3718,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "executions.recovery.adapters.fromToolResult",
@@ -3650,7 +3752,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "executions.recovery.adapters.unsupported",
@@ -3683,7 +3786,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "executions.recovery.visibility.register",
@@ -3716,7 +3820,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "executions.recovery.visibility.project",
@@ -3749,7 +3854,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "executions.recovery.availability",
@@ -3782,7 +3888,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "executions.recovery.coverage",
@@ -3815,7 +3922,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.get",
@@ -3848,7 +3956,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.list",
@@ -3881,7 +3990,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.header",
@@ -3914,7 +4024,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.events",
@@ -3947,7 +4058,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.seq",
@@ -3980,7 +4092,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.surface",
@@ -4013,7 +4126,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.requestHeader",
@@ -4046,7 +4160,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.requestContext",
@@ -4079,7 +4194,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.deriveMessages",
@@ -4112,7 +4228,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.sessionEventTypes",
@@ -4145,7 +4262,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.surfaceEventTypes",
@@ -4178,7 +4296,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.isSessionEventType",
@@ -4211,7 +4330,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.isSurfaceEventType",
@@ -4244,7 +4364,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.views.header",
@@ -4277,7 +4398,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.views.events",
@@ -4310,7 +4432,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.views.seq",
@@ -4343,7 +4466,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.views.surface",
@@ -4376,7 +4500,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.views.requestHeader",
@@ -4409,7 +4534,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.views.requestContext",
@@ -4442,7 +4568,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.views.deriveMessages",
@@ -4475,7 +4602,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.views.isSessionEventType",
@@ -4508,7 +4636,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.views.isSurfaceEventType",
@@ -4541,7 +4670,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.views.sessionEventTypes",
@@ -4574,7 +4704,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.views.surfaceEventTypes",
@@ -4607,7 +4738,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.on",
@@ -4640,7 +4772,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.observe",
@@ -4673,7 +4806,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.once",
@@ -4706,7 +4840,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.fork",
@@ -4739,7 +4874,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.availability",
@@ -4772,7 +4908,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.observe.handle",
@@ -4805,7 +4942,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.create",
@@ -4838,7 +4976,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.prepare",
@@ -4871,7 +5010,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.enter",
@@ -4904,7 +5044,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.announce",
@@ -4937,7 +5078,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.flush",
@@ -4970,7 +5112,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.append",
@@ -5003,7 +5146,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.deriveEventMessage",
@@ -5036,7 +5180,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.durable.durableEventTypes",
@@ -5069,7 +5214,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.durable.list",
@@ -5102,7 +5248,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.durable.durableEventDescriptors",
@@ -5135,7 +5282,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.durable.isDurableEventType",
@@ -5168,7 +5316,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.durable.getDurableEventDescriptor",
@@ -5201,7 +5350,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.durable.get",
@@ -5234,7 +5384,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.durable.onDurable",
@@ -5267,7 +5418,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.durable.observe",
@@ -5300,7 +5452,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.durable.observe.handle",
@@ -5333,7 +5486,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.durable.onceDurable",
@@ -5366,7 +5520,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.durable.appendMessage",
@@ -5399,7 +5554,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.branches.create",
@@ -5432,7 +5588,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.branches.graph",
@@ -5465,7 +5622,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.branches.plan",
@@ -5498,7 +5656,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.branches.preview",
@@ -5531,7 +5690,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.branches.commit",
@@ -5564,7 +5724,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.branches.rollback",
@@ -5597,7 +5758,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.branches.restore",
@@ -5630,7 +5792,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.branches.availability",
@@ -5663,7 +5826,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.channels.open",
@@ -5696,7 +5860,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.acquire.handle",
@@ -5729,7 +5894,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.heartbeat",
@@ -5762,7 +5928,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "sessions.channels.revoke",
@@ -5795,7 +5962,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.subscribe",
@@ -5828,7 +5996,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.onChange",
@@ -5861,7 +6030,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.observe",
@@ -5888,17 +6058,18 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "channel observation",
+      "currentShape": "standard observation handle over the channel projection: frozen { current(), subscribe(listener), dispose(), epoch }, where current() answers the live frozen projection (the degraded view once released), subscribe(listener) is notified with that projection on every channel state change and is a no-op from a released handle, and dispose() is the identity-bound discriminated result (revoked / stale)",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.channels.fetchEvents",
-      "targetPath": "sessions.channels.list",
+      "targetPath": "sessions.channels.history",
       "capability": "sessions.channels",
       "kind": "leaf",
       "idiom": "projection",
@@ -5927,11 +6098,12 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.list",
-      "targetPath": "sessions.channels.list",
+      "targetPath": "sessions.channels.history",
       "capability": "sessions.channels",
       "kind": "leaf",
       "idiom": "projection",
@@ -5955,12 +6127,115 @@
       "concurrency": null,
       "reducer": "none",
       "currentShape": "event fetch query",
+      "migrationAction": "rename",
+      "status": "removed",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ],
+      "callShape": "not-applicable"
+    },
+    {
+      "publicPath": "sessions.channels.history",
+      "targetPath": "sessions.channels.history",
+      "capability": "sessions.channels",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session authority",
+      "scope": "session",
+      "resourceKey": "session id",
+      "identitySource": "caller plugin context",
+      "conflictRule": "not-applicable",
+      "lifecycle": "valid while the namespace backing is active",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "captured event-frame query (the event fetch answering under the query verb allowed by api-idioms \u00a73.1): frames strictly after the presented cursor, capped and filtered by event kind, and a cursor outside the retained window is refused with a typed resync-required result instead of a silently partial window",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
+    },
+    {
+      "publicPath": "sessions.channels.current",
+      "targetPath": "sessions.channels.current",
+      "capability": "sessions.channels",
+      "kind": "leaf",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session authority",
+      "scope": "session",
+      "resourceKey": "session id",
+      "identitySource": "caller plugin context",
+      "conflictRule": "not-applicable",
+      "lifecycle": "valid while the namespace backing is active",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "one-shot read of the frozen channel projection { channels, subscriptions, connectionState }; the caller retains nothing and the read never mutates channel state (subscribing is the separate observe member)",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ],
+      "callShape": "sync"
+    },
+    {
+      "publicPath": "sessions.channels.observe.handle",
+      "targetPath": "sessions.channels.observe.handle",
+      "capability": "sessions.channels",
+      "kind": "handle",
+      "idiom": "projection",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "read",
+      "composition": "pure",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "session authority",
+      "scope": "session",
+      "resourceKey": "session id",
+      "identitySource": "parent handle generation",
+      "conflictRule": "not-applicable",
+      "lifecycle": "observer lifetime; the handle exposes only its four public members \u2014 the listener set and the liveness flag stay private, a throwing listener only degrades itself, and a released handle delivers nothing",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "frozen { current(), subscribe(listener), dispose(), epoch }; current() is the channel projection (a degraded view once released), subscribe(listener) returns an unsubscribe function and is a no-op from a released handle, and dispose() is an identity-bound discriminated result (revoked / stale)",
+      "migrationAction": null,
+      "status": "advanced",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.ack",
@@ -6002,7 +6277,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "sessions.channels.resume",
@@ -6035,7 +6311,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "sessions.channels.auth.registerVerifier",
@@ -6068,7 +6345,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.auth.registerAuthorizer",
@@ -6101,7 +6379,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.auth.registerPairingProvider",
@@ -6134,7 +6413,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.auth.initiatePairing",
@@ -6167,7 +6447,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.channels.auth.approvePairing",
@@ -6200,7 +6481,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.channels.auth.rejectPairing",
@@ -6233,7 +6515,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.channels.redaction.registerProfile",
@@ -6266,7 +6549,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.dispatchChannelMethod",
@@ -6299,7 +6583,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.channelGenerationOf",
@@ -6332,7 +6617,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.availability",
@@ -6365,7 +6651,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.isActive",
@@ -6398,7 +6685,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tools.register",
@@ -6431,7 +6719,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.register.handle",
@@ -6464,7 +6753,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tools.restrict",
@@ -6497,7 +6787,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tools.guard",
@@ -6530,7 +6821,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tools.get",
@@ -6563,7 +6855,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.schemas",
@@ -6596,7 +6889,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tools.list",
@@ -6629,7 +6923,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.execute",
@@ -6662,7 +6957,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "tools.presentAs",
@@ -6695,7 +6991,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tools.executionMode",
@@ -6728,7 +7025,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tools.defineTool",
@@ -6761,7 +7059,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.toolAbortedError",
@@ -6794,7 +7093,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tools.availability",
@@ -6827,7 +7127,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.discovery.isActive",
@@ -6860,7 +7161,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tools.discovery.catalog.register",
@@ -6893,7 +7195,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.discovery.search",
@@ -6926,7 +7229,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tools.discovery.list",
@@ -6959,7 +7263,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.discovery.activate",
@@ -6992,7 +7297,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "tools.discovery.deactivate",
@@ -7025,7 +7331,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.discovery.audit.query",
@@ -7058,7 +7365,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tools.discovery.audit.list",
@@ -7091,7 +7399,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.discovery.availability",
@@ -7124,7 +7433,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.discovery.catalog.register.handle",
@@ -7157,7 +7467,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "skills.activation.registerDescriptor",
@@ -7190,7 +7501,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "skills.activation.registerSkill",
@@ -7223,7 +7535,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "skills.activation.activate",
@@ -7256,7 +7569,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "skills.activation.deactivate",
@@ -7289,7 +7603,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "skills.activation.exposure",
@@ -7322,7 +7637,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "skills.activation.exposure.list",
@@ -7355,7 +7671,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "skills.activation.audit",
@@ -7388,7 +7705,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "skills.activation.audit.list",
@@ -7421,7 +7739,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "skills.activation.policy.registerMinimalCatalogUpdate",
@@ -7454,7 +7773,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "skills.activation.availability",
@@ -7487,7 +7807,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "skills.activation.register.handle",
@@ -7505,22 +7826,23 @@
       "authority": "skill activation authority",
       "scope": "facade",
       "resourceKey": "registered id",
-      "identitySource": "parent handle generation",
-      "conflictRule": "content-conflict",
+      "identitySource": "derived-caller (root-fallback)",
+      "conflictRule": "owner-conflict",
       "lifecycle": "new lifecycle after dispose; not a stale update",
       "failureSemantics": "typed-throw",
-      "idempotency": "content-idempotent",
+      "idempotency": "latest-wins",
       "retryLayer": null,
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "registration result",
+      "currentShape": "frozen { id, ownerId, generation, dispose() } carrying the registered skill id, the caller-derived owner and the facade-minted generation, plus the registered extension members (skillId, activate, deactivate, exposure); dispose() is idempotent and answers the frozen discriminated { ok, code } (revoked / stale), delegating to the owner's own unregister",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "prompts.isActive",
@@ -7553,7 +7875,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "prompts.section",
@@ -7586,7 +7909,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "prompts.context",
@@ -7619,7 +7943,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "prompts.variable",
@@ -7652,7 +7977,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "prompts.tools",
@@ -7685,7 +8011,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "prompts.suppressRuntimeContext",
@@ -7718,7 +8045,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "prompts.render",
@@ -7751,7 +8079,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "prompts.renderContextSections",
@@ -7784,7 +8113,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "prompts.renderContextSnapshot",
@@ -7817,7 +8147,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "prompts.joinContextSections",
@@ -7850,7 +8181,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "prompts.assemble",
@@ -7883,7 +8215,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "prompts.contribute.handle",
@@ -7916,7 +8249,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "prompts.availability",
@@ -7949,7 +8283,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "prompts.provenance.contribute",
@@ -7982,7 +8317,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "prompts.provenance.compose",
@@ -8015,7 +8351,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "prompts.provenance.inspect",
@@ -8048,7 +8385,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "prompts.provenance.mapping",
@@ -8081,7 +8419,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "prompts.provenance.observe",
@@ -8114,7 +8453,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "prompts.provenance.policy.register",
@@ -8147,7 +8487,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "prompts.provenance.availability",
@@ -8180,7 +8521,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attachments.availability",
@@ -8213,7 +8555,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attachments.pipeline.ingest",
@@ -8246,7 +8589,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "attachments.pipeline.transform",
@@ -8279,7 +8623,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "attachments.pipeline.cleanup",
@@ -8312,7 +8657,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "attachments.pipeline.registerTransform",
@@ -8345,7 +8691,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "attachments.pipeline.capabilities",
@@ -8378,7 +8725,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attachments.projection.resolve",
@@ -8411,7 +8759,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "attachments.projection.get",
@@ -8444,7 +8793,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "attachments.projection.open",
@@ -8477,7 +8827,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "attachments.projection.project",
@@ -8510,7 +8861,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "attachments.projection.provenance",
@@ -8543,7 +8895,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "attachments.projection.availability",
@@ -8576,7 +8929,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attachments.pipeline.transforms.register.handle",
@@ -8609,7 +8963,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "mcp.servers",
@@ -8642,7 +8997,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "mcp.tools",
@@ -8675,7 +9031,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "mcp.resolvePublicName",
@@ -8708,7 +9065,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "mcp.onChange",
@@ -8741,7 +9099,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "mcp.observe",
@@ -8774,7 +9133,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "mcp.observe.handle",
@@ -8807,7 +9167,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "mcp.availability",
@@ -8840,7 +9201,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tasks.register",
@@ -8882,7 +9244,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "tasks.start",
@@ -8924,7 +9287,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "tasks.claim",
@@ -8957,7 +9321,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tasks.reassign",
@@ -8990,7 +9355,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tasks.settle",
@@ -9032,7 +9398,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "tasks.attach",
@@ -9074,7 +9441,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "tasks.get",
@@ -9107,7 +9475,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "tasks.observe",
@@ -9140,7 +9509,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "tasks.observe.handle",
@@ -9173,7 +9543,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tasks.history",
@@ -9206,7 +9577,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "tasks.availability",
@@ -9239,7 +9611,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "coordination.availability",
@@ -9272,7 +9645,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "coordination.acquire",
@@ -9305,7 +9679,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "coordination.acquire.handle",
@@ -9338,7 +9713,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "coordination.heartbeat",
@@ -9371,7 +9747,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "coordination.release",
@@ -9404,7 +9781,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "coordination.takeover",
@@ -9437,7 +9815,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "coordination.compareAndSet",
@@ -9470,7 +9849,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "coordination.watch",
@@ -9503,7 +9883,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "coordination.observe",
@@ -9536,7 +9917,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "coordination.observe.handle",
@@ -9569,7 +9951,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "workspaces.transactions.prepare",
@@ -9602,7 +9985,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "workspaces.transactions.record",
@@ -9635,7 +10019,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "workspaces.transactions.preview",
@@ -9668,7 +10053,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "workspaces.transactions.commit",
@@ -9701,7 +10087,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "workspaces.transactions.rollback",
@@ -9734,7 +10121,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "workspaces.transactions.recover",
@@ -9767,7 +10155,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "workspaces.transactions.get",
@@ -9800,7 +10189,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "workspaces.transactions.observe",
@@ -9833,7 +10223,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "workspaces.transactions.prepare.handle",
@@ -9866,7 +10257,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "security.policy.register",
@@ -9899,7 +10291,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "agents.decisions.register",
@@ -9932,7 +10325,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.executionPolicies.register",
@@ -9974,7 +10368,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "prompts.assemblyPolicies.register",
@@ -10007,7 +10402,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "events.decisions.register",
@@ -10049,7 +10445,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "security.redaction.register",
@@ -10082,7 +10479,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "security.egress.register",
@@ -10115,7 +10513,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "security.egress.coverage",
@@ -10148,7 +10547,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "security.egress.check",
@@ -10181,7 +10581,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "security.egress.lease.acquire",
@@ -10214,7 +10615,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "security.egress.lease.acquire.handle",
@@ -10247,7 +10649,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "security.egress.lease.release",
@@ -10280,7 +10683,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "security.audit.query",
@@ -10313,7 +10717,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "security.audit.list",
@@ -10346,7 +10751,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "security.availability",
@@ -10379,7 +10785,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "diagnostics.register",
@@ -10412,7 +10819,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "diagnostics.get",
@@ -10445,7 +10853,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "diagnostics.onChange",
@@ -10478,7 +10887,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "diagnostics.observe",
@@ -10511,7 +10921,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "diagnostics.observe.handle",
@@ -10544,7 +10955,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "diagnostics.availability",
@@ -10577,7 +10989,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "settings.isActive",
@@ -10610,7 +11023,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "settings.register",
@@ -10649,7 +11063,8 @@
         "security policy: not applicable (the path crosses no egress or tool boundary)",
         "audit: not applicable (not an audited decision point)",
         "branch/routing: not applicable"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "settings.scope",
@@ -10688,7 +11103,8 @@
         "security policy: not applicable (the path crosses no egress or tool boundary)",
         "audit: not applicable (not an audited decision point)",
         "branch/routing: not applicable"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "settings.describe",
@@ -10721,7 +11137,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "settings.inspect",
@@ -10754,7 +11171,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "settings.installSettingsSection",
@@ -10787,7 +11205,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "settings.update",
@@ -10826,7 +11245,8 @@
         "security policy: not applicable (the path crosses no egress or tool boundary)",
         "audit: not applicable (not an audited decision point)",
         "branch/routing: not applicable"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "settings.replace",
@@ -10859,7 +11279,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "settings.mutate",
@@ -10892,7 +11313,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "settings.writable",
@@ -10925,7 +11347,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "settings.prepareDocument",
@@ -10958,7 +11381,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "settings.get",
@@ -10997,7 +11421,8 @@
         "security policy: not applicable (the path crosses no egress or tool boundary)",
         "audit: not applicable (not an audited decision point)",
         "branch/routing: not applicable"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "settings.remote",
@@ -11030,7 +11455,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "settings.availability",
@@ -11063,7 +11489,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "settings.dispose",
@@ -11096,7 +11523,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "settings.register.handle",
@@ -11129,7 +11557,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "settings.scope.handle",
@@ -11162,7 +11591,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "profiles.inspect",
@@ -11195,7 +11625,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "profiles.health",
@@ -11228,7 +11659,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "profiles.planDiff",
@@ -11261,7 +11693,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "profiles.apply",
@@ -11294,7 +11727,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "profiles.snapshot.create",
@@ -11327,7 +11761,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "profiles.snapshot.modify",
@@ -11360,7 +11795,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "profiles.snapshot.delete",
@@ -11393,7 +11829,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "profiles.snapshot.apply",
@@ -11426,7 +11863,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "profiles.snapshot.validate",
@@ -11468,7 +11906,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "profiles.availability",
@@ -11501,7 +11940,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "remotes.isActive",
@@ -11534,7 +11974,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "remotes.publish",
@@ -11567,7 +12008,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "remotes.register.handle",
@@ -11600,7 +12042,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "remotes.dispose",
@@ -11633,7 +12076,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "storage.isActive",
@@ -11666,7 +12110,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "storage.open",
@@ -11705,7 +12150,8 @@
         "security policy: not applicable (the path crosses no egress or tool boundary)",
         "audit: not applicable (not an audited decision point)",
         "branch/routing: not applicable"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "storage.availability",
@@ -11738,7 +12184,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "storage.open.handle.close",
@@ -11771,7 +12218,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "storage.open.handle.purge",
@@ -11804,7 +12252,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "storage.open.handle.dispose",
@@ -11837,7 +12286,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "storage.open.handle.domain",
@@ -11870,7 +12320,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "services",
@@ -11903,7 +12354,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "isActive",
@@ -11936,7 +12388,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "apiVersion",
@@ -11969,7 +12422,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "assertCompatible",
@@ -12002,7 +12456,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "capabilities.get",
@@ -12035,7 +12490,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "capabilities.list",
@@ -12068,7 +12524,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "capabilities.require",
@@ -12101,7 +12558,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "connection.isActive",
@@ -12134,7 +12592,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "connection.rpc.call",
@@ -12167,7 +12626,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "connection.api.settings",
@@ -12200,7 +12660,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "connection.api.llm",
@@ -12233,7 +12694,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "connection.dispose",
@@ -12266,7 +12728,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "events.isActive",
@@ -12299,7 +12762,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "events.on",
@@ -12332,7 +12796,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "events.localeChange.on",
@@ -12365,7 +12830,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "events.themeChange.on",
@@ -12398,7 +12864,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "events.connectionReset.on",
@@ -12431,7 +12898,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "events.commandExecuted.on",
@@ -12464,7 +12932,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "events.localeChange.isActive",
@@ -12497,7 +12966,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "events.themeChange.isActive",
@@ -12530,7 +13000,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "events.connectionReset.isActive",
@@ -12563,7 +13034,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "events.commandExecuted.isActive",
@@ -12596,7 +13068,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "remotes.$on",
@@ -12629,7 +13102,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "remotes.$dispatch",
@@ -12662,7 +13136,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "remotes.mountRemote",
@@ -12695,7 +13170,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "remotes.mountRemoteContribution",
@@ -12728,7 +13204,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "remotes.contribute.handle",
@@ -12761,7 +13238,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "settings.scope",
@@ -12800,7 +13278,8 @@
         "security policy: not applicable (the path crosses no egress or tool boundary)",
         "audit: not applicable (not an audited decision point)",
         "branch/routing: not applicable"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "settings.remote.mountRemoteContribution",
@@ -12833,7 +13312,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "slots.register",
@@ -12866,7 +13346,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "slots.inject",
@@ -12899,7 +13380,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "slots.entries",
@@ -12932,7 +13414,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "slots.subscribe",
@@ -12965,7 +13448,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "slots.on",
@@ -12998,7 +13482,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "lifecycle.isActive",
@@ -13031,7 +13516,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "lifecycle.registerFace",
@@ -13064,7 +13550,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "lifecycle.availability",
@@ -13097,7 +13584,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "lifecycle.onChange",
@@ -13130,7 +13618,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "lifecycle.onRebind",
@@ -13163,7 +13652,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "lifecycle.scan",
@@ -13196,7 +13686,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "lifecycle.register.handle",
@@ -13229,7 +13720,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "codec.zod",
@@ -13262,7 +13754,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "codec.json",
@@ -13295,7 +13788,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "codec.strict",
@@ -13328,7 +13822,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "codec.invocation",
@@ -13361,7 +13856,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "codec.validateInvocation",
@@ -13394,7 +13890,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "services",
@@ -13427,7 +13924,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "skills.availability",
@@ -13460,7 +13958,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "workspaces.availability",
@@ -13493,7 +13992,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "remotes.availability",
@@ -13526,7 +14026,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "connection.availability",
@@ -13559,7 +14060,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "events.availability",
@@ -13592,7 +14094,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "remotes.availability",
@@ -13625,7 +14128,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "settings.availability",
@@ -13658,7 +14162,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "slots.availability",
@@ -13691,7 +14196,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "codec.availability",
@@ -13724,7 +14230,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "codec.validate",
@@ -13757,7 +14264,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.policies.register.handle",
@@ -13790,7 +14298,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.routing.candidates.register.handle",
@@ -13823,7 +14332,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.routing.health.circuitPolicy.register.handle",
@@ -13856,7 +14366,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.routing.health.probe.register.handle",
@@ -13889,7 +14400,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.providers.register.handle",
@@ -13922,7 +14434,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.models.register.handle",
@@ -13955,7 +14468,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "agents.register.handle",
@@ -13988,7 +14502,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "executions.visibility.register.handle",
@@ -14021,7 +14536,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "executions.recovery.capability.register.handle",
@@ -14054,7 +14570,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "executions.recovery.policy.register.handle",
@@ -14087,7 +14604,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "executions.recovery.visibility.register.handle",
@@ -14120,7 +14638,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.auth.register.handle",
@@ -14153,7 +14672,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.auth.pairingProvider.register.handle",
@@ -14186,7 +14706,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.channels.redaction.register.handle",
@@ -14219,7 +14740,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "skills.activation.policy.register.handle",
@@ -14237,7 +14759,7 @@
       "authority": "skill activation authority",
       "scope": "facade",
       "resourceKey": "skill id",
-      "identitySource": "parent registration handle",
+      "identitySource": "derived-caller (root-fallback)",
       "conflictRule": "owner-conflict",
       "lifecycle": "handle { id, ownerId, generation, dispose() }; identity-bound stale disposer",
       "failureSemantics": "typed-throw",
@@ -14246,13 +14768,14 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": "the activation owner's policy registration handle, returned verbatim: the facade delegates to policy.register (or the historical registerMinimalCatalogUpdate fallback) and mints no identity of its own, so the handle shape and the failure presentation are the owner's",
+      "currentShape": "frozen { id, ownerId, generation, dispose() } carrying the session scope key, the caller-derived owner and the facade-minted generation; dispose() is idempotent and answers the frozen discriminated { ok, code } (revoked / stale), delegating to the owner's own policy release",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tools.restrict.register.handle",
@@ -14285,7 +14808,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tools.guard.register.handle",
@@ -14318,7 +14842,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tools.presentation.register.handle",
@@ -14351,7 +14876,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tools.executionMode.register.handle",
@@ -14384,7 +14910,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "tasks.register.handle",
@@ -14417,7 +14944,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "security.policy.register.handle",
@@ -14450,7 +14978,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "security.redaction.register.handle",
@@ -14483,7 +15012,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "security.egress.register.handle",
@@ -14516,7 +15046,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "prompts.provenance.policy.register.handle",
@@ -14549,7 +15080,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "prompts.provenance.contribute.handle",
@@ -14582,7 +15114,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "diagnostics.register.handle",
@@ -14615,7 +15148,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "settings.remote.contribute.handle",
@@ -14648,7 +15182,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "slots.contribute.handle",
@@ -14681,7 +15216,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.adapters.register",
@@ -14714,7 +15250,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.providers.register",
@@ -14747,7 +15284,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.models.register",
@@ -14780,7 +15318,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.requestTransforms.register",
@@ -14813,7 +15352,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.health.circuitPolicy.register",
@@ -14846,7 +15386,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.routing.health.probe.register",
@@ -14879,7 +15420,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "agents.providers.register",
@@ -14912,7 +15454,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "executions.recovery.capability.register",
@@ -14945,7 +15488,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.channels.auth.register",
@@ -14978,7 +15522,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.channels.auth.pairingProvider.register",
@@ -15011,7 +15556,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.channels.redaction.register",
@@ -15044,7 +15590,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.restrict.register",
@@ -15077,7 +15624,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.guard.register",
@@ -15110,7 +15658,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.presentation.register",
@@ -15143,7 +15692,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.executionMode.register",
@@ -15176,7 +15726,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "skills.activation.register",
@@ -15194,22 +15745,23 @@
       "authority": "skills activation authority",
       "scope": "facade",
       "resourceKey": "skill or descriptor id",
-      "identitySource": "caller plugin context",
-      "conflictRule": "content-conflict",
+      "identitySource": "derived-caller (root-fallback)",
+      "conflictRule": "owner-conflict",
       "lifecycle": "new lifecycle after dispose; not a stale update",
       "failureSemantics": "typed-throw",
-      "idempotency": "content-idempotent",
+      "idempotency": "latest-wins",
       "retryLayer": null,
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "merged skill/descriptor registration",
+      "currentShape": "merged skill/descriptor registration answering the standard resource handle { id, ownerId, generation, dispose() }: the caller-derived owner replaces a declared one (the spec owner is overwritten, not trusted) and the facade mints the generation; the registered skill id and the activation reads (skillId, activate, deactivate, exposure) stay as registered extension members, so unifying the shape removes no capability. The registration keeps its async call shape: a malformed spec is refused synchronously with a typed error and an owner refusal rejects with the owner's typed code. dispose() delegates to the owner's own unregister, naming the generation the registration was issued for, and answers the frozen discriminated { ok, code } (revoked / stale) \u2014 a superseded handle can never revoke its replacement",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "skills.activation.policy.register",
@@ -15227,7 +15779,7 @@
       "authority": "skills activation authority",
       "scope": "facade",
       "resourceKey": "policy id",
-      "identitySource": "caller plugin context",
+      "identitySource": "derived-caller (root-fallback)",
       "conflictRule": "owner-conflict",
       "lifecycle": "latest generation replaces the previous; dispose is identity-bound",
       "failureSemantics": "typed-throw",
@@ -15236,13 +15788,14 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "ordered-reducer",
-      "currentShape": "minimal catalog update policy registration",
+      "currentShape": "minimal catalog update policy registration answering the standard resource handle { id, ownerId, generation, dispose() }: the id is the registered session scope key, the owner is derived from the calling context (the owner is also what the policy registry keys its one-holder-per-scope rule on), and the facade mints the generation; a refusal is a typed throw and dispose() delegates to the owner's policy release, answering the frozen discriminated { ok, code } (revoked / stale)",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "prompts.contribute",
@@ -15275,7 +15828,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "remotes.register",
@@ -15308,7 +15862,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "settings.remote.contribute",
@@ -15341,7 +15896,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attachments.pipeline.transforms.register",
@@ -15374,7 +15930,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.channels.acquire",
@@ -15407,7 +15964,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "sessions.channels.release",
@@ -15440,7 +15998,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "tasks.acquire",
@@ -15473,7 +16032,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "tasks.takeover",
@@ -15506,7 +16066,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "tasks.acquire.handle",
@@ -15539,7 +16100,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.views.availability",
@@ -15572,7 +16134,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.activity.current",
@@ -15605,7 +16168,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.activity.get",
@@ -15638,7 +16202,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.activity.list",
@@ -15671,7 +16236,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.activity.history",
@@ -15704,7 +16270,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.activity.observe",
@@ -15737,7 +16304,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.activity.observe.handle",
@@ -15770,7 +16338,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.activity.availability",
@@ -15803,7 +16372,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.planMode.get",
@@ -15836,7 +16406,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.planMode.select",
@@ -15869,7 +16440,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.planMode.observe",
@@ -15902,7 +16474,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.planMode.observe.handle",
@@ -15935,7 +16508,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.planMode.availability",
@@ -15968,7 +16542,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.permissionPresets.current",
@@ -16001,7 +16576,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.permissionPresets.options",
@@ -16034,7 +16610,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.permissionPresets.select",
@@ -16067,7 +16644,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.permissionPresets.observe",
@@ -16100,7 +16678,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.permissionPresets.observe.handle",
@@ -16133,7 +16712,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.permissionPresets.availability",
@@ -16166,7 +16746,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "credentials.set",
@@ -16199,7 +16780,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "credentials.unset",
@@ -16232,7 +16814,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "credentials.availability",
@@ -16265,7 +16848,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.compaction.run",
@@ -16307,7 +16891,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "sessions.compaction.availability",
@@ -16340,7 +16925,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "workflows.start",
@@ -16373,7 +16959,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "workflows.start.handle",
@@ -16406,7 +16993,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "workflows.availability",
@@ -16439,7 +17027,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.request",
@@ -16472,7 +17061,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "sessions.request.handle",
@@ -16505,7 +17095,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions.cancel",
@@ -16538,7 +17129,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.cancel.handle",
@@ -16571,7 +17163,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "sessions",
@@ -16604,7 +17197,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.request",
@@ -16637,7 +17231,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "sessions.cancel",
@@ -16670,7 +17265,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "attention.current",
@@ -16703,7 +17299,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attention.list",
@@ -16736,7 +17333,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attention.observe",
@@ -16769,7 +17367,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attention.observe.handle",
@@ -16802,7 +17401,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "attention.contribute",
@@ -16835,7 +17435,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attention.dismiss",
@@ -16868,7 +17469,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attention.invoke",
@@ -16901,7 +17503,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attention.availability",
@@ -16934,7 +17537,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attention",
@@ -16967,7 +17571,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attention.current",
@@ -17000,7 +17605,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attention.list",
@@ -17033,7 +17639,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attention.observe",
@@ -17066,7 +17673,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "attention.observe.handle",
@@ -17099,7 +17707,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "attention.contribute",
@@ -17132,7 +17741,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "attention.dismiss",
@@ -17165,7 +17775,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "attention.invoke",
@@ -17198,7 +17809,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "attention.availability",
@@ -17231,7 +17843,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "executions.recovery.checkpoints.create",
@@ -17264,7 +17877,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "executions.recovery.checkpoints.list",
@@ -17297,7 +17911,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "executions.recovery.checkpoints.inspect",
@@ -17330,7 +17945,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "executions.recovery.checkpoints.planRestore",
@@ -17372,7 +17988,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "executions.recovery.checkpoints.restore",
@@ -17405,7 +18022,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "executions.recovery.checkpoints.restore.handle",
@@ -17438,7 +18056,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "executions.recovery.checkpoints.availability",
@@ -17471,7 +18090,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.adapters.decorations.register",
@@ -17504,7 +18124,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.adapters.decorations.list",
@@ -17537,7 +18158,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "llm.adapters.decorations.register.handle",
@@ -17570,7 +18192,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "llm.models.list",
@@ -17603,7 +18226,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "agents.scopes.register",
@@ -17636,7 +18260,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "agents.scopes.register.handle",
@@ -17669,7 +18294,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "not-applicable"
     },
     {
       "publicPath": "agents.scopes.snapshotOf",
@@ -17702,7 +18328,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.interactions.list",
@@ -17735,7 +18362,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "sessions.interactions.get",
@@ -17768,7 +18396,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "sessions.interactions.respond",
@@ -17810,7 +18439,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "sessions.interactions.availability",
@@ -17843,7 +18473,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "sessions.selection.get",
@@ -17876,7 +18507,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "sessions.selection.set",
@@ -17909,7 +18541,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "sessions.selection.availability",
@@ -17942,7 +18575,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "async"
     },
     {
       "publicPath": "sessions.availability",
@@ -17975,7 +18609,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.interactions",
@@ -18008,7 +18643,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.selection",
@@ -18041,7 +18677,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.interactions.list",
@@ -18074,7 +18711,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.interactions.get",
@@ -18107,7 +18745,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.interactions.respond",
@@ -18149,7 +18788,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.interactions.availability",
@@ -18182,7 +18822,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.selection.get",
@@ -18224,7 +18865,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.selection.set",
@@ -18274,7 +18916,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "sessions.selection.availability",
@@ -18307,7 +18950,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "lifecycle.register",
@@ -18340,7 +18984,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "lifecycle.observe",
@@ -18373,7 +19018,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "lifecycle.list",
@@ -18406,7 +19052,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "slots.contribute",
@@ -18439,7 +19086,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "slots.list",
@@ -18472,7 +19120,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "slots.declaration",
@@ -18505,7 +19154,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "slots.observe",
@@ -18538,7 +19188,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "events.observe",
@@ -18571,7 +19222,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "events.list",
@@ -18604,7 +19256,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "remotes.contribute",
@@ -18637,7 +19290,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "remotes.observe",
@@ -18670,7 +19324,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "remotes.dispatch",
@@ -18703,7 +19358,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "settings.remote.contribute",
@@ -18736,7 +19392,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "agents.decisions.admitted",
@@ -18769,7 +19426,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "tools.executionPolicies.admitted",
@@ -18802,7 +19460,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "prompts.assemblyPolicies.admitted",
@@ -18835,7 +19494,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "events.decisions.admitted",
@@ -18868,7 +19528,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     },
     {
       "publicPath": "workspaces.transactions.availability",
@@ -18901,7 +19562,8 @@
       "verification": [
         "member-inventory",
         "registry-validation"
-      ]
+      ],
+      "callShape": "sync"
     }
   ],
   "servicesWhitelist": [
@@ -20783,7 +21445,7 @@
     },
     {
       "oldPath": "sessions.channels.fetchEvents",
-      "targetPath": "sessions.channels.list",
+      "targetPath": "sessions.channels.history",
       "action": "rename",
       "relation": null
     },
@@ -21667,7 +22329,7 @@
       "oldPath": "sessions.channels.observe",
       "targetPath": "sessions.channels.observe",
       "action": "retain",
-      "relation": "standard observe handle"
+      "relation": "the name is retained for the standard observation handle; the one-shot snapshot it used to answer is the current() member"
     },
     {
       "oldPath": "sessions.channels.ack",
@@ -22612,6 +23274,12 @@
       "targetPath": null,
       "action": "delete",
       "relation": "retired: the acquisition answers a discriminated result carrying the channel identity and mints no handle object"
+    },
+    {
+      "oldPath": "sessions.channels.list",
+      "targetPath": "sessions.channels.history",
+      "action": "rename",
+      "relation": "the event-frame fetch answers under the query verb allowed by api-idioms \u00a73.1"
     }
   ],
   "deletionReport": [
@@ -22895,7 +23563,8 @@
     "sessions.isSurfaceEventType": "removed",
     "sessions.sessionEventTypes": "removed",
     "sessions.surfaceEventTypes": "removed",
-    "connection.get": "removed"
+    "connection.get": "removed",
+    "sessions.channels.list": "removed"
   },
   "inventory": {
     "completedAt": "Task 1.4, Stage 4",
@@ -24132,8 +24801,9 @@
         "sessions.channels.ack",
         "sessions.channels.acquire",
         "sessions.channels.availability",
+        "sessions.channels.current",
         "sessions.channels.heartbeat",
-        "sessions.channels.list",
+        "sessions.channels.history",
         "sessions.channels.observe",
         "sessions.channels.release",
         "sessions.channels.resume"

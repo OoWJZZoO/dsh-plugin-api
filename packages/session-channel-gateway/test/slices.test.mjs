@@ -73,11 +73,22 @@ test('remote namespace: publish called when facade present', () => {
     publishedService = service
     return () => {}
   }
-  const facade = { [CONTRACT_SYMBOL]: true, observe() {}, onChange() {} }
+  const asked = []
+  const facade = {
+    [CONTRACT_SYMBOL]: true,
+    current(params) { asked.push(params); return { channels: {}, subscriptions: {} } },
+    observe() {},
+    onChange() {},
+  }
   const remote = createChannelRemoteNamespace({ publish, facade: () => facade })
   assert.equal(publishedKey, 'sessionChannel')
   assert.ok(publishedService)
   assert.equal(typeof publishedService.observe, 'function')
+  // The published snapshot member reads through the facade's one-shot reader,
+  // not through its observation-handle factory.
+  const snapshot = publishedService.observe({ limit: 1 })
+  assert.deepEqual(asked, [{ limit: 1 }], 'the published member delegates to the snapshot reader')
+  assert.deepEqual(snapshot, { channels: {}, subscriptions: {} })
 })
 
 test('remote namespace: no publish when publish function absent', () => {

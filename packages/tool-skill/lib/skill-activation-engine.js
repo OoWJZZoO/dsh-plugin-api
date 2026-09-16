@@ -22,6 +22,7 @@ const SKILL_ENTRY_DISPOSED = 'SKILL_ENTRY_DISPOSED'
 const SKILL_ENTRY_FAILED = 'SKILL_ENTRY_FAILED'
 const DEACTIVATE_STALE_GENERATION = 'DEACTIVATE_STALE_GENERATION'
 const EXPOSURE_STALE_GENERATION = 'EXPOSURE_STALE_GENERATION'
+const UNREGISTER_STALE_GENERATION = 'UNREGISTER_STALE_GENERATION'
 
 function frozen(value) {
   return Object.freeze(value)
@@ -150,11 +151,23 @@ export function createSkillActivationEngine(options = {}) {
     return frozen({ ok: true, generation, replaced: existing === undefined ? false : existing.generation })
   }
 
-  function unregisterDescriptor(skillId, owner) {
+  /**
+   * Release one descriptor registration.
+   *
+   * The release is identity-bound: a foreign owner is refused, and a release
+   * that names the generation it was issued for is refused once a newer
+   * registration has taken the slot, so a superseded handle can never revoke
+   * its replacement. Callers that omit the generation keep the historical
+   * behaviour (release whatever the owner holds).
+   */
+  function unregisterDescriptor(skillId, owner, generation) {
     const existing = descriptors.get(skillId)
     if (existing === undefined) return fail(SKILL_ENTRY_UNKNOWN, `descriptor for "${skillId}" is not registered`)
     if (existing.owner !== owner) {
       return fail(SKILL_ENTRY_CONFLICT, `descriptor for "${skillId}" is owned by "${existing.owner}"`)
+    }
+    if (generation !== undefined && generation !== existing.generation) {
+      return fail(UNREGISTER_STALE_GENERATION, `descriptor for "${skillId}" has moved to a newer generation`)
     }
     descriptors.delete(skillId)
     for (const scope of activations.values()) scope.delete(skillId)
@@ -351,13 +364,20 @@ export function createSkillActivationEngine(options = {}) {
   }
 
   /**
-   * Minimal-update policy: latest-wins registration with an opaque token; a
-   * stale token's dispose is a no-op.
+   * Minimal-update policy: one registration per scope key, owned by the
+   * registrant that took it. Same owner re-registering is latest-wins (the
+   * previous token goes stale and its dispose is a no-op); a different owner
+   * is refused typed rather than allowed to take the slot silently. A caller
+   * that names no owner keeps the historical ownerless behaviour.
    */
-  function policyRegister(scopeKey) {
+  function policyRegister(scopeKey, owner) {
     const previous = policyTokens.get(scopeKey)
+    if (previous !== undefined && previous.current
+      && owner !== undefined && previous.owner !== undefined && previous.owner !== owner) {
+      return fail(SKILL_ENTRY_CONFLICT, `minimal update policy for "${scopeKey}" is owned by "${previous.owner}"`)
+    }
     if (previous !== undefined) previous.current = false
-    const token = { current: true }
+    const token = { current: true, owner: owner ?? previous?.owner }
     policyTokens.set(scopeKey, token)
     return frozen({ ok: true, token })
   }

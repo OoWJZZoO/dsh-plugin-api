@@ -61,6 +61,23 @@ test('rejects a compatibility alias: a rename that keeps the old path', () => {
   expectErrors(copy, 'must move to a different target path')
 })
 
+test('rejects a live policy/registry handle whose shape omits the generation member', () => {
+  const copy = structuredClone(registry)
+  const row = copy.members.find((m) => m.kind === 'handle' && (m.idiom === 'policy' || m.idiom === 'resourceRegistry') && m.status === 'advanced')
+  row.currentShape = 'a prose summary that never names the slot token'
+  expectErrors(copy, 'must record the required generation member')
+})
+
+test('a removed handle row is exempt from the generation rule', () => {
+  const copy = structuredClone(registry)
+  const row = copy.members.find((m) => m.kind === 'handle' && m.idiom === 'policy' && m.status === 'removed')
+  if (row !== undefined) {
+    row.currentShape = 'retired member'
+    const result = validateRegistry(copy)
+    assert.equal(result.errors.some((error) => error.includes('must record the required generation member')), false)
+  }
+})
+
 test('rejects generation/seq/epoch meaning bleed', () => {
   const copy = structuredClone(registry)
   copy.members[0].lifecycle = 'seq as fencing token for writes'

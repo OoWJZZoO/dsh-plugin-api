@@ -32,7 +32,7 @@ test('read projections expose the target get/list/inspect members with frozen vi
   const { ctx, state } = createHarness({ web: { registerSearchProvider() {}, registerFetchProvider() {}, search() {}, fetch() {} } })
   apply(ctx)
   const api = state.pluginApi
-  for (const member of ['llm.adapters.list', 'llm.routing.observe', 'llm.routing.circuit.inspect', 'sessions.observe', 'sessions.durable.list', 'sessions.durable.get', 'sessions.durable.observe', 'sessions.channels.list', 'tools.list', 'tools.discovery.list', 'tools.discovery.audit.list', 'attachments.projection.get', 'mcp.observe', 'coordination.observe', 'security.audit.list', 'diagnostics.observe', 'settings.inspect']) {
+  for (const member of ['llm.adapters.list', 'llm.routing.observe', 'llm.routing.circuit.inspect', 'sessions.observe', 'sessions.durable.list', 'sessions.durable.get', 'sessions.durable.observe', 'sessions.channels.current', 'sessions.channels.history', 'tools.list', 'tools.discovery.list', 'tools.discovery.audit.list', 'attachments.projection.get', 'mcp.observe', 'coordination.observe', 'security.audit.list', 'diagnostics.observe', 'settings.inspect']) {
     let target = api
     for (const segment of member.split('.')) target = target?.[segment]
     assert.equal(typeof target, 'function', `${member} must be exposed as a read member`)

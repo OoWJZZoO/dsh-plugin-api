@@ -72,14 +72,14 @@ test('the channel consumption contract delivers a baseline view and typed refusa
 
     // The consumer's baseline is the delivered channel projection: live
     // channels plus their subscriptions, never a fabricated session state.
-    const snapshot = api.observe({ device: 'dev1', session: 's1' })
+    const snapshot = api.current({ device: 'dev1', session: 's1' })
     assert.ok(snapshot.channels)
     assert.ok(snapshot.subscriptions)
     assert.equal(snapshot.channels[opened.channelId].sessionId, 's1')
     assert.equal(snapshot.connectionState, 'active')
 
     // An incomplete consumption call is refused typed instead of guessed.
-    const missingSubscription = await api.list({ device: 'dev1', session: 's1', channelId: opened.channelId, channelGeneration: opened.channelGeneration })
+    const missingSubscription = await api.history({ device: 'dev1', session: 's1', channelId: opened.channelId, channelGeneration: opened.channelGeneration })
     assert.equal(missingSubscription.ok, false)
     assert.equal(missingSubscription.error.code, 'invalid-input')
     const missingToken = await api.resume({ device: 'dev1', session: 's1', channelId: opened.channelId, channelGeneration: opened.channelGeneration, cursor: '1' })
@@ -110,7 +110,7 @@ test('the channel face keeps its exact member set and reports honest availabilit
     if (probe !== undefined) {
       assert.ok(probe.status === 'active' || probe.status === 'degraded' || probe.status === 'unavailable')
     }
-    for (const member of ['acquire', 'list', 'ack', 'resume', 'release', 'observe', 'heartbeat']) {
+    for (const member of ['acquire', 'history', 'ack', 'resume', 'release', 'current', 'observe', 'heartbeat']) {
       assert.equal(typeof api[member], 'function', `sessions.channels.${member} stays available`)
     }
     assert.equal(typeof api.auth.register, 'function')

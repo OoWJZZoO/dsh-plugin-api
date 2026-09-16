@@ -90,13 +90,19 @@ export function createRegisterSkillSugar({ ctx, engine, service }) {
       dispose: () => {
         if (disposed) return Object.freeze({ ok: true, alreadyDisposed: true })
         disposed = true
-        const overlayDispose = engine.unregisterDescriptor(skillId, owner)
+        // The release names the overlay generation this handle was issued for,
+        // so a superseded handle cannot revoke the registration that replaced
+        // it. The content half keeps the official first-wins rule: a duplicate
+        // registration received the official no-op disposer.
+        const overlayDispose = engine.unregisterDescriptor(skillId, owner, overlay.generation)
         try {
           contentDisposer()
         } catch {
           // disposal must never throw through the fail-safe apply
         }
-        return Object.freeze({ ok: true, overlayDisposed: overlayDispose.ok })
+        return overlayDispose.ok === true
+          ? Object.freeze({ ok: true, overlayDisposed: true })
+          : Object.freeze({ ok: false, overlayDisposed: false, code: overlayDispose.code, reason: overlayDispose.reason })
       },
     })
     return Object.freeze({

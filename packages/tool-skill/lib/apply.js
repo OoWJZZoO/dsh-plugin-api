@@ -275,6 +275,19 @@ function createSkillActivationService({ ctx, engine, readSeamStatus, log }) {
     )
   }
 
+  /**
+   * Release one descriptor registration. The engine stays the single state
+   * owner: a facade handle release delegates here and hands back the engine's
+   * own typed result (an unknown or already released descriptor is reported,
+   * never silently accepted).
+   */
+  function unregisterDescriptor(skillId, owner, generation) {
+    if (typeof skillId !== 'string' || skillId.length === 0) {
+      return failResult('SKILL_ENTRY_INVALID', 'unregister requires a skill id')
+    }
+    return engine.unregisterDescriptor(skillId, owner, generation)
+  }
+
   function deactivate(skillId, generation, scope) {
     let scopeKey
     if (scope !== undefined) {
@@ -308,7 +321,10 @@ function createSkillActivationService({ ctx, engine, readSeamStatus, log }) {
   function registerMinimalCatalogUpdate(input) {
     const norm = normalizePolicyInput(input)
     if (!norm.ok) return norm
-    const result = engine.policyRegister(norm.value)
+    // The registrant identity travels with the registration so the engine can
+    // refuse a foreign owner instead of letting it take the slot silently.
+    const owner = typeof input?.ownerId === 'string' && input.ownerId.length > 0 ? input.ownerId : undefined
+    const result = engine.policyRegister(norm.value, owner)
     if (!result.ok) return result
     return Object.freeze({
       ok: true,
@@ -319,6 +335,7 @@ function createSkillActivationService({ ctx, engine, readSeamStatus, log }) {
   const surface = {
     [CONTRACT_SYMBOL]: true,
     registerDescriptor,
+    unregisterDescriptor,
     activate,
     deactivate,
     exposure,

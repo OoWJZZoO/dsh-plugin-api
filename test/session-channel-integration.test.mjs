@@ -91,12 +91,15 @@ test('facade: pluginApi.sessions.channels has correct shape', async () => {
   const api = service.sessions.channels
   assert.ok(api, 'pluginApi.sessions.channels must be published')
   assert.equal(typeof api.acquire, 'function')
-  assert.equal(typeof api.list, 'function')
+  assert.equal(typeof api.history, 'function')
   assert.equal(typeof api.ack, 'function')
   assert.equal(typeof api.resume, 'function')
   assert.equal(typeof api.release, 'function')
+  // The one-shot snapshot and the observation handle are separate members:
+  // `list` (the event-frame fetch under its old name) is gone.
+  assert.equal(typeof api.current, 'function')
   assert.equal(typeof api.observe, 'function')
-  assert.equal(typeof api.observe, 'function')
+  assert.equal('list' in api, false, 'the renamed event-frame fetch must not keep its old name')
   assert.equal(typeof api.auth.register, 'function')
   assert.equal(typeof api.auth.pairingProvider.register, 'function')
   assert.equal(typeof api.auth.register, 'function')
@@ -131,14 +134,42 @@ test('facade: open succeeds after registering a verifier', async () => {
   assert.doesNotThrow(() => result.disposer())
 })
 
-test('facade: projection observe returns a snapshot', async () => {
+test('facade: current returns the one-shot frozen snapshot', async () => {
   const service = createRealService()
   const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   result.prepared.commit()
   const api = service.sessions.channels
-  const snap = api.observe({})
+  const snap = api.current({})
   assert.ok(snap.channels)
   assert.ok(snap.subscriptions)
+  assert.ok(Object.isFrozen(snap), 'the snapshot is deep-frozen')
+  assert.doesNotThrow(() => result.disposer())
+})
+
+test('facade: observe answers the standard observation handle over the projection', async () => {
+  const service = createRealService()
+  const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
+  result.prepared.commit()
+  const api = service.sessions.channels
+  const seen = []
+  const handle = api.observe((snapshot) => seen.push(snapshot))
+  assert.deepEqual(Object.keys(handle).sort(), ['current', 'dispose', 'epoch', 'subscribe'])
+  assert.ok(Object.isFrozen(handle))
+  assert.equal(typeof handle.epoch, 'string')
+  assert.ok(handle.current().channels, 'the handle reads the live projection')
+
+  // A state change flows to the subscriber.
+  api.auth.register({ kind: 'verifier', id: 'v1', verify: () => ({ deviceId: 'dev1', scope: [] }) })
+  await api.acquire({ device: 'dev1', session: 's1' })
+  assert.ok(seen.length > 0, 'the listener observes channel state changes')
+
+  // Release is a discriminated, idempotent result and degrades the read face.
+  const first = handle.dispose()
+  assert.deepEqual({ ok: first.ok, code: first.code }, { ok: true, code: 'revoked' })
+  assert.equal(handle.current().connectionState, 'unknown', 'a released handle answers the degraded view')
+  assert.equal(handle.subscribe(() => {})(), undefined, 'subscribing to a released handle is a no-op')
+  const second = handle.dispose()
+  assert.deepEqual({ ok: second.ok, code: second.code }, { ok: false, code: 'stale' })
   assert.doesNotThrow(() => result.disposer())
 })
 

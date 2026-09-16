@@ -172,13 +172,25 @@
 
 | Task | 未完成内容 |
 |---|---|
-| 4.14/4.15 余项（B2 余项 · generation 校验提升） | 「把 generation 校验提升为覆盖全部 policy / resourceRegistry handle 行」在实现时发现两个**委派型**注册仍无门面身份（`skills.activation.register.handle`、`skills.activation.policy.register.handle`；门面校验输入后委派给 activation owner）。提升该规则必须先关闭这两处，否则需要新增 2 条例外、把「带例外的成员行 / 公共 path」两口径顶到基线（17 / 16）。规则暂维持「itemize 成员集」形态；解除动作：为该 owner 契约补 unregister 语义并把两行包装为标准 handle |
-| 3.1（B5 · `async` 回填） | registry 现 559 行成员中 `async` 字段回填 **0 行**（原 546 行的计数未随成员扩张刷新），validator 仍无该校验。上一轮已否决启发式回填；本轮评估的可行路径是「构建期 / 测试期采集入口（挂载门面后按 `constructor.name === 'AsyncFunction'` 逐叶判定）」，需要一套覆盖全部 owner 的挂载 harness，工作量与风险都大，尚未实施 |
-| 5.12 / C4/C5（通道半） | `sessions.channels` 的成员语义仍未按 Task 5.12 收敛：公开面当前是 `list`（官方 `fetchEvents` 的事件帧拉取）与 `observe`（官方 `observe` 的一次性快照），而设计要求的映射是 `current()`（快照）/ `history({...})`（事件帧）/ `observe(listener)`（订阅，官方 `onChange`）。改名会波及 registry 行、`oldToTargetMapping` 与多个套件，本轮未动 |
-| 8.13（C17） | `tasks.*` 全域的 `async` 抽样复核依赖 B5，未做 |
-| 3.6（B6） | 行为表 / 装配表本轮未被触及（成员表已重建为 551 行）；历史现状注待与上述余项同批处理 |
+| 3.6（B6） | M10 三表中，行为表与装配表在第十五轮按受影响面就地复核（见下）；两表均保持冻结行数与 token 可解析，无需改写内容 |
+
+**第十五轮（续做，2026-09-15/16）已完成**：上表五项余项全部收口（逐项见 §3.0.4）。
 
 **C7 回滚记录（Task 10.1(d)）**：client `connection.get` → `connection.api.settings` 的改名回滚已在上一轮交付（registry / `oldToTargetMapping` / `statusByPath` 三处同步，避免自环），本轮无新增回滚。
+
+## 3.0.4 第十五轮（续做收口轮，2026-09-15/16）—— 上一轮清单的五项余项全部交付
+
+本轮的起点是第十四周复核通过后的「仍未完成」清单；五项全部按 `tasks.md` 的对应任务落地，不再有未完成主体工作。
+
+| Task | 交付内容 | 落点 |
+|---|---|---|
+| 5.12 / C4/C5（通道成员映射） | `sessions.channels` 按 Task 5.12 收敛：事件帧读取 `list` 改名 `history`（api-idioms §3.1 允许的查询动词；旧名留 `removed` 行 + `oldToTargetMapping`），一次性快照由 `observe()` 移到 `current()`，`observe(listener)` 改为内核铸造的标准观察 handle（冻结 `{ current(), subscribe(listener), dispose(), epoch }`，变更时投递冻结投影，释放后 `current()` 给降级视图、`subscribe` 为 no-op、`dispose()` 判别式 `revoked` / `stale`）；网关 R 包的远端投影改读 `current()`（其 wire 成员名不变）；`skill`/gateway 两处套件与 `test/interactive-session-consumption.test.mjs` 同步 | `lib/session-channel.js`、`lib/plugin-api-service.js`、`packages/session-channel-gateway/lib/slices.js`、registry（`history` 新增 / `current` 新增 / `observe` 改写 / `observe.handle` 新增 / `list` 退役）+ 成员表（**562 行**） |
+| 4.14/4.15 余项（B2 · generation 校验提升） | 两处**委派型**注册收口为标准 handle：`skills.activation.register` 由门面**派生 owner**（spec 自报 owner 被覆盖）、**铸造 generation** 并返回 `{ id, ownerId, generation, dispose() }`（含已登记扩展成员 `skillId` / `activate` / `deactivate` / `exposure`），拒绝按注册类呈 typed throw（非法 spec 同步抛、owner 拒绝以 rejection 表达）；`skills.activation.policy.register` 同形返回标准 handle（id 为会话 scope 键）；owner 契约补 `unregisterDescriptor` 释放路径并支持**按发行 generation 释放**——实测修复了一个真实缺陷：同 owner 重新登记后，**旧 handle 的释放会撤销新登记**（探针复现，现由 `UNREGISTER_STALE_GENERATION` 拒绝并如实报 `stale`）；`skills` 命名空间改为方法式 getter（箭头 getter 会把访问者身份丢掉，与 storage/workspaces/security 同类）；策略面补跨 owner 冲突（`policyRegister(scope, owner)`，跨 owner 同 scope 抛 typed conflict）；**generation 校验提升为「覆盖全部在册 policy / resourceRegistry handle 行」**（不再限于 itemize 的行），并补两条反例测试 | `lib/plugin-api-service.js`（`bindSkillsActivation`）、`lib/index.js`（owner 包装的释放入口）、`packages/tool-skill/lib/{apply,skill-activation-engine,register-skill-sugar}.js`、`scripts/registry-validate.mjs`、registry 四行、`test/skill-activation-facade.test.mjs`、`packages/tool-skill/test/{engine,register-skill-sugar}.test.mjs`、`test/registry-negative.test.mjs` |
+| 3.1（B5 · S15 调用形态回填） | 全 **562** 行成员回填 `callShape`（`sync` / `async` / `not-applicable`，词表同步）；判定以**实现现状**为准、两种证据形态：①在挂载的门面（真实 in-repo owner 服务）上调用成员、以是否答复 thenable 判定（in-repo 实现的族）；②读 owner 实现（official seam 与 R 包 owner）。实测 77 行 async / 258 行 sync / 227 行 `not-applicable`（handle 行、数据叶、已退役行）。validator 增加该校验（缺字段或词表外的值一律拒绝），并新增 `test/call-shape.test.mjs`：对可观测的族断言「登记值 = 挂载面实测值」、对 official-seam / R 包 owner 的族显式登记为不可观测边界 | registry（全体成员行 + `vocabulary.callShape`）、`scripts/registry-validate.mjs`、`test/call-shape.test.mjs`（新增） |
+| 8.13（C17） | `tasks.*` 全域的调用形态抽样复核：9 个成员（register / start / settle / attach / get / observe / history / acquire / takeover）全部登记为 `async` 并在挂载面上逐条实测为答复 Promise；`tasks.availability` 等同步成员作为对照登记为 `sync`。`test/call-shape.test.mjs` 固定该断言 | registry + `test/call-shape.test.mjs` |
+| 3.6（B6） | M10 三表按受影响面复核：成员表 1:1 重建（562 行）；行为表保持 37 行冻结清单、逐行内容复核（受影响的行为行只引用 `sessions.channels.*` 泛名与已更新的套件，无需改写）；装配表 token 未变、可解析（`convergence-verify` 硬判据全绿）。历史现状注：M8 迁移账本追加「M11 续做的 channels 映射现状注」（旧 path 保留 removed 行与 `oldToTargetMapping`，历史措辞不改写） | `docs/specs/plugin-api-m10-contract-convergence/convergence/*`、`docs/specs/plugin-api-m8-api-idiom-refactor/migration-ledger.md` |
+
+**第十五轮的判定口径补记（S15）**：`callShape` 的「async」定义为**调用会得到 Promise**（不限于 `async` 函数声明）——门面的转发函数本身是同步函数，把 owner 的 Promise 原样交回调用者，因此按函数声明判定会漏判（这正是 C17 的成因）。可观测族（tasks / executions / coordination / workspaces / security / diagnostics / events / prompts / attention / capabilities）由测试逐条断言；official seam（llm / tools / sessions / settings / agents / web / apiProxy）与 R 包 owner（attachments / mcp / profiles / storage / remotes / credentials / workflows / skills）两族的登记值取自各自 owner 实现，测试把这两族列为**不可观测边界**并在测试文件头写明理由。
 
 ## 3.0 本轮（2026-09-15 续做）完成与未完成清单
 
@@ -269,7 +281,8 @@
 - **人类授权**：否（design §2 B1 已授权）。
 
 ### B2 Task 4.14 / 4.15 —— K1/K2/K3 全树一致性收口
-- **未完成子项**：registry 驱动的静态枚举未执行完。**仍未收口**的成员族（第十三轮按实现重核）：`sessions.channels.auth.{register,pairingProvider.register}` 与 `sessions.channels.redaction.register`（owner 仍是常量 root token，facade 原样透传）、`skills.activation.register`（owner 取 spec 自报，返回 `{ ok, generation, replaced }`）与 `skills.activation.policy.register`（返回 `{ ok, dispose }`）、`settings.register`（facade 自有 `resourceRegistry` leaf，回答的是门面**包裹**官方 scope 铸出的 handle（成员 `{ get, watch, update, replace, mutate }`，无 id / ownerId / generation / dispose）而非标准 handle；三行文本已按运行时改写，收敛方式（改铸标准 handle 或登记例外）待定，例外路径受 Req 11.5 上限约束）、`tools.executionMode.register`（该官方动词是分类查询、不是注册，属行文字漂移，见 §5）。已收口且不再列出：`executions.recovery.*`、`executions.visibility.register`、四族 `*.decisions.register` / `*.executionPolicies.register` / `*.assemblyPolicies.register`、`security.{policy,redaction,egress}.register`、`llm.adapters.*`、client `lifecycle.register`（leaf 与 handle 两行均已收口：派生 owner + 标准 handle 成员，其 handle 行 `currentShape` 已 itemize）。generation 校验提升仍受阻于 `skills.activation.*` 两处委派型 handle——§4 实测的形状为 prose 且未登记例外的两行正是它们。
+- **状态（第十五轮）**：**该条已收口**——`skills.activation.*` 两处委派型注册已包装为标准 handle，generation 校验已提升为覆盖全部在册 policy / resourceRegistry handle 行；下一段保留登记时的未收口清单供对账，其判定不再成立。
+- **未完成子项**（登记时措辞，已被第十五轮取代）：registry 驱动的静态枚举未执行完。**仍未收口**的成员族（第十三轮按实现重核）：`sessions.channels.auth.{register,pairingProvider.register}` 与 `sessions.channels.redaction.register`（owner 仍是常量 root token，facade 原样透传）、`skills.activation.register`（owner 取 spec 自报，返回 `{ ok, generation, replaced }`）与 `skills.activation.policy.register`（返回 `{ ok, dispose }`）、`settings.register`（facade 自有 `resourceRegistry` leaf，回答的是门面**包裹**官方 scope 铸出的 handle（成员 `{ get, watch, update, replace, mutate }`，无 id / ownerId / generation / dispose）而非标准 handle；三行文本已按运行时改写，收敛方式（改铸标准 handle 或登记例外）待定，例外路径受 Req 11.5 上限约束）、`tools.executionMode.register`（该官方动词是分类查询、不是注册，属行文字漂移，见 §5）。已收口且不再列出：`executions.recovery.*`、`executions.visibility.register`、四族 `*.decisions.register` / `*.executionPolicies.register` / `*.assemblyPolicies.register`、`security.{policy,redaction,egress}.register`、`llm.adapters.*`、client `lifecycle.register`（leaf 与 handle 两行均已收口：派生 owner + 标准 handle 成员，其 handle 行 `currentShape` 已 itemize）。generation 校验提升仍受阻于 `skills.activation.*` 两处委派型 handle——§4 实测的形状为 prose 且未登记例外的两行正是它们。
 - **解除动作**：按 `tasks.md` Task 4.14 的两臂枚举（`idiom ∈ {policy, resourceRegistry, contribution}` 的现行行 + handle 行；`currentShape` 描述 disposer/handle 的行）逐项就地收口；随后把 §4 的 generation 校验从「itemize 成员集」提升为**覆盖全部 policy/resourceRegistry handle 行**（`currentShape: null` 的登记缺口已在本线清零，不再是该提升的前置）。
 - **人类授权**：否（goal Scope direction 2 与 Req 2.1 无条件条款已授权）。
 
@@ -368,10 +381,11 @@
 
 `scripts/registry-validate.mjs` 本轮新增两条 entry 级校验：
 
-1. **policy / resourceRegistry handle 的 generation 成员**。规则**只对「itemize 成员集」（`currentShape` 含 `{`）的行生效**，且**豁免带 `idiomExceptions` 的行**（该行的偏离已登记）。实测口径（第十四轮按 HEAD registry 重测，`kind === 'handle'` 且 `status !== 'removed'`）：policy/resourceRegistry handle 行共 **34** 行，`currentShape` 为 `null` 的 **0** 行（该登记缺口已在本线清零），形状为 prose 且未登记例外的 **2** 行 = `skills.activation.register.handle` + `skills.activation.policy.register.handle`，二者即 B2 的收口对象、也是本规则提升的最后屏障（规则已把 `lifecycle.register.handle` 纳入覆盖：其 `currentShape` 已 itemize 且含 generation）。
+1. **policy / resourceRegistry handle 的 generation 成员**。第十五轮起，规则**覆盖全部在册（`status !== 'removed'`）的 policy / resourceRegistry handle 行**，只**豁免带 `idiomExceptions` 的行**（该行的偏离已登记）。实测口径（第十五轮按 HEAD registry）：该类 handle 行 **34** 行（`advanced`），其中 `currentShape` 为 `null` 的 **0** 行、形状不提及 generation 的 **0** 行；两处委派型注册（`skills.activation.register.handle`、`skills.activation.policy.register.handle`）已在第十五轮包装为标准 handle，`currentShape` 相应 itemize 并含 generation，提升的最后屏障随之消失。规则从「只对 itemize 成员集生效」提升的判据：`currentShape` 为 `null` 的登记缺口已清零，且两类在册 handle 行全部写出成员集——**没有任何一行**还需要靠「prose 形态」豁免。
 2. **例外记录的 `baseContract` 必属八类 idiom**。
+3. **`callShape` 已回填**（Task 3.1/S15）：每行的 `callShape` 必须取自 `vocabulary.callShape`（`sync` / `async` / `not-applicable`），值为 `not-applicable` 表示该行描述的是值（handle、数据叶、已退役行）而非调用。
 
-**为什么现在不强制全量**：本线未完成 B2 的全树收口；若对全部 34 行强制，就等于要求为**未改动的成员**填写与其运行时不符的 `currentShape`——那是伪造登记，比漏报更有害。**登记缺口的历史**（供后续读者对账，非现行待办）：规则落盘时（`cb55e94`）registry 有 **42** 行成员的 `currentShape` 为 `null`（其中 handle 行 **21** 行，policy/resourceRegistry 子集 **16** 行；design §2.4 的 R 系列只列了六条同类缺口，是该缺口的抽样而非全量清单）；本线期间已由 registry 缺口收口提交（`6f62bd9`，registry 空形状清零）把这些行逐条补齐，HEAD 下 `currentShape` 为 `null` 的成员行为 **0**，该待办解除。
+**为什么规则 1 曾一度不是全量**：登记缺口未清零时对全部行强制，等于要求为未改动的成员填写与其运行时不符的 `currentShape`——那是伪造登记，比漏报更有害。**登记缺口的历史**（供后续读者对账，非现行待办）：规则落盘时（`cb55e94`）registry 有 **42** 行成员的 `currentShape` 为 `null`（其中 handle 行 **21** 行，policy/resourceRegistry 子集 **16** 行；design §2.4 的 R 系列只列了六条同类缺口，是该缺口的抽样而非全量清单）；本线期间已由 registry 缺口收口提交（`6f62bd9`，registry 空形状清零）把这些行逐条补齐，HEAD 下 `currentShape` 为 `null` 的成员行为 **0**。
 
 ## 5. 未纳入本线的排除项（无变化）
 

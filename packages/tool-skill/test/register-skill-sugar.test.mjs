@@ -160,6 +160,31 @@ test('sugar: official registration errors surface as typed registration invalid'
   assert.match(result.reason, /invalid skill name/)
 })
 
+test('sugar: a superseded handle reports the stale release and keeps the replacement', async () => {
+  const { ctx, registry } = makeFakeCtx()
+  const engine = createSkillActivationEngine({})
+  const service = makeService({ engine, ctx, registryNames: () => registry })
+  const sugar = createRegisterSkillSugar({ ctx, engine, service })
+  const first = await sugar.registerSkill({
+    name: 'demo-skill', owner: 'plugin-a', summary: 'Demo summary', content: 'instructions',
+  })
+  const second = await sugar.registerSkill({
+    name: 'demo-skill', owner: 'plugin-a', summary: 'Demo summary', content: 'instructions',
+  })
+  assert.notEqual(second.handle.generation, first.handle.generation)
+
+  const stale = first.handle.dispose()
+  assert.equal(stale.ok, false)
+  assert.equal(stale.code, 'UNREGISTER_STALE_GENERATION')
+  assert.equal(engine.descriptorOf('demo-skill').generation, second.handle.generation,
+    'the newer registration survives the superseded handle')
+
+  const released = second.handle.dispose()
+  assert.equal(released.ok, true)
+  assert.equal(released.overlayDisposed, true)
+  assert.equal(engine.descriptorOf('demo-skill'), null)
+})
+
 test('sugar: dispose is idempotent and identity-bound; handle methods forward', async () => {
   const { ctx, registry } = makeFakeCtx()
   const engine = createSkillActivationEngine({})

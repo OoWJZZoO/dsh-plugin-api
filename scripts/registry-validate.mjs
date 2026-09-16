@@ -43,7 +43,7 @@ const MEMBER_FIELDS = [
   'semanticFace', 'effect', 'composition', 'runtime', 'implementationChannel', 'authority', 'scope',
   'resourceKey', 'identitySource', 'conflictRule', 'lifecycle', 'failureSemantics', 'idempotency',
   'retryLayer', 'availabilityShape', 'concurrency', 'reducer', 'currentShape', 'migrationAction',
-  'status', 'verification',
+  'status', 'verification', 'callShape',
 ]
 
 function isPlainRecord(value) {
@@ -74,7 +74,7 @@ export function validateRegistry(registry) {
     'terminal', 'priority', 'scope', 'implementationChannel', 'deletionCategory',
     'idiom', 'eventSemantics', 'semanticFace', 'failureSemantics', 'conflictRule',
     'migrationAction', 'lifecycleState', 'coordinationCode', 'concurrency', 'reducer',
-    'qualifier', 'operationTerminal',
+    'qualifier', 'operationTerminal', 'callShape',
   ]
   for (const name of vocabNames) {
     if (!Array.isArray(vocabulary[name]) || vocabulary[name].length === 0) {
@@ -207,18 +207,28 @@ export function validateRegistry(registry) {
       // is required regardless of composition mode and never omitted for an
       // additive registration.
       //
-      // The rule binds rows that spell out their member set: a row whose
-      // declared shape itemizes handle members must name the generation member.
-      // A row that only carries a prose summary, or that registers a deviation
-      // through an idiom exception, is not reported here — a missing shape
-      // declaration at all is a separate registration gap.
-      if (member.kind === 'handle' && (idiom === 'policy' || idiom === 'resourceRegistry')) {
+      // The rule binds every live row of those idioms, whatever summary it
+      // carries: a live handle whose declared shape does not name the
+      // generation member is a registration gap, not a style difference. Rows
+      // describing a retired member, and rows whose deviation is already
+      // registered through an idiom exception, are not reported here.
+      if (member.kind === 'handle' && (idiom === 'policy' || idiom === 'resourceRegistry')
+        && member.status !== 'removed') {
         const shape = typeof member.currentShape === 'string' ? member.currentShape : ''
-        const itemizesMembers = shape.includes('{')
-        if (itemizesMembers && !/generation/.test(shape) && !acknowledged) {
-          errors.push(`${where}: a ${idiom} handle that itemizes its members must record the required generation member, got ${JSON.stringify(member.currentShape)}`)
+        if (!/generation/.test(shape) && !acknowledged) {
+          errors.push(`${where}: a ${idiom} handle must record the required generation member, got ${JSON.stringify(member.currentShape)}`)
         }
       }
+      // Every member row declares how it is invoked. A callable member answers
+      // either directly (sync) or with a promise (async); a row that describes
+      // a value instead of a call — a returned handle, a data leaf, a retired
+      // member — says so with not-applicable rather than leaving the field
+      // unset, so a caller never has to discover the shape by trial and error.
+      const callShapes = Array.isArray(vocabulary.callShape) ? vocabulary.callShape : []
+      if (!callShapes.includes(member.callShape)) {
+        errors.push(`${where}.callShape ${JSON.stringify(member.callShape)} is not in vocabulary.callShape (${callShapes.join(' | ')})`)
+      }
+
       // Every idiom exception names the base contract it deviates from, and
       // that base contract must be one of the eight idioms.
       if (Array.isArray(member.idiomExceptions) && member.idiomExceptions.length > 0) {

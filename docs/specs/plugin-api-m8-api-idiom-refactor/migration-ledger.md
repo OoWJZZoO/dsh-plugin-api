@@ -1,6 +1,8 @@
 # M8 Public Surface Subtraction — Migration And Conservation Ledger
 
 > 公共契约现状注（2026-09-02）：下述删除时的 gap 记录保留 M8 当时的验收边界；后续 policy-enforcement-closure 已以自动 egress/recovery 证据闭合对应守恒结论，并交付 `events.define` 合作型入口。现行状态以 canonical registry 与后续 feature delivery report 为准。
+>
+> 公共契约现状注（2026-09-15，M11 续做）：本账本中 `sessions.channels` 的目标 path 已被 M11 的成员映射取代——`sessions.channels.fetchEvents` 的现行目标是 `sessions.channels.history`（事件帧读取按 api-idioms §3.1 改用查询动词），`sessions.channels.list` 记为 `removed`；官方快照读面 `observe` 的现行目标是 `sessions.channels.current`，而 `sessions.channels.observe` 现承载标准观察 handle。旧 path 一律保留 removed 行与 `oldToTargetMapping` 条目，本账本的历史措辞不改写。
 
 本账本记录公共面减法（Wave 7）执行的每个迁移处置与能力守恒证据。核对基线：
 M8 当时的迁移处置与能力守恒基线；其长期规则已合并至

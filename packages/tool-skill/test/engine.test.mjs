@@ -41,6 +41,29 @@ test('descriptor registration: generations, same-owner replace, foreign conflict
   assert.equal(foreign.code, 'SKILL_ENTRY_UNKNOWN')
 })
 
+test('release is identity- and generation-bound: a superseded handle cannot revoke its replacement', () => {
+  const { engine } = makeEngine()
+  const first = register(engine)
+  const second = register(engine)
+  assert.equal(second.replaced, first.generation)
+
+  // The superseded handle names the generation it was issued for.
+  const stale = engine.unregisterDescriptor('demo-skill', 'plugin-a', first.generation)
+  assert.equal(stale.ok, false)
+  assert.equal(stale.code, 'UNREGISTER_STALE_GENERATION')
+  assert.equal(engine.descriptorOf('demo-skill').generation, second.generation, 'the replacement survives the stale release')
+
+  // A foreign owner is refused before the generation is even considered.
+  const foreign = engine.unregisterDescriptor('demo-skill', 'plugin-b', second.generation)
+  assert.equal(foreign.code, 'SKILL_ENTRY_CONFLICT')
+  assert.equal(engine.descriptorOf('demo-skill').generation, second.generation)
+
+  // The current generation releases normally.
+  const released = engine.unregisterDescriptor('demo-skill', 'plugin-a', second.generation)
+  assert.equal(released.ok, true)
+  assert.equal(engine.descriptorOf('demo-skill'), null)
+})
+
 test('activate: unknown skill, failed descriptor, scope isolation, latest-wins', () => {
   const { engine } = makeEngine()
   const unknown = engine.activate({ skillId: 'absent', scope: SCOPE, sourceKind: 'explicit' })
@@ -190,6 +213,24 @@ test('minimal-update policy: latest-wins tokens and stale dispose no-ops', () =>
   assert.equal(engine.minimalPolicyFor('session:s-1'), false)
   // Per-session: another scope is unaffected.
   assert.equal(engine.minimalPolicyFor('session:s-2'), false)
+})
+
+test('minimal-update policy: same owner is latest-wins, a foreign owner is refused typed', () => {
+  const { engine } = makeEngine()
+  const first = engine.policyRegister('session:s-1', 'plugin-a')
+  assert.equal(first.ok, true)
+  // Same owner: latest-wins, the earlier token goes stale.
+  const second = engine.policyRegister('session:s-1', 'plugin-a')
+  assert.equal(second.ok, true)
+  assert.equal(engine.policyDispose('session:s-1', first.token).revoked, false)
+  // Foreign owner: refused typed, the incumbent keeps the slot.
+  const foreign = engine.policyRegister('session:s-1', 'plugin-b')
+  assert.equal(foreign.ok, false)
+  assert.equal(foreign.code, 'SKILL_ENTRY_CONFLICT')
+  assert.equal(engine.policyDispose('session:s-1', second.token).revoked, true)
+  // Once released, the slot is free for another owner.
+  const takeover = engine.policyRegister('session:s-1', 'plugin-b')
+  assert.equal(takeover.ok, true)
 })
 
 test('catalog-change audit and engine availability are truthful', () => {

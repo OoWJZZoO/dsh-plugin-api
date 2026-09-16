@@ -124,18 +124,19 @@ export function createChannelRemoteNamespace({ publish, facade = () => undefined
     }
   }
 
-  // Build a projection service that reflects the facade's observe/onChange.
+  // Build a projection service over the facade's one-shot snapshot reader
+  // (`current`); the published member keeps its own remote name.
   let disposer
   if (typeof publish === 'function') {
     const projectionService = {
       observe: (params) => {
         const surface = facadeSurface()
         if (surface === undefined) return { ok: false, error: { code: 'unavailable', message: 'channel facade is not available', details: {} } }
-        if (typeof surface.observe !== 'function') return { ok: false, error: { code: 'unavailable', message: 'channel observe is not available', details: {} } }
+        if (typeof surface.current !== 'function') return { ok: false, error: { code: 'unavailable', message: 'channel snapshot is not available', details: {} } }
         try {
-          return surface.observe(params)
+          return surface.current(params)
         } catch (error) {
-          return { ok: false, error: { code: 'internal', message: error?.message ?? 'observe failed', details: {} } }
+          return { ok: false, error: { code: 'internal', message: error?.message ?? 'snapshot read failed', details: {} } }
         }
       },
     }
