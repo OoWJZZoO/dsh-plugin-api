@@ -58,8 +58,8 @@ function readAuthority(loopCtx) {
 /**
  * Declare the capability describing this component's own operation through
  * the facade's public recovery capability registry. The declaration is
- * best-effort: without it the authority rejects policy retries with a typed
- * bounds error and the consumer falls back to its fail-safe default.
+ * best-effort: without it the authority answers `retry-capability-missing` and
+ * the consumer falls back to its fail-safe default.
  */
 function declareCapability(loopCtx, spec) {
   try {

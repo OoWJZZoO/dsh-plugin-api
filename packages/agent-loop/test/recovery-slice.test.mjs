@@ -133,9 +133,9 @@ test('the declaration the slice sends is accepted by the real recovery engine', 
     retryPolicy: { mode: 'normal', maxRetries: 2 },
   })
   // The engine owns the declaration: a refused one never reaches its registry,
-  // which is exactly how the automatic path would go silent. The registration
-  // availability therefore has to remain 'active' after the slice declares.
-  assert.equal(owner.api.coverage().registration, 'active', 'the engine accepted the declaration')
+  // which is exactly how the automatic path would go silent. The declaration
+  // count is the evidence — the availability flag stays active either way.
+  assert.equal(owner.api.availability().capabilities, 1, 'the engine accepted the declaration')
   assert.equal(capabilitySpecs.length, 1)
   owner.dispose()
 })

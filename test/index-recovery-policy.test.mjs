@@ -65,7 +65,9 @@ test('mounted recovery evaluates and consumes a bounded policy decision without 
     idempotent: true, retryable: true, allowedActions: ['retry', 'stop'],
     sideEffectClass: 'read-only', retryBudget: { maxAttempts: 1 }, deadlineMs: 60_000,
   })
-  recovery.policy.register({ id: 'retry', ownerId: 'policy', generation: '1', decide() {
+  // The owner and generation are the facade's to supply: a declared pair would
+  // be overwritten, so the fixture exercises the public contract as it is.
+  recovery.policy.register({ id: 'retry', decide() {
     return { action: 'retry', reason: { code: 'temporary' }, proposedAttemptId: 'a-2', bounds: {
       attemptsRemaining: 1, deadlineAt: '2999-01-01T00:00:00.000Z', backoff: { kind: 'immediate' },
     } }
