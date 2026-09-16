@@ -10637,7 +10637,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "settings section registration forwarded to the official authority; the answer is the official settings scope object for that namespace (its members are get / watch / update / replace / mutate), not a facade-minted handle",
+      "currentShape": "settings section registration forwarded to the official authority; the answer is a facade scope handle over the official scope for that namespace, whose members are the domain entries { get(), watch(callback), update(patch), replace(section), mutate(ops, expectedRevision) } \u2014 get and mutate delegate to the official settings provider, watch / update / replace to the official scope captured at registration; the wrapper carries no owner / generation identity and no dispose()",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -11123,7 +11123,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "the registration answer is the official settings scope object for that namespace, whose own members are the domain read and write entries { get(), watch(callback), update(patch), replace(section), mutate(ops) }; the handle is the scope the official authority keeps, so it mints no separate facade identity",
+      "currentShape": "the registration answers the facade scope handle it wrapped around the official scope for that namespace; its members are the domain read and write entries { get(), watch(callback), update(patch), replace(section), mutate(ops, expectedRevision) }, and the object carries no id / ownerId / generation and no dispose(), so release semantics are not expressed through it",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
@@ -11156,7 +11156,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "the same official settings scope object settings.register answered for that namespace: the members are the domain read and write entries { get(), watch(callback), update(patch), replace(section), mutate(ops) }, and the object is the official authority's own handle rather than a facade-minted one",
+      "currentShape": "the same facade scope handle settings.register minted for that namespace \u2014 the domain entries { get(), watch(callback), update(patch), replace(section), mutate(ops, expectedRevision) } \u2014 answered again rather than a fresh binding; it is the facade wrapper, not the official scope object itself",
       "migrationAction": "retain",
       "status": "advanced",
       "verification": [
