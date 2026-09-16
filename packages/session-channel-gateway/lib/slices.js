@@ -57,7 +57,7 @@ export function createChannelRpcDispatch({ connection, facade = () => undefined,
    */
   const CHANNEL_MEMBER = Object.freeze({
     'sessionChannel/open': 'acquire',
-    'sessionChannel/subscribe': 'subscribe',
+    'sessionChannel/subscribe': 'subscriptions.acquire',
     'sessionChannel/fetchEvents': 'history',
     'sessionChannel/heartbeat': 'heartbeat',
     'sessionChannel/ack': 'ack',
@@ -74,7 +74,7 @@ export function createChannelRpcDispatch({ connection, facade = () => undefined,
     if (member === undefined) return typedError(CODE_INVALID_INPUT, 'unknown channel method')
     const surface = facadeSurface()
     if (surface === undefined) return typedUnavailable()
-    const entry = surface[member]
+    const entry = member.split('.').reduce((node, key) => (node == null ? undefined : node[key]), surface)
     if (typeof entry !== 'function') {
       // A facade that does not publish the capability answers typed; the route
       // stays registered so the official gateway face is untouched.
@@ -110,7 +110,9 @@ export function createChannelRpcDispatch({ connection, facade = () => undefined,
     get active() {
       const surface = facadeSurface()
       if (surface === undefined) return false
-      return Object.values(CHANNEL_MEMBER).every((member) => typeof surface[member] === 'function')
+      return Object.values(CHANNEL_MEMBER).every((member) => (
+        typeof member.split('.').reduce((node, key) => (node == null ? undefined : node[key]), surface) === 'function'
+      ))
     },
     dispose: () => {
       if (typeof disposer === 'function') {

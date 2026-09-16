@@ -2,7 +2,7 @@
 
 > **公共契约现状注（2026-08-29 追加）**：本制品成文于目标领域树 cutover 之前，文中的公共 path 为旧命名。现行命名以 [`public-contract.registry.json`](../plugin-api-m7-public-contract-refactor/public-contract.registry.json) 的 `oldToTargetMapping` 为唯一权威，本制品涉及的映射如下：
 >
-> **公共契约现状注（2026-09-16 追加，ANY 工作流，人类批准）**：本制品 4.3 / 7.1 描述的跨包机制已按公共面现状改写——（1）channel 方法 RPC 不再经内部派发器 `dispatchChannelMethod`（该成员在 M7/M8 公共面减法中已 `internalize`），改为经**已发布的 channel 能力成员**分派；（2）为此**新发布**一个订阅成员 `sessions.channels.subscribe`（线协议 `sessionChannel/subscribe` 映射到它），恢复 M8 期「官方 `subscribe` 并入 `observe`」时被合并掉的订阅语义——该合并的前提（`observe` 承载订阅）在 M11 把 `observe` 定为标准投影观察 handle、快照移到 `current()` 之后已不成立；（3）connection 侧的 fencing 改读已发布的 `observe(listener)` 与 `current()`（generation 取自快照）。本制品的**验收边界不变**：端点集合、回包形状与既有 RSC 条款照旧。
+> **公共契约现状注（2026-09-16 追加，ANY 工作流，人类批准）**：本制品 4.3 / 7.1 描述的跨包机制已按公共面现状改写——（1）channel 方法 RPC 不再经内部派发器 `dispatchChannelMethod`（该成员在 M7/M8 公共面减法中已 `internalize`），改为经**已发布的 channel 能力成员**分派；（2）为此**新发布**一个订阅获取成员 `sessions.channels.subscriptions.acquire`（线协议 `sessionChannel/subscribe` 映射到它；`acquire` 是 coordination 动词表内的动词，子命名空间形状与同层的 `auth.*` / `redaction.register` 同构），恢复 M8 期「官方 `subscribe` 并入 `observe`」时被合并掉的订阅语义——该合并的前提（`observe` 承载订阅）在 M11 把 `observe` 定为标准投影观察 handle、快照移到 `current()` 之后已不成立；（3）connection 侧的 fencing 改读已发布的 `observe(listener)` 与 `current()`（generation 取自快照）。本制品的**验收边界不变**：端点集合、回包形状与既有 RSC 条款照旧。
 >
 > | 本制品使用的旧 path | 现行 path |
 > |---|---|
@@ -88,7 +88,7 @@
   - RSC-R2 AC5 应急路径：契约保真度对已装 runtime 无法证明时 → 本切片暂停（inert + 诊断），并把受影响切片在交付报告/登记中记为 C 类上游提案（供 I 在 feature-list 落盘），不伪造 replacement 边界。
 - [ ] 4.3 增量切片：channel 方法 RPC 派发
   - 在复刻面之上增加 channel 方法面：把 `open`/`subscribe`/`ack`/`resume`/`revoke` 作为经官方 RPC carrier（`/api`）进出的 channel 方法端点（如 `sessionChannel/open` 等），带 descriptor 校验与调用边界。
-  - 端点命中时路由到 B 门面**已发布的 channel 能力成员**（经 `CONTRACT_SYMBOL` 确认身份后按方法分派：`open→acquire`、`subscribe→subscribe`、`fetchEvents→history`、`heartbeat`/`ack`/`resume` 同名、`revoke→release`）；B 门面缺席/inert 或该成员缺席 → 该端点返回有界 `unavailable`、官方 gateway 面保持不变（RSC-R2 AC4/RSC-R14 AC2/AC3）。（2026-09-16 修订：原措辞为「路由到 `dispatchChannelMethod`」——该内部派发器已在公共面减法中 internalize，见文首现状注。）
+  - 端点命中时路由到 B 门面**已发布的 channel 能力成员**（经 `CONTRACT_SYMBOL` 确认身份后按方法分派：`open→acquire`、`subscribe→subscriptions.acquire`、`fetchEvents→history`、`heartbeat`/`ack`/`resume` 同名、`revoke→release`）；B 门面缺席/inert 或该成员缺席 → 该端点返回有界 `unavailable`、官方 gateway 面保持不变（RSC-R2 AC4/RSC-R14 AC2/AC3）。（2026-09-16 修订：原措辞为「路由到 `dispatchChannelMethod`」——该内部派发器已在公共面减法中 internalize，见文首现状注。）
   - 本包只做 RPC/remote 派发管道，channel 语义（auth、cursor、replay、revoke 决策）全部由 B 门面拥有；不复制第二份 channel 状态（RSC-R11 AC3/RSC-R13 AC3）。
 - [ ] 4.4 增量切片：remote 命名空间扩展
   - 在既有 `remote` 之上提供 channel 专用 remote 命名空间（host 注册 + client mount）：channel 状态投影与配对 UI 可经此暴露；复用 `remote.publish`/client `$mount` 机制，不发明新协议（design gateway 切片）。
@@ -144,7 +144,7 @@
 
 - [ ] 7.1 投影面与门面装配（`lib/session-channel.js` / `lib/session-channel-project.js`）
   - `observe({channelId?, session?}) -> frozen snapshot { channels, subscriptions, connectionState }`（只读投影，不 ack/revoke/授权/改状态，api-shape §1）；`onChange(listener) -> disposer`（通道/订阅/连接状态变更通知；监听异常隔离；disposer 只移除本监听）。
-  - 门面装配：`pluginApi.sessions.channels` 挂 `acquire`/`subscribe`/`history`/`heartbeat`/`ack`/`resume`/`release`（控制面）+ `current`/`observe`（投影面：一次性冻结快照与标准观察 handle）+ `auth.*`（注册接口）+ `redaction.register`，并打 `CONTRACT_SYMBOL`；挂载必需钩子（session 观察、auth 注册接口）不可用时 → inert + typed diagnostic，不挂载 channel 能力（RSC-R3 AC4）。（2026-09-16 修订：装配清单按现行命名与投影面改写；原「跨包协调钩子」不再发布——R 包改经上面的已发布成员工作。）激活 gate 三条件：运行时可检的 1（必需钩子可用）与 3（信任模型已文档化）在 mount 时执行；条件 2（feature 级装配已登记 feature-list §3.1.1）是交付期治理义务，由任务 8.2 落实，不做运行时检查（design 激活 gate 的治理属性）。
+  - 门面装配：`pluginApi.sessions.channels` 挂 `acquire`/`history`/`heartbeat`/`ack`/`resume`/`release`（控制面）+ `current`/`observe`（投影面：一次性冻结快照与标准观察 handle）+ `subscriptions.acquire`（订阅获取）+ `auth.*`（注册接口）+ `redaction.register`，并打 `CONTRACT_SYMBOL`；挂载必需钩子（session 观察、auth 注册接口）不可用时 → inert + typed diagnostic，不挂载 channel 能力（RSC-R3 AC4）。（2026-09-16 修订：装配清单按现行命名与投影面改写；原「跨包协调钩子」不再发布——R 包改经上面的已发布成员工作。）激活 gate 三条件：运行时可检的 1（必需钩子可用）与 3（信任模型已文档化）在 mount 时执行；条件 2（feature 级装配已登记 feature-list §3.1.1）是交付期治理义务，由任务 8.2 落实，不做运行时检查（design 激活 gate 的治理属性）。
   - 信任模型文档化：认证强度由第三方注册链决定，门面不提供内置安全保证；`trustedHosts`/`authority: trusted-host` 不作设备认证（RSC-R15 AC1/AC3）。
   - 测试：`test/session-channel-project.test.mjs`——快照冻结、投影只读、onChange 派发、监听异常隔离、B 门面缺钩子 inert。
 - [ ] 7.2 guards.js 追加 `sessionChannel` 分支

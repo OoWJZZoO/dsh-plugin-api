@@ -54,11 +54,17 @@ test('fencing: inactive when no facade attached', () => {
   assert.ok(!f.active, 'must stay inactive when facade remains undefined')
 })
 
-test('fencing: active after facade with CONTRACT_SYMBOL is attached', () => {
-  const facade = { [CONTRACT_SYMBOL]: true, observe: () => ({ dispose() {} }) }
-  const f = createFencingTable({ facade: () => facade })
+test('fencing: active only when the facade carries the marker and the members it needs', () => {
+  const usable = { [CONTRACT_SYMBOL]: true, observe: () => ({ dispose() {} }), current: () => ({ channels: {} }) }
+  const f = createFencingTable({ facade: () => usable })
   f.attach()
   assert.ok(f.active)
+  // The marker alone is not enough: a facade without the observation handle and
+  // the snapshot is reported inactive rather than active-but-inert.
+  const bare = { [CONTRACT_SYMBOL]: true }
+  const g = createFencingTable({ facade: () => bare })
+  assert.equal(g.attach(), false)
+  assert.ok(!g.active)
 })
 
 test('fencing: prune drops bindings whose channel generation moved on', () => {

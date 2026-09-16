@@ -109,9 +109,10 @@ test('cross-package: gateway channel RPC dispatch routes to the real facade', as
   // gateway serves each endpoint through the published capability members,
   // and the subscription member is what carries the wire subscribe endpoint.
   assert.equal(typeof api.dispatchChannelMethod, 'undefined', 'the internal dispatcher stays off the public face')
-  for (const member of ['acquire', 'subscribe', 'history', 'heartbeat', 'ack', 'resume', 'release']) {
+  for (const member of ['acquire', 'history', 'heartbeat', 'ack', 'resume', 'release']) {
     assert.equal(typeof api[member], 'function', `the gateway endpoint is served by ${member}`)
   }
+  assert.equal(typeof api.subscriptions?.acquire, 'function', 'the wire subscribe is served by subscriptions.acquire')
 
   // Wire the real facade into the gateway slice (same discovery the R package apply uses).
   const rpc = createChannelRpcDispatch({ connection: { rpc: { handle() {} } }, facade: () => api })
@@ -228,7 +229,7 @@ test('cross-package: anonymous floods cannot lock out verified callers (bucket i
   // Establish a legitimately-owned channel and subscription BEFORE the flood.
   const opened = await api.acquire({ device: 'deviceA', session: 's1' })
   assert.ok(opened.ok)
-  const ownedSub = await api.subscribe({
+  const ownedSub = await api.subscriptions.acquire({
     channelId: opened.channelId, channelGeneration: opened.channelGeneration, session: 's1',
   })
   assert.ok(ownedSub.ok)
@@ -265,7 +266,7 @@ test('cross-package: authorizer sees canonical identity plus possession context'
   assert.deepEqual(seen[0]?.scope, ['session:read'])
 
   // Possession-gated method: authorizer receives method/channel context.
-  await api.subscribe({ channelId: opened.channelId, channelGeneration: opened.channelGeneration, session: 's1' })
+  await api.subscriptions.acquire({ channelId: opened.channelId, channelGeneration: opened.channelGeneration, session: 's1' })
   const last = seen[seen.length - 1]
   assert.equal(last.method, 'subscribe')
   assert.equal(last.channel, opened.channelId)
@@ -278,16 +279,16 @@ test('cross-package: wire-time audience filter narrows captured payloads by prof
 
   // Unknown profile ids fail closed at subscribe time.
   const opened = await api.acquire({ device: 'dev1', session: 's1' })
-  const badSub = await api.subscribe({
+  const badSub = await api.subscriptions.acquire({
     channelId: opened.channelId, channelGeneration: opened.channelGeneration, session: 's1', redactionProfile: 'no-such-profile',
   })
   assert.equal(badSub.ok, false)
   assert.equal(badSub.error.code, 'invalid-input')
 
-  const cleanSub = await api.subscribe({
+  const cleanSub = await api.subscriptions.acquire({
     channelId: opened.channelId, channelGeneration: opened.channelGeneration, session: 's1',
   })
-  const profiledSub = await api.subscribe({
+  const profiledSub = await api.subscriptions.acquire({
     channelId: opened.channelId, channelGeneration: opened.channelGeneration, session: 's1', redactionProfile: 'telemetry',
   })
 
@@ -339,7 +340,8 @@ test('cross-package: connection fencing table syncs with facade generations', as
 
 test('cross-package: the published channel face carries every wire endpoint member', () => {
   const { api } = mountFacade()
-  for (const member of ['acquire', 'subscribe', 'history', 'heartbeat', 'ack', 'resume', 'release', 'current', 'observe']) {
+  for (const member of ['acquire', 'history', 'heartbeat', 'ack', 'resume', 'release', 'current', 'observe']) {
     assert.equal(typeof api[member], 'function', `${member} is published`)
   }
+  assert.equal(typeof api.subscriptions.acquire, 'function', 'subscriptions.acquire is published')
 })

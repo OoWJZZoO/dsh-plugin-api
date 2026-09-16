@@ -27,7 +27,7 @@ test('channel RPC: each endpoint is served by the published member that carries 
   const facade = {
     [CONTRACT_SYMBOL]: true,
     acquire: async (args, signal) => { seen.push(['acquire', args, signal]); return { ok: true, value: { channelId: 'test' } } },
-    subscribe: async (args) => { seen.push(['subscribe', args]); return { ok: true, value: { subscriptionId: 'sub-1' } } },
+    subscriptions: { acquire: async (args) => { seen.push(['subscriptions.acquire', args]); return { ok: true, value: { subscriptionId: 'sub-1' } } } },
     history: async (args) => { seen.push(['history', args]); return { ok: true, frames: [] } },
     heartbeat: async () => { seen.push(['heartbeat']); return { ok: true } },
     ack: async () => { seen.push(['ack']); return { ok: true } },
@@ -41,7 +41,7 @@ test('channel RPC: each endpoint is served by the published member that carries 
   assert.equal(opened.value.channelId, 'test')
 
   const subscribed = await rpc.handle('sessionChannel/subscribe', { args: { channelId: 'c1' } })
-  assert.deepEqual(seen.at(-1), ['subscribe', { channelId: 'c1' }], 'subscribe is served by the published subscription member')
+  assert.deepEqual(seen.at(-1), ['subscriptions.acquire', { channelId: 'c1' }], 'the wire subscribe is served by the published subscription acquisition member')
   assert.equal(subscribed.value.subscriptionId, 'sub-1')
 
   for (const [endpoint, member] of [
@@ -81,7 +81,7 @@ test('channel RPC: handle returns internal error on throw', async () => {
 test('channel RPC: active depends on the facade publishing the capability members', () => {
   const rpc = createChannelRpcDispatch({ connection: { rpc: { handle() {} } }, facade: () => undefined })
   assert.ok(!rpc.active)
-  const members = { acquire() {}, subscribe() {}, history() {}, heartbeat() {}, ack() {}, resume() {}, release() {} }
+  const members = { acquire() {}, subscriptions: { acquire() {} }, history() {}, heartbeat() {}, ack() {}, resume() {}, release() {} }
   const rpc2 = createChannelRpcDispatch({
     connection: { rpc: { handle() {} } },
     facade: () => ({ [CONTRACT_SYMBOL]: true, ...members }),

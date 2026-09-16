@@ -90,9 +90,17 @@ export function createFencingTable({ facade = () => undefined, logger } = {}) {
     }
   }
 
+  /**
+   * Whether the facade carries the members the fencing table works with: the
+   * observation handle it subscribes through and the snapshot it reads
+   * generations from. A facade with the marker but without them is reported
+   * inactive, so the self-check never claims a capability that is not there.
+   */
+  const surfaceUsable = (surface) => typeof surface?.observe === 'function' && typeof surface?.current === 'function'
+
   const attach = () => {
     const surface = facadeSurface()
-    if (surface === undefined || attached) return false
+    if (surface === undefined || !surfaceUsable(surface) || attached) return false
     attached = true
     try {
       // The published observation handle is the subscription: each change
@@ -151,9 +159,9 @@ export function createFencingTable({ facade = () => undefined, logger } = {}) {
   }
 
   return Object.freeze({
-    /** Whether channel fencing capability is published (B facade attached). */
+    /** Whether channel fencing capability is published (B facade attached with the members it needs). */
     get active() {
-      return attached && facadeSurface() !== undefined
+      return attached && surfaceUsable(facadeSurface())
     },
     /** Bind a channel to a connection-layer generation. */
     bind(channelId, generation) {
