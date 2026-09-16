@@ -219,11 +219,13 @@ export function validateRegistry(registry) {
           errors.push(`${where}: a ${idiom} handle must record the required generation member, got ${JSON.stringify(member.currentShape)}`)
         }
       }
-      // Every member row declares how it is invoked. A callable member answers
-      // either directly (sync) or with a promise (async); a row that describes
-      // a value instead of a call — a returned handle, a data leaf, a retired
-      // member — says so with not-applicable rather than leaving the field
-      // unset, so a caller never has to discover the shape by trial and error.
+      // Every member row declares how it is invoked: a member answers either
+      // directly (sync) or with a promise (async). Rows that describe a value
+      // rather than a call — a returned handle, a retired member — say
+      // not-applicable instead of leaving the field unset, so a caller never has
+      // to discover the shape by trial and error. A published data leaf keeps a
+      // call shape (reading it answers directly), which is why the value is not
+      // required to be not-applicable for every non-callable row.
       const callShapes = Array.isArray(vocabulary.callShape) ? vocabulary.callShape : []
       if (!callShapes.includes(member.callShape)) {
         errors.push(`${where}.callShape ${JSON.stringify(member.callShape)} is not in vocabulary.callShape (${callShapes.join(' | ')})`)

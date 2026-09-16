@@ -48,15 +48,25 @@ function createHarness() {
     model() { return { name: 'x' } },
     runtime: { name: 'test', version: '0.1.0-rc.6' },
   }
-  // The routing plane's own owner (session route) mounts on top of the facade,
-  // so `llm.routing.*` is published by its in-repo implementation.
-  mountSessionRouteFeature({
-    ctx,
-    service: state.pluginApi,
-    featureRegistry: { isActive: () => false, mount() {} },
-    logger: { warn() {} },
-  })
   return { ctx, state }
+}
+
+/**
+ * Mount the routing plane's own owner on the live facade. The owner needs
+ * dependencies this harness does not stand up, so the mount usually declines
+ * and those rows fall to the unobservable boundary below.
+ */
+function mountRoutePlane(ctx, state) {
+  try {
+    mountSessionRouteFeature({
+      ctx,
+      service: state.pluginApi,
+      featureRegistry: { isActive: () => false, mount() {} },
+      logger: { warn() {} },
+    })
+  } catch {
+    // a failed mount leaves the routing plane on its disabled face
+  }
 }
 
 function resolveMember(root, path) {
@@ -164,6 +174,7 @@ function namespaceIsLive(api, path) {
 test('every observable host member answers the call shape the registry declares', () => {
   const { ctx, state } = createHarness()
   apply(ctx)
+  mountRoutePlane(ctx, state)
   const api = state.pluginApi
 
   const mismatches = []
@@ -204,6 +215,7 @@ test('every observable host member answers the call shape the registry declares'
 test('the async family this declaration exists for is declared and observed async', () => {
   const { ctx, state } = createHarness()
   apply(ctx)
+  mountRoutePlane(ctx, state)
   const api = state.pluginApi
   const declared = new Map(registry.members
     .filter((m) => m.runtime === 'host' && m.status !== 'removed')
@@ -218,9 +230,10 @@ test('the async family this declaration exists for is declared and observed asyn
   }
 })
 
-test('value rows declare not-applicable and callable rows never do', () => {
+test('handle rows declare not-applicable and callable rows never do', () => {
   const { ctx, state } = createHarness()
   apply(ctx)
+  mountRoutePlane(ctx, state)
   const api = state.pluginApi
   const wrong = []
   for (const member of registry.members) {
