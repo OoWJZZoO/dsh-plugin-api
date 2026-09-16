@@ -155,7 +155,10 @@ test('the provenance contribution derives its owner and ignores a declared one',
   const context = host.ctx.get('pluginApi').prompts.provenance
   const forged = context.contribute({ ...spec(), owner: 'someone-else', ownerId: 'someone-else' })
   assert.equal(forged.ok, true)
-  assert.notEqual(forged.handle.ownerId, 'someone-else', 'the owner comes from the calling plugin, never from the spec')
+  // The derived-owner contract itself is proven with two distinct callers in
+  // `test/caller-derived-owner.test.mjs`; here the declared owner is only shown
+  // to be ignored rather than trusted.
+  assert.notEqual(forged.handle.ownerId, 'someone-else', 'the owner never comes from the spec')
   // A duplicate id for the same owner is a typed conflict, not a silent overwrite.
   const duplicate = context.contribute({ ...spec(), owner: 'someone-else' })
   assert.equal(duplicate.ok, false)

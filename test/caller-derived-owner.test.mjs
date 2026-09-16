@@ -241,13 +241,17 @@ test('executions.visibility.register derives the owner from the caller that read
     availability: () => ({ status: 'active' }),
   })
 
-  const first = forCaller(service, 'plugin-a').executions.visibility.register({ id: 'v-1', ownerId: 'someone-else', filter: () => true })
+  const viewA = forCaller(service, 'plugin-a')
+  const first = viewA.executions.visibility.register({ id: 'v-1', ownerId: 'someone-else', filter: () => true })
   const second = forCaller(service, 'plugin-b').executions.visibility.register({ id: 'v-1', ownerId: 'someone-else', filter: () => true })
+  const third = viewA.executions.visibility.register({ id: 'v-2', ownerId: 'someone-else', filter: () => true })
 
-  assert.deepEqual(seen, ['plugin-a', 'plugin-b'], 'each caller binds to its own derived identity')
+  assert.deepEqual(seen, ['plugin-a', 'plugin-b', 'plugin-a'], 'each caller binds to its own derived identity')
   assert.equal(first.ownerId, 'plugin-a')
   assert.equal(second.ownerId, 'plugin-b')
-  assert.notEqual(first.generation, second.generation, 'each registration carries its own minted generation')
+  // The generation sequence is the service's, not the view's: two
+  // registrations from the same caller still carry different generations.
+  assert.notEqual(first.generation, third.generation, 'the generation sequence keeps advancing across reads')
   assert.equal(first.dispose().code, 'revoked')
   assert.equal(first.dispose().code, 'stale')
 })
