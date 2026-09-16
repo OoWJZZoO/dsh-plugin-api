@@ -65,7 +65,7 @@
 | C10c `agents.scopes` | 已修复 | typed throw 失败呈现 + 判别式 dispose + 扩展成员改行登记 |
 | C11 缺位词汇 | 已修复 | `missing` / `unavailable` 分界落 `executions.get` / `tasks.*` / `sessions.activity.*` |
 | C12 settings mutation 呈现 | **已修复**（第三轮） | `facadeSettingsMutation`：冻结判别式 + `commitState`，官方 revisions/CAS 与错误映射保留 |
-| C13 `storage.open.handle.domain` | 已修复（第三轮） | registry 行改回 retained + 理由；实现本就保留 |
+| C13 `storage.open.handle.domain` | 已修复（第三轮） | registry 行改回 retained + 理由；实现本就保留。**第二十四轮补**：该行在 `b3cba10` 由 `removed/migrate` 翻为 `advanced/retain` 时漏删 `statusByPath` 的残留键，形成「在册行却记 `removed`」的自环，已删除该键（现 `statusByPath` 177 键、值全为 `removed`、不含任何在册 path） |
 | C14 `capabilityMatrix` 内容模型 | **已修复**（第三轮） | 当前能力投影 + 生成物重建入口 `scripts/capability-matrix-sync.mjs` |
 | C15 handle 行互指 | 已修复（第三轮） | 两行 `currentShape` 互指 |
 | C16 `events.compaction` 示例 | 已修复 | `public-api-shape` §5 示例改为真实 capability path |
@@ -125,7 +125,7 @@
 | 位置 | 差异与理由 |
 |---|---|
 | `agents.register`（leaf，`resourceRegistry`） | 该成员**按设计不铸标准 handle**：上游 `plugin-api-agent-create-m2` 的要求是「原样返回官方 disposer、SHALL NOT wrap」。该差异**已按 idiom 例外登记**（该行原本就有 provider 分家的例外；本轮为 handle 形状追加第二条记录，行/path 两口径不变，记录数 18 → 19，仍不高于上限 20），同时退役其 `.handle` 行并在 leaf 行的 `currentShape` 写明透传形状 |
-| `sessions.channels` 家族的 `coordination` 形状 | 该家族按 Task 5.12 / C4-C5 仍属**未完成**（公开面是 `list` + `observe`，且获取回答判别式结果而非 §3.7 的 lease handle）；本线只退役了不存在的 `.handle` 行，家族级的 idiom 收敛仍在既登记未完成项内，不另开例外 |
+| `sessions.channels` 家族的 `coordination` 形状 | **登记时的状态**（第三轮）：该家族按 Task 5.12 / C4-C5 当时仍属未完成（公开面是 `list` + `observe`，且获取回答判别式结果而非 §3.7 的 lease handle），本线当时只退役了不存在的 `.handle` 行、家族级 idiom 收敛留在既登记未完成项内，不另开例外。**该差异现已不成立**：第十五轮交付家族级收敛（`history` / `current` / `observe(listener)`，见 §3.0.4 第 1 行），第十七轮先以 `sessions.channels.subscribe` 复活订阅获取成员、`82e2ccf` 改名（见 §3.0.6） |
 
 **本线登记的外部差异（不属本线待办，供后续处理）**：
 
@@ -200,7 +200,7 @@
 |---|---|
 | 阻塞 B-1′（`llm.routing.candidates.list` 登记 `sync`、owner 实现答复 Promise） | 改为 `async`；同批复查 `packages/agent-loop/lib/route-policy.js` 的其余族（`policy.register` / `health.*` / `decisions.*` 同步，与登记一致） |
 | 阻塞 B-1″（`events.serial` / `events.parallel` 登记 `sync`，而原生派发器 cordis 为 `async`；测试用桩回显掩盖） | 两行改为 `async`（原生实现：`cordis` 的 `async serial` / `async parallel`；`emit` / `bail` / `waterfall` 确为同步，登记不变）；`test/call-shape.test.mjs` 把这五行列为**不可观测**（形状 owner 是原生派发器，本环境不挂载），不再由 harness 的桩回显充当证据 |
-| 中级 M-1′（边界口径与台账不符，部分本仓族未被断言） | 口径与实现对齐：`NATIVE_DISPATCHER_ROWS` 之外，可观测性由「official seam 且非本仓实现」判定；同时把 `storage.*` 纳入断言（host 断言行数 106，其中新增 live storage facility；**第十七轮注**：重排后新增一行可调用成员（`sessions.channels.subscriptions.acquire`），断言行数增至 107；**第二十轮订正**：`llm.routing` 的 16 行可调用行中只有 `forExecution` / `availability` 在断言内，其余 14 行因该特性在本 harness 未挂载而同步拒绝、落在不可观测边界） |
+| 中级 M-1′（边界口径与台账不符，部分本仓族未被断言） | 口径与实现对齐：`NATIVE_DISPATCHER_ROWS` 之外，可观测性由「official seam 且非本仓实现」判定；同时把 `storage.*` 纳入断言（host 断言行数 106，其中新增 live storage facility；**第十七轮注**：重排后新增一行可调用成员（第十七轮以 `sessions.channels.subscribe` 复活为在册行、行数仍 562；第六轮收口提交 `82e2ccf` 把旧名重新退役并新增 `sessions.channels.subscriptions.acquire`，行数 563），断言行数增至 107；**第二十轮订正**：`llm.routing` 的 16 行可调用行中只有 `forExecution` / `availability` 在断言内，其余 14 行因该特性在本 harness 未挂载而同步拒绝、落在不可观测边界） |
 | 中级 M-3（`sessions.channels.auth.*` / `redaction.register` 的身份仍是常量 root token，feature-list 记为未收口而台账索引记 B2 已完成） | **改实现收口**：`lib/session-channel-auth.js` / `lib/session-channel-redact.js` 的注册改为**一 id 一 owner**——门面在 `sessions` 的访问点派生调用者身份并传入（`bindChannelRegistrations`），跨 owner 同 id 抛 typed conflict（`PLUGIN_API_CHANNEL_AUTH_OWNER_CONFLICT` / `PLUGIN_API_CHANNEL_REDACTION_OWNER_CONFLICT`）、同 owner 替换自己的条目，释放**绑定发行 generation**（同批消除了「旧 handle 撤销新登记」这一同型缺陷）；registry 三行 leaf 的 `identitySource` 改 `derived-caller (root-fallback)`、`conflictRule` 改 `owner-conflict`，三行 handle 同步；`test/session-channel-integration.test.mjs` 新增鉴别性用例（两调用者两 owner、跨 owner 拒绝、旧 handle 释放报 `stale`） |
 | 低级 L-5（`events.serial/parallel` 漂移未处置） | 见 B-1″ |
 | 低级其余（L-1…L-4） | 已在 `4e97a19` 处置（§2 数字、§3 索引、§7 记录、register 行分界） |
@@ -408,7 +408,7 @@
 
 ## 4. registry 校验规则的现状说明（如实登记）
 
-`scripts/registry-validate.mjs` 本线新增**六条** entry 级校验（第一交付批 2 条 + 第三轮 3 条 + 第十五轮 1 条；可复核口径：以开工基线 `cf2a2d1` 的 `errors.push` 计数 **84** 为基线，HEAD 为 **90** ⇒ +6，增量恰落在 `0482018`（+2）/ `6f62bd9`（+3）/ `1191569`（+1）三个提交）：
+`scripts/registry-validate.mjs` 本线新增**六条** entry 级校验（第一交付批 2 条 + 第三轮 3 条 + 第十五轮 1 条；可复核口径：以开工基线 `cf2a2d1` 的 `errors.push` 计数 **84** 为基线，HEAD 为 **90** ⇒ +6，增量恰落在 `0482018`（+2）/ `6f62bd9`（+3）/ `1191569`（+1）三个提交）。**项序口径注**：本列表自第二十三轮起为六项（此前为三项）；§7.20–§7.23 等历史记录中的「§4 第 3 条」指当时的 `callShape` 回填规则，即本列表现行的第 6 项。
 
 1. **policy / resourceRegistry handle 的 generation 成员**（第一交付批）。第十五轮起，规则**覆盖全部在册（`status !== 'removed'`）的 policy / resourceRegistry handle 行**，只**豁免带 `idiomExceptions` 的行**（该行的偏离已登记）。实测口径（第十五轮按 HEAD registry）：该类 handle 行 **34** 行（`advanced`），其中 `currentShape` 为 `null` 的 **0** 行、形状不提及 generation 的 **0** 行；两处委派型注册（`skills.activation.register.handle`、`skills.activation.policy.register.handle`）已在第十五轮包装为标准 handle，`currentShape` 相应 itemize 并含 generation，提升的最后屏障随之消失。规则从「只对 itemize 成员集生效」提升的判据：`currentShape` 为 `null` 的登记缺口已清零，且两类在册 handle 行全部写出成员集——**没有任何一行**还需要靠「prose 形态」豁免。
 2. **例外记录的 `baseContract` 必属八类 idiom**（第一交付批）。
@@ -679,3 +679,15 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 - **低级 B（校验条目计数失实：三条 vs 六条）**：§4 抬头与 §1 同源句写「本线新增**三条** entry 级校验」，实测为**六条**（以 `cf2a2d1` 的 `errors.push` 计数 84 为基线，HEAD 为 90 ⇒ +6，增量落在 `0482018` +2 / `6f62bd9` +3 / `1191569` +1）；§4 其下的列表也只列了三条，**漏掉第三轮 `6f62bd9` 的三条**（入口动词与 idiom 一致、注册类 leaf 的 typed-throw 失败呈现、已 itemize 的成员不得再消耗例外——与 §3.0.1 / §3.0.3 / B4 的记载同源），`feature-list.md` 的同句亦同步扩散。
 
 **处置（第二十三轮，本节之后的提交）**：① §2 尾句改为「`b7eb175` = 3577（该提交成员表 562 行：`sessions.channels.subscribe` 复活为在册行）；此后总数不变（3577）——`82e2ccf`（改名到 coordination 动词表，成员表 563 行）与 `0c3d531` 都动过测试文件，但总数未变」；② §3.0.4 的 B5 行、B5 索引行与 §3.0.6 的实施记录补上 563 行的实际产出提交 `82e2ccf`（并写明此前为 562 行）；③ §4 抬头改为「六条（第一交付批 2 条 + 第三轮 3 条 + 第十五轮 1 条）」并把列表扩为六项（补齐 `6f62bd9` 的三条），§1 同源句与 `feature-list.md` 的同句同步。
+
+### 7.25 第三交付批的全局终审（第十二轮，收口验证，对象至 `e268632`）—— **有偏差（0 阻塞 / 0 中级）**
+
+结论 **有偏差（0 阻塞 / 0 中级 / 5 低级）**：第十一轮两条声称修订**逐条属实**（§2 尾句与四处 562/563 归属句彼此一致；§4/§1/`feature-list.md` 的六条计数与 validator 实测一致：基线 84 → HEAD 90，增量落在 `0482018` +2 / `6f62bd9` +3 / `1191569` +1）；§7.24 落盘；成员表演进、registry 计数、call-shape 面（host 107 / 167 = 68 + 55 + 44 / 19 根、client 24、零 mismatch）、例外额度、机械门与纪律全部复算相符。新发现五条**登记面与上游制品文字**（均不触及实现、测试、机械门与已交付验收边界）：
+
+- **低级 L-1**：§3.0.3「本线登记的形态差异」表的 `sessions.channels` 行仍以现在时写「仍属**未完成**（公开面是 `list` + `observe`）」，而该家族已在第十五轮收敛（`list` 退役、`history` / `current` / `observe(listener)` 在册），属同类「过期状态词」残留。
+- **低级 L-2**：§3.0.5 的 M-1′ 行注把「第十七轮新增的一行可调用成员」直接写成 `sessions.channels.subscriptions.acquire`，而该提交（`b7eb175`）里的名字是 `sessions.channels.subscribe`（562 行），改名发生在 `82e2ccf`——与本轮刚统一的四处表述不一致。
+- **低级 L-3**：§4 列表由三项扩为六项后，§7.20–§7.23 中的「§4 第 3 条」交叉引用全部错位（按现行编号会落到 typed-throw 规则，而非所记的 `callShape` 规则），缺一条项序口径注。
+- **低级 L-4**：registry 的 `statusByPath` 与成员行对同一 path 给出相反状态——`storage.open.handle.domain` 记 `removed`，而其成员行为 `advanced` / `retain`（自环）。该键在 `b3cba10`（本评审区间内）该行由 `removed` 翻为 `advanced` 时漏删，全库仅此 1 例；无运行时消费者（validator 不校验 `statusByPath`），属登记面自相矛盾。
+- **低级 L-5**：上游 `remote-session-channel` 的机制措辞只改到 4.3 / 7.1，同制品内任务 2.4 / 7.4 与文末「命名/边界速查」仍在讲已退役的 `onChange` 机制，`requirements.md` / `design.md` 的现状注表又写「叶子名不变」（`subscribe` 已改名）。
+
+**处置（第二十四轮，本节之后的提交）**：① §3.0.3 该行改标为「登记时的状态」并写明该差异现已不成立（第十五轮收敛 + `82e2ccf` 改名）；② §3.0.5 的第十七轮注补上「先以 `sessions.channels.subscribe` 复活、`82e2ccf` 改名并新增」的准确表述；③ §4 抬头加「项序口径注」（六项自第二十三轮起；旧「第 3 条」= 现行第 6 项）；④ 删除 registry `statusByPath` 的残留键（现 177 键、值全为 `removed`、不含任何在册 path），并在 C13 行登记该清理；⑤ 上游 `remote-session-channel` 的 2026-09-16 现状注扩展到任务 2.4 / 7.4 与命名速查（机制描述以注为准、任务文本按历史制品惯例保留），`requirements.md` / `design.md` 的现状注表改准叶名。

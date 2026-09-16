@@ -23548,7 +23548,6 @@
     "remotes.publish": "removed",
     "remotes.dispose": "removed",
     "storage.open.handle.close": "removed",
-    "storage.open.handle.domain": "removed",
     "connection.dispose": "removed",
     "events.localeChange.on": "removed",
     "events.themeChange.on": "removed",
