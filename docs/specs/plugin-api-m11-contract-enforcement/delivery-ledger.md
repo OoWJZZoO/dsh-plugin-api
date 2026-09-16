@@ -188,7 +188,7 @@
 |---|---|---|
 | 5.12 / C4/C5（通道成员映射） | `sessions.channels` 按 Task 5.12 收敛：事件帧读取 `list` 改名 `history`（api-idioms §3.1 允许的查询动词；旧名留 `removed` 行 + `oldToTargetMapping`），一次性快照由 `observe()` 移到 `current()`，`observe(listener)` 改为内核铸造的标准观察 handle（冻结 `{ current(), subscribe(listener), dispose(), epoch }`，变更时投递冻结投影，释放后 `current()` 给降级视图、`subscribe` 为 no-op、`dispose()` 判别式 `revoked` / `stale`）；网关 R 包的远端投影改读 `current()`（其 wire 成员名不变）；`skill`/gateway 两处套件与 `test/interactive-session-consumption.test.mjs` 同步 | `lib/session-channel.js`、`lib/plugin-api-service.js`、`packages/session-channel-gateway/lib/slices.js`、registry（`history` 新增 / `current` 新增 / `observe` 改写 / `observe.handle` 新增 / `list` 退役）+ 成员表（**562 行**） |
 | 4.14/4.15 余项（B2 · generation 校验提升） | 两处**委派型**注册收口为标准 handle：`skills.activation.register` 由门面**派生 owner**（spec 自报 owner 被覆盖）、**铸造 generation** 并返回 `{ id, ownerId, generation, dispose() }`（含已登记扩展成员 `skillId` / `activate` / `deactivate` / `exposure`），拒绝按注册类呈 typed throw（非法 spec 同步抛、owner 拒绝以 rejection 表达）；`skills.activation.policy.register` 同形返回标准 handle（id 为会话 scope 键）；owner 契约补 `unregisterDescriptor` 释放路径并支持**按发行 generation 释放**——实测修复了一个真实缺陷：同 owner 重新登记后，**旧 handle 的释放会撤销新登记**（探针复现，现由 `UNREGISTER_STALE_GENERATION` 拒绝并如实报 `stale`）；`skills` 命名空间改为方法式 getter（箭头 getter 会把访问者身份丢掉，与 storage/workspaces/security 同类）；策略面补跨 owner 冲突（`policyRegister(scope, owner)`，跨 owner 同 scope 抛 typed conflict）；**generation 校验提升为「覆盖全部在册 policy / resourceRegistry handle 行」**（不再限于 itemize 的行），并补两条反例测试 | `lib/plugin-api-service.js`（`bindSkillsActivation`）、`lib/index.js`（owner 包装的释放入口）、`packages/tool-skill/lib/{apply,skill-activation-engine,register-skill-sugar}.js`、`scripts/registry-validate.mjs`、registry 四行、`test/skill-activation-facade.test.mjs`、`packages/tool-skill/test/{engine,register-skill-sugar}.test.mjs`、`test/registry-negative.test.mjs` |
-| 3.1（B5 · S15 调用形态回填） | 全 562 行成员回填（第十七轮 reshape 后为 563 行） `callShape`（`sync` / `async` / `not-applicable`，词表同步）；判定以**实现现状**为准、两种证据形态：①在挂载的门面（真实 in-repo owner 服务）上调用成员、以是否答复 thenable 判定（in-repo 实现的族）；②读 owner 实现（official seam 与 R 包 owner）。实测（第十七轮复测）**83 行 async / 253 行 sync / 227 行 `not-applicable`**（handle 行与已退役行；另有一批不可调用的数据叶按「读取直接答复」登记为 `sync`）。validator 增加该校验（缺字段或词表外的值一律拒绝），并新增 `test/call-shape.test.mjs`：在挂载的 host 面（含 live 的 storage facility）与 client 面上逐行断言「登记值 = 实测值」（host **107** 行 + client **24** 行）；不可观测的行按实现渠道而非根名收集——official seam（llm/tools/sessions/settings/agents/web/apiProxy 中非本仓实现的部分）与在本环境不可挂载的替代包族（attachments/mcp/skills/credentials/workflows/profiles/remotes 等） | registry（全体成员行 + `vocabulary.callShape`）、`scripts/registry-validate.mjs`、`test/call-shape.test.mjs`（新增） |
+| 3.1（B5 · S15 调用形态回填） | 全 562 行成员回填（第十七轮 reshape 后为 563 行） `callShape`（`sync` / `async` / `not-applicable`，词表同步）；判定以**实现现状**为准、两种证据形态：①在挂载的门面（真实 in-repo owner 服务）上调用成员、以是否答复 thenable 判定（in-repo 实现的族）；②读 owner 实现（official seam 与 R 包 owner）。实测（第十七轮复测）**83 行 async / 253 行 sync / 227 行 `not-applicable`**（handle 行与已退役行；数据叶按「读取直接答复」登记为 `sync`）。validator 增加该校验（缺字段或词表外的值一律拒绝），并新增 `test/call-shape.test.mjs`：在挂载的 host 面（含 live 的 storage facility）与 client 面上逐行断言「登记值 = 实测值」（host **107** 行 + client **24** 行）；不可观测的行按实现渠道而非根名收集——official seam（llm/tools/sessions/settings/agents/web/apiProxy 中非本仓实现的部分）与在本环境不可挂载的替代包族（attachments/mcp/skills/credentials/workflows/profiles/remotes 等） | registry（全体成员行 + `vocabulary.callShape`）、`scripts/registry-validate.mjs`、`test/call-shape.test.mjs`（新增） |
 | 8.13（C17） | `tasks.*` 全域的调用形态抽样复核：9 个成员（register / start / settle / attach / get / observe / history / acquire / takeover）全部登记为 `async` 并在挂载面上逐条实测为答复 Promise；`tasks.availability` 等同步成员作为对照登记为 `sync`。`test/call-shape.test.mjs` 固定该断言 | registry + `test/call-shape.test.mjs` |
 | 3.6（B6） | M10 三表按受影响面复核：成员表 1:1 重建（562 行）；行为表保持 37 行冻结清单、逐行内容复核（受影响的行为行只引用 `sessions.channels.*` 泛名与已更新的套件，无需改写）；装配表 token 未变、可解析（`convergence-verify` 硬判据全绿）。历史现状注：M8 迁移账本追加「M11 续做的 channels 映射现状注」（旧 path 保留 removed 行与 `oldToTargetMapping`，历史措辞不改写） | `docs/specs/plugin-api-m10-contract-convergence/convergence/*`、`docs/specs/plugin-api-m8-api-idiom-refactor/migration-ledger.md` |
 
@@ -200,14 +200,14 @@
 |---|---|
 | 阻塞 B-1′（`llm.routing.candidates.list` 登记 `sync`、owner 实现答复 Promise） | 改为 `async`；同批复查 `packages/agent-loop/lib/route-policy.js` 的其余族（`policy.register` / `health.*` / `decisions.*` 同步，与登记一致） |
 | 阻塞 B-1″（`events.serial` / `events.parallel` 登记 `sync`，而原生派发器 cordis 为 `async`；测试用桩回显掩盖） | 两行改为 `async`（原生实现：`cordis` 的 `async serial` / `async parallel`；`emit` / `bail` / `waterfall` 确为同步，登记不变）；`test/call-shape.test.mjs` 把这五行列为**不可观测**（形状 owner 是原生派发器，本环境不挂载），不再由 harness 的桩回显充当证据 |
-| 中级 M-1′（边界口径与台账不符，部分本仓族未被断言） | 口径与实现对齐：`NATIVE_DISPATCHER_ROWS` 之外，可观测性由「official seam 且非本仓实现」判定；同时把 `storage.*` 纳入断言（host 断言行数 106，其中新增 live storage facility；**第十七轮注**：routing owner 在本 harness 无法构造，其注册类行仍不可观测，断言行数后增至 107） |
+| 中级 M-1′（边界口径与台账不符，部分本仓族未被断言） | 口径与实现对齐：`NATIVE_DISPATCHER_ROWS` 之外，可观测性由「official seam 且非本仓实现」判定；同时把 `storage.*` 纳入断言（host 断言行数 106，其中新增 live storage facility；**第十七轮注**：重排后新增一行可调用成员（`sessions.channels.subscriptions.acquire`），断言行数增至 107；`llm.routing` 的可调用行在本环境可挂载、全部在断言内，不在不可观测边界） |
 | 中级 M-3（`sessions.channels.auth.*` / `redaction.register` 的身份仍是常量 root token，feature-list 记为未收口而台账索引记 B2 已完成） | **改实现收口**：`lib/session-channel-auth.js` / `lib/session-channel-redact.js` 的注册改为**一 id 一 owner**——门面在 `sessions` 的访问点派生调用者身份并传入（`bindChannelRegistrations`），跨 owner 同 id 抛 typed conflict（`PLUGIN_API_CHANNEL_AUTH_OWNER_CONFLICT` / `PLUGIN_API_CHANNEL_REDACTION_OWNER_CONFLICT`）、同 owner 替换自己的条目，释放**绑定发行 generation**（同批消除了「旧 handle 撤销新登记」这一同型缺陷）；registry 三行 leaf 的 `identitySource` 改 `derived-caller (root-fallback)`、`conflictRule` 改 `owner-conflict`，三行 handle 同步；`test/session-channel-integration.test.mjs` 新增鉴别性用例（两调用者两 owner、跨 owner 拒绝、旧 handle 释放报 `stale`） |
 | 低级 L-5（`events.serial/parallel` 漂移未处置） | 见 B-1″ |
 | 低级其余（L-1…L-4） | 已在 `4e97a19` 处置（§2 数字、§3 索引、§7 记录、register 行分界） |
 
-**第十五轮的判定口径补记（S15；第十六轮按终审意见修订）**：`callShape` 的「async」定义为**调用会得到 Promise**（不限于 `async` 函数声明）——门面的转发函数本身是同步函数，把 owner 的 Promise 原样交回调用者，因此按函数声明判定会漏判（这正是 C17 的成因）。可观测族（tasks / executions / coordination / workspaces / security / diagnostics / prompts / attention / capabilities，以及 live 的 `storage.*`、`sessions.*` 各子面、`llm.routing.*` 的就地挂载面，host 107 行 + client 24 行）由测试逐条断言；**不可观测的两类**：① 形状 owner 是原生派发器的五行事件派发入口（`events.emit/serial/parallel/bail/waterfall`，测试显式列为不可观测，登记值取自 cordis 实现）；② official seam 与在本环境不可挂载的替代包族（含 `llm.routing` 中经 R 包发布的注册类，登记值取自 owner 实现）。official seam（llm / tools / sessions / settings / agents / web / apiProxy）与 R 包 owner（attachments / mcp / profiles / storage / remotes / credentials / workflows / skills）两族的登记值取自各自 owner 实现，测试把它们列为**不可观测边界**并在测试文件头写明理由。**混合形态的登记判据**：`llm.routing.wait`、`profiles.apply`、`profiles.snapshot.validate` 对非法输入同步拒绝或返回已拒绝的 Promise、对合法输入分别答复 Promise / operation handle；登记值按**成功路径**判定（`wait` → async，`profiles.apply` / `snapshot.validate` → sync，后者返回的是同步铸造的 operation handle）。
+**第十五轮的判定口径补记（S15；第十六轮按终审意见修订）**：`callShape` 的「async」定义为**调用会得到 Promise**（不限于 `async` 函数声明）——门面的转发函数本身是同步函数，把 owner 的 Promise 原样交回调用者，因此按函数声明判定会漏判（这正是 C17 的成因）。可观测族（tasks / executions / coordination / workspaces / security / diagnostics / prompts / attention / capabilities，以及 live 的 `storage.*`、`sessions.*` 各子面、`llm.routing.*` 的就地挂载面，host 107 行 + client 24 行）由测试逐条断言；**不可观测的两类**：① 形状 owner 是原生派发器的五行事件派发入口（`events.emit/serial/parallel/bail/waterfall`，测试显式列为不可观测，登记值取自 cordis 实现）；② official seam 与在本环境不可挂载的替代包族（登记值取自各自 owner 实现；`llm.routing` **不在其列**——该族的可调用行在本环境可挂载并逐条断言）。official seam（llm / tools / sessions / settings / agents / web / apiProxy）与在本环境不可挂载的替代包族（实测不可观测根集合：attachments / mcp / profiles / remotes / credentials / workflows / skills 等）的登记值取自各自 owner 实现，测试把它们列为**不可观测边界**并在测试文件头写明理由；`storage.*` **不在此列**——它由 harness 的 live storage facility 挂载并逐条断言（`open` / `availability`）。**混合形态的登记判据**：`llm.routing.wait`、`profiles.apply`、`profiles.snapshot.validate` 对非法输入同步拒绝或返回已拒绝的 Promise、对合法输入分别答复 Promise / operation handle；登记值按**成功路径**判定（`wait` → async，`profiles.apply` / `snapshot.validate` → sync，后者返回的是同步铸造的 operation handle）。
 
-**判定的两条修订（终审意见 B-1/M-1）**：①「以实现现状为准」的判据是**调用得到的答复**，不是函数声明形态——`storage.open`（`lib/storage-binding.js` 的 `const open = async (…)`）与 `llm.routing.wait`（`lib/session-route.js` 同步函数但各路径 `return new Promise(…)`）原被误判为 `sync`，已改正为 `async`；②可观测边界改按**实现渠道**划分：根名排除会把本仓自有、可挂载的族（`llm.routing.*`、`sessions.*` 各子面、`storage.*`、`settings.register/scope/inspect` 等）一并排除，现改为「official seam 且非本仓实现」才排除，并把可挂载的本仓族纳入断言（断言行数由 94 增至 107（第十七轮 reshape 后再增一行）；`llm.routing` 的 owner 在本 harness 中无法构造，其行全部落在不可观测边界）；对**同步抛错**的调用不再当作 sync 证据（成员可能对非法输入同步拒绝、成功路径仍答复 Promise），改为计入不可观测。
+**判定的两条修订（终审意见 B-1/M-1）**：①「以实现现状为准」的判据是**调用得到的答复**，不是函数声明形态——`storage.open`（`lib/storage-binding.js` 的 `const open = async (…)`）与 `llm.routing.wait`（`lib/session-route.js` 同步函数但各路径 `return new Promise(…)`）原被误判为 `sync`，已改正为 `async`；②可观测边界改按**实现渠道**划分：根名排除会把本仓自有、可挂载的族（`llm.routing.*`、`sessions.*` 各子面、`storage.*`、`settings.register/scope/inspect` 等）一并排除，现改为「official seam 且非本仓实现」才排除，并把可挂载的本仓族纳入断言（断言行数由 94 增至 107（第十七轮 reshape 后再增一行）；`llm.routing` 的可调用行在本环境可挂载、**全部逐条断言**（16 行），其 5 行 handle 属值行、不参与调用断言）；对**同步抛错**的调用不再当作 sync 证据（成员可能对非法输入同步拒绝、成功路径仍答复 Promise），改为计入不可观测。
 
 ### 3.0.6 已知跨包缺口登记（第十六轮终审发现，**需人类裁决修法**）
 
@@ -282,7 +282,7 @@
 | 条目 | 状态 |
 |---|---|
 | B1（Task 6.4） | **已完成** — `tasks` 全域与 `workspaces.transactions` 的动作名字段改为 `action` |
-| B2（Task 4.14/4.15） | **大部分完成**（第三轮 + 复审修订轮）— 第三轮追加交付：callerAware 别名改为 per-caller leaf/view 四族、staged 回滚全树收口、`llm.adapters.decorations.register.handle` 身份成员 + 判别式 dispose、`security.*` 冲突口径改 `owner-scoped`、24 行 `currentShape: null` 补齐、两处幻影 handle 行退役；复审修订轮再补：`slots.declaration` 与另外七条 client 现行行补登记、`tasks.acquire.handle` 幻影行退役、client 面「实现 → registry」全量枚举；**第十五轮收口**：两处委派型注册包装为标准 handle（派生 owner + 铸造 generation + 按发行 generation 释放），generation 校验随之提升为覆盖全部在册 policy / resourceRegistry handle 行；**第十六轮再收口**：`sessions.channels` 三族注册的 owner 派生落地（一 id 一 owner、跨 owner typed conflict、释放绑定发行 generation，见 §3.0.5）。**该条已完成** |
+| B2（Task 4.14/4.15） | **已完成**（第三轮 → 复审修订轮 → 第十五 / 十六轮逐轮收口）— 第三轮追加交付：callerAware 别名改为 per-caller leaf/view 四族、staged 回滚全树收口、`llm.adapters.decorations.register.handle` 身份成员 + 判别式 dispose、`security.*` 冲突口径改 `owner-scoped`、24 行 `currentShape: null` 补齐、两处幻影 handle 行退役；复审修订轮再补：`slots.declaration` 与另外七条 client 现行行补登记、`tasks.acquire.handle` 幻影行退役、client 面「实现 → registry」全量枚举；**第十五轮收口**：两处委派型注册包装为标准 handle（派生 owner + 铸造 generation + 按发行 generation 释放），generation 校验随之提升为覆盖全部在册 policy / resourceRegistry handle 行；**第十六轮再收口**：`sessions.channels` 三族注册的 owner 派生落地（一 id 一 owner、跨 owner typed conflict、释放绑定发行 generation，见 §3.0.5）。**该条已完成** |
 | B3（Task 5.1–5.6、5.13 client 半、8.4–8.7） | **已完成**（第三轮）— 5.3（pending handle + 惰性 `face`/`render`）、8.4（七个 namespace 的 `availability()` 与 `capabilities.*` 同源）、8.7（`settings.scope(spec)`）、C3 的投影半（`declaration` + `list` 状态）、client `lifecycle.register` 派生 owner 全部交付；8.4 上一轮的整体回滚已在本轮以「probe 表 + 身份稳定缓存」的方式落地 |
 | B4（Task 3.3/3.4/10.1(e)） | **已完成**（第三轮 + 第五轮追加）— 回收 6 条 / 新增 5 条（第四条在第三轮，第五条为 `agents.register` 的 handle 形状记录，第五轮追加），净额 17 行 / 19 记录 / 16 path（≤ 基线 17/20/16）；三条 entry 级校验 + 3 条反例测试落盘 |
 | B5（Task 3.1 registry 半） | **已完成**（第十五轮；数字按第十七轮 reshape 复测）— 全 **563** 行回填 `callShape`（**83 async / 253 sync / 227 not-applicable**）、词表与 validator 校验落盘、`test/call-shape.test.mjs` 断言可观测面（host **107** 行 + client 24 行）；判定口径与两条修订见 §3.0.4 |
@@ -292,7 +292,7 @@
 | B9（Task 8.1 域侧） | **已完成** — coordination `availability` 改同步、security `availability` 状态化 |
 | B10（Task 8.9 余项） | **已完成** — `sessions.activity.current/get` 的 `missing` / `invalid-input` 拆分 |
 | B11（Task 6.6 余项） | **已完成**（storage / transactions / prompts 三处派生；**注**：本轮修复了三处 getter 的 caller 捕获——必须是方法式 getter，箭头 getter 会闭包门面自身） |
-| B12（Task 8.x 余项） | **大部分完成**（第三轮 + 复审修订轮）— 第三轮追加交付 C1b、C8、C9、C10b、C12、C13、C14、C15（C10a 以「合理例外 + 内部回退分支」结论落台账）；复审修订轮把 C14 的 matrix 内容模型从「常量状态」升级为「由已发布 path 派生 + 精确限制清单」并补齐 12 个簇的 path 证据，C2 的 client 自描述按 Req 4.5 补齐成员级 path；**第十五/十六轮收口**：C4/C5 的 `current` / `history` / `observe` 成员映射交付、C17 的 `tasks.*` 全域抽样复核由 `test/call-shape.test.mjs` 固定。**该条已完成** |
+| B12（Task 8.x 余项） | **已完成**（第三轮 → 复审修订轮 → 第十五 / 十六轮逐轮收口）— 第三轮追加交付 C1b、C8、C9、C10b、C12、C13、C14、C15（C10a 以「合理例外 + 内部回退分支」结论落台账）；复审修订轮把 C14 的 matrix 内容模型从「常量状态」升级为「由已发布 path 派生 + 精确限制清单」并补齐 12 个簇的 path 证据，C2 的 client 自描述按 Req 4.5 补齐成员级 path；**第十五/十六轮收口**：C4/C5 的 `current` / `history` / `observe` 成员映射交付、C17 的 `tasks.*` 全域抽样复核由 `test/call-shape.test.mjs` 固定。**该条已完成** |
 | B13（Task 9.1/9.2） | **已完成**（第三轮交付，复审修订轮加固）— `test/dual-plugin-composition.test.mjs`（4 场景）与 `test/migration-slices.test.mjs`（2 切片，含「原行为 → 现行公共调用 → 运行结果」矩阵）交付；复审修订轮把两处不具鉴别力的断言改为真实边界（真实 diagnostics owner 的回调查错隔离；第二身份与伪造 `ownerId` 的派生反例），证据全部来自真实公共入口执行 |
 | B14（Task 4.4） | **已完成** — `llm.providers.register` / `llm.models.register` 标准 handle（`.replace` 保留） |
 | B15（Task 3.5 尾项） | **已完成** — `bypasses` 首次落盘（11 行） |
@@ -412,7 +412,7 @@
 
 1. **policy / resourceRegistry handle 的 generation 成员**。第十五轮起，规则**覆盖全部在册（`status !== 'removed'`）的 policy / resourceRegistry handle 行**，只**豁免带 `idiomExceptions` 的行**（该行的偏离已登记）。实测口径（第十五轮按 HEAD registry）：该类 handle 行 **34** 行（`advanced`），其中 `currentShape` 为 `null` 的 **0** 行、形状不提及 generation 的 **0** 行；两处委派型注册（`skills.activation.register.handle`、`skills.activation.policy.register.handle`）已在第十五轮包装为标准 handle，`currentShape` 相应 itemize 并含 generation，提升的最后屏障随之消失。规则从「只对 itemize 成员集生效」提升的判据：`currentShape` 为 `null` 的登记缺口已清零，且两类在册 handle 行全部写出成员集——**没有任何一行**还需要靠「prose 形态」豁免。
 2. **例外记录的 `baseContract` 必属八类 idiom**。
-3. **`callShape` 已回填**（Task 3.1/S15）：每行的 `callShape` 必须取自 `vocabulary.callShape`（`sync` / `async` / `not-applicable`），值为 `not-applicable` 表示该行描述的是值（handle、数据叶、已退役行）而非调用。
+3. **`callShape` 已回填**（Task 3.1/S15）：每行的 `callShape` 必须取自 `vocabulary.callShape`（`sync` / `async` / `not-applicable`），值为 `not-applicable` 表示该行描述的是值而非调用——实测 227 行中 live 的 67 行**全部是 handle 行**，其余 160 行是已退役行（154 行数据叶 + 6 行 handle）；**live 的数据叶一律按「读取直接答复」登记 `sync`**（336 行：253 sync + 83 async），无一行取 `not-applicable`。
 
 **为什么规则 1 曾一度不是全量**：登记缺口未清零时对全部行强制，等于要求为未改动的成员填写与其运行时不符的 `currentShape`——那是伪造登记，比漏报更有害。**登记缺口的历史**（供后续读者对账，非现行待办）：规则落盘时（`cb55e94`）registry 有 **42** 行成员的 `currentShape` 为 `null`（其中 handle 行 **21** 行，policy/resourceRegistry 子集 **16** 行；design §2.4 的 R 系列只列了六条同类缺口，是该缺口的抽样而非全量清单）；本线期间已由 registry 缺口收口提交（`6f62bd9`，registry 空形状清零）把这些行逐条补齐，HEAD 下 `currentShape` 为 `null` 的成员行为 **0**。
 
@@ -575,6 +575,14 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 - **低度（既有缺陷，已登记为下一轮项）**：`prepareFeature(...).rollback()` 在 `storage` / `security` 上无法恢复禁用面——`_readSlot` 与 `unmountFeature` 都没有 `storage` 分支（rollback 静默 no-op），`createDisabledSecurityApi` 缺少 `egress.lease.release` / `egress.coverage` 导致 `_assignFeature('security')` 的挂载守卫抛错（异常在 apply 的 `close()` 中被吞，feature 已销毁而门面仍发布其 api）。经 `git show 75bbc91:lib/plugin-api-service.js` 比对确认**非本轮引入**，可达性窄（host 无 `unmountFeature('storage')` 调用点）。已记入 §3.0 未完成表。
 - **已确认无问题**：三处 getter 仍为方法式；`_callerView` 的三个字段无其他读写路径（无残留身份键缓存）；`slot.callerCtx` 的 4 处写点恰为 §3.0 已登记的下一轮四族，与三处 slot 无交集；`_promptsSurfaceCache` 有显式失效点、`_routingCallerSurfaceCache` 绑定 service-lifetime surface，均非同型问题；`Object.freeze` 与 `_decoratedNamespaces` 的装饰互不干扰。
 
+### 7.13 第二轮交付的全局终审（第五轮，收敛验证）—— **无偏差**
+
+**结论：无偏差（无阻塞、无中度）。** 第四轮的 1 条中度（重挂载断言不具判别力）经**回放实验**确认已建立判别力：审查代理以 data-URL loader 在内存中把三处 caller 视图替换为旧的身份键实现（worktree 零改动），`test/caller-derived-owner.test.mjs` 中「重挂载后视图跟随新 slot」一条**如实失败**（`assert.notEqual(viewAfter, viewBefore)`），其余四条只验身份绑定、本不承担该职责；反向对照探针显示 HEAD 下 `viewFollowsNewSlot: true` 且新 slot 收到调用，旧实现下为 `false` 且对活 slot 报 `disabled`——即 §7.11 阻塞语义确已消除。第四轮登记的既有低度缺陷（`prepareFeature(...).rollback()` 在 storage / security 上无法恢复禁用面）已入 §3.0 未完成表，其代码事实（`_readSlot` / `unmountFeature` 缺 `storage` 分支、`createDisabledSecurityApi` 缺 `egress.lease.release` / `coverage`、异常在 apply 的 `close()` 中被吞、`ab15065` 与 `75bbc91` 两版本均如此）经逐条核对成立；审查另说明「可达性窄」的准确依据是**影响面**而非零调用点（`ctx.effect` 的宿主拆除会调到 `rollback()`），登记已覆盖同一根因。
+
+本轮 diff（`59f273a..HEAD`）仅测试与台账，**实现零改动**；三处 getter 仍为方法式、`_callerView` 仍为 `WeakMap<slot, Map<identity, view>>`、无残留身份键 slot 缓存（其余按 identity 键控的缓存各有显式失效点或绑定 service-lifetime surface，均非同型问题）；六项机械门全绿；工作区干净。
+
+**终审范围声明（第五轮）**：本轮通过的是**第二轮交付的实现与登记面**同 `tasks.md` / `design.md` / `requirements.md` 的一致性，以及按 `docs/standards/` 适用分册的符合性。**M11 仍未收口**——交付义务由 §3.0 的未完成清单与 §3 的状态索引承载（最大余项：B3 的 client 自描述与贡献面余项、B12 的 C 系列余项、B4 的例外台账重分类与三条校验、B5 的 `async` 回填、B13 的组合验收与迁移切片、B16a 的四态结论表、以及 §3.0 新登记的三条既有缺陷）。
+
 ### 7.14 第三交付批的全局终审（第一轮，登记面收敛，对象至 `072b556`）
 
 结论 **有偏差（0 阻塞 / 2 中级）**：两条都是登记面准确性——① `settings.register` 三行把「门面包裹官方 scope 铸出的 handle」写成了「就是官方 scope 对象 / 非门面铸造」（与 `lib/settings.js` 的 `createScopeHandle` 相反，探针实测 own keys 恰为五项、非官方对象）；② 台账 §4 的「实测口径」数字与对象已过时（policy/resourceRegistry handle 34 行而非 37、`currentShape: null` 0 行而非 16 行、prose 无例外的两行是 `skills.activation.*` 而非 client `lifecycle.register`）。两条已在第十四轮就地修订（三行文本、成员表重建、§4 重测刷新、B2 清单与解除动作同步），并在 §3.0.3 记录。
@@ -582,6 +590,27 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 ### 7.15 第三交付批的全局终审（第二轮，收敛验证，对象至 `e8e4dd2`）—— **无偏差**（范围：当时已交付面 + 登记面）
 
 结论 **无偏差**：第十四轮的两条中级、以及第十三轮的五条低级全部确认闭合；四处登记面（台账 / feature-list / registry / 成员表）互相一致；机械门全绿；版本冻结、官方包零修改、无新增 R 点、工作区干净。**当轮明确判定 Stage 4 未达成**——台账仍登记五项未完成主体工作（通道映射、两处委派型 handle + generation 提升、S15 `callShape` 回填、C17 抽样、M10 三表），该判定与真实状态一致。
+
+### 7.16 第三交付批的全局终审（第三轮，收口验证，对象至 `1191569`）—— **有偏差**
+
+结论 **有偏差（1 阻塞 / 2 中级 / 5 低级）**：上一轮登记的五项余项在第十五轮全部落位且主体可复核，但终审抓出：
+
+- **阻塞 B-1（登记与实现不符，2 行 + 口径声称失实）**：`callShape` 的判据是「调用得到的答复」，而 `storage.open`（`lib/storage-binding.js` 的 `async` 实现）与 `llm.routing.wait`（同步函数但各路径 `return new Promise(…)`）被登记为 `sync`；两行都被测试的**根级**排除掩盖，机械门抓不到。§3.0.4 声称该族「登记值取自 owner 实现」对这两行不成立。
+- **中级 M-1（边界口径比声称粗）**：`OWNER_BACKED_ROOTS` 按根名一刀切，把本仓自有、可挂载的族（`llm.routing.*`、`sessions.*` 各子面、`storage.*`、`settings.register/scope/inspect`）一并排除，正是 B-1 两条漏网的成因。
+- **中级 M-2（覆盖率事实）**：测试只覆盖 host 的 94 行，client 58 个在册行当时无任何 pin；台账未提这一点。
+- **低级**：§3 的 B1–B20 索引未随轮次刷新（L-1）；§2 仍写 3562 / 559 行（L-2）；§7 缺第三交付批的终审记录（L-3）；`skills.activation.register` 行的「同步拒绝」分界未写明（L-4）；`events.serial/parallel` 的潜在漂移仅记录（L-5）。
+
+**处置（第十六轮补充，见 §3.0.5；§3.0.4 记第十五轮口径）**：① 两行改为 `async`（按「答复 Promise」判据）；② 边界改按**实现渠道**划分（official seam 且非本仓实现才排除），并把可挂载的本仓族纳入断言（host 断言行数 94 → **106**）；③ 新增 client 面的同口径断言（**24** 行）；④ 同步抛错不再当作 `sync` 证据，改记不可观测（`llm.routing.wait` 即属此类，其 `async` 由 owner 实现判定）；⑤ §2 实测数字、§3 的 B 索引、§7 记录（本节）同步刷新；⑥ registry 行补写「同步拒绝 vs owner 拒绝（rejection）」的分界。
+
+### 7.17 第三交付批的全局终审（第四轮，收口验证，对象至 `c7586f6`）—— **有偏差**
+
+结论 **有偏差（1 阻塞 / 1 中级 / 4 低级）**：上一轮的 2 条阻塞与 M-3 全部确认闭合（`llm.routing.candidates.list` / `events.serial` / `events.parallel` 已按实现改为 `async`；通道三族注册的 owner 派生、一 id 一 owner、跨 owner typed conflict、generation 绑定释放与 root 回落经独立探针逐条复现），L-A/L-B/L-5 关闭。仍余：
+
+- **阻塞 N-1（新发现，**非本区间引入**）**：`sessions.channel` 的两个 R 包依赖已被 M7/M8 内化的 `dispatchChannelMethod` / `onChange` / `channelGenerationOf`，真实公共面上 `/channel` RPC 恒答 `unavailable`、connection 的 fencing 退化为惰性；两条仓内测试对同一契约给出相反断言（mock 版断言成员存在、真实版断言成员不存在）。已登记为 **§3.0.6（需人类裁决修法：改 R 包 或 恢复成员）**——恢复成员触及能力边界硬停机点，故本线不自行选择。
+- **中级 M-1′（残留）**：断言行数与台账不符（实测 host **106** / client 24；台账与 feature-list 已按实测改正），且 `llm.routing.*` 的可观测性描述曾过头（该 owner 在本 harness 中通常无法构造，已改准）。
+- **低级**：`not-applicable` 的成文口径与 16 行不可调用数据叶的登记不一致（口径已改准：`not-applicable` 用于 handle 行与已退役行，数据叶按「读取直接答复」登记 `sync`）；§3 索引 B16 状态词过期（已改「已完成」）；§3.0.2 四态表的 C4/C17 为落盘快照（已加口径注）。
+
+**结论**：本交付批的实现与登记面已按终审意见收敛；**Stage 4 完成判定未达成**，唯一未决项是 §3.0.6 的跨包缺口（其修法二选一均需人类裁决）。
 
 ### 7.18 第三交付批的全局终审（第五轮，收口验证，对象至 `b7eb175`）—— **有偏差**
 
@@ -602,31 +631,10 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 
 **处置（第十八轮，本节之后的提交）**：逐条就地修订——数字全部按 HEAD 复测刷新（563 / 83 / 253 / 227、host 107 / client 24）、测试标题改准、`llm.routing` 描述改准、`temp/` 清空、§7.18/§7.19 补录。
 
-### 7.17 第三交付批的全局终审（第四轮，收口验证，对象至 `c7586f6`）—— **有偏差**
+### 7.20 第三交付批的全局终审（第七轮，收口验证，对象至 `0c3d531`）—— **有偏差（0 阻塞）**
 
-结论 **有偏差（1 阻塞 / 1 中级 / 4 低级）**：上一轮的 2 条阻塞与 M-3 全部确认闭合（`llm.routing.candidates.list` / `events.serial` / `events.parallel` 已按实现改为 `async`；通道三族注册的 owner 派生、一 id 一 owner、跨 owner typed conflict、generation 绑定释放与 root 回落经独立探针逐条复现），L-A/L-B/L-5 关闭。仍余：
+结论 **有偏差（0 阻塞 / 0 中级 / 5 低级）**：数字面**穷尽对账后全部相符**（563 行、83 / 253 / 227、3577 tests、host 107 + client 24、行数演进 538→563 且中间不存在 552、例外额度 17 / 19 / 16、`currentShape: null` 0 行），端点链路、登记面自洽、机械门与纪律（冻结、官方包、无新增 R 行、工作区）全部复核通过。剩余五条**全为登记面措辞与实测不符**：
 
-- **阻塞 N-1（新发现，**非本区间引入**）**：`sessions.channel` 的两个 R 包依赖已被 M7/M8 内化的 `dispatchChannelMethod` / `onChange` / `channelGenerationOf`，真实公共面上 `/channel` RPC 恒答 `unavailable`、connection 的 fencing 退化为惰性；两条仓内测试对同一契约给出相反断言（mock 版断言成员存在、真实版断言成员不存在）。已登记为 **§3.0.6（需人类裁决修法：改 R 包 或 恢复成员）**——恢复成员触及能力边界硬停机点，故本线不自行选择。
-- **中级 M-1′（残留）**：断言行数与台账不符（实测 host **106** / client 24；台账与 feature-list 已按实测改正），且 `llm.routing.*` 的可观测性描述曾过头（该 owner 在本 harness 中通常无法构造，已改准）。
-- **低级**：`not-applicable` 的成文口径与 16 行不可调用数据叶的登记不一致（口径已改准：`not-applicable` 用于 handle 行与已退役行，数据叶按「读取直接答复」登记 `sync`）；§3 索引 B16 状态词过期（已改「已完成」）；§3.0.2 四态表的 C4/C17 为落盘快照（已加口径注）。
+- **低级**：① §3.0.5「判定的两条修订」段的 `llm.routing` 句**未改净**（该句仍称其行全部落在不可观测边界，实测 16 行可调用行全部参与断言）；② §4 第 3 条把 `not-applicable` 的适用范围写成「handle、数据叶、已退役行」，与实测（live 的 67 行全是 handle、live 数据叶全为 `sync`）不符；③ §3.0.5 同一句内 `storage` 既被列为逐条断言、又被列入「R 包 owner … 不可观测边界」（实测不可观测集合无 storage 行）；④ §3 索引 B2 / B12 的状态词仍以「大部分完成」开头而单元格结尾已写「该条已完成」；⑤ §7 文序与编号不齐（§7.18 / §7.19 被插在 §7.15 与 §7.17 之间、§7.13 留在末尾）。
 
-**结论**：本交付批的实现与登记面已按终审意见收敛；**Stage 4 完成判定未达成**，唯一未决项是 §3.0.6 的跨包缺口（其修法二选一均需人类裁决）。
-
-### 7.16 第三交付批的全局终审（第三轮，收口验证，对象至 `1191569`）—— **有偏差**
-
-结论 **有偏差（1 阻塞 / 2 中级 / 5 低级）**：上一轮登记的五项余项在第十五轮全部落位且主体可复核，但终审抓出：
-
-- **阻塞 B-1（登记与实现不符，2 行 + 口径声称失实）**：`callShape` 的判据是「调用得到的答复」，而 `storage.open`（`lib/storage-binding.js` 的 `async` 实现）与 `llm.routing.wait`（同步函数但各路径 `return new Promise(…)`）被登记为 `sync`；两行都被测试的**根级**排除掩盖，机械门抓不到。§3.0.4 声称该族「登记值取自 owner 实现」对这两行不成立。
-- **中级 M-1（边界口径比声称粗）**：`OWNER_BACKED_ROOTS` 按根名一刀切，把本仓自有、可挂载的族（`llm.routing.*`、`sessions.*` 各子面、`storage.*`、`settings.register/scope/inspect`）一并排除，正是 B-1 两条漏网的成因。
-- **中级 M-2（覆盖率事实）**：测试只覆盖 host 的 94 行，client 58 个在册行当时无任何 pin；台账未提这一点。
-- **低级**：§3 的 B1–B20 索引未随轮次刷新（L-1）；§2 仍写 3562 / 559 行（L-2）；§7 缺第三交付批的终审记录（L-3）；`skills.activation.register` 行的「同步拒绝」分界未写明（L-4）；`events.serial/parallel` 的潜在漂移仅记录（L-5）。
-
-**处置（第十六轮补充，见 §3.0.5；§3.0.4 记第十五轮口径）**：① 两行改为 `async`（按「答复 Promise」判据）；② 边界改按**实现渠道**划分（official seam 且非本仓实现才排除），并把可挂载的本仓族纳入断言（host 断言行数 94 → **106**）；③ 新增 client 面的同口径断言（**24** 行）；④ 同步抛错不再当作 `sync` 证据，改记不可观测（`llm.routing.wait` 即属此类，其 `async` 由 owner 实现判定）；⑤ §2 实测数字、§3 的 B 索引、§7 记录（本节）同步刷新；⑥ registry 行补写「同步拒绝 vs owner 拒绝（rejection）」的分界。
-
-### 7.13 第二轮交付的全局终审（第五轮，收敛验证）—— **无偏差**
-
-**结论：无偏差（无阻塞、无中度）。** 第四轮的 1 条中度（重挂载断言不具判别力）经**回放实验**确认已建立判别力：审查代理以 data-URL loader 在内存中把三处 caller 视图替换为旧的身份键实现（worktree 零改动），`test/caller-derived-owner.test.mjs` 中「重挂载后视图跟随新 slot」一条**如实失败**（`assert.notEqual(viewAfter, viewBefore)`），其余四条只验身份绑定、本不承担该职责；反向对照探针显示 HEAD 下 `viewFollowsNewSlot: true` 且新 slot 收到调用，旧实现下为 `false` 且对活 slot 报 `disabled`——即 §7.11 阻塞语义确已消除。第四轮登记的既有低度缺陷（`prepareFeature(...).rollback()` 在 storage / security 上无法恢复禁用面）已入 §3.0 未完成表，其代码事实（`_readSlot` / `unmountFeature` 缺 `storage` 分支、`createDisabledSecurityApi` 缺 `egress.lease.release` / `coverage`、异常在 apply 的 `close()` 中被吞、`ab15065` 与 `75bbc91` 两版本均如此）经逐条核对成立；审查另说明「可达性窄」的准确依据是**影响面**而非零调用点（`ctx.effect` 的宿主拆除会调到 `rollback()`），登记已覆盖同一根因。
-
-本轮 diff（`59f273a..HEAD`）仅测试与台账，**实现零改动**；三处 getter 仍为方法式、`_callerView` 仍为 `WeakMap<slot, Map<identity, view>>`、无残留身份键 slot 缓存（其余按 identity 键控的缓存各有显式失效点或绑定 service-lifetime surface，均非同型问题）；六项机械门全绿；工作区干净。
-
-**终审范围声明（第五轮）**：本轮通过的是**第二轮交付的实现与登记面**同 `tasks.md` / `design.md` / `requirements.md` 的一致性，以及按 `docs/standards/` 适用分册的符合性。**M11 仍未收口**——交付义务由 §3.0 的未完成清单与 §3 的状态索引承载（最大余项：B3 的 client 自描述与贡献面余项、B12 的 C 系列余项、B4 的例外台账重分类与三条校验、B5 的 `async` 回填、B13 的组合验收与迁移切片、B16a 的四态结论表、以及 §3.0 新登记的三条既有缺陷）。
+**处置（第十九轮，本节之后的提交）**：五条全部就地修订——① 该句改为「可调用行全部逐条断言（16 行），5 行 handle 属值行不参与调用断言」，并同步 §3.0.5 的 M-1′ 行注与 §3.0.4 的口径段；② §4 第 3 条改为实测口径（live 67 行全为 handle、其余 160 行为已退役行、live 数据叶一律 `sync`）；③ 不可观测族清单删去 `storage` 并显式写明 `storage.*` 由 live facility 挂载断言；④ B2 / B12 状态词改「已完成」；⑤ §7 记录按编号重排为 §7.1–§7.20 连续。另按同一类问题做了一次全文扫查（`不可观测` / `数据叶` / `大部分完成` 三个词族的全部命中逐条核对），未发现其余同型残留；实现的机械门复跑全绿。
