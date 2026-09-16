@@ -72,7 +72,6 @@
 
 **C7 回滚记录（Task 10.1(d)）**：client `connection.get` → `connection.api.settings` 的改名回滚已在上一轮交付（registry / `oldToTargetMapping` / `statusByPath` 三处同步，避免自环），本轮无新增回滚。
 
-> **§3.0.2 口径注（第十六轮）**：该四态表的 C4 记「部分完成」、C17 记「未完成」，是**落盘当时的快照**；两项均已由第十五轮交付（见 §3.0.4），以本节与 §3.0.5 为准。
 
 ## 3.0.2 处置结论表（Task 10.1(a) / B16a）
 
@@ -113,6 +112,8 @@
 | R4 `events.emit` 等五行的 `currentShape` | 已修复 | 判别式结果 + producer 判定已登记 |
 | R5 `storage.availability` | 已修复 | 补 `scope` / `durability` / `epoch` |
 | R6 `capabilityMatrix` / client `events.observe` 行 | 已完成 | client `events.observe` 现行行已补；`capabilityMatrix` 行随 C14 落盘，复审修订轮再按「状态由已发布 path 派生」改写 |
+
+> **§3.0.2 口径注（第十六轮）**：该四态表的 C4 记「部分完成」、C17 记「未完成」，是**落盘当时的快照**；两项均已由第十五轮交付（见 §3.0.4），以本节与 §3.0.5 为准。
 
 ## 3.0.3 复审修订轮（2026-09-15 续做，第四轮）完成与未完成清单
 
@@ -175,7 +176,7 @@
 | Task | 未完成内容 |
 |---|---|
 | 4.14/4.15 余项（B2 余项 · generation 校验提升） | 与上一轮同因：两处**委派型**注册（`skills.activation.register.handle`、`skills.activation.policy.register.handle`）仍无门面身份，提升规则会新增 2 条例外并顶破基线（17 / 16）。解除动作：为该 owner 契约补 unregister 语义并把两行包装为标准 handle |
-| 3.1（B5 · `async` 回填） | registry 现 559 行成员中 `async` 字段回填 **0 行**，validator 仍无该校验；采集入口方案未实施 |
+| 3.1（B5 · `async` 回填） | registry 现 559 行成员中 `async` 字段回填 **0 行**，validator 仍无该校验；采集入口方案未实施（**措辞为当时快照**：该字段的交付名为 `callShape`，口径见 §4 规则 6） |
 | 5.12 / C4/C5（通道半） | `sessions.channels` 的 `current` / `history` / `observe` 成员映射仍未收敛（公开面现状是 `list` + `observe`） |
 | 8.13（C17） | `tasks.*` 全域的 `async` 抽样复核依赖 B5，未做 |
 | 3.6（B6） | 行为表 / 装配表本轮未被触及（成员表已重建为 **559 行**）；历史现状注待与上述余项同批处理 |
@@ -415,7 +416,7 @@
 3. **注册类 leaf 的失败呈现必须为 typed throw**（第三轮 `6f62bd9`）：`idiom` 为注册类、且 `failureSemantics` 为某形态时，`currentShape` 必须写明 typed throw（或经例外登记）。
 4. **入口动词与 idiom 一致**（第三轮 `6f62bd9`）：`currentShape` 的入口动词必须落在 `IDIOM_ENTRY_VERBS[idiom]` 内。
 5. **已 itemize 的成员不得再消耗例外**（第三轮 `6f62bd9`）：行内已写出成员集的 handle，其 `idiomExceptions` 不得再列同一成员。
-6. **`callShape` 已回填**（第十五轮 `1191569`，Task 3.1/S15）：每行的 `callShape` 必须取自 `vocabulary.callShape`（`sync` / `async` / `not-applicable`），值为 `not-applicable` 表示该行描述的是值而非调用——实测 227 行中 live 的 67 行**全部是 handle 行**，其余 160 行是已退役行（154 行数据叶 + 6 行 handle）；**live 的叶行（336 行）无一取 `not-applicable`**——其中**可调用的 320 行**按答复形态登记 `async`（83）/ `sync`（237），**不可调用的 16 行数据行**（host 8 + client 8）按「读取直接答复」登记 `sync`（两类合计 253 sync + 83 async）。
+6. **`callShape` 已回填**（第十五轮 `1191569`，Task 3.1/S15；字段名以交付实现为准——分册 §5、本 feature 的 `design.md` 与 `tasks.md` 原先按工作名写作 `async`，第二十七轮已对齐到 `callShape` 并把该命名决策记入 registry 的 `namingDecisions`）：每行的 `callShape` 必须取自 `vocabulary.callShape`（`sync` / `async` / `not-applicable`），值为 `not-applicable` 表示该行描述的是值而非调用——实测 227 行中 live 的 67 行**全部是 handle 行**，其余 160 行是已退役行（154 行数据叶 + 6 行 handle）；**live 的叶行（336 行）无一取 `not-applicable`**——其中**可调用的 320 行**按答复形态登记 `async`（83）/ `sync`（237），**不可调用的 16 行数据行**（host 8 + client 8）按「读取直接答复」登记 `sync`（两类合计 253 sync + 83 async）。
 
 **`statusByPath` 覆盖口径（如实登记，非校验规则）**：该面登记**曾经发布过**的旧 path 的退役状态。本线退役的 5 条**幻影** handle 行（`tasks.register.handle`、`tools.executionMode.register.handle`、`tasks.acquire.handle`、`agents.register.handle`、`sessions.channels.acquire.handle`）从未在公共面存在，故**不入该面**；实测 HEAD：160 条 `removed` 成员行中 155 条有键、缺键的 5 条即上述幻影行，`statusByPath` 177 键、值全为 `removed`、不含任何在册 path。机械门不覆盖该覆盖关系（`test/registry.test.mjs` 只断言值必须为 `removed`）。
 
@@ -714,3 +715,12 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 - **低级 L-3**：§3.0.2 抬头句「未闭合者指向 §3.0.1 的余项」是 F-4 的同型残留（表内两行已改指 §3.0.4，抬头句未改）。
 
 **处置（第二十六轮，本节之后的提交）**：① 成员行 `llm.adapters.decorate` 的 `targetPath` 改为 `llm.adapters.decorations.register`（与两份历史制品的修正记录及 `oldToTargetMapping` 一致；改后全库仅剩 1 处成员行与映射条目的 `targetPath` 差异，即已登记的 `storage.open.handle.domain`）；② 在 §4 增「`statusByPath` 覆盖口径」段：该面只登记**曾经发布过**的旧 path，5 条幻影 handle 行从未在公共面存在故不入该面（实测 155 / 160 有键），并写明机械门不覆盖该覆盖关系；③ §3.0.2 抬头句改指 §3.0.4 的五项余项表并注明本表状态词为第三轮快照；另把 §7.26 处置句的「全部实测改名」限定为「**旧面叶名**的实测改名」（本轮实际改写范围即旧 `pluginApi.sessionChannel` 面的叶）。
+
+### 7.28 第三交付批的全局终审（第十五轮，收口验证，对象至 `fb28672`）—— **有偏差（0 阻塞 / 1 中级 / 1 低级）**
+
+结论 **有偏差（0 阻塞 / 1 中级 / 1 低级）**：第十四轮三条修订**逐条属实**（`llm.adapters.decorate` 的 `targetPath` 改后与两份历史制品的修正记录及 `oldToTargetMapping` 一致，全库成员行 / 映射条目的 `targetPath` 差异只剩已登记的一处；`statusByPath` 覆盖口径经全历史检索无反例；§3.0.2 抬头句改指且快照标注落盘；§7.26 限定与 §7.27 互不矛盾）；registry 八个面程序化交叉比对自洽、测试链 15 个锚点逐提交实跑相符、成员表 8 段演进复现、call-shape 面全部数字复算相符、六项机械门与纪律全绿。新发现：
+
+- **中级 M-1（分册与交付字段名不一致，且无登记）**：`docs/standards/api-idioms.md` §5 的「成员 registry 必须至少保存」清单列的是 **`async`**，而 registry / validator / 测试实际使用 **`callShape`**（词表 `sync` / `async` / `not-applicable`）；该 25 项清单中 24 项在册、唯一缺失即 `async`。本 feature 的 `design.md`（S15 / C17 两行）与 `tasks.md`（2.15 / 3.1 / 8.13 三处）同样按工作名写作 `async`。按分册 §5 取字段的读者在 canonical registry 里取不到该字段——S15 的交付面「分册修订落盘且与实现一致」在该字段上不成立。台账 §4 规则 6 以「`callShape` 已回填（Task 3.1/S15）」把两者当作同一物，掩盖了该分歧。不触及运行时、测试、机械门与已验收边界（`callShape` 在信息量上是 `async` 的超集）。
+- **低级 L-1**：本轮新写的指针「口径见**本节末**的「§3.0.2 口径注」」中，「本节」按字面指 §3.0.2，而该注当时位于 **§3.0.1 的末尾**（本文件 6 行之内「本节」同时指两节）。
+
+**处置（第二十七轮，本节之后的提交）**：① **M-1 取「对齐分册」一侧并显式留痕**——`callShape` 是更精确的交付名（三值，覆盖值行），故保留实现侧命名：`docs/standards/api-idioms.md` §5 的字段清单 `async` → `callShape` 并写明三值与值行含义；`design.md`（S15 / C17）与 `tasks.md`（2.15 / 3.1 / 8.13）的字段名同步；registry 的 `namingDecisions.notes` 追加该命名决策（含「分册/设计/任务原按工作名 `async` 书写、已对齐」的说明），台账 §4 规则 6 加同名注；② L-1 把「§3.0.2 口径注」整段移入 §3.0.2 自身末尾，使「本节末」按字面成立。

@@ -169,7 +169,7 @@
 |---|---|---|---|---|---|
 | C15 | `settings.register.handle` 与 `settings.scope.handle` 是同一对象 | `lib/settings.js:43-71`（`register` 存入 `scopes` map、`scope(ns)` 取回同一 handle） | 运行时同一 handle，由两个公共入口给出；registry 按两行分别登记 | 判定：**保持实现**（同一 authority 的两个入口，`scope` 是取回而非第二次注册）；在 registry 两行加互指说明，避免被读成两个 authority | 登记修正 / registry |
 | C16 | 分册正文笔误：示例使用不存在的 capability id | `public-api-shape.md:137` 的 `capabilities.require(['llm.routing', 'events.compaction'])` | `events.compaction` 不存在，实为 `sessions.compaction`（registry 无 `events.compaction` 能力路径） | 随 S8/S11 一并修正分册正文示例 | 修复 / `docs/standards/public-api-shape.md` |
-| C17 | `tasks` 全域 async 未声明（附录 B 问题 5） | `lib/task-execution-observation.js`（`register/start/claim/reassign/settle/attach/get/observe/history` 均为 async） | 调用点按同步写法使用会得到 Promise（`tasks.observe` 返回 Promise\<handle>） | 判定：**保留 async**（指引 §6 明确排除「同步/异步差异本身」），但 SHALL 显式声明调用形态，使调用点可预测；不作为形状阻塞。分册依据为 §4-S15（registry 增加 `async` 字段），落地为全量成员行回填 | 登记声明 / registry（S15） |
+| C17 | `tasks` 全域 async 未声明（附录 B 问题 5） | `lib/task-execution-observation.js`（`register/start/claim/reassign/settle/attach/get/observe/history` 均为 async） | 调用点按同步写法使用会得到 Promise（`tasks.observe` 返回 Promise\<handle>） | 判定：**保留 async**（指引 §6 明确排除「同步/异步差异本身」），但 SHALL 显式声明调用形态，使调用点可预测；不作为形状阻塞。分册依据为 §4-S15（registry 增加 `callShape` 字段），落地为全量成员行回填 | 登记声明 / registry（S15） |
 
 ### §2.4 核验补充（registry 自身缺口）
 
@@ -238,7 +238,7 @@
 | S12 | `api-idioms.md` §1、§5 | §1 规定 handle 上的成员按 dot path 登记并给出六项例外的适用条件，但未区分「领域扩展成员」与「外层合同偏离」，于是扩展成员也逐条发例外——registry 中 `workflows.start.handle` 单行 3 条、`agents.scopes.register.handle` 1 条均属此类，例外台账被扩展成员淹没（§3 重分类的依据） | 写明分类边界：扩展成员按成员行登记、不消耗六项例外；六项例外只用于外层合同偏离；§5 的机械校验增加「扩展成员已登记且与 handle 实际成员集一致」 | registry 例外清单 + `scripts/registry-validate.mjs` | 否 |
 | S13 | `api-idioms.md` §3.4 | §3.4 把结果形状写作 `{ ok, code, operation, terminal, ... }` 却未说明 `terminal` 的在场条件，导致「返回时尚未裁决」的成员被逐个判为偏离（`workflows.start` 已登记例外，`sessions.request` 未登记——同一事实两套登记，指引附录 B 问题 7） | 明确 `terminal` **仅在返回时终态已可裁决时出现**；未裁决的接受结果以 `operation.status()` 为终态来源 | registry `sessions.request` / `workflows.start` 的例外行回收 | 否 |
 | S14 | `api-idioms.md` §3.5 | §3.5 要求异步 contribution 提供可安全 dispose 的 pending handle，却未规定调用方如何得知生效结果，故 client 两处 contribution 只能各自造 `status` 形状（且 `status` 充当成功标志） | 写明异步生效的 contribution handle 增加 `status()`（取值 `pending\|active\|failed\|revoked`）；同步生效的 contribution 不提供该成员 | registry contribution handle 行 | 否 |
-| S15 | `api-idioms.md` §2、§5 | 全树存在同步与异步混用的同类成员（`tasks.*` 全域 async 而 `sessions.activity.*` / `executions.get` 同步；`llm.models.list` 异步而 `llm.adapters.list` 同步），但 §5 的 registry 字段清单没有承载「同步/异步」的字段，调用方只能靠试错发现 | 在 §5 的必需字段中增加 `async`（同步/异步声明），并在 §2 写明「公共成员 SHALL 显式声明调用形态；不得以返回值形态暗示同步」（同步/异步差异本身保留，不做形态同化） | registry 字段清单（全量成员行回填）+ 机械校验 | 否 |
+| S15 | `api-idioms.md` §2、§5 | 全树存在同步与异步混用的同类成员（`tasks.*` 全域 async 而 `sessions.activity.*` / `executions.get` 同步；`llm.models.list` 异步而 `llm.adapters.list` 同步），但 §5 的 registry 字段清单没有承载「同步/异步」的字段，调用方只能靠试错发现 | 在 §5 的必需字段中增加 `callShape`（同步/异步声明，取 `sync` / `async` / `not-applicable`；交付字段名见 registry `namingDecisions`），并在 §2 写明「公共成员 SHALL 显式声明调用形态；不得以返回值形态暗示同步」（同步/异步差异本身保留，不做形态同化） | registry 字段清单（全量成员行回填）+ 机械校验 | 否 |
 
 > 说明：S10 的「人类确认」依据是该册自身的治理条款（`capability-strategy.md` §9：本文任何实质修订须经人类确认）；S9 的确认依据**不是**该 §9（它只约束该册自身修订），而是 K8 引入的能力边界收紧（第三方经门面派发 canonical 系统事件由可用变为 typed `denied`）以及人类对本轮分册修订的授权。两项都不是本线新增的范围请求；其余修订（S1–S8、S11–S15）属分册维护，按 AGENTS §6 的规范目录义务落盘。
 

@@ -132,9 +132,9 @@ publicPath, idiom, idiomExceptions, eventSemantics, semanticFace, effect,
 composition, runtime, implementationChannel, authority, scope, resourceKey,
 identitySource, conflictRule, lifecycle, failureSemantics, idempotency,
 retryLayer, availabilityShape, concurrency, reducer, currentShape,
-targetPath, migrationAction, async
+targetPath, migrationAction, callShape
 ```
 
-`async` 是同步 / 异步的**显式声明**（§2）：公共成员必须声明调用形态，调用方不得靠返回值形态猜测。
+`callShape` 是同步 / 异步的**显式声明**（§2）：取 `sync` / `async` / `not-applicable`（后者用于值行——handle 与已退役行），公共成员必须声明调用形态，调用方不得靠返回值形态猜测。
 
 验证必须确保：每个公共叶子与 handle 成员已登记；每个成员有八类 idiom 或受限 `services.*` 例外；入口动词、失败/冲突形状和 handle 与所属 idiom 一致；**policy / resourceRegistry 的 handle 一律含 `generation`**；**handle 上的领域扩展成员已按其公共 path 登记成员行，且登记成员集与运行时实际成员集一致**；**`dispose()` 与失败呈现与登记的 `failureSemantics` / `lifecycle` 一致**；generation/seq/epoch 语义未混用；每个 namespace 有 `availability()`（`availabilityExemption` 除外）；所有事件登记事件语义（含 `producerAuthority`）；同步 / 异步语义已声明；registry、host/client 类型与 active/disabled surface snapshot 的成员集合一致。能力删减、迁移、合并或缺口必须保持能力守恒，并在相应 feature 的迁移账本中留下替代或 gap 证据。

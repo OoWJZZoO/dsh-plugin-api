@@ -23668,7 +23668,8 @@
       "agents surface uses plural providers; the current singular provider leaf is renamed during cutover.",
       "sessions tree leaves are gated by registry backing; unimplemented leaves (create/append) are not invented.",
       "2026-09-02 shape-convergence batch: llmRoutingLeaves synced to delivered observe vocabulary (on/once merged); member-level isActive retired to availability().",
-      "2026-09-16 recovery plane: the capability declaration names the recovered operation scope scopeOwner/scopeGeneration (evaluate matches on that pair), while the policy entries derive the caller identity and refuse another owner's id."
+      "2026-09-16 recovery plane: the capability declaration names the recovered operation scope scopeOwner/scopeGeneration (evaluate matches on that pair), while the policy entries derive the caller identity and refuse another owner's id.",
+      "2026-09-16 call shape: each member declares its call shape in the `callShape` field (sync | async | not-applicable; value rows such as handles and retired rows take not-applicable) rather than in a field named `async`. The vocabulary is `vocabulary.callShape` and the standard lives in docs/standards/api-idioms.md §5; this feature's design.md and tasks.md were written with the working name `async` and are aligned to the delivered field name."
     ]
   },
   "namespaces": [
