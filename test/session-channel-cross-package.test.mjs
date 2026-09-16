@@ -2,6 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { mountSessionChannelFeature } from '../lib/session-channel.js'
 import { CONTRACT_SYMBOL } from '../lib/session-channel-shared.js'
+import { createFeatureRegistry } from '../lib/feature-registry.js'
+import { createPluginApiService } from '../lib/plugin-api-service.js'
 import { createChannelRpcDispatch } from '../packages/session-channel-gateway/lib/slices.js'
 import { createFencingTable } from '../packages/session-channel-connection/lib/slices.js'
 
@@ -74,9 +76,26 @@ function createMockService() {
   return service
 }
 
+/**
+ * Mount on the real facade service.
+ *
+ * A mock service that publishes the owner api directly would hand the test a
+ * surface the product never publishes — which is exactly how the gateway's
+ * dependency on the internalized dispatcher went unnoticed. The published
+ * surface is what the R packages consume, so it is what the test mounts.
+ */
 function mountFacade() {
-  const service = createMockService()
-  const result = mountSessionChannelFeature({ ctx: {}, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
+  const registry = createFeatureRegistry()
+  const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
+  const service = new ServiceClass({
+    reflect: { provide() {} },
+    get() { return undefined },
+    on() { return () => {} },
+    once() {},
+    effect() {},
+  })
+  service.mountFeature('session', createMockSessionApi())
+  const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
   assert.ok(result, 'facade must mount')
   result.prepared.commit()
   return { service, api: service.sessions.channels, result }
@@ -85,18 +104,58 @@ function mountFacade() {
 test('cross-package: gateway channel RPC dispatch routes to the real facade', async () => {
   const { api } = mountFacade()
   assert.equal(api[CONTRACT_SYMBOL], true, 'facade must carry the coordination symbol')
-  assert.equal(typeof api.dispatchChannelMethod, 'function', 'facade must expose dispatchChannelMethod directly')
+  // The internal dispatcher is not on the published face (the surface cut
+  // internalized it); the
+  // gateway serves each endpoint through the published capability members,
+  // and the subscription member is what carries the wire subscribe endpoint.
+  assert.equal(typeof api.dispatchChannelMethod, 'undefined', 'the internal dispatcher stays off the public face')
+  for (const member of ['acquire', 'subscribe', 'history', 'heartbeat', 'ack', 'resume', 'release']) {
+    assert.equal(typeof api[member], 'function', `the gateway endpoint is served by ${member}`)
+  }
 
   // Wire the real facade into the gateway slice (same discovery the R package apply uses).
   const rpc = createChannelRpcDispatch({ connection: { rpc: { handle() {} } }, facade: () => api })
   assert.ok(rpc.active, 'gateway slice must detect the facade via CONTRACT_SYMBOL')
 
   // A real channel method round-trip: open via the gateway RPC slice.
-  api.auth.registerVerifier({ id: 'v1', verify: (cred) => ({ deviceId: cred, scope: [] }) })
+  api.auth.register({ kind: 'verifier', id: 'v1', verify: (cred) => ({ deviceId: cred, scope: []  }) })
   const result = await rpc.handle('sessionChannel/open', { args: { device: 'dev1', session: 's1' } })
   assert.ok(result.ok, 'channel method must route to the facade and succeed')
   assert.ok(result.channelId, 'result must carry the opened channel')
   assert.match(result.channelGeneration, /^[0-9a-f]{32}$/, 'open response carries a random opaque possession token')
+})
+
+test('cross-package: the wire subscribe endpoint is served by the published subscription member', async () => {
+  const { api } = mountFacade()
+  api.auth.register({ kind: 'verifier', id: 'v1', verify: (cred) => ({ deviceId: cred, scope: []  }) })
+  const rpc = createChannelRpcDispatch({ connection: { rpc: { handle() {} } }, facade: () => api })
+
+  const opened = await rpc.handle('sessionChannel/open', { args: { device: 'dev1', session: 's1' } })
+  assert.ok(opened.ok, 'the channel opens first')
+  const subscribed = await rpc.handle('sessionChannel/subscribe', {
+    args: {
+      device: 'dev1',
+      session: 's1',
+      channelId: opened.channelId,
+      channelGeneration: opened.channelGeneration,
+    },
+  })
+  assert.ok(subscribed.ok, 'subscribe routes through the published member and succeeds')
+  assert.equal(typeof subscribed.subscriptionId, 'string', 'the subscription identity travels back to the wire caller')
+  assert.equal(typeof subscribed.subscriptionGeneration, 'string')
+
+  // The identity the wire caller received is what the frame reader uses.
+  const frames = await rpc.handle('sessionChannel/fetchEvents', {
+    args: {
+      device: 'dev1',
+      session: 's1',
+      channelId: opened.channelId,
+      channelGeneration: opened.channelGeneration,
+      subscriptionId: subscribed.subscriptionId,
+      subscriptionGeneration: subscribed.subscriptionGeneration,
+    },
+  })
+  assert.ok(frames.ok, 'fetchEvents accepts the subscription identity the subscribe endpoint answered')
 })
 
 test('cross-package: RPC dispatch fails closed without verifier (typed unavailable)', async () => {
@@ -109,7 +168,8 @@ test('cross-package: RPC dispatch fails closed without verifier (typed unavailab
 
 test('cross-package: RPC dispatch is denied by a denying verifier (fixed generic text)', async () => {
   const { api } = mountFacade()
-  api.auth.registerVerifier({
+  api.auth.register({
+    kind: 'verifier',
     id: 'v1',
     verify: () => { throw new Error('super-secret-db-connection-string') },
   })
@@ -123,8 +183,8 @@ test('cross-package: RPC dispatch is denied by a denying verifier (fixed generic
 
 test('cross-package: RPC dispatch is denied by the authorizer', async () => {
   const { api } = mountFacade()
-  api.auth.registerVerifier({ id: 'v1', verify: (cred) => ({ deviceId: cred, scope: ['session:read'] }) })
-  api.auth.registerAuthorizer({ id: 'a1', authorize: () => ({ deny: true, reason: 'method not allowed' }) })
+  api.auth.register({ kind: 'verifier', id: 'v1', verify: (cred) => ({ deviceId: cred, scope: ['session:read']  }) })
+  api.auth.register({ kind: 'authorizer', id: 'a1', authorize: () => ({ deny: true, reason: 'method not allowed'  }) })
   const rpc = createChannelRpcDispatch({ connection: { rpc: { handle() {} } }, facade: () => api })
   const result = await rpc.handle('sessionChannel/open', { args: { device: 'dev1', session: 's1' } })
   assert.equal(result.ok, false, 'open via RPC with a denying authorizer must be rejected')
@@ -133,7 +193,7 @@ test('cross-package: RPC dispatch is denied by the authorizer', async () => {
 
 test('cross-package: possession gating holds end-to-end over the RPC carrier', async () => {
   const { api } = mountFacade()
-  api.auth.registerVerifier({ id: 'v1', verify: (cred) => ({ deviceId: cred, scope: [] }) })
+  api.auth.register({ kind: 'verifier', id: 'v1', verify: (cred) => ({ deviceId: cred, scope: []  }) })
   const rpc = createChannelRpcDispatch({ connection: { rpc: { handle() {} } }, facade: () => api })
   const opened = await rpc.handle('sessionChannel/open', { args: { device: 'dev1', session: 's1' } })
   assert.ok(opened.ok)
@@ -163,10 +223,10 @@ test('cross-package: possession gating holds end-to-end over the RPC carrier', a
 test('cross-package: anonymous floods cannot lock out verified callers (bucket isolation)', async () => {
   const { api } = mountFacade()
   let verifyCalls = 0
-  api.auth.registerVerifier({ id: 'v1', verify: (cred) => { verifyCalls += 1; return { deviceId: cred, scope: [] } } })
+  api.auth.register({ kind: 'verifier', id: 'v1', verify: (cred) => { verifyCalls += 1; return { deviceId: cred, scope: [] } } })
 
   // Establish a legitimately-owned channel and subscription BEFORE the flood.
-  const opened = await api.open({ device: 'deviceA', session: 's1' })
+  const opened = await api.acquire({ device: 'deviceA', session: 's1' })
   assert.ok(opened.ok)
   const ownedSub = await api.subscribe({
     channelId: opened.channelId, channelGeneration: opened.channelGeneration, session: 's1',
@@ -178,7 +238,7 @@ test('cross-package: anonymous floods cannot lock out verified callers (bucket i
   // before the chain runs again (plugin callbacks stay protected).
   let lastAnonymous
   for (let i = 0; i < 15; i++) {
-    lastAnonymous = await api.open({ device: 'anon', session: 's1' })
+    lastAnonymous = await api.acquire({ device: 'anon', session: 's1' })
   }
   assert.equal(lastAnonymous.ok, false)
   assert.equal(lastAnonymous.error.code, 'rate-limited')
@@ -186,7 +246,7 @@ test('cross-package: anonymous floods cannot lock out verified callers (bucket i
 
   // Possession-gated calls live in their own buckets: an anonymous flood on
   // `open` never touches `fetchEvents`, so the paired consumer keeps working.
-  const pull = await api.fetchEvents({
+  const pull = await api.history({
     channelId: opened.channelId, channelGeneration: opened.channelGeneration,
     subscriptionId: ownedSub.subscriptionId, subscriptionGeneration: ownedSub.subscriptionGeneration,
     maxEvents: 10,
@@ -197,9 +257,9 @@ test('cross-package: anonymous floods cannot lock out verified callers (bucket i
 test('cross-package: authorizer sees canonical identity plus possession context', async () => {
   const { api } = mountFacade()
   const seen = []
-  api.auth.registerVerifier({ id: 'v1', verify: (cred) => ({ deviceId: `verified-${cred}`, scope: ['session:read'] }) })
-  api.auth.registerAuthorizer({ id: 'a1', authorize: (req) => { seen.push(req); return { allow: true } } })
-  const opened = await api.open({ device: 'label-A', session: 's1' })
+  api.auth.register({ kind: 'verifier', id: 'v1', verify: (cred) => ({ deviceId: `verified-${cred}`, scope: ['session:read']  }) })
+  api.auth.register({ kind: 'authorizer', id: 'a1', authorize: (req) => { seen.push(req); return { allow: true } } })
+  const opened = await api.acquire({ device: 'label-A', session: 's1' })
   assert.ok(opened.ok)
   assert.equal(seen[0]?.deviceId, 'verified-label-A')
   assert.deepEqual(seen[0]?.scope, ['session:read'])
@@ -213,11 +273,11 @@ test('cross-package: authorizer sees canonical identity plus possession context'
 
 test('cross-package: wire-time audience filter narrows captured payloads by profile', async () => {
   const { api, service } = mountFacade()
-  api.auth.registerVerifier({ id: 'v1', verify: (cred) => ({ deviceId: cred, scope: [] }) })
-  api.redaction.registerProfile({ id: 'telemetry', allowlist: ['detail'] })
+  api.auth.register({ kind: 'verifier', id: 'v1', verify: (cred) => ({ deviceId: cred, scope: []  }) })
+  api.redaction.register({ id: 'telemetry', allowlist: ['detail'] })
 
   // Unknown profile ids fail closed at subscribe time.
-  const opened = await api.open({ device: 'dev1', session: 's1' })
+  const opened = await api.acquire({ device: 'dev1', session: 's1' })
   const badSub = await api.subscribe({
     channelId: opened.channelId, channelGeneration: opened.channelGeneration, session: 's1', redactionProfile: 'no-such-profile',
   })
@@ -239,7 +299,7 @@ test('cross-package: wire-time audience filter narrows captured payloads by prof
     unlistedField: 'dropped-by-default',
   })
 
-  const defaultFrame = await api.fetchEvents({
+  const defaultFrame = await api.history({
     channelId: opened.channelId, channelGeneration: opened.channelGeneration,
     subscriptionId: cleanSub.subscriptionId, subscriptionGeneration: cleanSub.subscriptionGeneration,
     maxEvents: 10,
@@ -249,7 +309,7 @@ test('cross-package: wire-time audience filter narrows captured payloads by prof
   assert.equal(defaultPayload.detail, undefined, 'default audience stays narrow')
   assert.doesNotMatch(JSON.stringify(defaultPayload), /must-not-appear/)
 
-  const profiledFrame = await api.fetchEvents({
+  const profiledFrame = await api.history({
     channelId: opened.channelId, channelGeneration: opened.channelGeneration,
     subscriptionId: profiledSub.subscriptionId, subscriptionGeneration: profiledSub.subscriptionGeneration,
     maxEvents: 10,
@@ -261,8 +321,8 @@ test('cross-package: wire-time audience filter narrows captured payloads by prof
 
 test('cross-package: connection fencing table syncs with facade generations', async () => {
   const { api } = mountFacade()
-  api.auth.registerVerifier({ id: 'v1', verify: (cred) => ({ deviceId: cred, scope: [] }) })
-  const opened = await api.open({ device: 'dev1', session: 's1' })
+  api.auth.register({ kind: 'verifier', id: 'v1', verify: (cred) => ({ deviceId: cred, scope: []  }) })
+  const opened = await api.acquire({ device: 'dev1', session: 's1' })
   assert.ok(opened.ok)
   const channelId = opened.channelId
 
@@ -272,15 +332,14 @@ test('cross-package: connection fencing table syncs with facade generations', as
   assert.ok(fence.bind(channelId, opened.channelGeneration))
   assert.ok(fence.isCurrent(channelId, opened.channelGeneration), 'fresh generation must qualify')
 
-  await api.revoke({ channelId, channelGeneration: opened.channelGeneration })
+  await api.release({ channelId, channelGeneration: opened.channelGeneration })
   fence.prune()
   assert.ok(!fence.isCurrent(channelId, opened.channelGeneration), 'revoked channel generation must lose qualification')
 })
 
-test('cross-package: facade reports slice unavailable when R package is missing', () => {
+test('cross-package: the published channel face carries every wire endpoint member', () => {
   const { api } = mountFacade()
-  assert.equal(typeof api.open, 'function')
-  assert.equal(typeof api.subscribe, 'function')
-  assert.equal(typeof api.fetchEvents, 'function')
-  assert.equal(typeof api.heartbeat, 'function')
+  for (const member of ['acquire', 'subscribe', 'history', 'heartbeat', 'ack', 'resume', 'release', 'current', 'observe']) {
+    assert.equal(typeof api[member], 'function', `${member} is published`)
+  }
 })

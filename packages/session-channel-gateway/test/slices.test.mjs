@@ -22,27 +22,55 @@ test('channel RPC: handle returns unavailable when facade absent', async () => {
   assert.ok(rpc.active === false)
 })
 
-test('channel RPC: handle dispatches to facade when present', async () => {
-  let called = false
+test('channel RPC: each endpoint is served by the published member that carries it', async () => {
+  const seen = []
   const facade = {
     [CONTRACT_SYMBOL]: true,
-    dispatchChannelMethod: async (endpoint, payload, signal) => {
-      called = true
-      assert.equal(endpoint, 'sessionChannel/open')
-      return { ok: true, value: { channelId: 'test' } }
-    },
+    acquire: async (args, signal) => { seen.push(['acquire', args, signal]); return { ok: true, value: { channelId: 'test' } } },
+    subscribe: async (args) => { seen.push(['subscribe', args]); return { ok: true, value: { subscriptionId: 'sub-1' } } },
+    history: async (args) => { seen.push(['history', args]); return { ok: true, frames: [] } },
+    heartbeat: async () => { seen.push(['heartbeat']); return { ok: true } },
+    ack: async () => { seen.push(['ack']); return { ok: true } },
+    resume: async () => { seen.push(['resume']); return { ok: true } },
+    release: async () => { seen.push(['release']); return { ok: true } },
   }
   const rpc = createChannelRpcDispatch({ connection: { rpc: { handle() {} } }, facade: () => facade })
-  const result = await rpc.handle('sessionChannel/open', { args: { device: 'dev1' } })
-  assert.ok(called, 'facade dispatchChannelMethod must be called')
-  assert.ok(result.ok)
-  assert.equal(result.value.channelId, 'test')
+  const signal = { aborted: false }
+  const opened = await rpc.handle('sessionChannel/open', { args: { device: 'dev1' } }, signal)
+  assert.deepEqual(seen.at(-1), ['acquire', { device: 'dev1' }, signal], 'open is served by acquire, arguments and signal intact')
+  assert.equal(opened.value.channelId, 'test')
+
+  const subscribed = await rpc.handle('sessionChannel/subscribe', { args: { channelId: 'c1' } })
+  assert.deepEqual(seen.at(-1), ['subscribe', { channelId: 'c1' }], 'subscribe is served by the published subscription member')
+  assert.equal(subscribed.value.subscriptionId, 'sub-1')
+
+  for (const [endpoint, member] of [
+    ['sessionChannel/fetchEvents', 'history'],
+    ['sessionChannel/heartbeat', 'heartbeat'],
+    ['sessionChannel/ack', 'ack'],
+    ['sessionChannel/resume', 'resume'],
+    ['sessionChannel/revoke', 'release'],
+  ]) {
+    await rpc.handle(endpoint, { args: {} })
+    assert.equal(seen.at(-1)[0], member, `${endpoint} is served by ${member}`)
+  }
+})
+
+test('channel RPC: a facade without the member, and an unknown endpoint, answer typed', async () => {
+  const bare = { [CONTRACT_SYMBOL]: true }
+  const rpc = createChannelRpcDispatch({ connection: { rpc: { handle() {} } }, facade: () => bare })
+  const missing = await rpc.handle('sessionChannel/open', { args: {} })
+  assert.equal(missing.ok, false)
+  assert.equal(missing.error.code, 'unavailable')
+  const unknown = await rpc.handle('sessionChannel/nope', { args: {} })
+  assert.equal(unknown.ok, false)
+  assert.equal(unknown.error.code, 'invalid-input')
 })
 
 test('channel RPC: handle returns internal error on throw', async () => {
   const facade = {
     [CONTRACT_SYMBOL]: true,
-    dispatchChannelMethod: async () => { throw new Error('oops') },
+    acquire: async () => { throw new Error('oops') },
   }
   const rpc = createChannelRpcDispatch({ connection: { rpc: { handle() {} } }, facade: () => facade })
   const result = await rpc.handle('sessionChannel/open', { args: {} })
@@ -50,14 +78,22 @@ test('channel RPC: handle returns internal error on throw', async () => {
   assert.equal(result.error.code, CODE_INTERNAL)
 })
 
-test('channel RPC: active depends on facade presence', () => {
+test('channel RPC: active depends on the facade publishing the capability members', () => {
   const rpc = createChannelRpcDispatch({ connection: { rpc: { handle() {} } }, facade: () => undefined })
   assert.ok(!rpc.active)
+  const members = { acquire() {}, subscribe() {}, history() {}, heartbeat() {}, ack() {}, resume() {}, release() {} }
   const rpc2 = createChannelRpcDispatch({
     connection: { rpc: { handle() {} } },
-    facade: () => ({ [CONTRACT_SYMBOL]: true, dispatchChannelMethod() {} }),
+    facade: () => ({ [CONTRACT_SYMBOL]: true, ...members }),
   })
   assert.ok(rpc2.active)
+  // A facade that carries the marker but not the members is not active: the
+  // self-check never claims a capability the facade does not publish.
+  const rpc3 = createChannelRpcDispatch({
+    connection: { rpc: { handle() {} } },
+    facade: () => ({ [CONTRACT_SYMBOL]: true, acquire() {} }),
+  })
+  assert.ok(!rpc3.active)
 })
 
 test('channel RPC: dispose is idempotent', () => {

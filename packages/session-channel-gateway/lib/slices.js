@@ -15,21 +15,11 @@
  */
 import {
   CODE_INTERNAL,
+  CODE_INVALID_INPUT,
   CONTRACT_SYMBOL,
   typedError,
   typedUnavailable,
 } from './shared-vocab.js'
-
-/** Channel method endpoints. */
-const CHANNEL_METHODS = Object.freeze([
-  'sessionChannel/open',
-  'sessionChannel/subscribe',
-  'sessionChannel/fetchEvents',
-  'sessionChannel/heartbeat',
-  'sessionChannel/ack',
-  'sessionChannel/resume',
-  'sessionChannel/revoke',
-])
 
 /**
  * Create a channel method RPC dispatch slice.
@@ -56,17 +46,42 @@ export function createChannelRpcDispatch({ connection, facade = () => undefined,
     }
   }
 
+  /**
+   * Wire endpoint → published channel member.
+   *
+   * The facade publishes capabilities, not its internal dispatcher (the
+   * dispatcher was internalized when the public surface was cut), so each
+   * endpoint is served by the member that carries it — the same controlled
+   * wrappers the dispatcher used, with the auth gate, rate limiting, audit and
+   * redaction intact.
+   */
+  const CHANNEL_MEMBER = Object.freeze({
+    'sessionChannel/open': 'acquire',
+    'sessionChannel/subscribe': 'subscribe',
+    'sessionChannel/fetchEvents': 'history',
+    'sessionChannel/heartbeat': 'heartbeat',
+    'sessionChannel/ack': 'ack',
+    'sessionChannel/resume': 'resume',
+    'sessionChannel/revoke': 'release',
+  })
+
   /** Check if an endpoint is a channel method. */
-  const isChannelMethod = (endpoint) => CHANNEL_METHODS.includes(endpoint)
+  const isChannelMethod = (endpoint) => Object.hasOwn(CHANNEL_MEMBER, endpoint)
 
   /** Handle a channel method RPC call. */
   const handle = async (endpoint, payload, signal) => {
+    const member = CHANNEL_MEMBER[endpoint]
+    if (member === undefined) return typedError(CODE_INVALID_INPUT, 'unknown channel method')
     const surface = facadeSurface()
-    if (surface === undefined || typeof surface.dispatchChannelMethod !== 'function') {
+    if (surface === undefined) return typedUnavailable()
+    const entry = surface[member]
+    if (typeof entry !== 'function') {
+      // A facade that does not publish the capability answers typed; the route
+      // stays registered so the official gateway face is untouched.
       return typedUnavailable()
     }
     try {
-      return await surface.dispatchChannelMethod(endpoint, payload, signal)
+      return await entry(payload?.args, signal)
     } catch (error) {
       return typedError(CODE_INTERNAL, error?.message ?? 'channel method dispatch failed')
     }
@@ -86,8 +101,17 @@ export function createChannelRpcDispatch({ connection, facade = () => undefined,
     isChannelMethod,
     handle,
     facadeSurface: facadeSurface,
-    /** Whether channel dispatch is active (facade present). */
-    get active() { return facadeSurface() !== undefined },
+    /**
+     * Whether channel dispatch is active: the facade is present *and* it
+     * publishes the capability members the endpoints are served by. A facade
+     * without them is reported inactive rather than active-but-refusing, so
+     * the boot self-check cannot claim a capability the facade does not have.
+     */
+    get active() {
+      const surface = facadeSurface()
+      if (surface === undefined) return false
+      return Object.values(CHANNEL_MEMBER).every((member) => typeof surface[member] === 'function')
+    },
     dispose: () => {
       if (typeof disposer === 'function') {
         try { disposer() } catch { /* never throw */ }

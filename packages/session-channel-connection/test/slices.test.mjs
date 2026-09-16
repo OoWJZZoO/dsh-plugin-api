@@ -55,10 +55,35 @@ test('fencing: inactive when no facade attached', () => {
 })
 
 test('fencing: active after facade with CONTRACT_SYMBOL is attached', () => {
-  const facade = { [CONTRACT_SYMBOL]: true, onChange: () => undefined }
+  const facade = { [CONTRACT_SYMBOL]: true, observe: () => ({ dispose() {} }) }
   const f = createFencingTable({ facade: () => facade })
   f.attach()
   assert.ok(f.active)
+})
+
+test('fencing: prune drops bindings whose channel generation moved on', () => {
+  const snapshot = { channels: { ch1: { generation: 'gen2' } } }
+  const listeners = []
+  let released = 0
+  const facade = {
+    [CONTRACT_SYMBOL]: true,
+    observe(listener) {
+      listeners.push(listener)
+      return { dispose() { released += 1 } }
+    },
+    current: () => snapshot,
+  }
+  const f = createFencingTable({ facade: () => facade })
+  f.attach()
+  assert.equal(typeof listeners[0], 'function', 'the attachment subscribes through the published observation handle')
+  f.bind('ch1', 'gen1')
+  f.bind('ch2', 'gen2')
+  // A change notification prunes the binding whose generation moved on.
+  listeners[0](snapshot)
+  assert.ok(!f.isCurrent('ch1', 'gen1'), 'the stale binding is dropped')
+  assert.ok(f.isCurrent('ch2', 'gen2'))
+  f.detach()
+  assert.equal(released, 1, 'detaching releases the observation handle')
 })
 
 test('fencing: bind and isCurrent round-trip', () => {

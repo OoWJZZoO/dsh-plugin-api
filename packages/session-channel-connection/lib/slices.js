@@ -95,12 +95,15 @@ export function createFencingTable({ facade = () => undefined, logger } = {}) {
     if (surface === undefined || attached) return false
     attached = true
     try {
-      const disposer = surface.onChange?.((/* snapshot */) => {
+      // The published observation handle is the subscription: each change
+      // notification carries the projection, and the handle's release is the
+      // unsubscribe. The internal onChange hook is not on the public surface.
+      const observer = surface.observe?.((/* snapshot */) => {
         // Generation changes flow through bindings on read; the table is
         // transport-local and only compares its own bindings.
         prune()
       })
-      facadeDisposer = typeof disposer === 'function' ? disposer : undefined
+      facadeDisposer = typeof observer?.dispose === 'function' ? () => observer.dispose() : undefined
     } catch (error) {
       log(`session-channel: connection fencing could not subscribe to the channel facade: ${error?.name ?? 'Error'}`)
       attached = false
@@ -129,11 +132,11 @@ export function createFencingTable({ facade = () => undefined, logger } = {}) {
       bindings.clear()
       return
     }
+    // The generation of a channel is read from the published snapshot: the
+    // internal generation query is not on the public surface.
     let generationOf
-    try {
-      generationOf = surface.channelGenerationOf
-    } catch {
-      generationOf = undefined
+    if (typeof surface.current === 'function') {
+      generationOf = (channelId) => surface.current()?.channels?.[channelId]?.generation
     }
     if (typeof generationOf !== 'function') return
     for (const [channelId, binding] of bindings) {

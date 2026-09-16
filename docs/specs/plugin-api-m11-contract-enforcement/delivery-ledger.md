@@ -2,7 +2,7 @@
 
 > feature_name: `plugin-api-m11-contract-enforcement`
 > milestone: M11
-> 状态：**Stage 4 续做中（in progress，未收口）**。Stage 3 审查门四轮闭合（见 `tasks.md`「Stage 3 审查门记录」）；Stage 4 按 `tasks.md` 顺序推进：§1 记第一轮交付范围，**§3.0 记本轮（2026-09-15 续做）的完成与未完成清单**，§3 的 B1–B20 逐条登记随之更新。本线在第十五/十六轮把登记的五项余项全部收口；**Stage 4 完成判定**因 §3.0.6 登记的跨包缺口（需人类裁决修法）**尚未达成**，各轮终审记录见 §7。
+> 状态：**Stage 4 续做中（in progress，未收口）**。Stage 3 审查门四轮闭合（见 `tasks.md`「Stage 3 审查门记录」）；Stage 4 按 `tasks.md` 顺序推进：§1 记第一轮交付范围，**§3.0 记本轮（2026-09-15 续做）的完成与未完成清单**，§3 的 B1–B20 逐条登记随之更新。本线在第十五/十六轮把登记的五项余项全部收口；**Stage 4 完成判定**在 §3.0.6 的跨包缺口按人类裁决（a1）实施后，待本批终审结论，各轮终审记录见 §7。
 > 执行口径：版本冻结基线内（runtime `0.1.0-rc.6`、包 `0.1.0-rc.6-0.1.0`、`dsh.api: 0.1`），**未步进任何版本字段**；未新增 R 点；官方包零修改。
 > 工作流纪律（`AGENTS.md` §3.2「Stage 4 连续执行纪律」，本轮落盘）：Stage 3 审查门通过后，除**硬停机点**与**环境 / 工具链 / 权限缺失**两类因素外，不得以批次边界、会话长度、上下文占用、任务规模或已交付部分成果为由终止未完成的主体工作；未完成项不得登记为「阻塞项」。
 
@@ -26,7 +26,7 @@
 
 | 项目 | 结果 |
 |---|---|
-| `npm test`（4G 内存护栏内） | **3574 / 3574 通过**（开工基线 3469；第二轮交付 3524；第三轮 3549；复审修订轮 3556；第十四/十五/十六轮 3562 → 3566 → 3569 → 3572 → 3573 → 3574）。复审修订轮新增的断言集中在 `test/client-observation-handles.test.mjs`（新：三个 client 观察入口的 handle 形状、`current()` 语义、释放后行为与缺服务时的 typed 拒绝）、`test/client-self-description.test.mjs`（成员级 capability path 与未知成员的 typed 拒绝）、`test/client-slots.test.mjs`（抛错的声明查询判 `unavailable`）、`test/client-remote-events.test.mjs`（`dispatch` 判别式结果与缺载体拒绝）、`test/dual-plugin-composition.test.mjs`（真实 diagnostics owner 的检查回调查错隔离）、`test/migration-slices.test.mjs`（第二身份与伪造 ownerId 的派生断言）、`test/host-namespace-integration.test.mjs`（settings mutation 的 `invalid-input` 分支）、`test/policy-inventory.test.mjs`（matrix 状态由已发布 path 派生） |
+| `npm test`（4G 内存护栏内） | **3577 / 3577 通过**（开工基线 3469；第二轮交付 3524；第三轮 3549；复审修订轮 3556；第十四至十七轮 3562 → 3566 → 3569 → 3572 → 3573 → 3574 → 3577）。复审修订轮新增的断言集中在 `test/client-observation-handles.test.mjs`（新：三个 client 观察入口的 handle 形状、`current()` 语义、释放后行为与缺服务时的 typed 拒绝）、`test/client-self-description.test.mjs`（成员级 capability path 与未知成员的 typed 拒绝）、`test/client-slots.test.mjs`（抛错的声明查询判 `unavailable`）、`test/client-remote-events.test.mjs`（`dispatch` 判别式结果与缺载体拒绝）、`test/dual-plugin-composition.test.mjs`（真实 diagnostics owner 的检查回调查错隔离）、`test/migration-slices.test.mjs`（第二身份与伪造 ownerId 的派生断言）、`test/host-namespace-integration.test.mjs`（settings mutation 的 `invalid-input` 分支）、`test/policy-inventory.test.mjs`（matrix 状态由已发布 path 派生） |
 | `node scripts/registry-validate.mjs <registry>` | `registry valid`（exit 0） |
 | `node scripts/convergence-verify.mjs` | `562 member rows, 37 behavior rows, 37 fully linked behavior rows`（exit 0；行数演进 538 → 539 → 546 → 551 → **559 → 562**——562 来自第十五轮的通道成员映射（`history` / `current` / `observe.handle` 三行新增）与 `list` 退役：546 来自补入七个 client 现行 leaf 行，551 来自第三轮补入四个 decision `admitted()` 行与 `workspaces.transactions.availability` 行，559 来自复审修订轮一次性补入的**八**行——`slots.declaration` 与另外七条 client 现行行 `remotes.observe` / `remotes.dispatch` / `lifecycle.observe` / `lifecycle.list` / `codec.validate` / client `sessions.availability` / client `attention.availability`；中间不存在 552 行状态；行为表 37 行冻结、装配表 token 未变；第十五轮行为表 / 装配表零改动） |
 | `npm run build:client:check` | `client bundle is up to date with its sources`（exit 0；复审修订轮 client 侧源码有改动——`client-runtime`（成员级 capability path、`slots.observe` 门禁）、`client-slot-events` / `client-remote-events`（标准观察 handle、`dispatch` 判别式结果）、`client-generation-rebind`（变化 epoch + 观察 handle）、`client-slots`（声明查询抛错判 `unavailable`）——bundle 已重建，产物 diff 仅含预期变更） |
@@ -217,8 +217,9 @@
 - **溯源**：公共面收缩发生在 `c83b4cc`（2026-09-01）与 `d270b02`（2026-09-02），**早于本交付区间**（`4d6d549..`），非本轮引入；但第十五轮的通道映射动过该包（远端投影改读 `current()`）而未发现该缺口，feature-list 的「gateway 套件同步」表述因此不完整。
 - **为何测试没抓到**：`test/session-channel-cross-package.test.mjs` 自造 mock service（把 **owner 原始 api** 直接挂到 `service.sessions.channels`），断言 `typeof api.dispatchChannelMethod === 'function'`；而 `test/session-channel-integration.test.mjs` 对真实服务断言该成员**不得存在**。两条断言各自为真、合起来与真实集成相矛盾。
 - **修法（二选一，均需人类裁决）**：**(a) 改 R 包**——gateway 改经已发布的控制成员派发（`open→acquire`、`fetchEvents→history` 等），connection 改经 `observe(listener)` 订阅、`current()` 读 generation；这会改动两包的线协议映射与 boot 自检，属 R 包设计变更。**(b) 恢复成员**——把 `dispatchChannelMethod` / `onChange` / `channelGenerationOf` 重新发布到公共面，属**能力边界变更**（AGENTS.md §2/§4 与 capability-strategy 口径），按 §3.2 属硬停机点，必须由人类批准。
-- **当前处置**：**不自行选择**（(b) 触及硬停机点；(a) 会改动已交付 R 包的线协议契约）。既有行为是**诚实降级**（typed `unavailable`，无静默错误），故本缺口不构成安全或数据问题；登记于此，等待人类裁决。
-- **同日登记**：`test/session-channel-cross-package.test.mjs` 的 mock 断言与真实面矛盾一事，随该裁决一并修正（避免再次掩盖）。
+- **人类裁决（2026-09-16）**：选 **(a1) 改 R 包 + 新发布订阅成员**，并授权以 ANY 工作流先修订上游 spec 制品再实现；其余 8 个依赖点按「走已发布成员」处理。
+- **已实施（第十七轮，2026-09-16）**：① 上游 spec 修订——`docs/specs/remote-session-channel/tasks.md` 加现状注并改写 4.3 / 7.1 的机制措辞（端点按 `open→acquire`、`subscribe→subscribe`、`fetchEvents→history`、`revoke→release` 分派；跨包协调钩子不再发布），验收边界不变；② 门面**新发布** `sessions.channels.subscribe`（控制面成员，与其余 channel 方法共用同一 auth 门/限流/审计/捕获红名单收口；disabled 面同形）；registry 该行由 `removed/merge` 改为 `advanced/retain`、`oldToTargetMapping` 相应改写（记录「interim merge into observe 被撤销」的原因）、`statusByPath` 移除该键、capabilityMatrix 目标面补入、`callShape: async`；③ gateway R 包改为按端点分派到已发布成员，`active` 收紧为「门面确实发布了这些成员」；④ connection R 包改读 `observe(listener)` 订阅与 `current()` 取 generation；⑤ `test/session-channel-cross-package.test.mjs` **改为挂载真实门面**（原先的 mock 把 owner 原始 api 直接当公共面发布，正是掩盖该缺口的原因），并按已发布命名断言；新增鉴别性用例覆盖 wire subscribe→fetchEvents 的端到端链路与 fencing 的裁剪/释放。
+- **处置结果**：mock 与真实面矛盾一事已随本轮修订消除（该文件现在挂载真实门面）。
 
 ## 3.0 本轮（2026-09-15 续做）完成与未完成清单
 

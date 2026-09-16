@@ -5970,12 +5970,12 @@
       "targetPath": "sessions.channels.observe",
       "capability": "sessions.channels",
       "kind": "leaf",
-      "idiom": "projection",
+      "idiom": "coordination",
       "idiomExceptions": [],
       "eventSemantics": null,
       "semanticFace": null,
-      "effect": "subscribe",
-      "composition": "pure",
+      "effect": "execute",
+      "composition": "coordinated",
       "runtime": "host",
       "implementationChannel": "facade",
       "authority": "session authority",
@@ -5983,21 +5983,21 @@
       "resourceKey": "session id",
       "identitySource": "caller plugin context",
       "conflictRule": "not-applicable",
-      "lifecycle": "valid while the namespace backing is active",
+      "lifecycle": "the subscription carries its own generation; release is idempotent and ack advances its cursor",
       "failureSemantics": "discriminated-result",
-      "idempotency": "idempotent",
+      "idempotency": "not idempotent",
       "retryLayer": null,
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "channel subscription",
-      "migrationAction": "merge",
-      "status": "removed",
+      "currentShape": "channel subscription: subscribes the caller to one channel under a redaction profile and answers the discriminated result carrying the subscription identity (subscriptionId plus subscriptionGeneration) the frame reader works against; the control gate (verifier/authorizer, rate limits, auditing, capture redaction) is the same one the other channel methods pass through, and the subscription lifecycle stays with the channel engine",
+      "migrationAction": "retain",
+      "status": "advanced",
       "verification": [
         "member-inventory",
         "registry-validation"
       ],
-      "callShape": "not-applicable"
+      "callShape": "async"
     },
     {
       "publicPath": "sessions.channels.onChange",
@@ -21433,9 +21433,9 @@
     },
     {
       "oldPath": "sessions.channels.subscribe",
-      "targetPath": "sessions.channels.observe",
-      "action": "merge",
-      "relation": null
+      "targetPath": "sessions.channels.subscribe",
+      "action": "retain",
+      "relation": "restored 2026-09-16 (human-approved): the interim merge into observe was undone when observe became the standard projection observation handle and the snapshot moved to current(); the wire endpoint sessionChannel/subscribe is served by this member"
     },
     {
       "oldPath": "sessions.channels.onChange",
@@ -23467,7 +23467,6 @@
     "sessions.durable.onceDurable": "removed",
     "sessions.channels.open": "removed",
     "sessions.channels.revoke": "removed",
-    "sessions.channels.subscribe": "removed",
     "sessions.channels.onChange": "removed",
     "sessions.channels.fetchEvents": "removed",
     "sessions.channels.auth.registerVerifier": "removed",
@@ -24806,7 +24805,8 @@
         "sessions.channels.history",
         "sessions.channels.observe",
         "sessions.channels.release",
-        "sessions.channels.resume"
+        "sessions.channels.resume",
+        "sessions.channels.subscribe"
       ],
       "status": "merged",
       "qualifiers": [],
