@@ -65,8 +65,8 @@ test('capability registration validates declarations and old disposer cannot rem
   const oldHandle = capability(owner)
   const newHandle = capability(owner, { generation: '2' })
   assert.equal(oldHandle.id, 'operation-1')
-  assert.equal(oldHandle.scopeOwner, 'owner-1', 'the declaration identity is the operation scope, under its own name')
-  assert.equal(typeof oldHandle.scopeGeneration, 'string')
+  assert.equal(oldHandle.ownerId, 'owner-1', 'the handle identity carries the recovered operation scope')
+  assert.equal(typeof oldHandle.generation, 'string')
   assert.equal(oldHandle.dispose().code, 'stale')
   assert.equal(newHandle.dispose().code, 'revoked')
   assert.throws(

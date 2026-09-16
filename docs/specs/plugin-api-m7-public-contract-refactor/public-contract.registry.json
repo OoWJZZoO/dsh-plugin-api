@@ -14048,7 +14048,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "frozen { id, ownerId, generation, dispose() } for the capability declaration, where ownerId and generation carry the declaration's scopeOwner and scopeGeneration (the recovered operation's scope) and dispose() answers the frozen discriminated { ok, code: revoked | stale, reason? }",
+      "currentShape": "frozen { id, ownerId, generation, dispose() } for the capability declaration, where ownerId and generation carry the declaration's scopeOwner and scopeGeneration (the recovered operation scope) and dispose() answers the frozen discriminated { ok, code: revoked | stale, reason? }",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
@@ -14939,7 +14939,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "recovery capability declaration; its scopeOwner and scopeGeneration name the operation under recovery \u2014 the very pair the evaluate call matches a capability by \u2014 and are not the declaring plugin's identity (nothing is derived here); the answer is the frozen handle { id, ownerId, generation, dispose() } whose disposition is the frozen discriminated result, and a declaration for the same (scopeOwner, operationId) replaces the previous one whatever its content",
+      "currentShape": "recovery capability declaration; its scopeOwner and scopeGeneration input parameters name the operation under recovery \u2014 the very pair the evaluate call matches a capability by \u2014 and are not the declaring plugin's identity (nothing is derived here); the answer is the frozen handle { id, ownerId, generation, dispose() } whose ownerId and generation carry that same scope pair, and a declaration for the same (scopeOwner, operationId) replaces the previous one whatever its content",
       "migrationAction": null,
       "status": "advanced",
       "verification": [

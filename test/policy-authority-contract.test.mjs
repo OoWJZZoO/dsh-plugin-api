@@ -294,8 +294,8 @@ test('policy registration handles carry owner-bound id, ownerId, generation and 
     idempotent: true, retryable: true, allowedActions: ['stop'], sideEffectClass: 'none',
   })
   assert.equal(capabilityHandle.id, 'op-h')
-  assert.equal(capabilityHandle.scopeOwner, 'o-h', 'the declaration identity is the recovered operation scope, under its own name')
-  assert.equal(capabilityHandle.scopeGeneration, 'g-h')
+  assert.equal(capabilityHandle.ownerId, 'o-h', 'the handle identity carries the recovered operation scope')
+  assert.equal(capabilityHandle.generation, 'g-h')
   assert.equal(typeof capabilityHandle.dispose, 'function')
   const policyRecoveryHandle = recovery.api.policy.register({
     id: 'p-h', ownerId: 'o-h', generation: 'g-h', decide: () => ({ action: 'stop' }),

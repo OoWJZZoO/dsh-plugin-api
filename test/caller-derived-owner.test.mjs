@@ -323,7 +323,7 @@ test('the recovery policy entries derive the owner and refuse another owner id',
   const service = createService()
   const seen = []
   service.mountFeature('recovery', {
-    capability: { register: (spec) => ({ id: spec.operationId, scopeOwner: spec.scopeOwner, scopeGeneration: spec.scopeGeneration, dispose: () => ({ ok: true, code: 'revoked' }) }) },
+    capability: { register: (spec) => ({ id: spec.operationId, ownerId: spec.scopeOwner, generation: spec.scopeGeneration, dispose: () => ({ ok: true, code: 'revoked' }) }) },
     policy: { register: (spec) => { seen.push(['policy', spec.ownerId]); return { id: spec.id, ownerId: spec.ownerId, generation: spec.generation, dispose: () => ({ ok: true, code: 'revoked' }) } } },
     visibility: { register: (spec) => { seen.push(['visibility', spec.ownerId]); return { id: spec.id, ownerId: spec.ownerId, generation: spec.generation, dispose: () => ({ ok: true, code: 'revoked' }) } } },
     evaluate: () => ({ ok: true }),
@@ -346,6 +346,6 @@ test('the recovery policy entries derive the owner and refuse another owner id',
   // The capability declaration keeps its own scope vocabulary: the operation
   // under recovery is not the declaring plugin, so nothing is derived there.
   const capability = a.executions.recovery.capability.register({ operationId: 'op', scopeOwner: 'op-owner', scopeGeneration: 'gen-1', scope: 'session', idempotent: true, retryable: true, allowedActions: ['stop'], sideEffectClass: 'none' })
-  assert.equal(capability.scopeOwner, 'op-owner')
-  assert.equal(capability.scopeGeneration, 'gen-1')
+  assert.equal(capability.ownerId, 'op-owner', 'the declaration scope rides the standard handle identity members')
+  assert.equal(capability.generation, 'gen-1')
 })

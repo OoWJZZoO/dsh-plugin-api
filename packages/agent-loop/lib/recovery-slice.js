@@ -130,8 +130,8 @@ export async function consumeRequestRecovery({
   const attemptsRemaining = Math.max(0, maxRetries - countRetriesThisTurn(session, turn))
   declareCapability(loopCtx, {
     operationId: 'agent-loop-model-request',
-    ownerId: RECOVERY_OWNER_ID,
-    generation,
+    scopeOwner: RECOVERY_OWNER_ID,
+    scopeGeneration: generation,
     scope: 'session',
     idempotent: false,
     retryable: true,
@@ -149,7 +149,7 @@ export async function consumeRequestRecovery({
       scope: 'session',
       provider: boundedString(provider, MAX_STRING),
       execution: { executionId, attemptId, active: true, cancellable: true },
-      capability: { operationId: 'agent-loop-model-request', ownerId: RECOVERY_OWNER_ID, generation },
+      capability: { operationId: 'agent-loop-model-request', scopeOwner: RECOVERY_OWNER_ID, scopeGeneration: generation },
       failure: failure ?? undefined,
       signal,
       attemptsRemaining,
@@ -194,8 +194,8 @@ export async function consumeToolRecovery({
   const windowId = boundedString(`tool:${sessionId}:${turn}:${step}:${callId}`, MAX_ID)
   declareCapability(loopCtx, {
     operationId: 'agent-loop-tool-dispatch',
-    ownerId: RECOVERY_OWNER_ID,
-    generation,
+    scopeOwner: RECOVERY_OWNER_ID,
+    scopeGeneration: generation,
     scope: 'session',
     idempotent: false,
     retryable: true,
@@ -213,7 +213,7 @@ export async function consumeToolRecovery({
       scope: 'session',
       decisionWindowId: windowId,
       execution: { executionId, attemptId, active: true, cancellable: true },
-      capability: { operationId: 'agent-loop-tool-dispatch', ownerId: RECOVERY_OWNER_ID, generation },
+      capability: { operationId: 'agent-loop-tool-dispatch', scopeOwner: RECOVERY_OWNER_ID, scopeGeneration: generation },
       failure: failure ?? undefined,
       signal,
       attemptsRemaining: 1,

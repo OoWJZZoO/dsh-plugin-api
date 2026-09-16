@@ -9,12 +9,13 @@ import { consumeRequestRecovery, consumeToolRecovery, RECOVERY_OWNER_ID } from '
 function createAuthorityDouble({ decision, policies = 1 } = {}) {
   const commits = []
   const consumed = new Set()
+  const decideCalls = []
   return {
     commits,
-    decideCalls: [],
+    decideCalls,
     recovery: {
       async decide(input) {
-        this.decideCalls = this.decideCalls || []
+        decideCalls.push(input)
         if (policies === 0) return { ok: true, decision: null, consultedPolicies: 0 }
         return { ok: true, decision: decision ?? null, consultedPolicies: policies }
       },
@@ -102,6 +103,41 @@ test('a policy retry is committed once and advances the attempt with a fallback 
   assert.equal(capabilitySpecs.length, 1)
   assert.equal(capabilitySpecs[0].operationId, 'agent-loop-model-request')
   assert.equal(capabilitySpecs[0].retryBudget.maxAttempts, 3)
+  // The declaration must satisfy the engine's identity contract, and the
+  // decide call must reference the operation by the same pair: a declaration
+  // the engine refuses is swallowed as best-effort and would silently turn the
+  // automatic retry into a terminal stop.
+  assert.equal(capabilitySpecs[0].scopeOwner, RECOVERY_OWNER_ID, 'the declaration names the operation scope owner')
+  assert.equal(typeof capabilitySpecs[0].scopeGeneration, 'string')
+  assert.equal(capabilitySpecs[0].ownerId, undefined, 'the declaration does not borrow the caller-identity parameter name')
+  assert.deepEqual(authority.decideCalls[0]?.capability ?? {}, {
+    operationId: 'agent-loop-model-request',
+    scopeOwner: RECOVERY_OWNER_ID,
+    scopeGeneration: capabilitySpecs[0].scopeGeneration,
+  }, 'the decide call carries the same scope pair the declaration used')
+})
+
+test('the declaration the slice sends is accepted by the real recovery engine', async () => {
+  const { createRecoveryPolicyOwner } = await import('../../../lib/recovery-policy.js')
+  const owner = createRecoveryPolicyOwner({ logger: { warn() {} } })
+  const capabilitySpecs = []
+  const pluginApi = { executions: { recovery: { capability: { register(spec) { capabilitySpecs.push(spec); return owner.api.capability.register(spec) } } } } }
+  const authority = createAuthorityDouble({ decision: { decisionId: 'd-real', action: 'stop', reason: { code: 'no-retry' } } })
+  await consumeRequestRecovery({
+    loopCtx: createLoopCtx(authority, pluginApi),
+    session: SESSION,
+    turn: 3,
+    attemptEpoch: '1',
+    provider: 'p',
+    failure: { code: 'timeout', message: 'x' },
+    retryPolicy: { mode: 'normal', maxRetries: 2 },
+  })
+  // The engine owns the declaration: a refused one never reaches its registry,
+  // which is exactly how the automatic path would go silent. The registration
+  // availability therefore has to remain 'active' after the slice declares.
+  assert.equal(owner.api.coverage().registration, 'active', 'the engine accepted the declaration')
+  assert.equal(capabilitySpecs.length, 1)
+  owner.dispose()
 })
 
 test('a fallback decision re-enters the next attempt with the fallback cause; abort becomes terminal', async () => {
