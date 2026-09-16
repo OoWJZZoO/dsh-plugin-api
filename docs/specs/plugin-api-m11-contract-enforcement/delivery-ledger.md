@@ -76,7 +76,7 @@
 
 ## 3.0.2 处置结论表（Task 10.1(a) / B16a）
 
-按输入编号全集逐项给出四态结论（**修复** / **合理例外** / **已修复（开工前即为正确形态）** / **误报**）与锚点。未闭合者指向 §3.0.1 的余项。
+按输入编号全集逐项给出四态结论（**修复** / **合理例外** / **已修复（开工前即为正确形态）** / **误报**）与锚点。未闭合者指向 §3.0.4 的五项余项表（本表所余的 `3.6（B6）` 见 §3.0.4 表末行）；本表的状态词为**第三轮的落盘快照**，口径见本节末的「§3.0.2 口径注」。
 
 | 编号 | 结论 | 证据锚点 |
 |---|---|---|
@@ -417,6 +417,8 @@
 5. **已 itemize 的成员不得再消耗例外**（第三轮 `6f62bd9`）：行内已写出成员集的 handle，其 `idiomExceptions` 不得再列同一成员。
 6. **`callShape` 已回填**（第十五轮 `1191569`，Task 3.1/S15）：每行的 `callShape` 必须取自 `vocabulary.callShape`（`sync` / `async` / `not-applicable`），值为 `not-applicable` 表示该行描述的是值而非调用——实测 227 行中 live 的 67 行**全部是 handle 行**，其余 160 行是已退役行（154 行数据叶 + 6 行 handle）；**live 的叶行（336 行）无一取 `not-applicable`**——其中**可调用的 320 行**按答复形态登记 `async`（83）/ `sync`（237），**不可调用的 16 行数据行**（host 8 + client 8）按「读取直接答复」登记 `sync`（两类合计 253 sync + 83 async）。
 
+**`statusByPath` 覆盖口径（如实登记，非校验规则）**：该面登记**曾经发布过**的旧 path 的退役状态。本线退役的 5 条**幻影** handle 行（`tasks.register.handle`、`tools.executionMode.register.handle`、`tasks.acquire.handle`、`agents.register.handle`、`sessions.channels.acquire.handle`）从未在公共面存在，故**不入该面**；实测 HEAD：160 条 `removed` 成员行中 155 条有键、缺键的 5 条即上述幻影行，`statusByPath` 177 键、值全为 `removed`、不含任何在册 path。机械门不覆盖该覆盖关系（`test/registry.test.mjs` 只断言值必须为 `removed`）。
+
 **为什么规则 1 曾一度不是全量**：登记缺口未清零时对全部行强制，等于要求为未改动的成员填写与其运行时不符的 `currentShape`——那是伪造登记，比漏报更有害。**登记缺口的历史**（供后续读者对账，非现行待办）：规则落盘时（`cb55e94`）registry 有 **42** 行成员的 `currentShape` 为 `null`（其中 handle 行 **21** 行，policy/resourceRegistry 子集 **16** 行；design §2.4 的 R 系列只列了六条同类缺口，是该缺口的抽样而非全量清单）；本线期间已由 registry 缺口收口提交（`6f62bd9`，registry 空形状清零）把这些行逐条补齐，HEAD 下 `currentShape` 为 `null` 的成员行为 **0**。
 
 ## 5. 未纳入本线的排除项（无变化）
@@ -701,4 +703,14 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 - **低级 F-3**：上游两份现状注表新写的「其余叶名不变」仍失实——registry 实测该门面多数叶名已随公共面重命名（`open`→`acquire`、`fetchEvents`→`history`、`revoke`→`release`、`subscribe`→`subscriptions.acquire`、`onChange`→观察 handle、`auth.registerVerifier`/`registerAuthorizer`→`auth.register`、`auth.registerPairingProvider`→`auth.pairingProvider.register`、`redaction.registerProfile`→`redaction.register`；仅 `heartbeat`/`ack`/`resume`/`observe` 与 `auth.initiatePairing`/`approvePairing`/`rejectPairing` 保持原名）。
 - **低级 F-4**：§3.0.2 四态表的 C4 / C17 两处指针写「见 / 依赖 §3.0.1 未完成清单」，而 §3.0.1 的未完成表只剩 `3.6（B6）` 一行（该两项的落点在 §3.0.4 的五项余项表）；§3.0.1 尾句「上表五项余项全部收口」的「上表」也只有 1 行；§3.0.x 的物理顺序仍为 3.0.2 → 3.0.3 → 3.0.1 → 3.0.4（§7 曾按同类意见重排，§3.0.x 未重排）。
 
-**处置（第二十五轮，本节之后的提交）**：① 5 条 delete 行的 `targetPath` 改为 `null`（与 `oldToTargetMapping` 及同族先例一致；29 条 delete 行现全部为 `null`），并在 §7.26 登记该修正；② F-2 经复核为机械门强制，取值不变，改在 C13 行写明该字段的双重含义与 191/192 自指的实测口径；③ 上游 `requirements.md` / `design.md` 的现状注表改列全部实测改名与保持原名的叶，删去失实的「其余叶名不变」；④ §3.0.2 的 C4 / C17 指针改为指向 §3.0.4 的五项余项表，§3.0.1 尾句的「上表」改为「§3.0.4 表列的五项余项」并把 `3.6（B6）` 的去向写清，§3.0.x 小节按编号重排为 3.0.1 → 3.0.2 → 3.0.3 → 3.0.4 → 3.0.5 → 3.0.6。
+**处置（第二十五轮，本节之后的提交）**：① 5 条 delete 行的 `targetPath` 改为 `null`（与 `oldToTargetMapping` 及同族先例一致；29 条 delete 行现全部为 `null`），并在 §7.26 登记该修正；② F-2 经复核为机械门强制，取值不变，改在 C13 行写明该字段的双重含义与 191/192 自指的实测口径；③ 上游 `requirements.md` / `design.md` 的现状注表改列**旧面叶名**的实测改名与保持原名的叶，删去失实的「其余叶名不变」；④ §3.0.2 的 C4 / C17 指针改为指向 §3.0.4 的五项余项表，§3.0.1 尾句的「上表」改为「§3.0.4 表列的五项余项」并把 `3.6（B6）` 的去向写清，§3.0.x 小节按编号重排为 3.0.1 → 3.0.2 → 3.0.3 → 3.0.4 → 3.0.5 → 3.0.6。
+
+### 7.27 第三交付批的全局终审（第十四轮，收口验证，对象至 `8577b75`）—— **有偏差（0 阻塞 / 0 中级）**
+
+结论 **有偏差（0 阻塞 / 0 中级 / 3 低级）**：第十三轮五条修订**逐条与实测一致**（本轮是该线首次「声称 = 实测」无出入），其中 F-2「机械门强制」的判定由审查以**反例实验**确认（把该行 `targetPath` 改成自指后 validator 报 `passthrough-exception is only valid on a services.* path`）；registry 三面（`members` / `oldToTargetMapping` / `statusByPath` / `deletionReport`）程序化交叉比对、call-shape 面全部数字、成员表演进、validator 六条增量、例外额度、机械门与纪律均复算相符。新发现三条**登记面与指针**（均不触及实现、测试、机械门与已交付验收边界）：
+
+- **低级 L-1**：`llm.adapters.decorate` 的两面对同一 path 给出不同去向——成员行 `targetPath` 为 `llm.adapters.register`，`oldToTargetMapping` 条目为 `llm.adapters.decorations.register`（F-1 的同型，但**非本区间引入**，且任何登记面都未记录）。两份历史制品（`plugin-api-m10-contract-convergence/convergence/reconciliation.md`、`llm-adapter-registration/design.md`）都写明「split 目标**修正为** `llm.adapters.decorations.register`」，即成员行是未随修正刷新的那一面。
+- **低级 L-2**：5 条退役 handle 行不在 `statusByPath`（`sessions.channels.acquire.handle`、`agents.register.handle`、`tools.executionMode.register.handle`、`tasks.register.handle`、`tasks.acquire.handle`），而基线 `4d6d549` 上「removed 行全数有键」；该覆盖口径在 registry 与台账里均无记载。
+- **低级 L-3**：§3.0.2 抬头句「未闭合者指向 §3.0.1 的余项」是 F-4 的同型残留（表内两行已改指 §3.0.4，抬头句未改）。
+
+**处置（第二十六轮，本节之后的提交）**：① 成员行 `llm.adapters.decorate` 的 `targetPath` 改为 `llm.adapters.decorations.register`（与两份历史制品的修正记录及 `oldToTargetMapping` 一致；改后全库仅剩 1 处成员行与映射条目的 `targetPath` 差异，即已登记的 `storage.open.handle.domain`）；② 在 §4 增「`statusByPath` 覆盖口径」段：该面只登记**曾经发布过**的旧 path，5 条幻影 handle 行从未在公共面存在故不入该面（实测 155 / 160 有键），并写明机械门不覆盖该覆盖关系；③ §3.0.2 抬头句改指 §3.0.4 的五项余项表并注明本表状态词为第三轮快照；另把 §7.26 处置句的「全部实测改名」限定为「**旧面叶名**的实测改名」（本轮实际改写范围即旧 `pluginApi.sessionChannel` 面的叶）。

@@ -1700,7 +1700,7 @@
     },
     {
       "publicPath": "llm.adapters.decorate",
-      "targetPath": "llm.adapters.register",
+      "targetPath": "llm.adapters.decorations.register",
       "capability": "llm.adapters",
       "kind": "leaf",
       "idiom": "resourceRegistry",
