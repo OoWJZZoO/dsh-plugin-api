@@ -177,3 +177,40 @@ test('cross-package: CONTRACT_SYMBOL is present on the coordination surface', ()
   // Verify that the shared symbol is the same reference everywhere
   assert.equal(CONTRACT_SYMBOL, Symbol.for('dsh-plugin-api.session-channel.contract'))
 })
+test('facade: channel registrations carry the derived caller identity', async () => {
+  const service = createRealService()
+  const result = mountSessionChannelFeature({ ctx: { get: () => {} }, service, logger: { warn() {} }, featureRegistry: { isActive: () => false } })
+  result.prepared.commit()
+
+  // Two callers read the channel face through their own receiver.
+  const callerView = (name) => {
+    const shadow = Object.create(service)
+    Object.defineProperty(shadow, 'ctx', { value: { fiber: { name } }, enumerable: true, configurable: true })
+    return shadow
+  }
+  const first = callerView('plugin-a').sessions.channels
+  const second = callerView('plugin-b').sessions.channels
+
+  const verifier = first.auth.register({ kind: 'verifier', id: 'v1', verify: () => ({ deviceId: 'dev1', scope: [] }) })
+  assert.equal(verifier.ownerId, 'plugin-a', 'the derived owner replaces the constant root token')
+  assert.match(verifier.generation, /^plugin-a:/)
+
+  // A slot another plugin holds is refused typed rather than taken silently.
+  assert.throws(
+    () => second.auth.register({ kind: 'verifier', id: 'v1', verify: () => ({ deviceId: 'dev2', scope: [] }) }),
+    (error) => error.code === 'PLUGIN_API_CHANNEL_AUTH_OWNER_CONFLICT',
+  )
+  // The same caller replacing its own entry keeps working.
+  const replacement = first.auth.register({ kind: 'verifier', id: 'v1', verify: () => ({ deviceId: 'dev1', scope: [] }) })
+  assert.equal(replacement.ownerId, 'plugin-a')
+  assert.notEqual(replacement.generation, verifier.generation)
+
+  // Redaction profiles follow the same rule, and the release is identity-bound.
+  const profile = first.redaction.register({ id: 'p1', allowlist: ['channelId'] })
+  assert.equal(profile.ownerId, 'plugin-a')
+  assert.throws(() => second.redaction.register({ id: 'p1', allowlist: ['deviceId'] }), (error) => error.code === 'PLUGIN_API_CHANNEL_REDACTION_OWNER_CONFLICT')
+  assert.equal(verifier.dispose().code, 'stale', 'the superseded handle does not release the replacement')
+  assert.equal(replacement.dispose().code, 'revoked')
+  assert.equal(profile.dispose().code, 'revoked')
+  assert.doesNotThrow(() => result.disposer())
+})

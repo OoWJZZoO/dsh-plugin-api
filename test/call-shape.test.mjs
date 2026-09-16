@@ -4,8 +4,10 @@
  * discovering it by trial and error.
  *
  * The test mounts the host facade over the in-repo owner services and calls
- * each active member with no arguments: a thenable answer is `async`, a direct
- * answer (or a synchronous refusal) is `sync`. Members whose facade feature
+ * each active member with no arguments: a thenable answer is `async` and a
+ * direct answer is `sync`. A synchronous refusal is not evidence either way —
+ * a member may refuse invalid input synchronously and still answer a promise
+ * on its success path — so those calls are collected as unobserved. Members whose facade feature
  * stays disabled in this environment — the auxiliary packages are not
  * resolvable from the main package here, so their replacement-backed features
  * never mount — cannot be observed; they are collected and reported rather
@@ -96,7 +98,19 @@ const IN_REPO_PREFIXES = [
   'settings.register', 'settings.scope', 'settings.inspect',
 ]
 
+/**
+ * The five event dispatch entries hand the call to the native dispatcher, whose
+ * shapes this workspace does not mount: cordis answers `serial` and `parallel`
+ * with promises and `emit` / `bail` / `waterfall` directly. Declaring them from
+ * the core implementation and leaving them unobserved keeps the harness from
+ * echoing its own stub back as evidence.
+ */
+const NATIVE_DISPATCHER_ROWS = new Set([
+  'events.emit', 'events.serial', 'events.parallel', 'events.bail', 'events.waterfall',
+])
+
 function isUnobservableFamily(path) {
+  if (NATIVE_DISPATCHER_ROWS.has(path)) return true
   const root = path.split('.')[0]
   if (!OFFICIAL_SEAM_ROOTS.has(root)) return false
   return !IN_REPO_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}.`))
