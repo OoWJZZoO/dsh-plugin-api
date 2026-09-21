@@ -278,12 +278,14 @@
 
 > **口径**：本清单是**未完成项**登记，不是「阻塞项」——按 `AGENTS.md` §3.2 的连续执行纪律，阻塞项的判定标准是代理**无法**完成（硬停机点、环境 / 工具链 / 权限缺失），而非**尚未**完成。
 
+**阻塞项登记（Req 13.6 / Task 10.4）：无。**（2026-09-21 收尾补记，见 §8。依据：本线全部登记条目均已收口——§3.0.1–§3.0.6 的完成清单、§3 索引 B1–B20 全为已完成、§3.0.4 五项余项与 §3.0.6 跨包缺口已按人类裁决 (a1) 实施；未出现「代理无法完成」的必需行为，故无「原因 + 最小解除动作 + 是否需人类授权 + 日期」型条目。）
+
 **本轮续做后的 B1–B20 状态索引**（正文见下，逐条按登记时措辞保留）：
 
 | 条目 | 状态 |
 |---|---|
 | B1（Task 6.4） | **已完成** — `tasks` 全域与 `workspaces.transactions` 的动作名字段改为 `action` |
-| B2（Task 4.14/4.15） | **已完成**（第三轮 → 复审修订轮 → 第十五 / 十六轮逐轮收口）— 第三轮追加交付：callerAware 别名改为 per-caller leaf/view 四族、staged 回滚全树收口、`llm.adapters.decorations.register.handle` 身份成员 + 判别式 dispose、`security.*` 冲突口径改 `owner-scoped`、24 行 `currentShape: null` 补齐、两处幻影 handle 行退役；复审修订轮再补：`slots.declaration` 与另外七条 client 现行行补登记、`tasks.acquire.handle` 幻影行退役、client 面「实现 → registry」全量枚举；**第十五轮收口**：两处委派型注册包装为标准 handle（派生 owner + 铸造 generation + 按发行 generation 释放），generation 校验随之提升为覆盖全部在册 policy / resourceRegistry handle 行；**第十六轮再收口**：`sessions.channels` 三族注册的 owner 派生落地（一 id 一 owner、跨 owner typed conflict、释放绑定发行 generation，见 §3.0.5）。**该条已完成** |
+| B2（Task 4.14/4.15） | **已完成**（第三轮 → 复审修订轮 → 第十五 / 十六轮逐轮收口）— 第三轮追加交付：callerAware 别名改为 per-caller leaf/view 四族、staged 回滚全树收口、`llm.adapters.decorations.register.handle` 身份成员 + 判别式 dispose、`security.*` 冲突口径改 `owner-scoped`、24 行 `currentShape: null` 补齐、两处幻影 handle 行退役；复审修订轮再补：`slots.declaration` 与另外七条 client 现行行补登记、`tasks.acquire.handle` 幻影行退役、client 面「实现 → registry」全量枚举；**第十五轮收口**：两处委派型注册包装为标准 handle（派生 owner + 铸造 generation + 按发行 generation 释放），generation 校验随之提升为覆盖全部在册 policy / resourceRegistry handle 行；**第十六轮再收口**：`sessions.channels` 三族注册的 owner 派生落地（一 id 一 owner、跨 owner typed conflict、释放绑定发行 generation，见 §3.0.5）。**该条已完成**（**2026-09-21 收尾补记**：§5 并入本条的行文字项——`tools.executionMode.register` 的 `currentShape`——已随 §8 落盘） |
 | B3（Task 5.1–5.6、5.13 client 半、8.4–8.7） | **已完成**（第三轮）— 5.3（pending handle + 惰性 `face`/`render`）、8.4（七个 namespace 的 `availability()` 与 `capabilities.*` 同源）、8.7（`settings.scope(spec)`）、C3 的投影半（`declaration` + `list` 状态）、client `lifecycle.register` 派生 owner 全部交付；8.4 上一轮的整体回滚已在本轮以「probe 表 + 身份稳定缓存」的方式落地 |
 | B4（Task 3.3/3.4/10.1(e)） | **已完成**（第三轮 + 第五轮追加）— 回收 6 条 / 新增 5 条（第四条在第三轮，第五条为 `agents.register` 的 handle 形状记录，第五轮追加），净额 17 行 / 19 记录 / 16 path（≤ 基线 17/20/16）；三条 entry 级校验 + 3 条反例测试落盘 |
 | B5（Task 3.1 registry 半） | **已完成**（第十五轮；数字按第六轮收口提交 `82e2ccf` 复测）— 全 **563** 行回填 `callShape`（**83 async / 253 sync / 227 not-applicable**）、词表与 validator 校验落盘、`test/call-shape.test.mjs` 断言可观测面（host **107** 行 + client 24 行）；判定口径与两条修订见 §3.0.4 |
@@ -429,7 +431,7 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 另记两条**设计取舍**（非阻塞，供后续记录）：
 
 - **R 包各自复刻 handle 构造**：`packages/agent-loop`、`packages/attachments`、`packages/mcp` 三个替代包各有一份本地 handle 构造器，因为它们**不能 import 门面私有模块**（R 包必须自包含）。语义与内核一致（冻结、幂等、`revoked`/`stale`），但**释放失败的码不齐**——内核用 `unavailable`，`packages/attachments` 用 `stale`。统一该码集属后续维护项。
-- **`tools.executionMode.register`**：其官方动词是**分类查询**（返回 `{kind}`），不是注册，registry 行文字「official execution mode registration disposer」是漂移。本线把它原样透传、未包装成 handle（包装会凭空制造官方契约没有的生命周期）；行文字修正并入 B2。
+- **`tools.executionMode.register`**：其官方动词是**分类查询**（返回 `{kind}`），不是注册，registry 行文字「official execution mode registration disposer」是漂移。本线把它原样透传、未包装成 handle（包装会凭空制造官方契约没有的生命周期）；行文字修正并入 B2。**2026-09-21 收尾补记**：该文字项在 B2 关闭时尚未改准（台账当时「无未完成主体工作」的判定在该项上过宽），已随 §8 落盘；行文字改准后 `idiom` / `effect` / `lifecycle` 等家族字段按本线「不包装」的决定保持不变。
 
 ## 6. 能力边界变化（design K8 / S9）
 
@@ -734,3 +736,14 @@ design §9「明确排除」清单原样保持：SDK、TS 化、API reference �
 **处置（第二十八轮，本节之后的提交）**：① `tasks.md` §3.4 的 `async` → `callShape`；② registry `namingDecisions` 第 7 条与台账 §4 规则 6 的表述收窄为如实口径（`tasks.md` 的字段名引用在第二十七轮同步、§3.4 一处于第二十八轮补齐）；③ 同批纠正 `tasks.md` §3.5 注释里同型的过期现在时——「registry 现行数据没有任何成员携带 `bypasses` 字段」为该字段落盘前的快照，实测已由 B15 落盘 **11 行**（`events.*` 五行 + settings 五个成员行 + `storage.open`，其中 10 行 `advanced`、`settings.get` 为 `removed`），已加现状补注且「属自愿登记、不受机械校验约束」的结论不变。
 
 **完成判定**：本轮唯一项为**一词级文字修订**——按 `AGENTS.md` §3.2「仅小修改（如一两处文字或单点修正）无需再对抗性审查」的口径，不构成实质修订、无需再派一轮终审。终审对**实质完成条件**的复核结论为：M11 `tasks.md` 的十个顶层任务均有落点、§3 索引 B1–B20 全部「已完成」、§3.0.4 五项余项与 §3.0.6 跨包缺口均已收口、**无未完成主体工作、无未登记偏差**，六项机械门与全部纪律项（版本冻结零步进、官方包零改动、无新增 R 行、工作区与 diff 干净）全绿。故 **Stage 4 判定完成**；`feature-list.md` 的 M11 状态词与本节之后的台账抬头状态随同批提交翻转。
+
+## 8. 收尾补记（2026-09-21，维护性修订：仅登记与文字，零运行时改动）
+
+对交付后台账与实现的复核发现两处小缺口，就地闭合如下：
+
+1. **`tools.executionMode.register` 的行文字**：`currentShape` 由 `"official execution mode registration disposer"` 改为如实描述——该官方动词是**对单个 exec 的分类查询**（回答执行种类），不是注册；门面原样发布、不铸 handle（测试亦按透传断言：`test/host-namespace-integration.test.mjs` 的 `executionMode.register({ mode: 'parallel' }) === 'parallel'`、`test/official-host-namespaces.test.mjs` 的官方错误原样透出）。该描述原按 §5「并入 B2」，实际在 B2 关闭时未改准（§5 已加收尾注）；`idiom` / `effect` / `lifecycle` 等家族字段按本线「不包装官方动词」的决定保持不变，不因文字修订改动分类。registry 修订后成员表按生成物口径重建（`scripts/convergence-table-sync.mjs`）。
+2. **阻塞项登记（Req 13.6 / Task 10.4）**：本次补记前，台账只有「本清单不是阻塞项」的口径说明，没有逐字的「无阻塞项」记录，与 Task 10.4「无阻塞项时显式记录『无』」不符。已在 §3「未完成项登记」抬头处显式落一条**阻塞项登记：无**（附依据：全部登记条目均已收口，未出现代理无法完成的必需行为）。
+
+**复核证据（本次修订后重跑）**：`node scripts/registry-validate.mjs <registry>` → `registry valid`；`node scripts/convergence-table-sync.mjs <registry> --check` → `member table is in sync with the registry (563 rows)`；`node scripts/convergence-verify.mjs` → `563 member rows, 37 behavior rows, 37 fully linked`；`node scripts/capability-matrix-sync.mjs --check` → 与 registry 同步；`npm test` → **3577 / 3577** 通过；`npm run build:client:check` → `client bundle is up to date with its sources`；`git diff --check` 干净。计数面（成员行 563、例外 17 行 / 19 记录 / 16 path、`servicesWhitelist` 54、版本冻结）均未因本次修订变化。
+
+**未随本次修订处置**（保持其原有的登记地位，见 §5）：三个替代包各自复刻 handle 构造器的**释放失败码不齐**（内核 `unavailable`、`packages/attachments` `stale`）仍为后续维护项；本次未改任何 R 包。

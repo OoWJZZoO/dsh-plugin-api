@@ -15720,7 +15720,7 @@
       "availabilityShape": "namespace availability()",
       "concurrency": "latest-wins",
       "reducer": "none",
-      "currentShape": "official execution mode registration disposer",
+      "currentShape": "the official executionMode verb answers the execution kind for one exec (a classification query, not a registration); the facade publishes it verbatim and mints no handle or lifecycle of its own",
       "migrationAction": null,
       "status": "advanced",
       "verification": [
