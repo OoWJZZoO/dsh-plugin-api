@@ -4,6 +4,7 @@
 > milestone: M11
 > status: Stage 3 已产出（2026-09-14）。Stage 0–2 已交付（同日，四轮提交：`f273202`、`3b18b75`、`4a63e32`、`cf2a2d1`）。本文按 design §11 的依赖顺序编排，但把「§4 分册修订」提到「§2 逐成员映射」之前，依据是 design §4 的明文纪律「修订未落盘前，实现不得先落新形状」；design §11 只要求「按 §1 内核 → §2 映射 → §4 分册修订的依赖顺序」，未禁止该调序。Tasks 经**阻塞对抗性审查**通过后，**先提交 tasks.md（Stage 3 阶段提交，AGENTS §3.2「阶段提交（强制）」）**，再进入 Stage 4；不提交用户评审。
 > 输入溯源：`goal.md`（十条 Scope direction）；`requirements.md`（Req 1–14 与 Scope direction 对应表）；`design.md`（§1 内核 K1–K8、§2 逐成员处置映射 A/B/C1–C17/R1–R6、§3 idiom 归类与例外变更、§4 分册修订清单 S1–S15、§5 owner 模型、§6 失败路径、§7 装配影响与落点、§8 验收与证据映射、§9 风险与排除、§10 分册适用性、§11 阶段边界）。
+> 批次注：本文件属 M11 **第一批次**（契约落实，2026-09-14 产出、2026-09-16 收口）。自 2026-09-21 起本批制品位于本 feature 目录的 `batch-1/` 子目录（目录重排由人类指示）；第二批次（实效收口）制品见同 feature 目录的 `batch-2/`。除路径引用与文首批次注外，本文件内容未改写。
 > 执行口径：版本冻结基线内交付（runtime `0.1.0-rc.6`、包 `0.1.0-rc.6-0.1.0`、`dsh.api: 0.1`），不步进任何版本字段；**本线不新增 R 点**，仅在三处既有替代包自身的扩展面内修订（`packages/agent-loop`、`packages/attachments`、`packages/mcp`）并维持被替代官方行的契约复刻（R2）与 boot 自检（R4）；官方包文件零修改；所有入口 fail-safe（apply 不抛穿）。
 > 连续执行纪律（AGENTS §3.2「Stage 4 连续执行纪律」）：Stage 3 审查门通过后，本线 SHALL 在同一工作序列内完成全部顶层任务直至 Stage 4 完成判定；**只有两类因素可以合法停下**——触及硬停机点（版本与发布、milestone 范围），或因环境 / 工具链 / 权限缺失而确实无法完成的已授权工作。不得以批次边界、会话长度、上下文占用、任务规模或「已交付部分成果」为由终止未完成的主体工作；未完成项不得登记为「阻塞项」——「阻塞项」的判定标准是代理**无法**完成，而非**尚未**完成。
 > 执行纪律（design §7 / §9-5、AGENTS §3.5）：**本线单线串行执行，不并行派工**。`lib/plugin-api-service.js`、`lib/index.js`、`lib/client-runtime.js`、`lib/namespace-availability.js` 与 `public-contract.registry.json` 为 design §7 指定的热点共享文件，按 Task 编号顺序集中串行修改；任一热点文件在多个 Task 出现时，以本文件编排的先后为编辑边界与合并顺序。
@@ -160,7 +161,7 @@
 
 ## Task 10: 交付台账与治理同步（对应 Req 1、Req 11.3、Req 12）
 
-- [ ] 10.1 交付台账落盘：新增 `docs/specs/plugin-api-m11-contract-enforcement/delivery-ledger.md`，逐项记录 (a) A1–A5 / B1–B3 / C1–C17（含 §2.3b）与 §2.4 的 R1–R6 的**最终去向**（修复 / 合理例外 / 已修复 / 误报 + 证据锚点 + 落地提交）；(b) 实际 API 变化清单；(c) K8 的能力边界变化单列；(d) C7 回滚的标注与理由；(e) 例外台账三口径的净额核算（Task 3.3）；(f) 计数型结论的计量单位与取样口径（Req 1.1）。合理例外须附六项或指向 registry 的例外记录；「误报 / 已修复」须附当前源码证据（Req 1.2/1.3）。
+- [ ] 10.1 交付台账落盘：新增 `docs/specs/plugin-api-m11-contract-enforcement/batch-1/delivery-ledger.md`，逐项记录 (a) A1–A5 / B1–B3 / C1–C17（含 §2.3b）与 §2.4 的 R1–R6 的**最终去向**（修复 / 合理例外 / 已修复 / 误报 + 证据锚点 + 落地提交）；(b) 实际 API 变化清单；(c) K8 的能力边界变化单列；(d) C7 回滚的标注与理由；(e) 例外台账三口径的净额核算（Task 3.3）；(f) 计数型结论的计量单位与取样口径（Req 1.1）。合理例外须附六项或指向 registry 的例外记录；「误报 / 已修复」须附当前源码证据（Req 1.2/1.3）。
 - [ ] 10.2 登记同步：`docs/specs/plugin-api-features/feature-list.md` §7（本 feature 交付条目与状态）与受影响的 `README.md` 表述；历史制品若有旧 path 受影响，以文首「公共契约现状注」追加映射，**不改写**其已获批验收边界（Req 12.3）。
 - [ ] 10.3 治理同步：`AGENTS.md` §4 第 3 条（S9 producer 模型 + 能力边界变化；**与 Task 7.4 是同一件工作，由本项统一执笔**）与 §2/§4 的对应表述（S10 `services.*` 存在性口径与 `capabilityMatrix` 内容定义）；`docs/standards/README.md` 索引（S11，若 Task 2.11 未覆盖）。
 - [ ] 10.4 阻塞项登记：本线未达成的必需行为按 Req 13.6 逐条登记（原因 + 最小解除动作 + 是否需人类授权 + 日期），**不以降级呈现充当完成**；无阻塞项时显式记录「无」。

@@ -4,6 +4,7 @@
 > milestone: M11
 > status: Stage 0–2 已交付（2026-09-14）。本文与同目录 `goal.md`、`design.md` 同日由 SPEC1 一口气产出并提交；不创建 `tasks.md`、不写实现代码。
 > 上游输入：本目录 `goal.md`（十条 Scope direction，逐条对应见文末对照表）；`temp/m11-api-contract-convergence-handoff.md`（§3 主线 A、§4 主线 B、§5 局部必修 C1–C14、§6 排除项、§8 验收目标、附录 A–D 子审线索；该文件为临时输入，本线已把其结论固化进 design §2 处置表）；canonical registry（`docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json`）；`docs/standards/*` 十二册；本线开工时的只读证据核验（design §2 各行的 `file:line` 锚点）。
+> 批次注：本文件属 M11 **第一批次**（契约落实，2026-09-14 产出、2026-09-16 收口）。自 2026-09-21 起本批制品位于本 feature 目录的 `batch-1/` 子目录（目录重排由人类指示）；第二批次（实效收口）制品见同 feature 目录的 `batch-2/`。除路径引用与文首批次注外，本文件内容未改写。
 
 ## Status
 

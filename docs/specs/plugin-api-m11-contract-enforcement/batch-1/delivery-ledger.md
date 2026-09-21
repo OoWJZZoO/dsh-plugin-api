@@ -5,6 +5,7 @@
 > 状态：**Stage 4 已交付（2026-09-16 收口）**。Stage 3 审查门四轮闭合（见 `tasks.md`「Stage 3 审查门记录」）；Stage 4 按 `tasks.md` 顺序连续执行至全部顶层任务与登记面收口：§1 记第一轮交付范围，§3.0 记各轮（2026-09-15/16 续做）的完成与未完成清单，§3 的 B1–B20 逐条登记随之更新。第十五/十六轮把登记的五项余项全部收口，§3.0.6 的跨包缺口按人类裁决（a1）实施；全局终审共十六轮（§7.1–§7.29），末轮判定唯一剩余项为**一词级文字修订**（按 `AGENTS.md` §3.2 属小修改、无需再派终审），故 **Stage 4 完成判定成立**。
 > 执行口径：版本冻结基线内（runtime `0.1.0-rc.6`、包 `0.1.0-rc.6-0.1.0`、`dsh.api: 0.1`），**未步进任何版本字段**；未新增 R 点；官方包零修改。
 > 工作流纪律（`AGENTS.md` §3.2「Stage 4 连续执行纪律」，本轮落盘）：Stage 3 审查门通过后，除**硬停机点**与**环境 / 工具链 / 权限缺失**两类因素外，不得以批次边界、会话长度、上下文占用、任务规模或已交付部分成果为由终止未完成的主体工作；未完成项不得登记为「阻塞项」。
+> 批次注：本文件属 M11 **第一批次**（契约落实，2026-09-14 产出、2026-09-16 收口）。自 2026-09-21 起本批制品位于本 feature 目录的 `batch-1/` 子目录（目录重排由人类指示）；第二批次（实效收口）制品见同 feature 目录的 `batch-2/`。除路径引用与文首批次注外，本文件内容未改写。
 
 ## 1. 已交付范围（本轮提交，逐项可复核）
 
@@ -137,8 +138,8 @@
 
 | 文档 | 订正 |
 |---|---|
-| `docs/specs/plugin-api-m11-contract-enforcement/design.md` §3 净额段 | 例外台账的执行实测值与设计预测不同：实测为记录 20 − 6 + 4 = 18、成员行 17 − 4 + 4 = 17、公共 path 16 − 4 + 4 = 16（预测是 20 → 17 / 17 → 16 / 16 → 15）。多出的一条是 `tasks.register`——Task 3.4 新增的 entry 级校验要求注册类 leaf 的失败呈现为 typed throw，而它返回判别式结果且不铸造 handle，故与 `tasks.start`/`tasks.settle`/`tasks.attach` 同批登记；三口径仍**不高于** Req 11.5 上限（17 行 / 20 记录 / 16 path）。（**第十四轮注**：该行是订正当时的记录；复核轮随后为 `agents.register` 追加了第 19 条例外记录，HEAD 实测为 19 记录 / 17 行 / 16 path） |
-| `docs/specs/plugin-api-m11-contract-enforcement/tasks.md` Task 3.3 | 同步上述实测净额与「新增 4 条记录 / 4 行」 |
+| `docs/specs/plugin-api-m11-contract-enforcement/batch-1/design.md` §3 净额段 | 例外台账的执行实测值与设计预测不同：实测为记录 20 − 6 + 4 = 18、成员行 17 − 4 + 4 = 17、公共 path 16 − 4 + 4 = 16（预测是 20 → 17 / 17 → 16 / 16 → 15）。多出的一条是 `tasks.register`——Task 3.4 新增的 entry 级校验要求注册类 leaf 的失败呈现为 typed throw，而它返回判别式结果且不铸造 handle，故与 `tasks.start`/`tasks.settle`/`tasks.attach` 同批登记；三口径仍**不高于** Req 11.5 上限（17 行 / 20 记录 / 16 path）。（**第十四轮注**：该行是订正当时的记录；复核轮随后为 `agents.register` 追加了第 19 条例外记录，HEAD 实测为 19 记录 / 17 行 / 16 path） |
+| `docs/specs/plugin-api-m11-contract-enforcement/batch-1/tasks.md` Task 3.3 | 同步上述实测净额与「新增 4 条记录 / 4 行」 |
 | `public-contract.registry.json`（`tasks.start` / `tasks.settle` / `tasks.attach` 三条例外记录） | `replacementShape` 的成功码由 `accepted` 订正为各成员真实的领域码 `started` / `settled` / `attached`（实现 `lib/task-execution-observation.js` 的 `succeeded('started' \| 'settled' \| 'attached', …)`；公开面不重写码）。例外的实质（不铸造 operation 身份、动作名走 `action`、控制对象是 durable task/attempt、经 `tasks.get`/`tasks.observe` 观察）不变，六项字段齐全 |
 | `public-contract.registry.json`（`executions.recovery.checkpoints.planRestore`、`tasks.register` 两条例外记录） | `replacementShape` 与实现对齐：planRestore 的形状改为计划对象真实字段（`slices` 携带每片的 steps / restoreability / bounded reasons，锚点未确认经 reasons 呈现，不存在 `anchorStatus` 字段）；`tasks.register` 的拒绝枚举补上可达的 `unavailable`（registry 写回失败）与身份冲突携带的 `observed` |
 | `public-contract.registry.json`（`tasks.settle`、`sessions.selection.get` 两条例外记录） | 同批收紧：`tasks.settle` 说明「已终态任务的重复结算按幂等回答并报出终态词（settled / failed / unknown）」；`sessions.selection.get` 补上非法主体按 `rejected` 拒绝（不裁剪为「| typed unavailable」） |

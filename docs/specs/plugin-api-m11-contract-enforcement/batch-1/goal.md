@@ -4,6 +4,7 @@
 > milestone: M11
 > status: Stage 0–2 已交付（2026-09-14）；本文件与 `requirements.md`、`design.md` 同日由 SPEC1 一口气产出并提交。立项依据：人类于 2026-09-14 裁决「M11 收敛为单一 feature」并给出 `temp/m11-api-contract-convergence-handoff.md` 的范围输入；同日追加授权「standards 分册本身可以修订，只需保证分册标准在仓库中对齐统一落实」。
 > 输入溯源：`temp/m11-api-contract-convergence-handoff.md`（临时指引，仅存于 `temp/`、永不提交；§2 主审结论、§3 主线 A、§4 主线 B、§5 局部必修 C1–C14、§6 排除项、§8 验收目标、附录 A–D 四份只读子审原文）；该指引基线为 `9b6c243`（M10 交付后 checkout），本线开工时工作区干净且 HEAD 即该提交；本目录 `design.md` §2 的逐项处置表（22 项 + 子审追加线索）与 §4 的分册修订清单是本线的正式落盘载体。
+> 批次注：本文件属 M11 **第一批次**（契约落实，2026-09-14 产出、2026-09-16 收口）。自 2026-09-21 起本批制品位于本 feature 目录的 `batch-1/` 子目录（目录重排由人类指示）；第二批次（实效收口）制品见同 feature 目录的 `batch-2/`。除路径引用与文首批次注外，本文件内容未改写。
 
 ## Goal
 

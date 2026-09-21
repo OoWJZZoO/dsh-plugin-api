@@ -5,6 +5,7 @@
 > status: Stage 0–2 已交付（2026-09-14）。本文与同目录 `goal.md`、`requirements.md` 同日由 SPEC1 一口气产出并提交；不创建 `tasks.md`、不写实现代码。
 > 上游输入：本目录 `goal.md`（十条 Scope direction）、`requirements.md`（Req 1–14）；`temp/m11-api-contract-convergence-handoff.md`（临时指引，结论已固化进本文 §2）；`docs/standards/*` 十二册；canonical registry（`docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json`，537 成员行 / 52 namespace / 100 能力簇行 / 69 事件目录行 / 17 个带 idiom 例外的成员行，合计 20 条例外记录、覆盖 16 个公共 path）；本线开工时的只读证据核验（本文 §2 各行锚点均按符号复核；核验结论与指引原文的差异在行内注明）。
 > 执行口径：版本冻结基线内交付（runtime `0.1.0-rc.6`、包 `0.1.0-rc.6-0.1.0`、`dsh.api: 0.1`），不步进任何版本字段；**不新增 R 点**，仅允许在既有替代包自身的扩展面内修订并维持被替代官方行的契约复刻与 boot 自检；官方包文件零修改；所有入口 fail-safe。
+> 批次注：本文件属 M11 **第一批次**（契约落实，2026-09-14 产出、2026-09-16 收口）。自 2026-09-21 起本批制品位于本 feature 目录的 `batch-1/` 子目录（目录重排由人类指示）；第二批次（实效收口）制品见同 feature 目录的 `batch-2/`。除路径引用与文首批次注外，本文件内容未改写。
 
 ## §0 衔接索引
 
