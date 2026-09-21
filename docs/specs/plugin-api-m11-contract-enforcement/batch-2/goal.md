@@ -7,6 +7,7 @@
 > 输入溯源：`temp/m11-effectiveness-review-and-fix-guide.md`（**临时只读实效审查结论，仅存于 `temp/`、已 gitignore、永不提交**；审查基线 `cbbc29b`，即 batch-1 收尾提交）。本批把该指引 §2 结论、§5 缺口 F1–F7、§6 低优先观察项与 §7–§8 的纪律要求固化进本目录 `design.md` §2 的逐项处置表与 §9 的决策清单；实现与验收 **SHALL NOT** 依赖 `temp/` 文件的可获得性。
 > 上游制品：`../batch-1/goal.md`、`../batch-1/requirements.md`、`../batch-1/design.md`、`../batch-1/tasks.md`（Stage 3）、`../batch-1/delivery-ledger.md`（Stage 4 交付台账，含全局终审十六轮记录与「无阻塞项」收口记录）。
 > 执行口径（承 batch-1）：版本冻结基线内交付（runtime `0.1.0-rc.6`、主包及全部辅助/聚合包 `0.1.0-rc.6-0.1.0`、`dsh.api: 0.1`）；不步进任何版本字段；**不新增 R 点**；官方包文件零修改；`lib/client.js` 只经 `npm run build:client` 重建；所有入口 fail-safe。
+> 纠偏记录：2026-09-21 由 SPEC2 复审并就地修订（登记验收项纳入观察 handle 行补齐、登记口径措辞与 Req 对齐、`settings.register` 冲突由官方裁决）；不改立项依据、范围方向与验收边界。
 
 ## Goal
 
@@ -62,10 +63,10 @@ batch-1 的**合规结论成立且不回退**：处置表逐项有结论、契�
 本批以**可复跑证据**收口（逐项映射见 `design.md` §7）：
 
 1. **观察**：一段 `const h = await ns.observe(subject); await h.current(); const off = h.subscribe(fn); h.dispose()` 在全部观察入口上成立，host 与 client 一致；handle 成员集逐字相同；`dispose()` 一律冻结判别式；释放后 `subscribe` 为 no-op 且 `current()` 给降级视图；任何观察入口都不抛裸 `TypeError`。
-2. **登记**：门面自有 register 只有一种成功形状（标准 handle + 扩展成员）；非 handle 的绑定/查询不再占用 `register` 名；官方动词透传类成员有分册级判定规则与登记；冲突行为逐行等于声明的 `conflictRule` 词表值，并由两个 synthetic owner 的矩阵测试取证。
+2. **登记**：门面自有 register 只有一种成功形状（标准 handle + 扩展成员）；非 handle 的查询类不再占用 `register` 名；官方动词透传类成员有分册级判定规则与登记；冲突行为逐行等于声明的 `conflictRule` 词表值（由官方裁决的行与官方行为一致），并由两个 synthetic owner 的矩阵测试取证。
 3. **同 path**：`events.observe` 两端同形（信封 + handle，未知名的 typed 结果/`untyped` 事实均已登记）；`settings.scope` 两端可复用同一段调用代码（读/订阅成员同名），写面差异已登记。
 4. **预检**：`caps.get('slots.contribute')`（client）与 `caps.get('workspaces.transactions.observe')`、`caps.get('llm.routing')`（host）在各自端可用并答**真实簇状态**；未知 path 在 `get` 上返回 `unavailable` + `reason: 'unknown capability'`，`require` 仍 typed throw。
-5. **登记完整性**：在挂载的门面上做「运行时成员 ↔ registry 行」机械对账，非 `services.*` 缺口为零；四个 `*.availability` 在册；`attention.hubSnapshot` 不在公共面且消费方改经内部接缝。
+5. **登记完整性**：在挂载的门面上做「运行时成员 ↔ registry 行」机械对账，非 `services.*` 缺口为零；四个 `*.availability` 在册；本批形状变更涉及的观察成员 handle 行补齐（登记补齐，不新增能力）；`attention.hubSnapshot` 不在公共面且消费方改经内部接缝。
 6. **availability**：`tasks`（有 unavailable 来源）报 `degraded` 且 `sources` 保留；`coordination` 跨 scope 报 `unavailable` 且 backend capability detail 保留；`security` 部分 face 缺失报 `degraded`；`workspaces.transactions` 的域 token 归一且 detail 不丢；非标准 token 不再静默回落。
 7. **client**：attention 未安装态的 handle 与安装态同形（`dispose()` 判别式、`subscribe` no-op、`current` 降级视图）；`slots` 槽位读面只剩一个成员且用标准查询动词。
 8. **治理**：分册修订清单落盘且与实现一致；例外净额（行 / 记录 / path 三口径）不高于 batch-1 收口实测；`npm test`、`registry-validate`、`convergence-verify`、`capability-matrix-sync --check`、`build:client:check`、`git diff --check` 全通过；版本冻结与官方包零修改审计通过。

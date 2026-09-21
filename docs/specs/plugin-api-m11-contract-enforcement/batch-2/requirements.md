@@ -5,8 +5,9 @@
 > status: Stage 1 Requirements（2026-09-21 交付）。本文与同目录 `goal.md`、`design.md` 同日由 SPEC1 一口气产出并提交；不创建 `tasks.md`、不写实现代码。
 > 上游输入：同目录 `goal.md`（十条 Scope direction）；`../batch-1/` 的 Goal / Requirements / Design / Tasks / 交付台账（已交付契约与本批的基线）；`temp/m11-effectiveness-review-and-fix-guide.md`（**临时指引，仅存 `temp/`、永不提交**；其结论已固化进 `design.md` §2 逐项处置表与 §9 决策清单）；`docs/standards/*` 十二册；canonical registry（`docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json`）。
 > 阅读约定：批次间条款关系 = **第一批次的 Req 1–14 与本文有效**；本文条款若与 batch-1 条款在同一成员上冲突，以本文为准（本文是本批的验收合同），并在 `design.md` §3 以分册修订与 registry 登记对齐，**不改写** batch-1 已获批的验收边界表述（历史制品以现状注追加映射）。
-> 决策口径：本批中若干条款（`settings.register` 的 handle 化、`events.observe` 两端统一为信封、`attention.hubSnapshot` 内部化、client `slots` 命名收敛、`capabilities.get` 未知 path 不再抛错）是 SPEC1 在 `design.md` §9「需人类复核的决策清单」中列明**决策与替代方案**的公共形状决定；人类可在 Stage 3 前据该清单复核或推翻，推翻时按 `AGENTS.md` §3.2 回改本文与 design 后再推进。
+> 决策口径：本批中若干条款（`settings.register` 的 handle 化与冲突口径、`settings.scope` 两端对象形态与读 / 订阅同名、`events.observe` 两端统一为信封、`attention.hubSnapshot` 内部化、client `slots` 命名收敛、`capabilities.get` 未知 path 不再抛错）是 SPEC1 在 `design.md` §9「需人类复核的决策清单」中列明**决策与替代方案**的公共形状决定；人类可在 Stage 3 前据该清单复核或推翻，推翻时按 `AGENTS.md` §3.2 回改本文与 design 后再推进。
 > 通道标注约定：每条 EARS 末尾以【…】标注性质——【形状】门面公共形状变更（对齐 / 改名 / 合并 / 退役）；【登记】registry、树图、台账同步义务；【分册】standards 修订义务；【验收】测试与证据义务；【治理】纯文档 / 流程 / 范围义务；【R】涉及既有替代包内部扩展面的修订（**本批不新增 R 点**）。
+> 纠偏记录：2026-09-21 由 SPEC2 复审并就地修订——Req 3.2 / 3.3 的 settings 注册口径与披露示例、Req 4.2 的 host 措辞、Req 7.6 与 Req 10.1 的登记 / 证据义务、映射表（含新增 goal ↔ Req 表）与决策清单引用；不改验收边界与 §9 的默认决策。
 
 ## Status
 
@@ -39,8 +40,8 @@
 
 - **User story**：作为插件作者，我学会一种「登记」后，在任何门面自有注册成员上拿到的都是同一形状的 handle，并用同一句 `dispose()` 释放。
 - **Req 3.1** WHEN 门面自有（非 `services.*`）成员以 `register` 命名 THEN 成功返回 SHALL 是所属 idiom 的标准 handle（`policy` / `resourceRegistry` 一律含 `id`、`ownerId`、`generation`、`dispose()`，扩展成员按公共 path 登记）；SHALL NOT 以领域对象、`undefined`、裸 disposer 或查询值收场。【形状 + 验收】
-- **Req 3.2** WHEN 某成员的动作实为「取回 / 建立命名空间绑定」或「查询」THEN 它 SHALL NOT 占用 `register` 名；查询 SHALL 使用 `api-idioms` §3.1 的查询动词；旧名 SHALL 退役并落 `removed` 行 + `oldToTargetMapping` + `statusByPath`。【形状 + 登记】
-- **Req 3.3** WHEN 门面自有注册的释放能力受官方权威限制 THEN handle SHALL 仍然铸造（`generation` 由门面按 owner 铸造）并在 `dispose()` 的 `reason`、registry 的 `lifecycle` 与 `currentShape` 中**如实披露释放边界**（例如「官方注册随 settings 服务挂载期存续，无按调用者释放路径」）；SHALL NOT 以虚假的 `revoked` 掩盖未释放的官方副作用，也 SHALL NOT 以「无 handle」回避合同。【形状 + 登记】
+- **Req 3.2** WHEN 某成员以 `register` 命名而其动作实为**查询**（只读取既有状态）THEN 它 SHALL NOT 占用 `register` 名；查询 SHALL 使用 `api-idioms` §3.1 的查询动词；旧名 SHALL 退役并落 `removed` 行 + `oldToTargetMapping` + `statusByPath`。门面自有的真注册（`settings.register` 向官方登记 namespace schema）SHALL 保留其名与语义；其取回面 `settings.scope` 本就不占 `register` 名。【形状 + 登记】
+- **Req 3.3** WHEN 门面自有注册的释放能力受官方权威限制 THEN handle SHALL 仍然铸造（`generation` 由门面按 owner 铸造）并在 `dispose()` 的 `reason`、registry 的 `lifecycle` 与 `currentShape` 中**如实披露释放边界**（例如「官方注册为 ctx effect，随门面与 settings 服务挂载期存续；调用方插件卸载不移除它，也没有按 handle 的显式释放路径」）；SHALL NOT 以虚假的 `revoked` 掩盖未释放的官方副作用，也 SHALL NOT 以「无 handle」回避合同。【形状 + 登记】
 - **Req 3.4** WHEN 任一注册成员在同一 key 上再次登记或与其他 owner 冲突 THEN 行为 SHALL 等于该行声明的封闭词表值之一（`latest-wins` / `content-conflict` / `owner-conflict` / `owner-scoped` / `fencing` / `not-applicable`）；跨 owner 同 key SHALL NOT 静默覆盖；同 owner 的 `latest-wins` SHALL 使旧 handle 返回 typed `stale` 且不能撤销新资源。【形状 + 登记 + 验收】
 - **Req 3.5** WHEN 冲突结果由官方权威裁决 THEN 该行 SHALL 在 `currentShape` 写明「由官方裁决」，且声明的词表值 SHALL 与官方行为一致；验证 SHALL 使用与官方行为一致的 owner 桩，SHALL NOT 以宽松桩充当证据。【验收 + 登记】
 - **Req 3.6** WHEN 「官方动词原样透传」类成员（门面不铸身份、原样返回官方结果）被保留 THEN `api-idioms` SHALL 给出该类成员的判定规则（何时可透传、如何登记、与门面自有 handle 如何分界），且该类成员 SHALL 逐条登记为六项例外。【分册 + 登记】
@@ -50,7 +51,7 @@
 
 - **User story**：作为双端插件作者，我在 host 与 client 上对同一公共 path 写同一段调用代码，并且能从返回对象判断自己在用哪一端的差异（差异已登记）。
 - **Req 4.1** WHEN host 与 client 存在同一公共 path 的语义成员 THEN 两端 SHALL 使用同一外层形状（成功 / 失败呈现、handle 或信封的层次）与同一成员名集合中**共同语义部分**；确实存在的环境差异 SHALL 显式登记（含理由与差异成员清单），SHALL NOT 让读者靠记忆分辨。【形状 + 分册 + 登记】
-- **Req 4.2** WHEN `events.observe(name)` 在任一端被调用 THEN 返回 SHALL 是承载标准观察 handle 的冻结判别式信封；未知名 SHALL 返回 typed 结果（client：`ok:false` + `code:'unsupported'` + 可查询目录；host：`ok:true` + `code:'untyped'` + `reason`，如实表达既有的非 catalog 无类型透传通道）；`events.define` 的 publisher 语义不变。【形状 + 登记 + 验收】
+- **Req 4.2** WHEN `events.observe(name)` 在任一端被调用 THEN 返回 SHALL 是承载标准观察 handle 的冻结判别式信封；非 catalog 名（host）/ 未知名（client）SHALL 返回 typed 结果（client：`ok:false` + `code:'unsupported'` + 可查询目录；host：`ok:true` + `code:'untyped'` + `reason`，如实表达既有的非 catalog 无类型透传通道）；`events.define` 的 publisher 语义不变。【形状 + 登记 + 验收】
 - **Req 4.3** WHEN `settings.scope` 在两端被调用 THEN 二者 SHALL 接受同一可复用的对象形态（`{ namespace, ... }`）并返回该命名空间的 scope 视图；视图中**读与订阅成员 SHALL 同名同义**（`get` / `watch`）；写面与释放面的差异（host 的 `update` / `replace` / `mutate` 与 scope 的 `dispose()` 边界、client 的官方 `set` / `unset`）SHALL 登记为环境差异并保留。【形状 + 登记】
 - **Req 4.4** WHEN 本批完成 THEN `api-idioms` 或 `public-api-shape` SHALL 含一条可判定的「同 path 同形到什么程度」规则（至少定：成功形状、失败呈现、公共成员名、handle 层次）。【分册】
 
@@ -79,7 +80,7 @@
 - **Req 7.3** WHEN 领域给出的状态 token 不属于三值 THEN 它 SHALL 按固定映射归一（`unsupported → unavailable`；`unknown` / `inert → degraded`；**`available → active`**，附 `reason`）；不在映射表内的 token SHALL NOT 静默回落为描述符状态，SHALL 以 `degraded` + `reason` 如实呈现。【形状 + 验收】
 - **Req 7.4** WHEN 某 namespace 存在多个在册部分（`sources` / `faces` / `operations` 等）THEN 降级部分 SHALL 在 detail 中指明，且 `status` 与 §7.1 的聚合一致；局部降级 SHALL 附 `reason` 或等价的 detail 字段。【形状 + 验收】
 - **Req 7.5** WHEN namespace 未挂载（禁用形态）THEN `availability()` SHALL 返回 `unavailable` + `reason`，并保留与非禁用形态**同一 detail 字段集**（含 `epoch`）。【形状 + 验收】
-- **Req 7.6** WHEN 本批完成 THEN `tasks`（存在 unavailable 来源）、`coordination`（跨 scope 请求）、`security`（部分 face `inert`）、`workspaces.transactions`（域 token `available` 与 detail 保留）四处的 `status` 与 detail SHALL 与 Req 7.1–7.5 逐条一致，并各有可复跑证据。【验收】
+- **Req 7.6** WHEN 本批完成 THEN `tasks`（存在 unavailable 来源）、`coordination`（跨 scope 请求）、`security`（部分 face `inert`）、`workspaces.transactions`（域 token `available` 与 detail 保留）四处的 `status` 与 detail SHALL 与 Req 7.1–7.5 逐条一致，并各有可复跑证据；`storage` 的禁用形态字段集 SHALL 满足 Req 7.5（含 `epoch`）。【验收】
 
 ## Req 8 client 降级路径与命名（F7）
 
@@ -87,7 +88,7 @@
 - **Req 8.1** WHEN client attention runtime 未安装 THEN `attention.observe()` SHALL 返回与安装态**同形**的冻结 handle（`dispose()` 判别式、`subscribe` no-op、`current()` 降级视图）；降级路径的 `contribute` / `dismiss` / `invoke` SHALL 保持判别式结果（`ok:false` + `unavailable`）。【形状 + 验收】
 - **Req 8.2** WHEN client `slots` 提供槽位读面 THEN 它 SHALL 只保留**一个**读成员并使用标准查询动词（`inspect(key)`），返回声明事实与条目（含 `declared` / `missing` / `unavailable` 三态、`spec` / `snapshot` / `declarationEpoch` / `entries`）；`slots.list` 与 `slots.declaration` 旧名 SHALL 退役并落 `removed` 行 + `oldToTargetMapping`（不得生成自环）。【形状 + 登记】
 - **Req 8.3** WHEN client `remotes.observe` / `remotes.dispatch` 与 host `events.*` 并存 THEN 分册 SHALL 写明命名分工（client `remotes.*` = 远端事件通道的观察与载体派发；host `events.*` = 官方事件总线的投影与受生产权约束的派发），使读者不必靠登记推断。【分册】
-- **Req 8.4** WHEN client 存在与 host 同名的观察入口 THEN Req 2 的全部条款逐条适用（含 `attention.observe`、`events.observe`、`remotes.observe`、`lifecycle` 观察面）。【形状 + 验收】
+- **Req 8.4** WHEN client 提供观察入口 THEN Req 2 的全部条款逐条适用（含 `attention.observe`、`events.observe`、`slots.observe`、`remotes.observe`、`lifecycle` 观察面）；与 host 同 path 者另按 Req 4 收敛。【形状 + 验收】
 
 ## Req 9 分册修订与治理同步
 
@@ -102,7 +103,7 @@
 ## Req 10 机械校验与对账
 
 - **User story**：作为维护者，我要用机械校验拦住「契约写了一套、实现跑了另一套」，而不是靠人读代码。
-- **Req 10.1** WHEN 契约收口宣称完成 THEN `scripts/registry-validate.mjs` SHALL 扩展到覆盖本批新规则，至少：观察类行必须为 `projection` 且其 handle 行登记四成员；注册类行必须为标准 handle 或登记完备的官方透传例外；每个 namespace / 子命名空间的 `availability` 成员在册；`conflictRule` 取值在封闭词表内；`*.observe` 的入参形态与 `current()` 形态已声明。【验收】
+- **Req 10.1** WHEN 契约收口宣称完成 THEN `scripts/registry-validate.mjs` SHALL 扩展到覆盖本批新规则，至少：观察类行（公共 path 以 `.observe` 结尾的叶行）必须为 `projection`，且其 handle 行（在册行或本批补齐的 `prompts.provenance.observe` / `workspaces.transactions.observe`）必须登记四成员；注册类行必须为标准 handle 或登记完备的官方透传例外；每个 namespace / 子命名空间的 `availability` 成员在册；`conflictRule` 取值在封闭词表内且与官方行为一致（官方裁决行不得声明 `latest-wins`）；`*.observe` 的 subject 形态已记入 `currentShape`、`current()` 形态由 `callShape` 声明。【验收】
 - **Req 10.2** WHEN 运行时成员与 registry 对账 THEN SHALL 有可复跑测试在挂载的门面（host 与 client）上枚举公共叶（跳过 `_` 前缀与 `services.*`）并断言每个成员有 registry 行；发现缺口即失败（本批前后的缺口清单 SHALL 记录在交付报告）。【验收】
 - **Req 10.3** WHEN 冲突行为宣称一致 THEN SHALL 以两个 synthetic owner 的矩阵测试覆盖词表各值（含 stale disposer 不能撤销新资源、跨 owner 拒绝、同 owner latest-wins）。【验收】
 - **Req 10.4** WHEN 观察合同宣称一致 THEN SHALL 有矩阵测试逐成员断言：handle 成员集、`dispose()` 结果形状、释放后 `subscribe`/`current()` 行为、非法输入的 typed 呈现（host 与 client 各一份矩阵）。【验收】
@@ -124,11 +125,26 @@
 - **Req 12.4** WHEN 实现或测试产物被提交 THEN 治理分类字母、需求 / feature 编号等治理 token SHALL NOT 出现在 `lib/`、`packages/`、`test/` 与 `package.json` 中。【治理 + 验收】
 - **Req 12.5** WHEN 本批交付完成 THEN SHALL NOT 遗留 `temp/` 依赖、临时脚本或未提交成果；正式制品与实现 SHALL 按阶段提交义务落盘。【治理】
 
+## Requirements ↔ goal Scope direction 对应表
+
+| goal Scope direction | 承载需求 |
+|---|---|
+| 1 观察面单一合同（F1） | Req 2（全部）、Req 4.2、Req 8.4 |
+| 2 登记面单一合同与冲突口径（F2） | Req 3（全部）、Req 9.3 |
+| 3 host/client 同 path 规则（F3） | Req 4（全部） |
+| 4 capability 预检可迁移（F4） | Req 5（全部） |
+| 5 登记完整性与可见性（F5） | Req 6（全部）、Req 1.1、Req 10.2 |
+| 6 availability 可跨 namespace 比较（F6） | Req 7（全部） |
+| 7 client 降级路径与命名（F7） | Req 8（全部） |
+| 8 可复跑证据优先 | Req 10（全部）、Req 11（全部） |
+| 9 分册与治理同步 | Req 9（全部） |
+| 10 边界不动 | Req 12（全部） |
+
 ## Requirements ↔ 指引条目对应表
 
 | 指引条目 | 承载需求 |
 |---|---|
-| F1 观察面（1 动词 4 返回、6 输入、3 个成员违反 handle 合同） | Req 2（全部）、Req 4.2、Req 7.4、Req 10.4 |
+| F1 观察面（1 动词 4 返回、6 输入、3 个成员违反 handle 合同） | Req 2（全部）、Req 4.2、Req 9.1（观察入参合同与 `current()` 形态的分册修订）、Req 10.4 |
 | F2 登记面（5 种成功结果、两个无 dispose、冲突口径多于词表） | Req 3（全部）、Req 9.3、Req 10.1、Req 10.3 |
 | F3 host/client 同 path（`events.observe`、`settings.scope`） | Req 4（全部） |
 | F4 capability 预检（host 49 条精选路径、client 成员级 path） | Req 5（全部） |

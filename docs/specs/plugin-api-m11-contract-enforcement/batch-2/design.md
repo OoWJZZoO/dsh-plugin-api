@@ -7,10 +7,11 @@
 > 本文的只读复核基线：`cbbc29b`（batch-1 收尾提交，本批开工时 HEAD，工作区干净）。§2 各行的锚点均按**符号**定位并在开工时逐条复核；与指引原文不一致处按本文 §2.9 订正，**不照抄**。
 > 执行口径：版本冻结基线内交付（runtime `0.1.0-rc.6`、包 `0.1.0-rc.6-0.1.0`、`dsh.api: 0.1`），不步进任何版本字段；**不新增 R 点**，仅允许在既有替代包（`packages/mcp`、`packages/api-remotes`）自身的扩展面内修订并维持被替代官方行的契约复刻与 boot 自检；官方包文件零修改；所有入口 fail-safe；`lib/client.js` 只经 `npm run build:client` 重建。
 > 决策口径：本文 §1 的 B 系列是本批的契约增量（对 batch-1 K 系列的补充，不推翻 K）；§2 是逐项处置映射；**§9 列出需人类复核的决策与替代方案**——本批按 SPEC1 决策推进，人类可在 Stage 3 前复核或推翻（推翻时回改本文、`requirements.md` 后重走）。
+> 纠偏记录：2026-09-21 由 SPEC2 复审并就地修订——settings 注册 effect 归属与冲突口径（§1-B2、§2.2、§8-3、§9-1）、`settings.scope` 决策条目（新增 §9-6）、观察 handle 行登记缺口（§2.1、§2.9-4、§6）、交叉引用与处置词表；不改立项依据、验收边界与 §9 的默认决策。
 
 ## §0 衔接索引
 
-编号约定：本文的 **F1–F7** 沿用 `temp/m11-effectiveness-review-and-fix-guide.md` §5 的缺口编号（只在本批制品内使用，不进入实现产物）；**B1–B7** 是本批契约增量；**S16–S26** 是本批分册修订（编号接续 batch-1 的 S1–S15）；**§2.x** 的「修复 / 保留例外 / 登记订正 / 需人类复核 / 误报」是处置结论词表（与 batch-1 一致）。
+编号约定：本文的 **F1–F7** 沿用 `temp/m11-effectiveness-review-and-fix-guide.md` §5 的缺口编号（只在本批制品内使用，不进入实现产物）；**B1–B7** 是本批契约增量；**S16–S26** 是本批分册修订（编号接续 batch-1 的 S1–S15）；**§2.x** 的「修复 / 保留例外 / 登记订正 / 已合规 / 需人类复核 / 误报」是处置结论词表（术语按本批需要扩展，与 batch-1 同口径）。
 
 | 本文章节 | 承载需求 | 说明 |
 |---|---|---|
@@ -54,24 +55,24 @@ B 系列是 batch-1 K 系列**没有写到的半步**。每条给出：现状事
 
 **理由**：调用方需要能写出一段 `observe → current → subscribe → dispose` 的通用代码；实测的 4 种返回 / 6 种输入使这段代码无法复制（指引 §5.3-F1）。**反方案**：把异步 `current()` 一律改同步（否：会伪造同步语义或引入陈旧缓存，违反 batch-1 §9-4 与 `concurrency-and-cancellation` §1）；保留纯 listener 形态（否：它与「订阅一律经 handle」冲突，且使降级路径无法同形）；只在分册写清差异（否：指引已证「文档统一不解决第二次学习的成本」）。
 
-**判定规则（可机械检查）**：遍历 registry 中全部 `effect: subscribe` 的 leaf 与对应 handle 行，逐行断言 §5（成员集）、§4（dispose 形状）、§5 释放后行为、`callShape` 声明；运行时由观察矩阵测试（Req 10.4）在挂载面上逐成员取证。
+**判定规则（可机械检查）**：遍历 registry 中全部 `effect: subscribe` 的 leaf 与**在册的**对应 handle 行，逐行断言 §5（成员集）、§4（dispose 形状）、§5 释放后行为、`callShape` 声明；subject 形态记入该行 `currentShape` 文案（本批不新增 registry 字段），`.observe` 叶缺失的 handle 行按 §2.9-4 与 §6 的补齐清单处理。运行时由观察矩阵测试（Req 10.4）在挂载面上逐成员取证。
 
 ### B2 登记面单一外层合同与冲突口径
 
 **现状**（实测 / 源码复核）：
 
 - 门面自有 `register` 族有 **5 种成功结果**：标准 handle（多数）、判别式信封（`prompts.contribute` 之外的 `events.define`）、**领域 scope 对象**（`settings.register`，`lib/settings.js:59-72`：返回未冻结的 `{ get, watch, update, replace, mutate }`，无 `dispose`）、官方裸 disposer（`agents.register`，已登记例外）、**查询返回值**（`tools.executionMode.register`，`lib/plugin-api-service.js:619-623` 直通 `tools().executionMode(exec)`）。
-- `settings.register` 的释放能力缺口：门面把官方 scope 包成自己的对象，**丢掉了任何释放维度**。官方实现已核实为**服务 ctx 上的 effect**（`/usr/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-settings/lib/index.js:311-344`：`this.ctx.effect(() => { registrations.set(ns, registration); return () => registrations.delete(ns) }, ...)`；重复注册直接抛错），因此**不存在按调用者的官方释放路径**——释放边界必须如实披露，而不是假装有。
+- `settings.register` 的释放能力缺口：门面把官方 scope 包成自己的对象，**丢掉了任何释放维度**。官方实现已核实为 **ctx effect**（`/usr/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-settings/lib/index.js:311-344`：`this.ctx.effect(() => { registrations.set(ns, registration); return () => registrations.delete(ns) }, ...)`；重复注册直接抛错），且 cordis 把服务方法里的 `this.ctx` 解析为**发起调用的 ctx**（service traceable 语义）——门面以自身 ctx 代调用方注册，因此官方注册随**门面（与 settings 服务）**的挂载期存续：**第三方插件卸载不会移除它，也没有按 handle 的显式释放路径**；同 ns 重复注册由官方抛错（门面只做 typed 映射，不改写该事实）——释放边界必须如实披露，而不是假装有。
 - `tools.executionMode.register` 的 registry 行自相矛盾：`idiom: resourceRegistry` / `effect: register` / `resourceKey: execution mode id` / `lifecycle: new lifecycle after dispose`，而同一行的 `currentShape` 明说它是「classification query, not a registration」。
 - 冲突口径多于词表：实测 `tools.register` 全局路径不判冲突（真实官方 verb 拒绝重名，`registry` 行明说「typed duplicate」）、scoped 路径按 `(owner, target, id)` typed 冲突（`lib/plugin-api-service.js:519-521`）；`diagnostics.register` 是 per-owner latest-wins 且跨 owner 同 id **并存**；`tools.guard` / `tools.presentation` 只包裹官方注册、门面不判冲突。词表已有 `latest-wins` / `content-conflict` / `owner-conflict` / `owner-scoped` / `fencing` / `not-applicable`。
 
 **目标合同**：
 
 1. **门面自有注册只有一种成功形状**：所属 idiom 的标准 handle。`policy` / `resourceRegistry` 一律 `{ id, ownerId, generation, dispose() }` + 已登记扩展成员。
-2. **不是 register 的动作不占 register 名**：取回 / 建立绑定、查询一律使用 `api-idioms` §3.1 的查询或领域动词；旧名退役。
-3. **释放边界如实披露**：门面铸造 handle（`generation` 由门面按 owner 铸造），`dispose()` 释放门面拥有的部分；官方持有、门面无法撤销的部分在 `dispose()` 的 `reason`、registry 的 `lifecycle` 与 `currentShape` 中写明。**禁止**两种规避：以虚假 `revoked` 掩盖未释放的官方副作用；以「不返回 handle」回避合同。
+2. **不是 register 的动作不占 register 名**：实为**查询**（只读取既有状态）的动作一律使用 `api-idioms` §3.1 的查询动词；旧名退役。门面自有的真注册（`settings.register` 是「向官方登记 namespace schema」）保留其名与语义；其取回面 `settings.scope` 本就不占 `register` 名。
+3. **释放边界如实披露**：门面铸造 handle（`generation` 由门面按 owner 铸造），`dispose()` 释放门面拥有的部分；官方持有、门面无法撤销的部分（`settings.register`：官方注册随门面与 settings 服务存续，调用方卸载不移除）在 `dispose()` 的 `reason`、registry 的 `lifecycle` 与 `currentShape` 中写明。**禁止**两种规避：以虚假 `revoked` 掩盖未释放的官方副作用；以「不返回 handle」回避合同。
 4. **官方动词原样透传类**（`agents.register` 等）是**唯一**的 register 例外类：判定规则 = ①该成员的 authority 是官方组件包且官方显式要求原样转发注册动词；②门面不铸第二身份（不派生 owner、不铸造 generation、不包装结果）；③如果官方返回 disposer，原样返回；④在 registry 登记六项例外，且 `currentShape` 写明官方动词名。该类成员**不得**与门面自有 handle 混列在同一名字面下（读者必须能据登记分辨）。
-5. **冲突口径**：每个注册成员的 `conflictRule` SHALL 取封闭词表值，且值与实现一致；由官方权威裁决的成员在 `currentShape` 写明「官方裁决」；跨 owner 同 key 一律不静默覆盖；验证必须使用与官方行为一致的 owner 桩（permissive 桩不得充当证据）。
+5. **冲突口径**：每个注册成员的 `conflictRule` SHALL 取封闭词表值，且值与实现一致；由官方权威裁决的成员在 `currentShape` 写明「官方裁决」，其词表值 SHALL 与官方行为一致——`settings.register` 的同 ns 重复注册由官方直接抛错，门面不得把它声明为 `latest-wins`（同 owner 也须由官方裁决）；跨 owner 同 key 一律不静默覆盖；验证必须使用与官方行为一致的 owner 桩（permissive 桩不得充当证据）。
 
 **理由**：指引 F2 的判据是「学会一种 register 后仍要记住 5 种结果」，其中 `settings.register` 的不可释放是**能力缺口**。**反方案**：把 `settings.register` 整体改名成绑定成员（指引候选 (b)）——被否：它在语义上确实是「向官方登记 namespace schema」，改名后仍要学一个无释放能力的特例，且丢掉 `register` 族的统一；把官方注册的生命周期说成「可释放」——被否：与官方源码事实相反（B2-3 用披露代替假装）。
 
@@ -161,7 +162,7 @@ B 系列是 batch-1 K 系列**没有写到的半步**。每条给出：现状事
 
 ## §2 逐项处置映射
 
-处置列含义：**修复**＝本批改实现或改形状；**保留例外**＝保留并登记；**登记订正**＝实现不变、登记/文档对齐；**需人类复核**＝本批按 §9 的默认决策推进，人类可推翻；**误报**＝复核不成立。锚点按符号定位，行号随开发漂移。
+处置列含义：**修复**＝本批改实现或改形状；**保留例外**＝保留并登记；**登记订正**＝实现不变、登记/文档对齐；**已合规**＝当前实现已符合目标合同，本批只补登记 / 声明（括号内注明补齐面）；**需人类复核**＝本批按 §9 的默认决策推进，人类可推翻；**误报**＝复核不成立。锚点按符号定位，行号随开发漂移。
 
 ### §2.1 F1 观察面逐成员处置（承载 Req 2）
 
@@ -170,7 +171,7 @@ B 系列是 batch-1 K 系列**没有写到的半步**。每条给出：现状事
 | `attention.observe`（host） | `lib/index.js:2547-2560`（caller-bound 装配）；`lib/attention-hub.js:499-543`、禁用分支 `:503-508` | 四成员 handle，但 `dispose()` 返回 `undefined`（两条分支）；registry handle 行却登记判别式 | 内核同形 handle，`dispose()` 判别式 | 修复 |
 | `prompts.provenance.observe(listener)` | `lib/context-engine.js:767-782`；通知帧 `:227-237` | `{ok:true, disposer}` / `{ok:false, code:'INACTIVE'\|'CONTRIBUTION_INVALID', detail}`；无 `current`/`subscribe`/`epoch`；无 handle 行 | `observe()` 零参 → 标准 handle；`current()` = 最近一次已投递的冻结通知帧，未投递 → 冻结降级视图；补 handle 行 | 修复 |
 | `coordination.observe(resource)` | `lib/coordination-lease.js:357/375/400/450-469/487-493`；facade `lib/plugin-api-service.js:3782` | 手工 `deepFreeze` handle（含 `resource` 扩展）；`current()` async；`dispose()` 布尔；释放后 `subscribe` 抛裸 `TypeError` | 入参收敛 `{resource}`；内核同形 handle（保留 `resource` 扩展）；`dispose()` 判别式；释放后 no-op；`current()` async 声明 | 修复 |
-| `workspaces.transactions.observe(id)` | `lib/workspace-mutation-transaction.js:1301/1320/1343/1382-1418` | 同形手工 handle（含 `transactionId`/`initialState`）；`current()` async；`dispose()` 布尔；释放后抛裸 `TypeError` | 内核同形 + 扩展保留；对象形态 `{transactionId}`；async 声明 | 修复 |
+| `workspaces.transactions.observe(id)` | `lib/workspace-mutation-transaction.js:1301/1320/1343/1382-1418` | 同形手工 handle（含 `transactionId`/`initialState`）；`current()` async；`dispose()` 布尔；释放后抛裸 `TypeError`；无 handle 行 | 内核同形 + 扩展保留；对象形态 `{transactionId}`；async 声明；补 handle 行 | 修复 |
 | `tasks.observe(taskId)` | `lib/task-execution-observation.js:1281/1312/1333-1343/1364-1370` | 内核 handle（含 `taskId`/`initialState`）；`current()` 为 Promise；`dispose()` 已判别式 | 保持 async（声明）；补 `{taskId}` 对象形态 | 已合规（声明/形态补全） |
 | `sessions.activity.observe({sessionId})` | `lib/session-activity-observe.js:76-82` | handle 合规；非法输入抛裸 `TypeError`（无 code） | 非法输入 → typed 结果 / 带 `code` 的 typed error | 修复 |
 | `sessions.channels.observe(listener)` | `lib/session-channel.js:167-186` | 内核 handle；入参为纯 listener（经 `handle.subscribe` 挂上） | 零参 `observe()`；listener 经 handle | 修复（入参） |
@@ -183,13 +184,13 @@ B 系列是 batch-1 K 系列**没有写到的半步**。每条给出：现状事
 | `sessions.planMode.observe(agent)` / `sessions.permissionPresets.observe(agent)` | `lib/sessions-plan-mode.js:461-494`、`lib/sessions-permission-presets.js:550-575` | 手工冻结四成员 handle，行为合规（形状基准）；非函数 listener 静默 no-op | 保留；补 `{agent}` 对象形态与声明 | 已合规（形态/登记补全） |
 | `executions.observe(options)` | `lib/execution-observation.js:111-163`；facade `lib/plugin-api-service.js:3685-3688` | 内核 handle；`current()` 同步；入参 `{sessionId, since, signal}` | 保持（见 §2.9 事实订正） | 登记订正 |
 
-**合计**：修复 10 项、已合规 / 登记订正 5 项，另含全部 disabled 形态与降级形态的同形义务（Req 2.10）。**入参形态的统一按 B1-2 适用于上表全部成员**：每个成员一律接受 options 对象形态（规范形态，如 `events.observe({ name, scope? })`、`tasks.observe({ taskId })`、`sessions.planMode.observe({ agent })`、`coordination.observe({ resource, ...options })`、`sessions.durable.observe({ targetSession, kind })`），已接受裸主题（字符串 / 领域对象 / handle）的成员保留裸形态为便捷形态；纯 listener 形态一律移除。
+**合计**：修复 10 项、已合规 / 登记订正 5 项，另含全部 disabled 形态与降级形态的同形义务（Req 2.10）。**入参形态的统一按 B1-2 适用于上表全部成员**：每个成员一律接受 options 对象形态（规范形态，如 `events.observe({ name, scope? })`、`tasks.observe({ taskId })`、`sessions.planMode.observe({ agent })`、`coordination.observe({ resource, ...options })`、`sessions.durable.observe({ targetSession, kind })`），已接受裸主题（字符串 / 领域对象 / handle）的成员保留裸形态为便捷形态；纯 listener 形态一律移除。**handle 行**：本批形状变更涉及的观察成员随本批补齐（`prompts.provenance.observe`、`workspaces.transactions.observe`）；其余缺失行按 §2.9-4 的登记现状处理。
 
 ### §2.2 F2 登记面逐项处置（承载 Req 3）
 
 | 成员 | 复核后锚点 | 当前实际形状 | 目标（B2） | 处置 |
 |---|---|---|---|---|
-| `settings.register` | `lib/settings.js:19-72`；官方 `dsh-settings/lib/index.js:311-344` | 返回未冻结 `{get,watch,update,replace,mutate}`，无 `dispose`；官方注册是**服务 ctx 的 effect**（无按调用者释放路径） | 标准 handle `{id(=ns), ownerId(派生), generation, dispose()}` + 上述成员作为扩展成员（按 handle 扩展登记，不消耗例外）；同 owner 同 ns latest-wins，跨 owner 由门面先判 typed owner-conflict；`dispose()` 释放门面绑定并在 `reason` 披露官方注册随服务存续；`settings.scope(ns)` 保留为取回同一 handle | 修复 + **需人类复核**（§9-1） |
+| `settings.register` | `lib/settings.js:19-72`；官方 `dsh-settings/lib/index.js:311-344` | 返回未冻结 `{get,watch,update,replace,mutate}`，无 `dispose`；官方注册是 ctx effect（门面代调用方发起，随门面与服务存续；无按 handle 的释放路径） | 标准 handle `{id(=ns), ownerId(派生), generation, dispose()}` + 上述成员作为扩展成员（按 handle 扩展登记，不消耗例外）；冲突由官方权威裁决——同 ns 重复注册官方直接抛错（门面映射为 typed conflict，不得声明为 `latest-wins`），跨 owner 由门面先判 typed owner-conflict 并在 `currentShape` 写明「官方裁决」；`dispose()` 释放门面绑定并在 `reason` 披露官方注册随门面与 settings 服务存续；`settings.scope(ns)` 保留为取回同一 handle | 修复 + **需人类复核**（§9-1） |
 | `tools.executionMode.register` | `lib/plugin-api-service.js:619-623`；registry `:15699-15730` | 直通查询 `(exec) => tools().executionMode(exec)`；registry 行的 idiom/effect/lifecycle 与其 `currentShape` 自相矛盾 | `tools.executionMode.get(exec)`（projection、pure、sync）；旧名退役 + mapping；订正该组行 | 修复 |
 | `agents.register` | `lib/agent-create-api.js:146-151/268-270`；registry 例外 `:2823-2873` | 原样透传官方注册动词与其 disposer；门面不铸身份 | 保留；按 B2-4 的判定规则核对例外措辞与 `currentShape` | 保留例外（分册补规则） |
 | `tools.register`（全局） | `lib/plugin-api-service.js:574-590`；registry `:6692-6724` | 门面不判冲突；真实官方 verb 拒绝重名（typed duplicate）；scoped 分支 `:519-521` 判 `(owner,target,id)` typed 冲突 | 声明与实现一致；验证桩与官方行为一致 | 登记订正 + 验证口径 |
@@ -201,7 +202,7 @@ B 系列是 batch-1 K 系列**没有写到的半步**。每条给出：现状事
 | path | host | client | 目标（B3） | 处置 |
 |---|---|---|---|---|
 | `events.observe(name)` | 直接 handle；非 catalog 名可订阅（透传） | `{ok:true, code:'observed', handle}`；未知名 typed `unsupported` | 两端统一信封 + handle；host 非 catalog 名 `{ok:true, code:'untyped', handle, reason}` | 修复（host）+ 登记订正（client） |
-| `settings.scope` | `scope(ns)` → 门面 handle | `scope(spec)` → 官方 scope 原样 | 两端接受 `{ namespace, ... }`；`get` / `watch` 同名同义（client 加别名层）；写面与释放面差异登记 | 修复 + 登记 + **需人类复核**（§9-2） |
+| `settings.scope` | `scope(ns)` → 门面 handle | `scope(spec)` → 官方 scope 原样 | 两端接受 `{ namespace, ... }`；`get` / `watch` 同名同义（client 加别名层）；写面与释放面差异登记 | 修复 + 登记 + **需人类复核**（§9-6） |
 
 ### §2.4 F4 capability 预检处置
 
@@ -239,7 +240,7 @@ B 系列是 batch-1 K 系列**没有写到的半步**。每条给出：现状事
 |---|---|---|---|---|
 | client `attention.observe()` 降级 | `lib/client-runtime.js:372-388` | 冻结四成员，但 `dispose(){}`→`undefined`、`current()`→数组、`subscribe` 忽略参数 | 内核同形 handle | 修复 |
 | client `slots.list(key)` / `slots.declaration(key)` | `lib/client-slots.js:44-50/55-84`；公共面 `lib/client-runtime.js:486-487` | 两个成员读同一事实；`list` 名不符实 | 收敛为 `slots.inspect(key)`；两旧名退役 + mapping | 修复 + **需人类复核**（§9-4） |
-| client `remotes.*` 与 host `events.*` 分工 | `lib/client-remote-events.js:6-13/58-99`；`lib/client-runtime.js:408-416`；registry `:19331-19396` | 分工只存在于 registry authority 说明 | 写入分册（S23 / B7-3） | 分册（不改实现） |
+| client `remotes.*` 与 host `events.*` 分工 | `lib/client-remote-events.js:6-13/58-99`；`lib/client-runtime.js:408-416`；registry `:19331-19396` | 分工只存在于 registry authority 说明 | 写入分册（S22 / B7-3） | 分册（不改实现） |
 
 ### §2.8 指引 §6 低优先观察项的去向
 
@@ -256,6 +257,7 @@ B 系列是 batch-1 K 系列**没有写到的半步**。每条给出：现状事
 1. **`executions.observe` 的入参**：指引 F1 表记为 `observe(execId)`（id 字符串）。复核为 `observe(options)`（`{ sessionId, since, signal }`），**无 per-execution 目标**，且 handle 与 `current()` 均已合规（`lib/execution-observation.js:111-163`）。本批不把它列入修复项。
 2. **`sessions.durable.observe` 的形态**：指引记为「本环境未取到 handle」。复核（源码级）为**三参 + 官方 disposer**（`lib/plugin-api-service.js:1436-1439`），比指引的保守描述更严重；本批纳入 F1 修复（§2.1）。
 3. **registry 与实现的反向行**：指引未覆盖的、由本轮复核发现的登记反向事实，一并按 Req 9.4 订正——`attention.observe.handle` 行登记 `discriminated-result` 而实现 `dispose()` 返回 `undefined`；`tools.executionMode.register` 行的 idiom/effect/lifecycle 与自身 `currentShape` 矛盾；`settings.scope` 行登记 `discriminated-result` 而实现对未知 ns 抛 typed error（本批订正为 `typed-throw`）。
+4. **观察 handle 行的登记缺口**：复核发现 6 个 `.observe` 叶没有对应 `.observe.handle` 行——`prompts.provenance.observe`、`workspaces.transactions.observe`、`llm.routing.health.observe`、client `slots.observe` / `remotes.observe` / `lifecycle.observe`。本批为形状变更涉及的两个（`prompts.provenance.observe`、`workspaces.transactions.observe`）补行；其余四处不在本批形状变更面（client 三处的 `currentShape` 已声明标准四成员 handle，host `llm.routing.health.observe` 未在本批核验范围内），保持登记现状——Req 10.1 的 handle 行断言只覆盖在册行与本批补齐行。
 
 ---
 
@@ -271,7 +273,7 @@ B 系列是 batch-1 K 系列**没有写到的半步**。每条给出：现状事
 | S19 | `api-idioms.md` §2、§3.6 | 冲突口径多于词表；「官方裁决」形态无处登记 | 封闭 `conflictRule` 词表（`latest-wins` / `content-conflict` / `owner-conflict` / `owner-scoped` / `fencing` / `not-applicable`）+ 逐成员声明义务 + 官方裁决的登记方式 + 验证桩要求 | registry 全部注册行 + `scripts/registry-validate.mjs` | 否 |
 | S20 | `api-idioms.md` §3.1 | 未定义「返回领域绑定对象 / 带写面前缀的成员」的登记义务，`settings.scope` 一类成员的 shape 只能靠个案理解 | 补绑定 / 访问器型成员的登记义务：必须登记对象成员集、读写面、lifecycle 与释放边界（含「为何无 `dispose()`」或「`dispose()` 释放的是什么」） | registry `settings.register` / `settings.scope` 行 | 否 |
 | S21 | `api-idioms.md` §2、§3.7 | 三值词汇已统一但**聚合口径未定义**，`status` 不可跨 namespace 比较；归一表缺 `available` 且允许静默回落（F6） | 写死聚合规则（B5-1）+ 字段语义分离（B5-2）+ 归一表补 `available → active`、未映射 token 必须 `degraded` + reason + 降级指明部分 + 禁用形态同形 | registry `availabilityShape` / namespace 记录 + 各域实现 | 否 |
-| S22 | `public-api-shape.md` §4、§5 | 只写了「client 与 host 同名/同类面使用同一套外层合同」，没有可判定的「同到什么程度」；capability 段要求成员级 path 与真实叶子状态，但未定未知 path 与解析规则 | 补同 path 同形四条规则（B3）+ capability 解析规则（B4）：成员级 path、最近簇状态、`get` 未知不抛、`require` 抛、`list` 同形 | registry capability 相关行、`clientDomainTree` / `hostDomainTree` | 否 |
+| S22 | `public-api-shape.md` §4、§5 | 只写了「client 与 host 同名/同类面使用同一套外层合同」，没有可判定的「同到什么程度」；capability 段要求成员级 path 与真实叶子状态，但未定未知 path 与解析规则；client `remotes.*` 与 host `events.*` 的命名分工只存在于 registry authority 说明 | 补同 path 同形四条规则（B3）+ capability 解析规则（B4）：成员级 path、最近簇状态、`get` 未知不抛、`require` 抛、`list` 同形；并在 §4 写明命名分工（client `remotes.*` = 远端事件通道的观察与载体派发；host `events.*` = 官方事件总线的投影与受生产权约束的派发，B7-3） | registry capability 相关行、`clientDomainTree` / `hostDomainTree` | 否 |
 | S23 | `visibility-and-redaction.md` §3 | 未写「公共读面必须按调用者范围过滤」与「内部缝不得占用公共成员名」 | 补一条：绕过调用者范围的聚合读面不得进入公共面；跨组件内部缝经内部通道（符号键 / 非枚举）且不登记为公共成员 | `attention.hubSnapshot` 的 `removed` 行 + 实现 | 否 |
 | S24 | `public-api-shape.md` §2、§4（树图） | 树图将随本批改名 / 退役 / 内部化漂移（`settings`、`tools.executionMode`、client `slots`、`attention`） | 按 registry 现状逐名刷新（含删除已 `removed` 的名字） | 树图 + registry | 否 |
 | S25 | `docs/standards/README.md` | 索引与各册适用范围未随本轮修订更新 | 索引同步 | 索引表 | 否 |
@@ -332,7 +334,7 @@ B 系列是 batch-1 K 系列**没有写到的半步**。每条给出：现状事
 | `packages/api-remotes/lib/apply.js` | snapshot resolver 改经内部缝（**R 包**） |
 | `scripts/registry-validate.mjs` | Req 10.1 的校验扩展 |
 | `scripts/convergence-table-sync.mjs` + `docs/specs/plugin-api-m10-contract-convergence/convergence/*` | 成员表机械重建；行为表口径复核；装配表 token 可解析 |
-| `docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json` | 全部形状变更 + `removed` / `oldToTargetMapping` / `statusByPath` / 新增 availability 行 / 反向行订正 |
+| `docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json` | 全部形状变更 + `removed` / `oldToTargetMapping` / `statusByPath` / 新增 availability 行 / 反向行订正 / 观察 handle 行补齐（`prompts.provenance.observe`、`workspaces.transactions.observe`）/ 观察行 `currentShape` 写明 subject 形态 |
 | `docs/standards/*`（S16–S26） | 分册修订 |
 | `docs/specs/plugin-api-features/feature-list.md`、`README.md` | 登记与治理同步 |
 | `test/*` | 观察矩阵、冲突矩阵、capability 预检、availability 聚合、client 降级、运行时↔registry 对账 |
@@ -356,7 +358,7 @@ B 系列是 batch-1 K 系列**没有写到的半步**。每条给出：现状事
 | 7 | capability 预检可迁移 | 两端 `get` 对能力路径 / 成员级 path / 未知 path 的三态断言；`require` 的 typed throw 断言 |
 | 8 | 未登记成员清零 | 运行时↔registry 对账测试（host + client），输出缺口清单为空 |
 | 9 | `attention.hubSnapshot` 不在公共面 | 公共面成员集断言 + api-remotes 经内部缝的端到端用例（保留 kind 裁剪断言） |
-| 10 | availability 可比较 | 四域（`tasks` / `coordination` / `security` / `workspaces.transactions`）的 status + detail 断言；归一表正反例（含未映射 token） |
+| 10 | availability 可比较 | 四域（`tasks` / `coordination` / `security` / `workspaces.transactions`）的 status + detail 断言；`storage` 禁用形态字段集（含 `epoch`）；归一表正反例（含未映射 token） |
 | 11 | client 降级同形 | 未安装态的 handle 断言（与安装态同形）+ `slots.inspect` 三态断言 |
 | 12 | F1–F7 与 5 个未登记成员逐项有去向 | 交付报告中的逐项矩阵（含本批 §2 的复核订正）与登记的 `removed` / mapping 对账 |
 
@@ -372,14 +374,14 @@ B 系列是 batch-1 K 系列**没有写到的半步**。每条给出：现状事
 
 1. **「统一」做成「强行同形」**：只统一外层（成功形状、handle、失败呈现、共同成员名），领域差异走登记（写面成员、`current()` 异步、`operations` 能力声明）。不得为了表格好看改领域语义。
 2. **减法伤到真实能力**：`attention.hubSnapshot` 内部化前必须确认门面内唯一消费方（api-remotes 替代包）已改经内部缝；`slots.list` / `declaration` 退役前必须确认无其他消费方（含 test 与文档）。
-3. **`settings.register` 的释放语义被误读**：`dispose()` 必须返回判别式并在 `reason`、registry `lifecycle`、`currentShape` 三处写明「官方注册随 settings 服务存续」；不得让作者以为官方注册被撤销。
+3. **`settings.register` 的释放语义被误读**：`dispose()` 必须返回判别式并在 `reason`、registry `lifecycle`、`currentShape` 三处写明「官方注册随门面与 settings 服务存续（调用方卸载不移除），无按 handle 的显式释放路径」；不得让作者以为官方注册被撤销。
 4. **`capabilities.get` 的行为变更**：`get` 对未知 path 由抛错改为返回 `unavailable`，属公共行为变更；`require` 的抛错语义不变；测试与文档同步，并在交付报告单列。
 5. **R 包修订触碰替代契约**：`packages/mcp` 只改公共别名入参、`packages/api-remotes` 只改 resolver 来源；改动后跑既有替代包测试与 boot 自检；无法在不破坏契约复刻的前提下完成时登记阻塞项，不自行扩大 R 范围。
 6. **热点文件冲突**：`plugin-api-service.js` / `index.js` / `client-runtime.js` / `namespace-availability.js` / registry 集中串行修改；并行开发按 `AGENTS.md` §3.5 契约先行。
 
 **明确排除**（本批不予处置）：batch-1 的全部排除项继续适用；此外不加 SDET 工程、不为 `sessions.views` 改名、不为同步/异步差异做形态同化、不新增公共能力、不新增 R 点、不改官方包文件、不做假想恶意插件的加固。
 
-**取舍记录**：`settings.register` 选择「补 handle + 如实披露释放边界」而非「改名成绑定成员」或「登记为透传例外」（§9-1）；`events.observe` 选择两端统一信封而非两端统一裸 handle（§9-2）；`attention.hubSnapshot` 选择内部化而非「补 caller 参数后公开」（§9-3）；client `slots` 选择「双旧名收敛为一个 `inspect`」而非「保留两个成员」或「改名 `entriesOf`」（§9-4）；`capabilities.get` 选择「未知不抛」而非「两端统一抛」（§9-5）。
+**取舍记录**：`settings.register` 选择「补 handle + 如实披露释放边界」而非「改名成绑定成员」或「登记为透传例外」（§9-1）；`events.observe` 选择两端统一信封而非两端统一裸 handle（§9-2）；`attention.hubSnapshot` 选择内部化而非「补 caller 参数后公开」（§9-3）；client `slots` 选择「双旧名收敛为一个 `inspect`」而非「保留两个成员」或「改名 `entriesOf`」（§9-4）；`capabilities.get` 选择「未知不抛」而非「两端统一抛」（§9-5）；`settings.scope` 选择「两端统一对象形态 + 读 / 订阅成员同名」而非「保持两端现状只登记差异」（§9-6）。
 
 ---
 
@@ -389,11 +391,12 @@ B 系列是 batch-1 K 系列**没有写到的半步**。每条给出：现状事
 
 | # | 决策 | 替代方案 | 若被推翻的回退动作 |
 |---|---|---|---|
-| 1 | `settings.register` **保留名与语义**，铸标准 handle（`id`=ns、派生 owner、门面铸造 generation）+ 扩展成员；`dispose()` 释放门面绑定并如实披露官方注册随服务存续 | ①改名 `settings.open` / `settings.scope.register` 并登记为绑定成员；②登记为官方透传例外（无 handle） | 改 Req 3.1/3.3 与 §2.2；registry 落对应 `removed` / 例外行；`settings.scope` 的取回语义随之一并复核 |
+| 1 | `settings.register` **保留名与语义**，铸标准 handle（`id`=ns、派生 owner、门面铸造 generation）+ 扩展成员；冲突由官方权威裁决（同 ns 重复注册抛错，门面只做 typed 映射）；`dispose()` 释放门面绑定并如实披露官方注册随门面与 settings 服务存续 | ①改名 `settings.open` / `settings.scope.register` 并登记为绑定成员；②登记为官方透传例外（无 handle） | 改 Req 3.1/3.3 与 §2.2；registry 落对应 `removed` / 例外行；`settings.scope` 的取回语义随之一并复核 |
 | 2 | `events.observe` 两端统一为**判别式信封 + handle**；host 非 catalog 名 `ok:true, code:'untyped'` | ①两端统一为裸 handle（client 用 typed throw 表达未知名，违反 §3.1 既有条款）；②保持现状并只做登记 | 改 Req 4.2 与 §2.3；S17 条款随之改写 |
 | 3 | `attention.hubSnapshot` **移出公共面**、改经内部符号缝（api-remotes 同仓消费方随之改） | ①保留公开并补 caller 参数 + 登记；②保留公开并补登记 | 改 Req 6.2/6.3 与 §2.5；S23 条款降级为「登记 + caller 过滤」 |
 | 4 | client `slots.list` + `slots.declaration` **收敛为 `slots.inspect(key)`**（两旧名退役 + mapping） | ①只退役 `list`、保留 `declaration`；②`list` 改名 `entriesOf` 并保留 `declaration` | 改 Req 8.2 与 §2.7；registry 落对应 `removed` / 保留行 |
 | 5 | `capabilities.get` 对未知 path **返回 `unavailable` + reason**（不抛）；`require` 保持 typed throw | ①两端统一为抛 typed error；②host 抛、client 返回（维持现状差异并登记） | 改 Req 5.2 与 §2.4；`test/host-cutover.test.mjs` 的既有抛错断言随回退保留 |
+| 6 | `settings.scope` 两端统一为**对象形态**（`{ namespace, ... }`；host 另保留 `ns` 字符串便捷形态），读 / 订阅成员同名同义（client 在官方 scope 外包 `get` / `watch` 别名层，官方成员作扩展成员保留），写面与释放面差异登记 | ①保持两端现状（host 门面 handle vs client 官方 scope 原样）并只登记差异；②host 对齐官方 scope 形状（`getSnapshot` / `subscribe` / `set` / `unset`） | 改 Req 4.3 与 §2.3；S22 的两端对象形态条款随之改写；client 别名层不落 |
 
 ---
 
