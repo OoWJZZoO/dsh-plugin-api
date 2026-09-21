@@ -205,7 +205,7 @@ test('observer epoch guards stale callbacks and isolates throwing observers', as
   assert.equal(seen.length, seenAfterDetach)
   first.dispose()
   second.dispose()
-  assert.equal(second.dispose(), false)
+  assert.equal(second.dispose().code, 'stale')
 })
 
 test('unavailable-registry projections: get/observe never infer state from silence', async () => {

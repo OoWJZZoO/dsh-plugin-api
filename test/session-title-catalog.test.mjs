@@ -154,7 +154,7 @@ test('the public catalog accessor filters the replacement slice by guard while s
 
   assert.ok(!('session-title/candidate' in bus.catalog()), 'inactive: hidden from the public snapshot')
   const listener = () => {}
-  const handle = bus.observe('session-title/candidate')
+  const handle = bus.observe('session-title/candidate').handle
   handle.subscribe(listener)
   assert.equal(ctx.hooksOf('session-title/candidate').length, 1)
   const wrapped = ctx.hooksOf('session-title/candidate')[0]
@@ -193,7 +193,7 @@ test('facade waterfall decision and next() are passed through', () => {
   // event are registered in the event catalog, and monitor-tier observers
   // never alter the waterfall.
   const seen = []
-  bus.observe('session-title/candidate').subscribe((payload) => {
+  bus.observe('session-title/candidate').handle.subscribe((payload) => {
     seen.push(payload[0])
     if (payload[0]?.message?.seq === 1) return { kind: 'exclude', reason: 'synthetic' }
     return payload[1]?.()

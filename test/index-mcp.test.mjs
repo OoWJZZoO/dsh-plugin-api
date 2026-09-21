@@ -90,7 +90,7 @@ test('pluginApi.mcp is a fixed face that fails closed when no MCP replacement ma
   assertMcpDisabled(() => mcp.servers())
   assertMcpDisabled(() => mcp.tools())
   assertMcpDisabled(() => mcp.resolvePublicName('mcp__s__t'))
-  assertMcpDisabled(() => mcp.observe(() => {}))
+  assertMcpDisabled(() => mcp.observe())
 })
 
 test('pluginApi.mcp fails closed when a catalog exists but the component marker is absent', () => {
@@ -124,9 +124,13 @@ test('pluginApi.mcp delegates queries to the marked replacement catalog when act
   const resolved = mcp.resolvePublicName('mcp__s1__t1')
   assert.deepEqual(resolved, { identity: { serverName: 's1', rawName: 't1' }, publicName: 'mcp__s1__t1' })
 
-  const handle = mcp.observe(() => {})
+  // The observation entry is zero-argument: listeners attach through the
+  // handle's own subscribe member, never through the observe entry.
+  const handle = mcp.observe()
   assert.equal(typeof handle.subscribe, 'function')
   assert.equal(typeof handle.current, 'function')
+  assert.equal(typeof handle.dispose, 'function')
+  assert.ok('epoch' in handle, 'the handle registers the four-member contract')
   assert.equal(handle.dispose().ok, true)
 
   assert.deepEqual(catalog.calls.map(([method]) => method), ['servers', 'resolvePublicName', 'onChange'])

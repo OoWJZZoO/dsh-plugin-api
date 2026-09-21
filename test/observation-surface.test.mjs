@@ -67,7 +67,8 @@ test('llm.routing.observe answers the standard projection handle through the fac
   service.mountFeature('sessionRoute', routeOwner.api)
 
   const seen = []
-  const handle = service.llm.routing.observe(session, (route) => seen.push(route))
+  const handle = service.llm.routing.observe({ session })
+  handle.subscribe((route) => seen.push(route))
   assert.deepEqual(Object.keys(handle).sort(), ['current', 'dispose', 'epoch', 'subscribe'])
   assert.ok(Object.isFrozen(handle), 'the public handle is frozen')
   assert.equal('listeners' in handle, false, 'the internal listener set never escapes')
@@ -102,7 +103,7 @@ test('a session disposal releases the observation handle instead of silencing it
   })
   service.mountFeature('sessionRoute', routeOwner.api)
 
-  const handle = service.llm.routing.observe(session, () => {})
+  const handle = service.llm.routing.observe({ session })
   h.emit('session/disposed', session)
   const view = handle.current()
   assert.equal(view.ok, false)

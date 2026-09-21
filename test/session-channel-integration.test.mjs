@@ -152,7 +152,8 @@ test('facade: observe answers the standard observation handle over the projectio
   result.prepared.commit()
   const api = service.sessions.channels
   const seen = []
-  const handle = api.observe((snapshot) => seen.push(snapshot))
+  const handle = api.observe()
+  handle.subscribe((snapshot) => seen.push(snapshot))
   assert.deepEqual(Object.keys(handle).sort(), ['current', 'dispose', 'epoch', 'subscribe'])
   assert.ok(Object.isFrozen(handle))
   assert.equal(typeof handle.epoch, 'string')

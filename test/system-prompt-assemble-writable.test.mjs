@@ -99,7 +99,7 @@ test('assemble observation delivers the frozen assembly payload through the proj
   const context = { scope: 'agent-1' }
   const seen = []
 
-  const handle = events.observe('system-prompt/assemble')
+  const handle = events.observe('system-prompt/assemble').handle
   handle.subscribe((payload) => {
     // The projection delivers the single-arg event payload: the assembly.
     seen.push(payload)
@@ -119,7 +119,7 @@ test('a throwing or rejecting observer is contained and never reaches the dispat
   const context = { scope: 'agent-1' }
   const seen = []
 
-  const handle = events.observe('system-prompt/assemble')
+  const handle = events.observe('system-prompt/assemble').handle
   handle.subscribe(() => {
     throw new Error('observer boom')
   })
@@ -143,9 +143,9 @@ test('scope and signal identity are preserved and scope filtering still applies'
 
   // system-prompt/assemble scope filtering is args[1].scope based; the
   // scope value is the context scope key, not the context object.
-  const scoped = events.observe('system-prompt/assemble', { scope: context.scope })
+  const scoped = events.observe({ name: 'system-prompt/assemble',  scope: context.scope  }).handle
   scoped.subscribe((payload) => seen.push(['scoped', payload[0]]))
-  const global = events.observe('system-prompt/assemble')
+  const global = events.observe('system-prompt/assemble').handle
   global.subscribe((payload) => seen.push(['global', payload[0]]))
 
   ctx.waterfall('system-prompt/assemble', assembly, context, () => Promise.resolve(assembly))
@@ -162,7 +162,7 @@ test('monitor-tier observers stay contained and never own the waterfall result',
   const assembly = makeAssembly()
   const seen = []
 
-  events.observe('system-prompt/assemble').subscribe((payload) => {
+  events.observe('system-prompt/assemble').handle.subscribe((payload) => {
     seen.push(payload[0])
     // A monitor observer attempting to rewrite the chain is ignored.
     return { sections: [{ name: 'ignored', text: 'x' }] }
@@ -176,7 +176,7 @@ test('monitor-tier observers stay contained and never own the waterfall result',
 test('unrelated events keep their freeze policies unchanged', () => {
   const { ctx, events } = createBus()
   const seen = []
-  events.observe('goal/changed').subscribe((payload) => seen.push(payload))
+  events.observe('goal/changed').handle.subscribe((payload) => seen.push(payload))
 
   const payload = { agent: 'a', change: 'x' }
   ctx.emit('goal/changed', payload)

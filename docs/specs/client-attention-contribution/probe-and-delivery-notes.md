@@ -3,6 +3,8 @@
 > feature_name: `client-attention-contribution`
 > milestone: M9
 > status: Stage 4 终审修订制品。记录契约 probe 结论、官方转发机械归属、attention 送达三条 seam 的集成波归属与浏览器端 feed 接入点，以及 `__DSH_BOOT__`/HMR 验证范围的限制声明。
+>
+> 公共契约现状注（2026-09-21，M11 batch-2）：本文提到的 `attention.hubSnapshot` 已内部化——改经内部符号缝 `dsh-plugin-api.attention.snapshot-seed` 供给消费方，per-kind 裁剪与脱敏语义不变；attention 的观察入口（host 与 client 两端）现统一为「单一 subject + 标准四成员 handle + 判别式 dispose + 释放后 no-op」，client 在 runtime 未安装时返回同形降级 handle（`current()` 为空视图、非函数 listener 为 no-op）。本注只做指针映射，不改写本文的验收边界表述。
 
 本文是 Stage 4 终审 MINOR-1/MINOR-3 的就地落盘（tasks.md 9.2/7.4 引用本文）。
 

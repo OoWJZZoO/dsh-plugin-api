@@ -218,7 +218,7 @@ test('the facade production path dispatches facade-produced events and observers
   const ctx = createMockCordisCtx()
   const events = createHostBus(ctx)
   const seen = []
-  events.observe('attention/update').subscribe((payload) => seen.push(payload))
+  events.observe('attention/update').handle.subscribe((payload) => seen.push(payload))
 
   const emitted = events.emit.call(facadeCaller, 'attention/update', { seq: 1 })
   assert.deepEqual(emitted, { ok: true, code: 'dispatched', outcome: null })
@@ -461,7 +461,7 @@ test('the mounted facade translation path publishes without the dispatch member'
   // `attention/update`. Facade observers receive it without any caller ever
   // touching the producer-guarded dispatch member.
   const seen = []
-  api.events.observe('attention/update').subscribe((payload) => seen.push(payload))
+  api.events.observe('attention/update').handle.subscribe((payload) => seen.push(payload))
   const committed = api.attention.contribute({ id: 'translation-probe', title: 'probe' })
   assert.notEqual(committed.ok, false, 'the contribution path stays available')
   assert.ok(seen.length >= 1, 'the facade translation path still delivers its produced event')
@@ -506,7 +506,7 @@ test('events.define keeps its owner-scoped publisher semantics beside the produc
   )
 
   const seen = []
-  events.observe('plugin-a.custom').subscribe((payload) => seen.push(payload))
+  events.observe('plugin-a.custom').handle.subscribe((payload) => seen.push(payload))
   assert.deepEqual(first.emit({ seq: 1 }), { ok: true, code: 'dispatched', outcome: null })
   assert.deepEqual(seen, [{ seq: 1 }], 'the owner-scoped publisher dispatches its own custom event')
 
@@ -521,7 +521,7 @@ test('a denied canonical dispatch never disturbs custom event publishing', () =>
   const events = createHostBus(ctx)
   const publisher = events.define.call(thirdPartyCaller, { name: 'plugin-a.unrelated' })
   const seen = []
-  events.observe('plugin-a.unrelated').subscribe((payload) => seen.push(payload))
+  events.observe('plugin-a.unrelated').handle.subscribe((payload) => seen.push(payload))
 
   assert.equal(events.emit.call(thirdPartyCaller, 'attention/update', { seq: 1 }).code, 'denied')
   assert.equal(publisher.emit({ seq: 2 }).ok, true)

@@ -151,7 +151,11 @@ test('mountFeature injects the settings API', () => {
 
   const settingsApi = { isActive: true, register() {}, scope() {}, inspect() {} }
   service.mountFeature('settings', settingsApi)
-  assert.equal(service.settings.register, settingsApi.register)
+  // The published settings surface is the caller-bound view: register/scope
+  // are wrappers that forward the caller context, so identity is not shared
+  // with the mounted owner object.
+  assert.equal(typeof service.settings.register, 'function')
+  assert.equal(typeof service.settings.scope, 'function')
   assert.ok(Object.isFrozen(service.settings))
 })
 

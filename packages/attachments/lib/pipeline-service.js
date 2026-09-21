@@ -256,7 +256,9 @@ export class AttachmentPipelineService extends Service {
   }
 
   availability() {
-    if (this.disposed) return deepFreeze({ status: 'unavailable', supportedMedia: [], limits: {} })
+    // The disabled face names why it is unavailable and keeps the detail field
+    // set the live face answers, so a probe reads one shape across both states.
+    if (this.disposed) return deepFreeze({ status: 'unavailable', reason: 'the attachment pipeline is disposed', supportedMedia: [], imageLimits: {}, limits: {} })
     const imageLimits = {
       maxImageBytes: this.store?.imageLimits?.maxImageBytes,
       maxImagesPerMessage: this.store?.imageLimits?.maxImagesPerMessage,

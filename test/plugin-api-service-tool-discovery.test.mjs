@@ -66,7 +66,11 @@ test('discovery disabled surface throws inactive and feature-disabled errors bef
   fail(() => active.tools.discovery.activate('a', {}))
   fail(() => active.tools.discovery.deactivate('a'))
   fail(() => active.tools.discovery.audit.list({}))
-  assert.deepEqual(active.tools.discovery.availability(), { status: 'unavailable' })
+  // The disabled face names why it is unavailable instead of a bare verdict.
+  const discovery = active.tools.discovery.availability()
+  assert.equal(discovery.status, 'unavailable')
+  assert.equal(typeof discovery.reason, 'string')
+  assert.ok(discovery.reason.length > 0)
 })
 
 test('mount exposes the discovery surface and delegates to the owner', async () => {

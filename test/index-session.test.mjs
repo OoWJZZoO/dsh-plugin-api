@@ -246,3 +246,39 @@ test('sessionRoute prepared cleanup rolls back its epoch, preserves routing iden
   assert.equal(secondCleanup(), true)
   assert.equal(firstCleanup(), false)
 })
+
+test('sessions.observe takes one subject — the canonical { name } and the bare name — never a listener argument', () => {
+  const { ctx, state } = createMockCtx()
+  apply(ctx)
+  const sessions = state.pluginApi.sessions
+
+  // The canonical subject is the options object; the bare name is the
+  // convenience form. Both register the named native hook — a subject object is
+  // never stringified into a hook name, which is what made the canonical form
+  // silently observe nothing.
+  const canonical = sessions.observe({ name: 'session/event' })
+  assert.equal(Object.isFrozen(canonical), true)
+  for (const member of ['current', 'subscribe', 'dispose', 'epoch']) {
+    assert.ok(member in canonical, `the handle carries ${member}`)
+  }
+  assert.ok(state.listeners.some((entry) => entry.name === 'session/event'), 'the canonical subject registers the named hook')
+  assert.equal(state.listeners.some((entry) => entry.name === '[object Object]'), false, 'a subject object is never stringified into a hook name')
+
+  const bare = sessions.observe('session/created')
+  assert.equal(Object.isFrozen(bare), true)
+  assert.ok(state.listeners.some((entry) => entry.name === 'session/created'), 'the bare name registers the same way')
+  assert.equal(state.listeners.some((entry) => entry.name === '[object Object]'), false)
+
+  // A listener attaches through the handle; the retired argument form is not a
+  // second subscription path.
+  const received = []
+  const unsubscribe = canonical.subscribe((payload) => received.push(payload))
+  assert.equal(typeof unsubscribe, 'function')
+  const hook = state.listeners.find((entry) => entry.name === 'session/event')
+  hook.listener('payload-1')
+  assert.deepEqual(received, ['payload-1'], 'the handle delivers what the native hook delivers')
+
+  assert.equal(canonical.dispose().code, 'revoked')
+  assert.equal(canonical.dispose().code, 'stale')
+  bare.dispose()
+})

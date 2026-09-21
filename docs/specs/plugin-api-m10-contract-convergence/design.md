@@ -4,6 +4,8 @@
 > milestone: M10
 > status: Stage 0–2 已交付（2026-09-12）。goal 于 2026-09-11 获批（M10 批量确认门）；本文与 requirements.md 同日交付。本文只定义设计与可验收方案，不创建 tasks.md、不写实现代码、不直接修改 canonical registry / docs/standards/ / feature-list。
 > 上游输入：本目录 `goal.md`、`requirements.md`（同批）；M10 工作纲领 §3.10（十条设计决定）、§4（分工表）、§7（三张表 + 跨线故事 + 无损边界）、§8；M10 观察报告 §5 OBS-13/OBS-14、§6 纠正表、§7 闭合判据；`docs/standards/` 全部 12 分册；canonical registry 现状；九条 M10 线已交付制品（衔接点逐条引用见 §0）。
+>
+> 公共契约现状注（2026-09-21，M11 batch-2）：本文中出现的 `slots.list` / `slots.declaration` 已由 `slots.inspect` 取代，`tools.executionMode.register` 已由 `tools.executionMode.get` 取代，`attention.hubSnapshot` 已内部化（内部符号缝 `dsh-plugin-api.attention.snapshot-seed`）；观察入口统一为「单一 subject + 标准四成员 handle + 判别式 dispose」，host `events.observe` 现回答判别式信封，`settings.register` 现回答标准资源 handle。本注只做指针映射，不改写本文的验收边界表述。
 
 ## Status
 

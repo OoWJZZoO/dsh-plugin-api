@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createSettingsApi } from '../lib/settings.js'
 import {
+  PluginApiError,
   PluginApiServiceUnavailableError,
   PluginApiSettingsNamespaceError,
 } from '../lib/errors.js'
@@ -99,16 +100,49 @@ test('register passes undefined options through when omitted', () => {
   assert.equal(service.registerCalls[0].options, undefined)
 })
 
-test('register lets official duplicate/invalid namespace errors surface unchanged', () => {
+test('register maps a refused duplicate registration into the typed family', () => {
   const service = createMockSettingsService()
   const api = createSettingsApi({ ctx: createMockCtx(service) })
 
   assert.throws(
     () => api.register('duplicate', {}),
     (error) => {
-      assert.equal(error.message, 'settings namespace "duplicate" is already registered')
+      // The official authority decides the duplicate; the facade only maps the
+      // refusal into the typed family and keeps the original fact readable.
+      assert.ok(error instanceof PluginApiError)
+      assert.equal(error.code, 'PLUGIN_API_SETTINGS_REGISTRATION_REFUSED')
+      assert.match(error.message, /already registered/)
+      assert.ok(error.cause instanceof Error)
       return true
     },
+  )
+})
+
+test('register answers the standard handle with derived identity and a disclosing release', () => {
+  const service = createMockSettingsService()
+  const api = createSettingsApi({ ctx: createMockCtx(service) })
+
+  const handle = api.register('a', {}, undefined, { fiber: { name: 'plugin-a' } })
+  assert.equal(handle.id, 'a')
+  assert.equal(handle.ownerId, 'plugin-a', 'the owner derives from the caller context')
+  assert.equal(typeof handle.generation, 'string')
+  const released = handle.dispose()
+  assert.equal(released.ok, true)
+  assert.equal(released.code, 'revoked')
+  assert.match(released.reason, /official namespace registration persists/)
+  assert.match(released.reason, /no per-handle release path/)
+  // The facade binding is gone, but the official registration is not revoked.
+  assert.throws(() => api.scope('a'), PluginApiSettingsNamespaceError)
+})
+
+test('a namespace registered by one owner is a typed owner conflict for another', () => {
+  const service = createMockSettingsService()
+  const api = createSettingsApi({ ctx: createMockCtx(service) })
+
+  api.register('a', {}, undefined, { fiber: { name: 'plugin-a' } })
+  assert.throws(
+    () => api.register('a', {}, undefined, { fiber: { name: 'plugin-b' } }),
+    (error) => error instanceof PluginApiError && error.code === 'PLUGIN_API_SETTINGS_OWNER_CONFLICT',
   )
 })
 

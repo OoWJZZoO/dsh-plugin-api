@@ -191,6 +191,28 @@ test('rejects a registration leaf that presents refusals as results without an e
   expectErrors(copy, 'answers failures as typed throws')
 })
 
+test('rejects a registration member declaring a concurrency strategy as its conflict rule', () => {
+  const copy = structuredClone(registry)
+  const row = copy.members.find((member) => member.idiom === 'policy' && member.status !== 'removed')
+  row.conflictRule = 'compare-and-swap'
+  expectErrors(copy, 'must declare a registration conflictRule')
+  // The concurrency vocabulary stays legitimate where the question is a
+  // concurrency question, not a registration one.
+  const copy2 = structuredClone(registry)
+  const mutation = copy2.members.find((member) => member.conflictRule === 'compare-and-swap')
+  assert.equal(validateRegistry(copy2).errors.some((error) => error.includes('must declare a registration conflictRule')), false)
+  assert.ok(mutation, 'a mutation member still carries the concurrency strategy')
+})
+
+test('rejects an officially adjudicated member declared as latest-wins', () => {
+  const copy = structuredClone(registry)
+  const row = copy.members.find((member) => member.publicPath === 'settings.register')
+  // A registration vocabulary value, so only the official-adjudication rule can
+  // object: the official authority decides this conflict, not registration order.
+  row.conflictRule = 'latest-wins'
+  expectErrors(copy, 'adjudicated by the official authority and must not declare conflictRule')
+})
+
 test('rejects an exception that claims a member the row already itemizes', () => {
   const copy = structuredClone(registry)
   const row = copy.members.find((member) => member.publicPath === 'workflows.start.handle')

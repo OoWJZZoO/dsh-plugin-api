@@ -769,13 +769,13 @@ test('integrated agent extension lifecycle double preserves official identity, o
 
   const eventNames = ['session/created', 'agent/created', 'agent/session-start', 'agent/disposed']
   for (const name of eventNames) {
-    const firstFeed = state.pluginApi.events.observe(name)
+    const firstFeed = state.pluginApi.events.observe(name).handle
     firstFeed.subscribe(function (payload) {
       const agent = payload?.agent
       observed.push({ name, label: agent?.label, listener: 'first' })
       if (name === 'agent/created' && agent?.veto) throw agent.veto
     })
-    const secondFeed = state.pluginApi.events.observe(name)
+    const secondFeed = state.pluginApi.events.observe(name).handle
     secondFeed.subscribe(function (payload) {
       observed.push({ name, label: payload?.agent?.label, listener: 'second' })
     })
@@ -791,13 +791,13 @@ test('integrated agent extension lifecycle double preserves official identity, o
   const scopedObserved = []
   const directOptions = { agent: { label: 'direct-created' } }
   const facadeOptions = { agent: { label: 'facade-created' } }
-  state.pluginApi.events.observe('agent/created', { scope: directOptions.agent }).subscribe((payload) => {
+  state.pluginApi.events.observe({ name: 'agent/created',  scope: directOptions.agent  }).handle.subscribe((payload) => {
     scopedObserved.push(['direct', payload.agent.label])
   })
-  state.pluginApi.events.observe('agent/created', { scope: facadeOptions.agent }).subscribe((payload) => {
+  state.pluginApi.events.observe({ name: 'agent/created',  scope: facadeOptions.agent  }).handle.subscribe((payload) => {
     scopedObserved.push(['facade', payload.agent.label])
   })
-  state.pluginApi.events.observe('agent/session-start').subscribe(() => Promise.reject(new Error('async lifecycle rejection')))
+  state.pluginApi.events.observe('agent/session-start').handle.subscribe(() => Promise.reject(new Error('async lifecycle rejection')))
 
   const directFactoryDisposer = direct.setFactory(directFactory)
   const facadeFactoryHandle = facade.providers.register({ kind: 'factory', factory: facadeFactory })
@@ -1018,7 +1018,7 @@ test('agent guard failure disables only agent and keeps facade active', () => {
     )
   }
   assert.equal(typeof state.pluginApi.events.observe, 'function')
-  const inertHandle = state.pluginApi.events.observe('goal/changed')
+  const inertHandle = state.pluginApi.events.observe('goal/changed').handle
   assert.equal(inertHandle.epoch, 0)
   assert.equal(inertHandle.current(), null)
   assert.equal(typeof state.pluginApi.services.web.registerSearchProvider, 'function')
@@ -1071,7 +1071,10 @@ test('events guard failure does not block the agent registry read API', () => {
   assert.equal(features[14].isActive, true)
 
   assert.equal(state.pluginApi.agents.get('agent-1').id, 'agent-1')
-  assert.equal(state.pluginApi.events.availability().status, 'unavailable')
+  const disabledEvents = state.pluginApi.events.availability()
+  assert.equal(disabledEvents.status, 'unavailable')
+  assert.equal(typeof disabledEvents.reason, 'string')
+  assert.ok(disabledEvents.reason.length > 0)
 })
 
 test('duplicate apply does not reprobe or republish agent extension', () => {
@@ -1107,8 +1110,8 @@ test('a third-party plugin can consume pluginApi.agents and pluginApi.events wit
   const pluginApi = ctx.get('pluginApi')
   assert.equal(pluginApi, state.pluginApi)
 
-  pluginApi.events.observe('agent/created').subscribe((payload) => consumer.onCreated(payload))
-  pluginApi.events.observe('agent/status').subscribe((payload) => consumer.onCreated(payload))
+  pluginApi.events.observe('agent/created').handle.subscribe((payload) => consumer.onCreated(payload))
+  pluginApi.events.observe('agent/status').handle.subscribe((payload) => consumer.onCreated(payload))
   assert.equal(pluginApi.agents.list().length, 1)
 
   // The consumer test never imports @deepseek-ai/dsh-agent; it only touches

@@ -141,7 +141,7 @@ test('events.observe returns a frozen projection handle and observes the frozen 
   const ctx = createMockCordisCtx()
   const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
-  const handle = events.observe('goal/changed')
+  const handle = events.observe('goal/changed').handle
   assert.ok(Object.isFrozen(handle))
   assert.equal(typeof handle.current, 'function')
   assert.equal(typeof handle.subscribe, 'function')
@@ -166,8 +166,8 @@ test('disposing the handle is idempotent, silences it, and leaves peers intact',
   const events = createEventsBus({ ctx, catalog: coreCatalog })
   const first = []
   const second = []
-  const a = events.observe('goal/changed')
-  const b = events.observe('goal/changed')
+  const a = events.observe('goal/changed').handle
+  const b = events.observe('goal/changed').handle
   a.subscribe((payload) => first.push(payload))
   b.subscribe((payload) => second.push(payload))
 
@@ -187,7 +187,7 @@ test('non-cataloged names are passed through and observed via the same handle co
   const events = createEventsBus({ ctx, catalog: coreCatalog })
 
   const seen = []
-  const handle = events.observe('custom/event')
+  const handle = events.observe('custom/event').handle
   handle.subscribe((payload) => seen.push(payload))
   ctx.emit('custom/event', { custom: true })
   assert.equal(seen.length, 1)
@@ -199,7 +199,7 @@ test('a throwing or rejecting observer is contained and peers keep receiving', a
   const ctx = createMockCordisCtx()
   const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
-  const handle = events.observe('goal/changed')
+  const handle = events.observe('goal/changed').handle
   handle.subscribe((payload) => {
     throw new Error('boom')
   })
@@ -221,8 +221,8 @@ test('scope-filtered emit delivers only to a matching opts.scope', () => {
   const globalCalls = []
 
   // goal/changed scope filtering is args[0].agent based (string agent).
-  events.observe('goal/changed', { scope: 'agent-1' }).subscribe((payload) => scopedCalls.push(payload.agent))
-  events.observe('goal/changed').subscribe((payload) => globalCalls.push(payload.agent))
+  events.observe({ name: 'goal/changed',  scope: 'agent-1'  }).handle.subscribe((payload) => scopedCalls.push(payload.agent))
+  events.observe('goal/changed').handle.subscribe((payload) => globalCalls.push(payload.agent))
 
   ctx.emit('goal/changed', { agent: 'agent-2', change: 'x' })
   ctx.emit('goal/changed', { agent: 'agent-1', change: 'x' })
@@ -236,7 +236,7 @@ test('presence-only scoped events match via the dispatch scope carrier', () => {
   const events = createEventsBus({ ctx, catalog: coreCatalog })
   const scopedCalls = []
 
-  events.observe('subagent/start', { scope: 'agent-1' }).subscribe((payload) => {
+  events.observe({ name: 'subagent/start',  scope: 'agent-1'  }).handle.subscribe((payload) => {
     scopedCalls.push(payload.runId)
   })
 
@@ -250,7 +250,7 @@ test('opts.scope is ignored for non-scope-filtered events', () => {
   const ctx = createMockCordisCtx()
   const events = createEventsBus({ ctx, catalog: coreCatalog })
   let called = false
-  events.observe('fs/observed', { scope: 'anything' }).subscribe(() => {
+  events.observe({ name: 'fs/observed',  scope: 'anything'  }).handle.subscribe(() => {
     called = true
   })
 
@@ -264,10 +264,10 @@ test('system-prompt/assemble scope filtering uses args[1].scope', () => {
   const scopedCalls = []
   const globalCalls = []
 
-  events.observe('system-prompt/assemble', { scope: 'agent-1' }).subscribe((payload) => {
+  events.observe({ name: 'system-prompt/assemble',  scope: 'agent-1'  }).handle.subscribe((payload) => {
     scopedCalls.push(payload[1].scope)
   })
-  events.observe('system-prompt/assemble').subscribe((payload) => {
+  events.observe('system-prompt/assemble').handle.subscribe((payload) => {
     globalCalls.push(payload[1].scope)
   })
 
@@ -318,7 +318,7 @@ test('monitor observers cannot bail or reshape serial dispatch', async () => {
   const ctx = createMockCordisCtx()
   const events = hostBus(ctx)
   let observed = false
-  events.observe('attention/update').subscribe(() => {
+  events.observe('attention/update').handle.subscribe(() => {
     observed = true
     return 'attempted-bail'
   })
@@ -333,7 +333,7 @@ test('monitor observers cannot bail or reshape serial dispatch', async () => {
 test('waterfall dispatch contains throwing observers and keeps the chain result', () => {
   const ctx = createMockCordisCtx()
   const events = createEventsBus({ ctx, catalog: coreCatalog })
-  events.observe('goal/changed').subscribe(() => {
+  events.observe('goal/changed').handle.subscribe(() => {
     throw new Error('boom')
   })
   const result = ctx.waterfall('goal/changed', { agent: 'a' }, () => 'chain')
@@ -354,7 +354,7 @@ test('tools/execute applies except-signal freezing and observes in-place signal 
     name: 'run_code',
   }
 
-  events.observe('tools/execute').subscribe((payload) => {
+  events.observe('tools/execute').handle.subscribe((payload) => {
     const [received, next] = payload
     assert.equal(received, exec, 'observer must receive the same exec object')
     assert.equal(Object.isFrozen(received), false, 'exec itself is not fully frozen')
@@ -380,7 +380,7 @@ test('tools/result emit delivers the frozen exec payload', () => {
   const ctx = createMockCordisCtx()
   const events = createEventsBus({ ctx, catalog: coreCatalog })
   let observed
-  events.observe('tools/result').subscribe((payload) => {
+  events.observe('tools/result').handle.subscribe((payload) => {
     observed = payload[0]
     assert.ok(Object.isFrozen(payload[0]))
   })
@@ -394,10 +394,10 @@ test('agent contain emit events contain sync throws while remaining observers ru
   const ctx = createMockCordisCtx()
   const events = createEventsBus({ ctx, catalog: coreCatalog })
   const seen = []
-  events.observe('agent/disposed').subscribe(() => {
+  events.observe('agent/disposed').handle.subscribe(() => {
     throw new Error('boom')
   })
-  events.observe('agent/disposed').subscribe((payload) => seen.push(payload.agent.id))
+  events.observe('agent/disposed').handle.subscribe((payload) => seen.push(payload.agent.id))
   assert.doesNotThrow(() => ctx.emit('agent/disposed', { agent: { id: 'a1' } }))
   assert.deepEqual(seen, ['a1'])
 })
@@ -406,11 +406,11 @@ test('agent/created sync throw is contained by the projection entry', () => {
   const ctx = createMockCordisCtx()
   const events = createEventsBus({ ctx, catalog: coreCatalog })
   let vetoed = false
-  events.observe('agent/created').subscribe(() => {
+  events.observe('agent/created').handle.subscribe(() => {
     vetoed = true
     throw new Error('veto')
   })
-  events.observe('agent/created').subscribe(() => {
+  events.observe('agent/created').handle.subscribe(() => {
     vetoed = vetoed
   })
   assert.doesNotThrow(() => ctx.emit('agent/created', { agent: { id: 'a1' } }))
@@ -422,7 +422,7 @@ test('llm/stream facade observer receives the frozen (options, next) args array'
   const events = createEventsBus({ ctx, catalog: coreCatalog })
   const seen = []
 
-  events.observe('llm/stream').subscribe((payload) => {
+  events.observe('llm/stream').handle.subscribe((payload) => {
     assert.ok(Array.isArray(payload))
     assert.ok(Object.isFrozen(payload), 'the args array is frozen')
     assert.ok(Object.isFrozen(payload[0]), 'options must be deep-frozen for the facade observer')
@@ -464,7 +464,7 @@ test('llm/adapters-updated observer is invoked with the undefined payload for a 
   const events = createEventsBus({ ctx, catalog: coreCatalog })
   const calls = []
 
-  events.observe('llm/adapters-updated').subscribe((payload) => {
+  events.observe('llm/adapters-updated').handle.subscribe((payload) => {
     calls.push(payload)
   })
 

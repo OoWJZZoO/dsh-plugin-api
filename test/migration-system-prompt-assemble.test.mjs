@@ -103,7 +103,7 @@ test('dsh-pro-ex-ability-anchor assemble listener pattern is behavior-equivalent
   const facadeCtx = createWaterfallCtx()
   const events = createEventsBus({ ctx: facadeCtx, catalog: composeCatalogs(baseEventsCatalog, systemPromptEventsCatalog) })
   let facadeArgs
-  const handle = events.observe('system-prompt/assemble')
+  const handle = events.observe('system-prompt/assemble').handle
   handle.subscribe((payload) => {
     const [assembly, ctx, next] = payload
     facadeArgs = [assembly, ctx, next]

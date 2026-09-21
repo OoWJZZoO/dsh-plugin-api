@@ -118,6 +118,7 @@ test('published durable epoch stays unavailable until the registry activates it'
     durableEventDescriptors: Object.freeze({}),
     isDurableEventType: (value) => value === 'approval/asked',
     getDurableEventDescriptor: () => undefined,
+    observeDurable: () => 'observe-handle',
     onDurable: () => 'on',
     onceDurable: () => 'once',
     appendMessage: () => 'append',
@@ -125,12 +126,12 @@ test('published durable epoch stays unavailable until the registry activates it'
 
   const epoch = service.mountFeature('sessionDurable', { facade, closeEpoch() {} })
   assertFeatureDisabled(() => service.sessions.durable.list())
-  assertFeatureDisabled(() => service.sessions.durable.observe())
+  assertFeatureDisabled(() => service.sessions.durable.observe({}))
 
   registry.mount('sessionDurable')
   assert.deepEqual(service.sessions.durable.list(), ['approval/asked'])
   assert.equal(service.sessions.durable.isDurableEventType('approval/asked'), true)
-  assert.equal(service.sessions.durable.observe(), 'on', 'the merged observe entry is the standard subscription')
+  assert.equal(service.sessions.durable.observe({}), 'observe-handle', 'the observe entry answers the standard handle')
   assert.equal(service.sessions.durable.appendMessage(), 'append')
   assert.equal(service.resetSessionDurable(epoch), true)
   assertFeatureDisabled(() => service.sessions.durable.appendMessage())

@@ -80,8 +80,22 @@ test('namespace availability stays shape-compatible when the backing is missing'
   // mcp has no backing provider in this harness: the namespace shape exists
   // and reports unavailable instead of disappearing.
   assert.equal(typeof api.mcp, 'object')
-  assert.equal(api.mcp.availability().status, 'unavailable')
-  assert.equal(api.attachments.availability().status, 'unavailable')
+  // An unmounted namespace names why it is unavailable, and an availability
+  // query is answered with an availability descriptor — never with the
+  // operation failure record the pipeline emits for a failed operation.
+  const mcpView = api.mcp.availability()
+  assert.equal(mcpView.status, 'unavailable')
+  assert.equal(typeof mcpView.reason, 'string')
+  const attachments = api.attachments.availability()
+  assert.equal(attachments.status, 'unavailable')
+  assert.equal(typeof attachments.reason, 'string')
+  assert.equal(attachments.commitState, undefined, 'no operation failure fields on the availability answer')
+  assert.ok(Array.isArray(attachments.supportedMedia))
+  assert.equal(typeof attachments.imageLimits, 'object')
+  assert.equal(typeof attachments.limits, 'object')
+  const projection = api.attachments.projection.availability()
+  assert.equal(projection.status, 'unavailable')
+  assert.equal(typeof projection.reason, 'string')
 })
 
 test('capabilityMatrix is separate from capabilities and from availability', () => {

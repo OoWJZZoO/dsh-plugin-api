@@ -95,8 +95,11 @@ test('KNOWN_FEATURES accepts the skillsActivation feature key with prepared tran
     availability() { return { active: true } },
     policy: { register() {} },
   }
-  // Before any mount the projection is the typed disabled surface.
-  assert.equal(service.skills.activation.availability().status, 'unavailable')
+  // Before any mount the projection is the typed disabled surface, and it
+  // names why it is unavailable.
+  const disabled = service.skills.activation.availability()
+  assert.equal(disabled.status, 'unavailable')
+  assert.equal(typeof disabled.reason, 'string')
   const prepared = service.prepareFeature('skillsActivation', owner)
   assert.equal(prepared.commit(), true)
   assert.equal(service.skills.activation.availability().status, 'active')

@@ -121,9 +121,9 @@ test('ordered: events execute in successful registration order at equal priority
   }
   const bus = createEventsBus({ ctx, catalog })
 
-  const secondHandle = bus.observe('matrix/order')
+  const secondHandle = bus.observe('matrix/order').handle
   secondHandle.subscribe((payload) => emitted.push(`b:${payload}`))
-  const firstHandle = bus.observe('matrix/order')
+  const firstHandle = bus.observe('matrix/order').handle
   firstHandle.subscribe((payload) => emitted.push(`a:${payload}`))
   ctx.emit('matrix/order', 'x')
   assert.deepEqual(emitted, ['x', 'b:x', 'a:x'], 'listeners run in successful registration order at equal priority')
@@ -297,7 +297,7 @@ test('synthetic consumer pair: reverse load order, owner conflict, stale dispose
   // events reach facade observers through the official native dispatch; the
   // facade dispatch member is reserved for the facade's own produced events.
   const seen = []
-  const handle = api.events.observe('goal/changed')
+  const handle = api.events.observe('goal/changed').handle
   handle.subscribe(() => { throw new Error('observer boom') })
   handle.subscribe((payload) => seen.push(payload.change))
   assert.doesNotThrow(() => ctx.emit('goal/changed', { change: 'x' }))
@@ -326,7 +326,7 @@ test('synthetic consumer pair: reverse load order, owner conflict, stale dispose
   // Read-only projection surfaces never expose write authority: the events
   // projection handle carries no dispatch members, and the catalog snapshot
   // is frozen.
-  const projection = api.events.observe('goal/changed')
+  const projection = api.events.observe('goal/changed').handle
   assert.equal(typeof projection.subscribe, 'function')
   assert.equal(projection.emit, undefined)
   assert.equal(projection.serial, undefined)

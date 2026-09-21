@@ -225,6 +225,10 @@ test('pluginApi service exposes the security disabled surface until mounted', ()
   assert.equal(typeof security.audit.list, 'function')
   // inactive facade: every member fails with the typed inactive contract
   assert.throws(() => security.policy.register('x', { point: 'tool-before', decide: () => ({ outcome: 'allow' }) }), PluginApiInactiveError)
-  assert.deepEqual(security.availability(), { status: 'unavailable' })
+  // The disabled face names why it is unavailable instead of a bare verdict.
+  const disabledSecurity = security.availability()
+  assert.equal(disabledSecurity.status, 'unavailable')
+  assert.equal(typeof disabledSecurity.reason, 'string')
+  assert.ok(disabledSecurity.reason.length > 0)
   assert.throws(() => security.policy.register({}), PluginApiInactiveError)
 })

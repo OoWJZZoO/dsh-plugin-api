@@ -106,7 +106,9 @@ test('no replacement marker: mount succeeds but operations reject with the typed
   assert.throws(() => branches.create('p1', 0, { kind: 'retry' }), (error) => error instanceof PluginApiFeatureDisabledError)
   assert.throws(() => branches.graph('p1'), PluginApiFeatureDisabledError)
   assert.throws(() => branches.plan('p1'), PluginApiFeatureDisabledError)
-  assert.equal(branches.availability().status, 'unavailable')
+  const disabledBranches = branches.availability()
+  assert.equal(disabledBranches.status, 'unavailable')
+  assert.equal(typeof disabledBranches.reason, 'string', 'a disabled namespace names why it is unavailable')
 })
 
 test('version mismatch or absent auxiliary: the facade feature is disabled and never forwards', () => {

@@ -35,12 +35,12 @@
 | `prompts.provenance` | projection 与 contribution/mapping owner 分离；不能通过 provenance API 绕过 prompt policy |
 | `attachments` | pipeline stage owner、顺序、content identity、cleanup authority 和 cancellation 明确 |
 | `mcp` | catalog/lifecycle 只读；server/tool identity 与 generation 稳定，不向查询方泄漏 mutation authority |
-| `tasks` | task/attempt/resource identity、claim/fencing 和终态唯一；多个 task 插件消费同一 authority 投影 |
-| `coordination` | resource key、owner、generation、fencing token 与 backend 能力显式；不把进程内状态伪装为 durable |
+| `tasks` | task/attempt/resource identity、claim/fencing 和终态唯一；多个 task 插件消费同一 authority 投影；availability 的 `status` 是该 namespace 在册部分（`sources` 等）的最小值——任一来源不可用 ⇒ `degraded` 并附 `reason`，detail 保留 |
+| `coordination` | resource key、owner、generation、fencing token 与 backend 能力显式；不把进程内状态伪装为 durable；`operations` / `durability` / `backend` 是后端能力声明、不参与 `status` 聚合——跨 scope 请求超出后端能力时 `status: unavailable` 并保留 detail |
 | `workspaces.transactions` | 所有受保证的 workspace mutation 纳入 transaction authority；旁路写路径显式登记 |
-| `security` | policy/redaction/egress 使用固定领域 reducer；policy/redaction 的 deny 与故障方向 fail-closed；egress 是 denylist（默认 allow，未命中 deny 即保持官方出站行为，初始零策略），只有显式 deny 拦截；受支持的 egress 路径形成 authority closure |
+| `security` | policy/redaction/egress 使用固定领域 reducer；policy/redaction 的 deny 与故障方向 fail-closed；egress 是 denylist（默认 allow，未命中 deny 即保持官方出站行为，初始零策略），只有显式 deny 拦截；受支持的 egress 路径形成 authority closure；availability 按 `faces` 在册部分聚合（局部缺失 ⇒ `degraded`，全部 `inert` ⇒ `unavailable`），detail 保留 |
 | `diagnostics` | health 与 availability 分离；source 注册 owner 化；诊断不得改变被诊断 feature 的状态 |
-| `settings` | namespace owner/key 冲突显式；document mutation 有 scope/revision；remote publication 不静默占键 |
+| `settings` | namespace owner/key 冲突显式；document mutation 有 scope/revision；remote publication 不静默占键；namespace 注册的释放边界必须如实披露（官方注册随门面与 settings 服务存续时不得伪装为可按 handle 撤销） |
 | `profiles` | read projection 与 mutation owner 分离；写操作 CAS/validation/claim 化；同 profile 写入不得 silent last-wins |
 | `remotes` | service key owner 化；同 key 跨 owner 冲突拒绝；disposer 不撤销其他 generation |
 | `storage` | 只保存 owner 私有实现数据；owner 自动派生、scope 显式；不得作为共享领域状态或 authority 的旁路 |

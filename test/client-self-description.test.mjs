@@ -48,7 +48,7 @@ test('capabilities accept member-level client paths and refuse unknown members',
   // A member-level path answers the same state as the namespace that owns it:
   // the member has no separate lifecycle and is never reported active on its
   // own account.
-  for (const [path, root] of [['slots.contribute', 'slots'], ['slots.declaration', 'slots'], ['remotes.observe', 'remotes'],
+  for (const [path, root] of [['slots.contribute', 'slots'], ['slots.inspect', 'slots'], ['remotes.observe', 'remotes'],
     ['lifecycle.register', 'lifecycle'], ['lifecycle.observe', 'lifecycle'], ['codec.validate', 'codec'], ['settings.scope', 'settings']]) {
     const descriptor = api.capabilities.get(path)
     assert.equal(descriptor.capability, path, 'the query echoes the requested path')
@@ -58,11 +58,20 @@ test('capabilities accept member-level client paths and refuse unknown members',
   assert.equal(api.capabilities.list().length, CLIENT_CAPABILITY_PATHS.length)
   assert.equal(api.capabilities.require(['slots.contribute', 'remotes.observe', 'codec.validate']), true)
 
-  // A path that is not a member of the namespace is refused rather than
-  // answered with the namespace's status.
+  // A path that is not a member of the namespace answers the unknown-capability
+  // result instead of throwing, so a generic preflight probe never needs a
+  // try/catch; `require` keeps its typed throw for unknown and unavailable
+  // paths alike.
   for (const unknown of ['slots.not-a-member', 'connection.api.deep', 'nope', 'slots.contribute.deep', 'services.locale']) {
-    assert.throws(() => api.capabilities.get(unknown), PluginApiCapabilityUnavailableError, `${unknown} is not an addressable capability path`)
+    const descriptor = api.capabilities.get(unknown)
+    assert.equal(descriptor.capability, unknown, 'the query echoes the requested path')
+    assert.equal(descriptor.status, 'unavailable', `${unknown} is not an addressable capability path`)
+    assert.equal(descriptor.reason, 'unknown capability')
   }
+  assert.throws(
+    () => api.capabilities.require(['slots.not-a-member']),
+    PluginApiCapabilityUnavailableError,
+  )
   await dispose()
 })
 

@@ -82,7 +82,8 @@ assert.equal(names.indexOf('diagnostics'), names.indexOf('workspaceTransactions'
     run() { return { health: 'healthy', availability: 'active' } },
   })
   const notifications = []
-  const observation = diag.observe({ scope: 'plugin' }, (payload) => notifications.push(payload))
+  const observation = diag.observe({ scope: 'plugin' })
+  observation.subscribe((payload) => notifications.push(payload))
   assert.deepEqual(Object.keys(observation).sort(), ['current', 'dispose', 'epoch', 'subscribe'])
   assert.equal(Object.isFrozen(observation), true)
   await settle()

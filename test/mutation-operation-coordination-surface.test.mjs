@@ -154,8 +154,8 @@ test('the transactions sub-namespace answers a non-throwing availability probe',
   assert.equal(disabled.availability().status, 'unavailable')
   assert.equal(typeof disabled.availability().reason, 'string')
 
-  // A mounted owner that publishes its own probe is preferred, and the domain
-  // reason survives verbatim.
+  // A mounted owner that publishes its own probe is preferred, and a domain
+  // reason declared alongside a standard status survives verbatim.
   const owner = {
     prepare: async () => ({ ok: true }), record: async () => ({ ok: true }), preview: async () => ({ ok: true }),
     commit: async () => ({ ok: true }), rollback: async () => ({ ok: true }), recover: async () => ({ ok: true }),
@@ -165,6 +165,31 @@ test('the transactions sub-namespace answers a non-throwing availability probe',
   bare.mountFeature('workspaceTransactions', owner)
   assert.equal(bare.workspaces.transactions.availability().status, 'degraded')
   assert.equal(bare.workspaces.transactions.availability().reason, 'a backend path is offline')
+
+  // The same owner shape the workspace transaction domain really publishes: the
+  // probe is a frozen availability record carrying the per-operation and
+  // backend detail. The records maps onto the shared vocabulary and every
+  // domain detail field survives the normalization.
+  const recordOwner = {
+    ...owner,
+    availability: Object.freeze({
+      status: 'available',
+      scope: 'workspace',
+      durability: 'durable',
+      operations: { prepare: 'available', recover: 'unsupported' },
+      backend: { id: 'git' },
+      epoch: 'epoch:1',
+    }),
+  }
+  bare.mountFeature('workspaceTransactions', recordOwner)
+  const published = bare.workspaces.transactions.availability()
+  assert.equal(Object.isFrozen(published), true)
+  assert.equal(published.status, 'active', 'the domain token maps onto the shared vocabulary')
+  assert.equal(published.scope, 'workspace')
+  assert.equal(published.durability, 'durable')
+  assert.equal(published.operations.recover, 'unsupported')
+  assert.equal(published.backend.id, 'git')
+  assert.equal(published.epoch, 'epoch:1')
 
   // Without an owner probe the live slot decides.
   const { ctx, state } = createHarness()

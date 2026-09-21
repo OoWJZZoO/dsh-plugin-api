@@ -92,7 +92,7 @@ Agent extension 成员是官方 AgentRegistry 的同参直通。调用从消费�
 ```js
 pluginApi.llm.routing.forExecution(exec)
 pluginApi.llm.routing.current(session)
-pluginApi.llm.routing.observe(session, listener)   // 原 on/once 已并入 observe
+pluginApi.llm.routing.observe({ session })        // 原 on/once 已并入 observe；listener 经 handle.subscribe，裸 session 仍是便捷形态
 pluginApi.llm.routing.wait(session, options?)
 pluginApi.llm.routing.policies.register(...)       // 原 routePolicy 面（复数 policies）
 pluginApi.llm.routing.candidates.register/list

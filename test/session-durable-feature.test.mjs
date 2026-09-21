@@ -255,6 +255,46 @@ test('durable observation argument failures do not subscribe', () => {
   assert.equal(eventsApi.feeds.length, 0)
 })
 
+test('observeDurable answers the standard projection handle over the deferred durable stream', () => {
+  const { api, eventsApi, session } = createDurableApi()
+  const handle = api.observeDurable({ targetSession: session, kind: 'approval/policy' })
+  assert.equal(Object.isFrozen(handle), true)
+  for (const member of ['current', 'subscribe', 'dispose', 'epoch']) {
+    assert.ok(member in handle, `the handle carries ${member}`)
+  }
+
+  // Before the first delivery the read face is a degraded frame, never a throw.
+  assert.equal(handle.current().code, 'unavailable')
+  assert.equal(handle.current().kind, 'approval/policy')
+
+  // Listeners attach through the handle, and only future matching records
+  // reach them.
+  const received = []
+  const unsubscribe = handle.subscribe((record) => received.push(record))
+  assert.equal(typeof unsubscribe, 'function')
+  const mismatch = durableEvent('approval/asked', { id: 'a', toolName: 'x' }, session.firstLiveSeq)
+  eventsApi.emit(session, mismatch)
+  assert.deepEqual(received, [], 'an unrelated record never reaches a durable observer')
+  const matching = durableEvent('approval/policy', { policy: 'ask' }, session.firstLiveSeq)
+  eventsApi.emit(session, matching)
+  assert.equal(received.length, 1)
+  assert.equal(Object.isFrozen(received[0]), true)
+  assert.equal(received[0].type, 'approval/policy')
+  // current() reports the latest delivered record.
+  assert.equal(handle.current(), received[0])
+
+  // Release is discriminated, silences the handle, and degrades the read face.
+  const released = handle.dispose()
+  assert.equal(released.ok, true)
+  assert.equal(released.code, 'revoked')
+  assert.equal(handle.dispose().code, 'stale')
+  assert.equal(typeof handle.subscribe(() => {}), 'function', 'subscribing after release is a no-op')
+  assert.equal(handle.current().code, 'inactive')
+  eventsApi.emit(session, durableEvent('approval/policy', { policy: 'never' }, session.firstLiveSeq + 1))
+  assert.equal(received.length, 1, 'a released handle delivers nothing')
+  assert.equal(eventsApi.feeds.length, 0, 'the release tears the underlying feed down')
+})
+
 test('seed-boundary and audited-record breaches reset the epoch without delivery', () => {
   const { api, eventsApi, owner, resets, session } = createDurableApi()
   let calls = 0

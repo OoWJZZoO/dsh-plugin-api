@@ -11,6 +11,8 @@
 > 治理 token 边界（AGENTS §6、Req 12.4）：本文在 `docs/` 下使用 A/B/C/K/R/S 编号是允许的，但**实现产物不得携带这些编号**——`lib/`、`packages/`、`test/`、`package.json` 与 bundle patch 中的命名、错误文案、Symbol 键、目录/文件名一律使用中立、面向能力或语义的名字（如包名 `@deepseek-ai/dsh-plugin-api-compaction-events`，不得出现 `r1` 之类治理后缀）。Task 9.6 是末端审计，实现者在动手时即须遵守。
 > 人类授权记录：`design.md` §4-S9（canonical producer 收紧）与 §4-S10（`capability-strategy.md` 实质修订）原列「需人类确认」。人类于 2026-09-14 在本线 SPEC3 开工指示中**预授权**这两项，故 Task 2.9 / Task 2.10 不再以「待确认」阻塞；两项的确认依据与能力边界变化声明按 design §4 表下注、K8「能力边界变化声明」与 Task 10.3 落盘。
 > 审查轮次记录（Stage 3 门）：本文经**四轮**阻塞式只读对抗性审查收敛。第 1 轮改「有偏差」（探针 P5 引用不存在的符号；K2 `dispose()` 落点缺失）→ 第 2 轮改「有偏差」（K2 落点仍不完整；M10 三表镜像无人承载）→ 第 3 轮改「有偏差」（K1/K2/K3 的全树义务未穷尽；行为表口径误解）→ 第 4 轮结论见文末。第 1–3 轮的实质意见已全部就地闭合，其中「全树义务」一项的闭合方式是从「枚举清单」升级为 **Task 4.14 的 registry 驱动枚举方法**（见该条），因为逐轮补枚举无法穷尽；该升级依据 goal Scope direction 2 与 Req 2.1 的无条件表述，属**本线范围的完整化**而非扩大。
+>
+> 公共契约现状注（2026-09-21，M11 batch-2）：本文中出现的 `slots.list` / `slots.declaration` 已由 `slots.inspect` 取代，`tools.executionMode.register` 已由 `tools.executionMode.get` 取代，`attention.hubSnapshot` 已内部化（内部符号缝 `dsh-plugin-api.attention.snapshot-seed`）；观察入口统一为「单一 subject + 标准四成员 handle + 判别式 dispose」，host `events.observe` 现回答判别式信封，`settings.register` 现回答标准资源 handle。本注只做指针映射，不改写本文的验收边界表述。
 
 ## Stage 3 探针记录（开工时基线，Stage 4 以对账与测试复核）
 

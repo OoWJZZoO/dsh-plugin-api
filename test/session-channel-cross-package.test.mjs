@@ -11,21 +11,27 @@ function createMockSessionApi() {
   const feeds = new Map()
   const api = {
     isActive: true,
-    observe(name, listener) {
+    // The converged subject contract: one subject (`{ name, ...options }` or a
+    // bare name), a projection feed back, and listeners attached through it.
+    observe(subject) {
+      const spec = subject !== null && typeof subject === 'object' && !Array.isArray(subject)
+        ? subject
+        : { name: subject }
       const listeners = new Set()
       const feed = {
+        name: spec.name,
+        options: spec,
         listeners,
         subscribe(next) {
           listeners.add(next)
           return () => listeners.delete(next)
         },
         dispose() {
-          feeds.delete(name)
+          feeds.delete(spec.name)
           return true
         },
       }
-      feeds.set(name, feed)
-      if (typeof listener === 'function') feed.subscribe(listener)
+      feeds.set(spec.name, feed)
       return feed
     },
     emit(name, data) {

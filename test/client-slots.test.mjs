@@ -70,7 +70,7 @@ test('the declaration projection separates undeclared, declared-but-empty and un
     },
   })
 
-  const declared = api.declaration('details')
+  const declared = api.inspect('details')
   assert.equal(declared.status, 'declared', 'a declared slot with no entries is still declared')
   assert.deepEqual(declared.entries, [], 'declared but empty is not the same as undeclared')
   assert.deepEqual(declared.spec, { kind: 'list', scope: 'root', declaredBy: 'shell' })
@@ -78,28 +78,28 @@ test('the declaration projection separates undeclared, declared-but-empty and un
   assert.deepEqual(declared.snapshot, [{ name: 'details', kind: 'list', scope: 'root' }])
   assert.ok(Object.isFrozen(declared) && Object.isFrozen(declared.spec) && Object.isFrozen(declared.snapshot))
 
-  assert.equal(api.declaration('never-declared').status, 'missing')
-  assert.equal(api.list('never-declared').status, 'missing')
-  assert.deepEqual(api.list('never-declared').entries, [])
+  assert.equal(api.inspect('never-declared').status, 'missing')
+  assert.equal(api.inspect('never-declared').status, 'missing')
+  assert.deepEqual(api.inspect('never-declared').entries, [])
 
   // The list view answers the same status as the projection it derives from.
-  assert.equal(api.list('details').status, 'declared')
-  assert.equal(Object.isFrozen(api.list('details')), true)
+  assert.equal(api.inspect('details').status, 'declared')
+  assert.equal(Object.isFrozen(api.inspect('details')), true)
 })
 
 test('a runtime that cannot answer declares the key unknowable instead of guessing', () => {
   const api = createClientSlots({
     slots: { register() { return () => {} }, inject() {}, subscribe() {}, entries: () => [] },
   })
-  const view = api.declaration('details')
+  const view = api.inspect('details')
   assert.equal(view.status, 'unavailable', 'without a declaration accessor the answer is unknowable, not "missing"')
   assert.equal('spec' in view, false, 'no official fact is fabricated')
-  assert.equal(api.list('details').status, 'unavailable')
+  assert.equal(api.inspect('details').status, 'unavailable')
 
   const withEntries = createClientSlots({
     slots: { register() { return () => {} }, inject() {}, subscribe() {}, entries: (key) => (key === 'details' ? [{ name: 'one' }] : []) },
   })
-  assert.equal(withEntries.declaration('details').status, 'declared', 'occupied entries prove a declaration exists')
+  assert.equal(withEntries.inspect('details').status, 'declared', 'occupied entries prove a declaration exists')
 
   // A declaration accessor that throws is a runtime that cannot answer, not a
   // runtime that answered "nothing is declared for this key".
@@ -112,7 +112,7 @@ test('a runtime that cannot answer declares the key unknowable instead of guessi
       spec() { throw new Error('declaration source is broken') },
     },
   })
-  assert.equal(failing.declaration('details').status, 'unavailable', 'a throwing declaration query is unknowable, never "missing"')
-  assert.equal('spec' in failing.declaration('details'), false, 'a failed query contributes no official fact')
-  assert.equal(failing.list('details').status, 'unavailable', 'the list view carries the same status')
+  assert.equal(failing.inspect('details').status, 'unavailable', 'a throwing declaration query is unknowable, never "missing"')
+  assert.equal('spec' in failing.inspect('details'), false, 'a failed query contributes no official fact')
+  assert.equal(failing.inspect('details').status, 'unavailable', 'the list view carries the same status')
 })

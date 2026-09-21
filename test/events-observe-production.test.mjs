@@ -136,7 +136,7 @@ test('events.observe returns a projection handle with current/subscribe/dispose/
   const events = createEventsBus({ ctx, catalog: coreCatalog })
 
   const seen = []
-  const handle = events.observe('goal/changed')
+  const handle = events.observe('goal/changed').handle
   assert.equal(typeof handle.current, 'function')
   assert.equal(typeof handle.subscribe, 'function')
   assert.equal(typeof handle.dispose, 'function')
@@ -169,8 +169,8 @@ test('events.observe dispose is idempotent, silences the handle, and leaves peer
 
   const first = []
   const second = []
-  const a = events.observe('goal/changed')
-  const b = events.observe('goal/changed')
+  const a = events.observe('goal/changed').handle
+  const b = events.observe('goal/changed').handle
   const offA = a.subscribe((payload) => first.push(payload))
   b.subscribe((payload) => second.push(payload))
 
@@ -195,7 +195,7 @@ test('a throwing or rejecting observe listener is contained and never starves pe
   const events = createEventsBus({ ctx, catalog: coreCatalog })
 
   const seen = []
-  const handle = events.observe('goal/changed')
+  const handle = events.observe('goal/changed').handle
   handle.subscribe(() => {
     throw new Error('sync boom')
   })
@@ -216,7 +216,7 @@ test('an observer registration grants no dispatch rights and define is a separat
   const ctx = createMockCordisCtx()
   const events = createEventsBus({ ctx, catalog: coreCatalog })
 
-  const handle = events.observe('goal/changed')
+  const handle = events.observe('goal/changed').handle
   const members = Object.keys(handle).filter((key) => typeof handle[key] === 'function')
   assert.deepEqual(members.sort(), ['current', 'dispose', 'subscribe'], 'the handle has no dispatch member')
   // The custom publisher entry lives in the separate custom-definition

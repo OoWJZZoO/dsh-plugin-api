@@ -75,7 +75,7 @@ async function observeClientFaces(bundle, degrade) {
   // era publishes them under .client. Normalize both.
   const face = api.client ?? api
   const slots = face.slots
-  const listSlots = (key) => (typeof slots.list === 'function' ? slots.list(key) : slots.entries(key))
+  const listSlots = (key) => (typeof slots.inspect === 'function' ? slots.inspect(key) : slots.entries(key))
   const contributeSlots = (spec) => (typeof slots.contribute === 'function' ? slots.contribute(spec) : slots.register(spec))
   const entriesBeforeRegister = listSlots('details')
   const contributed = contributeSlots({ name: 'details' })
@@ -90,7 +90,7 @@ async function observeClientFaces(bundle, degrade) {
   const live = {
     mounterNames: bundle.CLIENT_MOUNTERS === undefined ? undefined : [...bundle.CLIENT_MOUNTERS],
     connectionCall: typeof face.connection.rpc?.call,
-    slotsMembers: [['register', 'contribute'], ['inject', 'contribute'], ['entries', 'list'], ['subscribe', 'observe']].map((pair) => pair.map((name) => typeof slots[name]).sort().join('/')),
+    slotsMembers: [['register', 'contribute'], ['inject', 'contribute'], ['entries', 'inspect'], ['subscribe', 'observe']].map((pair) => pair.map((name) => typeof slots[name]).sort().join('/')),
     slotsEntriesIdentity: listSlots('details') === listSlots('details'),
     // The slot list moved from the raw entries array to a declaration-aware
     // view ({ key, status, entries }); what this regression guard protects is

@@ -11,6 +11,8 @@
 
 **扩展成员与例外记录的边界**（六项例外的适用范围）：handle 上的**领域扩展成员**——例如 provider 注册的 `.replace`、scoped 注册的 `targetId`、工作流运行 handle 的 `meta` / `result` / `cancel`、资源 handle 的 `status()` / `snapshot()`、异步 contribution 的 `status()`、settings 桥的 `face` / `render`——按**公共 path 单独登记成员行**即可，**不消耗六项例外**。六项例外只保留给**外层合同偏离**：入口动词、结果形状、失败呈现、身份成员集与 `baseContract` 不一致。判据是「该成员是否改变了调用方必须学会的那套外层交互」——不改变的是领域扩展，改变而无法拆分的才登记例外。
 
+**官方动词原样透传类的判定规则**（六项例外的唯一 register 例外类）：同时满足以下四条才可登记为「官方动词原样透传」——① 该成员的 authority 是官方组件包，且官方显式要求原样转发其注册动词；② 门面不铸第二身份（不派生 owner、不铸造 generation、不包装结果）；③ 官方返回 disposer 时原样返回；④ 在 registry 登记六项例外，且 `currentShape` 写明官方动词名。该类成员**不得**与门面自有 handle 混列在同一名字面下；读者必须能仅凭登记分辨「门面自有 handle」与「官方动词透传」。门面自有（非 `services.*`）注册一律以所属 idiom 的标准 handle 收场，不得以领域对象、`undefined`、裸 disposer 或查询值收场。
+
 现行逐成员事实、host/client runtime、能力路径、组合模式、authority、可用性、旧路径状态和 `services.*` 白名单均以 [public-contract.registry.json](../specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json) 为唯一事实源。本册规定成员应满足的公共契约，不复制 registry 的逐叶子清单。
 
 公共成员只使用下列八类 idiom：
@@ -35,10 +37,13 @@
 - `generation` 是 **owner 铸造的不透明 token，标识 (owner, key) 槽位当前占用者**，用于判定 stale / superseded——即"旧状态、旧回调、旧 disposer 是否已被取代"。它不跨 owner 比较、不承载排序；注册顺序使用 `seq`；只用于判新的后端或装配代次使用 `epoch`。三者不得互换。**所有 `policy` 与 `resourceRegistry` handle 一律必含 `generation`**，不按 composition 分层、不因注册是 additive 而省略。`coordination` 的 `generation` 是 fencing 令牌，见 §3.7。
 - 需要销毁的普通 handle 使用幂等 `dispose()`，返回冻结判别式结果 `{ ok, code, reason? }`：资源类（policy / registry / contribution / projection observer）成功码是 `revoked`、no-op 码是 `stale`（已释放、被新 generation 取代、资源已不存在）；operation handle 的 `dispose()` 表示「请求停止」而非终态裁决，成功码是 `requested`、no-op 码是 `stale`，终态由 `status()` 承担。stale disposer 绝不能撤销新 generation 或其他 owner 的资源，也绝不抛穿调用方（释放失败以 typed 失败码报告）。coordination lease 是例外，归还只能通过 `release(handle)`，不套用普通 disposer 契约。
 - `terminal` 统一使用 `success | error | aborted | denied | superseded`。timeout 归入 `error` 并由原因字段标记；mutation 使用 `commitState` 承载其终态，资源生命周期使用 `lifecycleState`，不得混用字段语义。
-- 每个公共 namespace 提供无副作用的 `availability()`，同步返回冻结对象且至少含 `status: active | degraded | unavailable`。**领域 detail 必须保留**：非标准状态按下表归一（`unsupported` → `unavailable`；`unknown` / `inert` → `degraded`）并附 `reason`，领域对象的其余字段（如 `scope`、`durability`、`operations`、`backend`、`epoch`）一并保留在同一冻结对象中，装饰层只做状态归一、不做裁剪。禁止「有对象即 active」或「解析成功即 active」的判定分支；异步领域解析须在挂载期完成并缓存，使公共探针永远同步可读。能力存在性由根 `capabilities.*` 表达；能力矩阵使用 `capabilityMatrix()`，不得占用 `availability` 名称——`capabilityMatrix()` 的内容模型是**当前能力簇 + 当前状态 + 限制 / 缺口原因**，它不承载迁移账本（改名 / 合并 / 迁移 / 删除 / 内化等历史处置只存在于 registry 的登记面，不进运行时可见输出）。
+- 每个公共 namespace 提供无副作用的 `availability()`，同步返回冻结对象且至少含 `status: active | degraded | unavailable`。**`status` 是可跨 namespace 比较的量，等于该 namespace 声明的当前可用性口径的最小值**：全部在册部分可用 ⇒ `active`；任一在册部分不可用 ⇒ `degraded`；命名空间整体不可用，或请求的目标 / scope 超出其后端能力 ⇒ `unavailable`。**字段语义分离**：`operations`、`durability`、`backend` 等字段表达**后端能力声明**（能做什么），不参与 `status` 聚合；当前可用性由 `status`（必要时附 `reason`）承担。各 namespace 的「在册部分」集合（如 `sources`、`faces`）与聚合方式必须在 registry 的 `availabilityShape` 或该行 `currentShape` 中声明。
+- **领域 detail 必须保留**：非标准状态按下表归一（`unsupported` → `unavailable`；`unknown` / `inert` → `degraded`；`available` → `active`）并附 `reason`；不在三值也不在映射表内的 token 一律以 `degraded` + `reason`（含原 token）呈现，**禁止静默回落到描述符状态**。领域对象的其余字段（如 `scope`、`durability`、`operations`、`backend`、`epoch`）一并保留在同一冻结对象中，装饰层只做状态归一、不做裁剪。局部降级必须在 detail 中指明降级部分并附 `reason`；禁用形态与非禁用形态必须保留**同一 detail 字段集**（含 `epoch`）——「同一字段集」义务适用于**披露了领域记录**的面（禁用时以同一字段集回报，如 `storage` / `executions` / 四个决策面）；对**没有领域披露**的 namespace（描述符回落路径），`status` 非 `active` 时必须以 `reason` 点名不可用的 backing（不得只回裸 `status`），但不虚构 `epoch` 等未被披露的字段。禁止「有对象即 active」或「解析成功即 active」的判定分支；异步领域解析须在挂载期完成并缓存，使公共探针永远同步可读。
+- 能力存在性由根 `capabilities.*` 表达；能力矩阵使用 `capabilityMatrix()`，不得占用 `availability` 名称——`capabilityMatrix()` 的内容模型是**当前能力簇 + 当前状态 + 限制 / 缺口原因**，它不承载迁移账本（改名 / 合并 / 迁移 / 删除 / 内化等历史处置只存在于 registry 的登记面，不进运行时可见输出）。
 - 同一 idiom 的外层失败呈现、冲突结果、handle 名称与生命周期语义必须一致。领域参数、reducer 和并发选择只能在显式领域字段中变化，不能另造外层合同。
 - **失败呈现的分界**：注册类成员（`policy` / `resourceRegistry`）失败一律 **typed throw**（输入非法、owner-conflict、环境不可用）；contribution / mutation / operation / coordination 失败一律返回**判别式结果**（环境不可用在该 idiom 下映射为 `inactive` / `unavailable` 码）。
 - 公共成员 SHALL 显式声明调用形态（同步 / 异步），不得以返回值形态暗示同步。同步与异步差异本身予以保留，不做形态同化。
+- **注册冲突词表（封闭）**：每个注册成员的 `conflictRule` 必须取以下值之一并与实现行为一致——`latest-wins`（同 owner 同 key 后登记者生效，旧 handle 变 stale）、`content-conflict`（同 key 同 owner 内容不同即 typed conflict）、`owner-conflict`（跨 owner 同 key 抛 typed conflict）、`owner-scoped`（按 owner 隔离、跨 owner 并存）、`fencing`（以 fencing 令牌判代次）、`not-applicable`（非注册成员）。跨 owner 同 key 一律不得静默覆盖。**由官方权威裁决**的成员在 `currentShape` 写明「官方裁决」，其词表值必须与官方行为一致——同 owner 重复注册若官方直接抛错，不得声明为 `latest-wins`；验证必须使用与官方行为一致的 owner 桩，宽松桩不得充当证据。
 
 ## 3. 八类标准形状
 
@@ -47,10 +52,15 @@
 用于冻结视图与订阅。查询使用 `get`、`list`、`inspect`、`history` 或 `current`；订阅统一使用 `observe`，不以 `on`、`once`、`watch`、`subscribe` 或 `onChange` 作为公开入口。
 
 - 查询返回冻结只读视图；缺位或降级返回降级视图或 typed unavailable result，不抛穿调用方。**缺位词汇固定**：确定不存在 ⇒ `missing`；无法得知 ⇒ `unavailable`。成功只读视图不带 `ok` 字段是合法的（视图本身不是判别式结果）。
-- `observe` 返回 `{ current(), subscribe(listener), dispose(), epoch }`。`subscribe(listener)` 返回可用于退订的函数；handle 已释放时 `subscribe` 是 no-op（返回 no-op 退订函数）而非抛错；回调异常只降级该监听者；dispose 后不再回调且不影响其他订阅者。handle 只含这四个公共成员（冻结或等价不可变），内部可变记录（listener 集合、`disposed` / `stale` / `signal` / `abortHandler` 等）绝不外泄。
-- **同一入口既要订阅、又要对「未知名」给出 typed 结果时**（事件面的订阅入口），成功形状是承载该 handle 的判别式信封 `{ ok, code, handle }`：handle 本体仍是上面那四个成员，未知名返回 typed `unsupported` 结果（并给出可查询的目录）而不是裸 `TypeError`。两种呈现都以上述 handle 为契约本体，成员行按各自运行时的真实形状登记，不因此消耗例外。
+- `observe(subject?)` 返回 `{ current(), subscribe(listener), dispose(), epoch }`。`subscribe(listener)` 返回可用于退订的函数；handle 已释放时 `subscribe` 是 no-op（返回 no-op 退订函数）而非抛错；回调异常只降级该监听者；dispose 后不再回调且不影响其他订阅者。handle 只含这四个公共成员加**已登记的领域扩展**（冻结或等价不可变），内部可变记录（listener 集合、`disposed` / `stale` / `signal` / `abortHandler` 等）绝不外泄。
+- **观察入口的入参合同**：`observe` 接收**单一 subject 参数**——规范形态是 options 对象（字段名与该命名空间同类动词一致，如 `coordination.observe({ resource })` 与 `acquire({ resource })`）；成员 MAY 额外接受裸主题便捷形态（字符串 id / name、领域对象或 handle），两种形态必须语义一致并在登记中写明；无主题的投影接受零参（或仅 options）。**任何观察入口不得接受订阅回调作为参数**——listener 一律经 `handle.subscribe(listener)` 挂上，纯 listener 形态退役。该禁令的范围是**投影观察入口**（namespace 级 `observe` 与其返回的 handle 契约）；operation handle 上已登记的领域扩展成员不受此限——如 `workflows.start.handle` 登记的 `observe(listener)` 是 run-scoped 过滤订阅并返回退订函数，其语义由该 handle 自己的登记承载。
+- **同一命名空间内同义动词的入参形态必须一致**：同一资源的 `observe` 与 `acquire` 等入口使用同一字段名与同一语义。
+- **`current()` 的调用形态按成员声明**：允许同步视图或 Promise 视图，由 registry 的 `callShape` 显式声明；调用方以 `const h = await ns.observe(subject); const v = await h.current()` 的 `await` 写法统一使用（`await` 对同步值透明）。不得为形状统一把异步读面伪造成同步。
+- **降级与非法输入**：域处于降级（已释放 / 无法回答）时返回**同形降级 handle**（四成员合同齐备、`current()` 返回降级视图、`subscribe` 为 no-op、`dispose()` 返回判别式）；命名空间未挂载时按既有惯例抛 typed error；非法输入以 typed 结果或带 `code` 的 typed error 表达——**任何观察入口不得抛裸 `TypeError`**；非函数 listener 一律不注册且不抛穿。
+- **事件面信封（host / client 同形）**：事件面的 `observe(subject)` 在任一端都以**冻结判别式信封**承载 handle——成功 `{ ok:true, code:'observed', handle }`；handle 本体仍是上面那四个成员，成员行按各自运行时的真实形状登记，不因此消耗例外。未知名必须是 typed 结果而不是裸 `TypeError`：host 的**非 catalog 名**以 `{ ok:true, code:'untyped', handle, reason }` 如实表达既有的**无类型透传通道**（自定义事件的既有观察路径，不关闭）；client 的事件面只有官方事件，未知名以 `{ ok:false, code:'unsupported', names }` 返回并给出可查询目录。两端信封同层同形，`code` 的差异即两端真实环境差异（登记为环境差异），读者可仅凭返回值判断所在端。
 - 查询与订阅必须由不同成员表达：查询用 `get` / `list` / `inspect` / `history` / `current`，订阅用 `observe`；不得用一次调用同时充当快照与订阅。成员名须反映真实语义——拉取分页事件帧的成员不得占用 `list` 的资源枚举含义。
 - 查询天然幂等；订阅是 additive 或 pure，不以订阅注册顺序表达业务语义。
+- **绑定 / 访问器型成员的登记义务**：返回领域绑定对象（带读 / 写 / 订阅面）的查询成员（如 settings scope 一类）必须在 registry 登记该对象的成员集、读写面、`lifecycle` 与释放边界——写明「为何没有 `dispose()`」或「`dispose()` 释放的是什么；官方持有的部分随什么存续、调用方卸载是否移除」。不得以「领域不同」为由省略该登记。
 
 ### 3.2 `policy`
 
@@ -91,7 +101,7 @@
 
 ### 3.6 `resourceRegistry`
 
-用于登记由系统按键消费的数据或实现。入口为 `register(spec)`；查询面使用 `get` 与 `list`。
+用于登记由系统按键消费的数据或实现。入口为 `register(spec)`；查询面使用 `get` 与 `list`。门面自有（非 `services.*`）注册一律以标准 handle 收场；**官方动词原样透传是唯一的 register 例外类**，其判定规则与登记义务见 §1。
 
 - handle 固定为 `{ id, ownerId, generation, dispose() }`，与 policy handle 同构；**`generation` 必含**（§2）。
 - 同 owner、同 id、同内容的重复登记幂等返回既有条目；同 owner、同 id、不同内容抛 typed conflict；跨 owner 冲突抛 owner-conflict。

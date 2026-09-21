@@ -68,7 +68,7 @@ pluginApi
 ├── workflows (start / availability)
 ├── tools
 │   ├── availability / defineTool / execute / get / list / register
-│   ├── restrict (register) / guard (register) / presentation (register) / executionMode (register)
+│   ├── restrict (register) / guard (register) / presentation (register) / executionMode (get)
 │   ├── executionPolicies (register)
 │   └── discovery
 │       ├── activate / deactivate / list / availability
@@ -168,6 +168,8 @@ client 领域树与 host 一样以 registry（`clientDomainTree` / `clientRoot.m
 - host/client 分别导出 `HostPluginApi` 与 `ClientPluginApi` 类型，不依赖运行时可选属性区分环境。
 - `defineManifest` 是构建期 helper，只作为 client 静态模块导出，不进入运行时 `ctx.pluginApi`。
 - client slot、remote、settings 和 lifecycle 同样遵守 owner、generation、stale disposer 和 composition contract。
+- **同 path 同形到什么程度（可判定规则）**：host 与 client 存在同一公共 path 的语义成员时——① 成功形状同层（要么都是「直接结果」，要么都是「承载结果的判别式信封」，不得一端封套、一端裸值）；② 失败呈现同规则（typed 结果 / typed error 的选择按 `api-idioms.md` §2 分界，不因端而异）；③ 共同语义成员同名同义（至少读与订阅成员 `get` / `watch` / `observe` 在两端同名）；④ 差异可判定（读者仅凭返回值 + registry 就能判断自己处在哪一端、能做什么）。确实存在的环境差异必须显式登记（含每个差异成员与理由），不得让读者靠记忆分辨。
+- **命名分工**：client `remotes.*` = 远端事件通道的观察与载体派发；host `events.*` = 官方事件总线的投影与受生产权约束的派发。两者不得互相承担对方职责。
 
 ## 5. Capability registry
 
@@ -181,6 +183,7 @@ pluginApi.capabilities.require(['llm.routing', 'sessions.compaction'])
 
 - capability ID 必须是公共语义 path，不得使用内部 feature key、package 名或 replacement 名。示例与树图引用的 capability 必须真实存在（以 registry 的成员与能力簇为唯一事实源）。
 - capability 状态只表达 `active | degraded | unavailable`；健康状态属于 `diagnostics`。client 面与 host 面接受**同一套公共语义 dot path（含成员级 path）**，并按真实叶子状态报告，不得以对象存在性报告 `active`。
+- **capability 解析规则（两端同源）**：`get(path)` 接受①该端登记的能力路径；②该端活面上可解析的公共成员 path（逐段解析、任意深度）。成员 path 的状态等于该成员所属**最近能力簇**（已登记能力路径的最长前缀；无前缀时用该命名空间自身的声明路径）的实时探针状态——不得以「对象存在」或「函数存在」作答。**无法解析的 path 在 `get` 上不抛**，返回冻结 `{ capability, status: 'unavailable', reason: 'unknown capability' }`；`require` 保持 capability-unavailable typed throw（未知与不可用一律计入 missing）。`list({ prefix })` 两端同形（冻结路径列表 + 前缀过滤）；两端差异只允许存在于「各端能力路径清单」这一登记事实（内容粒度差异继续登记）。
 - 公共 namespace 始终存在，不能通过属性是否存在表达安装状态。
 - 调用不可用成员时：**注册类成员（policy / resourceRegistry）抛 typed error；contribution / mutation / operation / coordination 返回判别式结果**（`api-idioms.md` §2「失败呈现的分界」）。正常业务冲突不复用 unavailable 错误。
 - capability 粒度必须足以表达部分可用性，不能用一个过大的 namespace boolean 掩盖成员差异。

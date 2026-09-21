@@ -26,7 +26,11 @@ test('slots.observe answers the standard observation handle for the slot change 
   const api = ctx.get('pluginApi')
   await settleAll()
 
-  assert.throws(() => api.slots.observe('slots/other'), TypeError, 'only the slot change channel is observable')
+  assert.throws(
+    () => api.slots.observe('slots/other'),
+    (error) => error.code === 'PLUGIN_API_SLOT_EVENT_INVALID_INPUT',
+    'only the slot change channel is observable, refused as a typed input error',
+  )
   const observation = api.slots.observe('slots/changed')
   assert.ok(isStandardHandle(observation), 'slots.observe answers the frozen four-member handle')
   assert.equal(observation.current(), undefined, 'nothing has changed yet')
@@ -54,7 +58,11 @@ test('remotes.observe answers the standard observation handle and keeps the forw
   const api = ctx.get('pluginApi')
   await settleAll()
 
-  assert.throws(() => api.remotes.observe('private/event'), /allowlist/, 'a non-forwarded event is refused, not silently subscribed')
+  assert.throws(
+    () => api.remotes.observe('private/event'),
+    (error) => error.code === 'PLUGIN_API_REMOTE_EVENT_NOT_FORWARDED',
+    'a non-forwarded event is refused as a typed input error, not silently subscribed',
+  )
   const observation = api.remotes.observe('llm/adapters-updated')
   assert.ok(isStandardHandle(observation), 'remotes.observe answers the frozen four-member handle')
 

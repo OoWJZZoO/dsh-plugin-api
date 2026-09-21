@@ -130,7 +130,7 @@ test('custom event definitions observe through the standard projection handle', 
   const bus = createBus()
   const handle = bus.define({ name: 'plugin-a.notify' })
   const observed = []
-  const projection = bus.observe('plugin-a.notify')
+  const projection = bus.observe('plugin-a.notify').handle
   const detach = projection.subscribe((payload) => observed.push(payload))
   assert.equal(projection.current(), null, 'nothing observed yet')
   handle.emit({ seq: 1 })
@@ -194,7 +194,7 @@ test('canonical dispatchers reject custom event names and cannot emit them', () 
   // The canonical path never dispatches the custom identity.
   const observed = []
   handle.emit({ seq: 3 })
-  bus.observe('plugin-a.custom').subscribe((payload) => observed.push(payload))
+  bus.observe('plugin-a.custom').handle.subscribe((payload) => observed.push(payload))
   assert.equal(observed.length, 0, 'the unsupported dispatch did not publish the custom event')
   handle.emit({ seq: 4 })
   assert.deepEqual(observed, [{ seq: 4 }])
@@ -213,7 +213,7 @@ test('a stale publisher neither dispatches nor removes a newer definition', () =
   const second = bus.define({ name: 'plugin-a.replaced' })
   assert.equal(first.dispose().code, 'stale', 'a stale disposer cannot remove the newer definition')
   const observed = []
-  const projection = bus.observe('plugin-a.replaced')
+  const projection = bus.observe('plugin-a.replaced').handle
   projection.subscribe((payload) => observed.push(payload))
   assert.equal(first.emit({ seq: 2 }).code, 'stale', 'the stale publisher cannot publish')
   second.emit({ seq: 3 })
@@ -231,7 +231,7 @@ test('reload isolation invalidates publishers from a previous bus', () => {
   const fresh = secondBus.define({ name: 'plugin-a.session' })
   assert.equal(fresh.emit({ seq: 3 }).ok, true, 'a fresh bus can redefine the freed identity')
   assert.equal(handle.emit({ seq: 4 }).code, 'stale')
-  assert.equal(secondBus.observe('plugin-a.session').current(), null)
+  assert.equal(secondBus.observe('plugin-a.session').handle.current(), null)
 })
 
 test('observer failure containment preserves unrelated custom and canonical events', () => {
@@ -240,18 +240,18 @@ test('observer failure containment preserves unrelated custom and canonical even
   const clean = bus.define({ name: 'plugin-a.clean' })
   const seenNoisy = []
   const seenClean = []
-  const noisyProjection = bus.observe('plugin-a.noisy')
+  const noisyProjection = bus.observe('plugin-a.noisy').handle
   noisyProjection.subscribe(() => {
     throw new Error('observer bug')
   })
   noisyProjection.subscribe((payload) => seenNoisy.push(payload))
-  bus.observe('plugin-a.clean').subscribe((payload) => seenClean.push(payload))
+  bus.observe('plugin-a.clean').handle.subscribe((payload) => seenClean.push(payload))
   assert.doesNotThrow(() => handle.emit({ n: 1 }), 'a throwing custom observer is contained')
   assert.deepEqual(seenNoisy, [{ n: 1 }], 'peer custom observers still receive the payload')
   clean.emit({ n: 2 })
   assert.deepEqual(seenClean, [{ n: 2 }], 'the unrelated custom event keeps dispatching')
   const canonicalSeen = []
-  bus.observe('tools/change').subscribe((payload) => canonicalSeen.push(payload))
+  bus.observe('tools/change').handle.subscribe((payload) => canonicalSeen.push(payload))
   const denied = bus.emit('tools/change', { tool: 'x' })
   assert.equal(denied.code, 'denied', 'canonical production stays a separate right from custom publishing')
   assert.equal(canonicalSeen.length, 0, 'a denied canonical dispatch publishes nothing')
@@ -265,7 +265,7 @@ test('observer failure containment preserves unrelated custom and canonical even
     resolveOwnerId: () => '@deepseek-ai/dsh-plugin-api-main',
   })
   const facadeSeen = []
-  facadeBus.observe('attention/update').subscribe((payload) => facadeSeen.push(payload))
+  facadeBus.observe('attention/update').handle.subscribe((payload) => facadeSeen.push(payload))
   assert.deepEqual(
     facadeBus.emit('attention/update', { seq: 1 }),
     { ok: true, code: 'dispatched', outcome: null },

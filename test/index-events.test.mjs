@@ -108,7 +108,7 @@ function createMockCtx(options = {}) {
 
 /** Observe projection shim: subscribe and unwrap multi-arg payload arrays. */
 function observeOn(events, name, listener, opts) {
-  const handle = events.observe(name, opts)
+  const handle = events.observe({ name, ...opts }).handle
   handle.subscribe((payload) => {
     const args = Array.isArray(payload) ? payload : [payload]
     listener(...args)
@@ -247,10 +247,22 @@ test('events guard failure disables only events and keeps facade active', () => 
 
   // The disabled events surface stays shape-compatible: observe returns the
   // inert projection handle and the availability reports the state.
-  const inertHandle = state.pluginApi.events.observe('goal/changed')
+  const inertHandle = state.pluginApi.events.observe('goal/changed').handle
   assert.equal(inertHandle.epoch, 0)
   assert.equal(inertHandle.current(), null)
-  assert.equal(state.pluginApi.events.availability().status, 'unavailable')
+  // The inert handle answers the same contract as a live one: a released
+  // release is discriminated, and subscribing is a no-op that never throws.
+  assert.equal(typeof inertHandle.subscribe(() => {}), 'function')
+  const inertRelease = inertHandle.dispose()
+  assert.equal(Object.isFrozen(inertRelease), true)
+  assert.equal(inertRelease.ok, false)
+  assert.equal(inertRelease.code, 'stale')
+  assert.equal(typeof inertRelease.reason, 'string')
+  // The disabled face names why it is unavailable, like every other namespace.
+  const disabledEvents = state.pluginApi.events.availability()
+  assert.equal(disabledEvents.status, 'unavailable')
+  assert.equal(typeof disabledEvents.reason, 'string')
+  assert.ok(disabledEvents.reason.length > 0)
   assert.equal(typeof state.pluginApi.services.web.registerSearchProvider, 'function')
 })
 

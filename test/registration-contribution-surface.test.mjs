@@ -90,7 +90,7 @@ test('resource registrations expose the merged register entry with official iden
   assert.equal(restriction.dispose().code, 'revoked')
   assert.equal(typeof api.tools.guard.register, 'function')
   assert.equal(typeof api.tools.presentation.register, 'function')
-  assert.equal(typeof api.tools.executionMode.register, 'function')
+  assert.equal(typeof api.tools.executionMode.get, 'function')
   // llm provider/model directory registrations
   assert.equal(typeof api.llm.providers.register, 'function')
   assert.equal(typeof api.llm.models.register, 'function')

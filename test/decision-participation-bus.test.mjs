@@ -291,7 +291,7 @@ test('participation: the observe feed still observes the dispatch and never part
     classify: () => 'undecided',
     priority: 'normal',
   })
-  const handle = bus.observe('agent/pre-step')
+  const handle = bus.observe('agent/pre-step').handle
   const seen = []
   const unsubscribe = handle.subscribe((payload) => {
     seen.push(payload)

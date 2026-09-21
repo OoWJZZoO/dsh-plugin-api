@@ -191,9 +191,10 @@ test('observe: invalid inputs are typed and never corrupt other subscriptions', 
   assert.equal(received.length, 1)
   // observe without a session is refused with a typed invalid-input error and
   // never corrupts other subscriptions
-  assert.throws(() => projection.api.observe({}), TypeError)
-  assert.throws(() => projection.api.observe({ sessionId: '' }), TypeError)
-  assert.throws(() => projection.api.observe(undefined), TypeError)
+  const invalidInput = (error) => error?.code === 'PLUGIN_API_SESSION_ACTIVITY_INVALID_INPUT'
+  assert.throws(() => projection.api.observe({}), invalidInput)
+  assert.throws(() => projection.api.observe({ sessionId: '' }), invalidInput)
+  assert.throws(() => projection.api.observe(undefined), invalidInput)
   const after = projection.api.observe({ sessionId: 's1' })
   const stillReceived = []
   after.subscribe((p) => stillReceived.push(p))

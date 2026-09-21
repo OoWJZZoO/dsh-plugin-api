@@ -288,7 +288,7 @@ test('integrated tools facade exposes executionMode and defineTool', async () =>
   const tools = state.pluginApi.tools
   // The official verb behind this member classifies one pending call and
   // answers with its scheduling mode; it is passed through verbatim.
-  assert.equal(tools.executionMode.register({ mode: 'parallel' }), 'parallel')
+  assert.equal(tools.executionMode.get({ mode: 'parallel' }), 'parallel')
   assert.equal(typeof tools.defineTool, 'function')
   // defineTool delegates the official public export when present.
   const dshTools = await import('@deepseek-ai/dsh-tools').catch(() => undefined)

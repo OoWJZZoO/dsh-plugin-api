@@ -451,7 +451,7 @@ test('an observer returning a reject-shaped value does not change the decision r
   // Observe feed: a read-only observer sees the dispatch and returns a
   // reject-shaped value; observation never decides.
   const seen = []
-  const disposer = state.pluginApi.events.observe('agent/pre-step').subscribe((payload) => {
+  const disposer = state.pluginApi.events.observe('agent/pre-step').handle.subscribe((payload) => {
     seen.push(payload)
     return { kind: 'reject', reason: 'observer-cannot-veto' }
   })

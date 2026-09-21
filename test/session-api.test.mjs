@@ -35,19 +35,27 @@ function createMocks() {
   const onDisposer = () => true
   const onceDisposer = () => true
   const eventsApi = {
-    observe(name, opts) {
+    observe(subject) {
+      const spec = subject !== null && typeof subject === 'object' && !Array.isArray(subject)
+        ? subject
+        : { name: subject }
+      const name = spec.name
       const listeners = new Set()
       return {
-        current: () => null,
-        subscribe(listener) {
-          delegated.push({ name, listener, opts })
-          listeners.add(listener)
-          return () => listeners.delete(listener)
+        ok: true,
+        code: 'observed',
+        handle: {
+          current: () => null,
+          subscribe(listener) {
+            delegated.push({ name, listener, opts: spec })
+            listeners.add(listener)
+            return () => listeners.delete(listener)
+          },
+          dispose() {
+            return true
+          },
+          epoch: 0,
         },
-        dispose() {
-          return true
-        },
-        epoch: 0,
       }
     },
   }
@@ -110,17 +118,19 @@ test('session lifecycle: lifecycle names subscribe through the projection handle
 
   const listener = () => {}
   for (const name of SESSION_LIFECYCLE_EVENT_NAMES) {
-    const opts = { priority: 'high' }
-    const handle = api.observe(name, listener, opts)
+    // The subject carries the name and the former trailing options; the
+    // listener attaches through the returned handle.
+    const handle = api.observe({ name, priority: 'high' })
     assert.equal(typeof handle.subscribe, 'function')
     assert.equal(typeof handle.dispose, 'function')
     assert.equal(typeof handle.current, 'function')
+    handle.subscribe(listener)
   }
   assert.equal(mocks.delegated.length, 4)
   assert.deepEqual(mocks.delegated.map((call) => call.name), [...SESSION_LIFECYCLE_EVENT_NAMES])
   for (const call of mocks.delegated) {
     assert.equal(call.listener, listener)
-    assert.deepEqual(call.opts, { priority: 'high' })
+    assert.equal(call.opts.priority, 'high')
   }
 
 })
@@ -135,12 +145,12 @@ test('session lifecycle: every name subscribes through the unified projection en
   })
 
   const listener = () => {}
-  api.observe('goal/changed', listener, { priority: 'high' })
-  api.observe('skills/change', listener, { priority: 'low' })
+  api.observe({ name: 'goal/changed', priority: 'high' }).subscribe(listener)
+  api.observe({ name: 'skills/change', priority: 'low' }).subscribe(listener)
   assert.equal(mocks.delegated.length, 2)
   assert.equal(mocks.delegated[0].name, 'goal/changed')
   assert.equal(mocks.delegated[0].listener, listener)
-  assert.deepEqual(mocks.delegated[1].opts, { priority: 'low' })
+  assert.equal(mocks.delegated[1].opts.priority, 'low')
 })
 
 test('session read surface: get/list/fork delegate to the sessions service with arguments and errors unchanged', () => {

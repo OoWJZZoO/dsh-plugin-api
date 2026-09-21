@@ -63,7 +63,7 @@ function createMockCordisCtx() {
 
 /** Observe projection shim: subscribe and unwrap multi-arg payload arrays. */
 function observeOn(events, name, listener, opts) {
-  const handle = events.observe(name, opts)
+  const handle = events.observe({ name, ...opts }).handle
   handle.subscribe((payload) => {
     const args = Array.isArray(payload) ? payload : [payload]
     listener(...args)

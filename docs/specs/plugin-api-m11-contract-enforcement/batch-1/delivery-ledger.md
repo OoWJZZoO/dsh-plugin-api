@@ -6,6 +6,8 @@
 > 执行口径：版本冻结基线内（runtime `0.1.0-rc.6`、包 `0.1.0-rc.6-0.1.0`、`dsh.api: 0.1`），**未步进任何版本字段**；未新增 R 点；官方包零修改。
 > 工作流纪律（`AGENTS.md` §3.2「Stage 4 连续执行纪律」，本轮落盘）：Stage 3 审查门通过后，除**硬停机点**与**环境 / 工具链 / 权限缺失**两类因素外，不得以批次边界、会话长度、上下文占用、任务规模或已交付部分成果为由终止未完成的主体工作；未完成项不得登记为「阻塞项」。
 > 批次注：本文件属 M11 **第一批次**（契约落实，2026-09-14 产出、2026-09-16 收口）。自 2026-09-21 起本批制品位于本 feature 目录的 `batch-1/` 子目录（目录重排由人类指示）；第二批次（实效收口）制品见同 feature 目录的 `batch-2/`。除路径引用与文首批次注外，本文件内容未改写。
+>
+> 公共契约现状注（2026-09-21，M11 batch-2）：本文中出现的 `slots.list` / `slots.declaration` 已由 `slots.inspect` 取代，`tools.executionMode.register` 已由 `tools.executionMode.get` 取代，`attention.hubSnapshot` 已内部化（内部符号缝 `dsh-plugin-api.attention.snapshot-seed`）；观察入口统一为「单一 subject + 标准四成员 handle + 判别式 dispose」，host `events.observe` 现回答判别式信封，`settings.register` 现回答标准资源 handle。本注只做指针映射，不改写本文的验收边界表述。
 
 ## 1. 已交付范围（本轮提交，逐项可复核）
 

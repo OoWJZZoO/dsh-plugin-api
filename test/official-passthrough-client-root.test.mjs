@@ -24,7 +24,7 @@ test('the root and all seven pending shells are observable synchronously while t
   assert.ok(api)
   assert.equal(typeof api.connection.rpc.call, 'function')
   assert.equal(typeof api.slots.contribute, 'function')
-  assert.equal(typeof api.slots.list, 'function')
+  assert.equal(typeof api.slots.inspect, 'function')
   assert.equal(typeof api.slots.observe, 'function')
   assert.equal(typeof api.codec, 'object')
   // Top-level capability paths match the published root members.

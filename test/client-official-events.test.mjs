@@ -57,7 +57,12 @@ test('client event facade exposes exact leaves and preserves argument identity a
   const received = []
   const observed = result.api.observe('command/executed')
   assert.equal(observed.ok, true, 'a catalog event answers the observation handle')
+  assert.equal(Object.isFrozen(observed), true, 'the catalog answer is a frozen envelope')
+  assert.equal(observed.code, 'observed')
   const handle = observed.handle
+  for (const member of ['current', 'subscribe', 'dispose', 'epoch']) {
+    assert.ok(member in handle, `the observation handle carries ${member}`)
+  }
   // An observer receives the delivered payload (the same value `current()`
   // reports), not the raw argument list.
   handle.subscribe((payload) => received.push(payload))
@@ -70,6 +75,30 @@ test('client event facade exposes exact leaves and preserves argument identity a
   assert.equal(handle.dispose().code, 'stale')
   source.emit('command/executed', first, second, 4)
   assert.deepEqual(received, [[first, second, 3]])
+  // The failure face is the same frozen envelope shape: a name outside the
+  // catalog answers the typed unsupported result and names the queryable
+  // directory instead of throwing.
+  const unknown = result.api.observe('not-a-client-event')
+  assert.equal(Object.isFrozen(unknown), true, 'the unsupported answer is a frozen envelope')
+  assert.equal(unknown.ok, false)
+  assert.equal(unknown.code, 'unsupported')
+  assert.equal(unknown.handle, undefined, 'no handle is published for an unobservable name')
+  assert.ok(Array.isArray(unknown.names), 'the unsupported answer names the queryable directory')
+  assert.deepEqual(unknown.names, result.api.catalog())
+
+  // The canonical subject is the same single argument the host entry takes:
+  // `{ name }` and the bare event name are two forms of one subject, and they
+  // answer the same envelope.
+  const canonical = result.api.observe({ name: 'locale/change' })
+  const bare = result.api.observe('locale/change')
+  assert.equal(canonical.ok, true)
+  assert.equal(canonical.code, 'observed')
+  assert.equal(bare.ok, true)
+  assert.equal(bare.code, 'observed')
+  const canonicalUnknown = result.api.observe({ name: 'not-a-client-event' })
+  assert.equal(canonicalUnknown.ok, false)
+  assert.equal(canonicalUnknown.code, 'unsupported')
+  assert.deepEqual(canonicalUnknown.names, unknown.names, 'both forms answer the same directory')
 })
 
 test('event source resolution is lazy and one absent source does not disable other leaves', () => {

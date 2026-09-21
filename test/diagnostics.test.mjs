@@ -373,8 +373,10 @@ test('audience projection keeps or drops internal detail without ever leaking se
 test('observe delivers one notification with immutable snapshot and a per-subscriber epoch', async () => {
   const { api } = createOwner()
   const events = []
-  const first = api.observe({ scope: 'plugin' }, (payload) => events.push(['a', payload]))
-  const second = api.observe({ scope: 'plugin', ownerId: 'o' }, (payload) => events.push(['b', payload]))
+  const first = api.observe({ scope: 'plugin' })
+  first.subscribe((payload) => events.push(['a', payload]))
+  const second = api.observe({ scope: 'plugin', ownerId: 'o' })
+  second.subscribe((payload) => events.push(['b', payload]))
   assert.deepEqual(Object.keys(first).sort(), ['current', 'dispose', 'epoch', 'subscribe'])
   assert.equal(Object.isFrozen(first), true)
   assert.equal('listeners' in first, false, 'the internal listener set never escapes')
@@ -405,7 +407,7 @@ test('observe delivers one notification with immutable snapshot and a per-subscr
 
 test('a released observation answers a degraded view instead of going silent', async () => {
   const { owner, api } = createOwner()
-  const handle = api.observe({ scope: 'plugin' }, () => {})
+  const handle = api.observe({ scope: 'plugin' })
   api.register({ checkId: 'c', scope: 'plugin', run() { return { health: 'healthy', availability: 'active' } } }, caller('o'))
   await settle()
   assert.equal(handle.current().state, 'healthy')
@@ -420,12 +422,12 @@ test('a released observation answers a degraded view instead of going silent', a
 
 test('observe never throws through the caller for a non-function listener', () => {
   const { api } = createOwner()
-  const handle = api.observe({ scope: 'plugin' }, 'not-a-function')
+  const handle = api.observe({ scope: 'plugin' })
   assert.deepEqual(Object.keys(handle).sort(), ['current', 'dispose', 'epoch', 'subscribe'])
   assert.equal(typeof handle.subscribe(null), 'function')
   assert.equal(handle.dispose().code, 'revoked')
   // an invalid scope filter is a typed input error that lists the legal scopes
-  assert.throws(() => api.observe({ scope: 'bogus' }, () => {}), (error) =>
+  assert.throws(() => api.observe({ scope: 'bogus' }), (error) =>
     error.code === 'DIAGNOSTICS_INPUT_INVALID' && error.message.includes('boot, host, client, plugin'))
 })
 
@@ -433,7 +435,7 @@ test('equivalent updates are coalesced and do not loop', async () => {
   const harness = createPublicationHarness()
   const { api } = createOwner({ publication: harness })
   const notifications = []
-  api.observe({ scope: 'client' }, (payload) => notifications.push(payload.observerEpoch))
+  api.observe({ scope: 'client' }).subscribe((payload) => notifications.push(payload.observerEpoch))
   harness.clientReport('degraded-active')
   await settle()
   assert.equal(notifications.length, 1)
@@ -450,8 +452,8 @@ test('equivalent updates are coalesced and do not loop', async () => {
 test('a throwing listener is contained and other listeners still receive', async () => {
   const { api } = createOwner()
   const seen = []
-  api.observe({ scope: 'plugin' }, () => { throw new Error('listener exploded') })
-  api.observe({ scope: 'plugin' }, (payload) => seen.push(payload))
+  api.observe({ scope: 'plugin' }).subscribe(() => { throw new Error('listener exploded') })
+  api.observe({ scope: 'plugin' }).subscribe((payload) => seen.push(payload))
   api.register({ ownerId: 'o', checkId: 'c', scope: 'plugin', run() { return { health: 'healthy', availability: 'active' } } })
   await settle()
   assert.equal(seen.length, 1)
@@ -460,8 +462,9 @@ test('a throwing listener is contained and other listeners still receive', async
 test('a released subscription removes only its own listener', async () => {
   const { api } = createOwner()
   const notifications = []
-  const first = api.observe({ scope: 'plugin' }, () => notifications.push('first'))
-  api.observe({ scope: 'plugin' }, () => notifications.push('second'))
+  const first = api.observe({ scope: 'plugin' })
+  first.subscribe(() => notifications.push('first'))
+  api.observe({ scope: 'plugin' }).subscribe(() => notifications.push('second'))
   api.register({ checkId: 'c', scope: 'plugin', run() { return { health: 'healthy', availability: 'active' } } }, caller('o'))
   await settle()
   assert.deepEqual(notifications, ['first', 'second']) // insertion order

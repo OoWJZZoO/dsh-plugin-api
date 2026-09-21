@@ -58,8 +58,9 @@ test('attention: host hub update rides the event stream into the api-remotes for
   assert.equal(outcome.ok, true)
 
   // Mount the api-remotes replacement with its default seams: it subscribes
-  // to the shared event stream, resolves the host snapshot through
-  // pluginApi.attention.hubSnapshot, and pushes frames on the connection.
+  // to the shared event stream, resolves the host snapshot through the
+  // internal snapshot-seed seam (never through a public member), and pushes
+  // frames on the connection.
   const { createApiRemotesApply, fullVersionContractsMatch } = await import('../packages/api-remotes/lib/apply.js')
   const apiRemotes = createApiRemotesApply({
     readPackageVersion: (name) => {
@@ -108,7 +109,13 @@ test('attention: per-stream audience trimming keeps cross-audience items out of 
 
   const view = hub.current({ kind: ['tui'], scopes: null })
   assert.deepEqual(view.map((item) => item.id), ['all-kinds'], 'tui stream trims web-only items')
-  const snapshot = hub.hubSnapshot('tui')
+  // The whole-hub snapshot seed is an internal cross-component seam, never a
+  // public member: the public face carries no hubSnapshot, and the seed rides
+  // the internal symbol with the same per-kind trimming.
+  assert.equal('hubSnapshot' in hub, false, 'the public attention face carries no whole-hub read')
+  const seed = globalThis[Symbol.for('dsh-plugin-api.attention.snapshot-seed')]
+  assert.equal(typeof seed, 'function', 'the attention feature publishes the internal snapshot seed')
+  const snapshot = seed('tui')
   assert.deepEqual(snapshot.items.map((item) => item.id), ['all-kinds'])
 })
 

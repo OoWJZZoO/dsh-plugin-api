@@ -142,6 +142,38 @@ test('observe returns a frozen projection with state, active attempt, run links,
   assert.equal(typeof subscription.subscribe(() => {}), 'function')
 })
 
+test('observe accepts the canonical { taskId } subject and the bare task id as one subject', async () => {
+  const sources = createSources()
+  const { owner } = createOwner(sources)
+  await owner.api.register({ taskId: 'task-spec', ownerId: 'owner-1', scope: taskScope, intent: { kind: 'review', summary: 'review PR' } })
+
+  const canonical = await owner.api.observe({ taskId: 'task-spec' })
+  assert.equal(Object.isFrozen(canonical), true)
+  assert.equal(canonical.taskId, 'task-spec')
+  for (const member of ['current', 'subscribe', 'dispose', 'epoch']) {
+    assert.ok(member in canonical, `the handle carries ${member}`)
+  }
+  // The canonical subject carries the same options the bare form passes on.
+  const withOptions = await owner.api.observe({ taskId: 'task-spec', audience: 'ui' })
+  assert.equal(withOptions.taskId, 'task-spec')
+  const bare = await owner.api.observe('task-spec')
+  assert.equal(bare.taskId, 'task-spec')
+
+  // Both forms observe the same task: the projected read agrees.
+  const fromCanonical = await canonical.current()
+  const fromBare = await bare.current()
+  assert.equal(fromCanonical.task.taskId, 'task-spec')
+  assert.deepEqual(fromCanonical.task, fromBare.task)
+  assert.equal(canonical.dispose().code, 'revoked')
+  withOptions.dispose()
+  bare.dispose()
+
+  // A malformed subject is a typed result, never a thrown TypeError.
+  const malformed = await owner.api.observe({})
+  assert.equal(malformed.ok, false)
+  assert.equal(typeof malformed.reason, 'string')
+})
+
 test('disposed observers cannot publish into a newer generation; one throwing observer never stops others', async () => {
   const sources = createSources()
   const { owner } = createOwner(sources)
@@ -216,8 +248,9 @@ test('reconnect reconstruction from durable evidence identifies the observation 
   // observation epoch/generation of the second facade
   assert.equal(current.task.state, 'registered')
   assert.equal(current.task.revision >= 1, true)
-  assert.ok(owner2.api.availability.epoch)
-  assert.equal(owner2.api.availability.durability, 'durable')
+  const availability2 = owner2.api.availability()
+  assert.ok(availability2.epoch)
+  assert.equal(availability2.durability, 'durable')
   subscription.dispose()
 })
 
@@ -243,7 +276,7 @@ test('a memory registry can never satisfy reconnect-after-process-loss reconstru
   const sources = createSources()
   const { owner } = createOwner(sources)
   await owner.api.register({ taskId: 'task-1', ownerId: 'owner-1', scope: taskScope, intent: { kind: 'review', summary: 'review PR' } })
-  const availability = owner.availability
+  const availability = owner.availability()
   assert.equal(availability.durability, 'memory')
   // a second facade (simulating a fresh process) has an empty memory registry
   const { owner: fresh } = createOwner(sources)

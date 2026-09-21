@@ -57,6 +57,10 @@ test('execution disabled surface throws core-inactive and feature-disabled error
   assert.ok(Object.isFrozen(disabled), 'the availability result stays frozen')
   assert.deepEqual(disabled.sources, {}, 'the domain detail survives the normalized status')
   assert.equal(disabled.epoch, 'none')
+  // The disabled face carries the same field set a live one answers: a caller
+  // reads why it is unavailable without a second code path.
+  assert.equal(typeof disabled.reason, 'string')
+  assert.ok(disabled.reason.length > 0)
 })
 
 test('mount exposes the execution surface and delegates to the owner', () => {

@@ -158,7 +158,9 @@ test('apply stays fail-safe (feature-disabled disabled surface) when the typert 
   // surface still exists (disabled shape) and apply never threw.
   const feature = state.pluginApi._registry.snapshot().filter((feature) => feature.name !== 'officialPassthrough').find((f) => f.name === 'remote')
   assert.ok(!feature || feature.isActive === false)
-  assert.equal(state.pluginApi.remotes.availability().status, 'unavailable')
+  const disabledRemotes = state.pluginApi.remotes.availability()
+  assert.equal(disabledRemotes.status, 'unavailable')
+  assert.equal(typeof disabledRemotes.reason, 'string', 'the disabled face names why it is unavailable')
   assert.throws(() => state.pluginApi.remotes.register('k', { get() {} }), PluginApiFeatureDisabledError)
 })
 

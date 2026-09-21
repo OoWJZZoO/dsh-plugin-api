@@ -31,6 +31,11 @@ const EXCEPTION_FIELDS = ['memberPath', 'baseContract', 'exception', 'reason', '
  * single entry verb cannot be asserted for them.
  */
 const IDIOM_ENTRY_VERBS = Object.freeze({ policy: 'register', resourceRegistry: 'register' })
+// The registration conflict vocabulary is closed: a registration member says
+// which registration conflict it answers. Concurrency strategies (a different
+// question, asked by mutation members) are not answers to it.
+const REGISTRATION_CONFLICT_RULES = Object.freeze(['latest-wins', 'content-conflict', 'owner-conflict', 'owner-scoped', 'fencing', 'not-applicable'])
+const REGISTRATION_IDIOMS = new Set(['policy', 'resourceRegistry'])
 /**
  * Registered non-entry leaves of the idioms above: the custom-event definition
  * verb (also covered by its own idiom exception), the tool-construction helper,
@@ -373,13 +378,98 @@ export function validateRegistry(registry) {
 
   // One outer failureSemantics per idiom (domain data varies, the outer
   // contract does not).
+  /**
+   * The failure semantics each idiom may declare. By default an idiom carries
+   * exactly one value; the projection idiom additionally allows `typed-throw`
+   * for query entries whose invalid input is refused with a typed error while
+   * missing or degraded reads stay non-throwing (api-idioms §3.1).
+   */
+  const IDIOM_FAILURE_SEMANTICS = Object.freeze({
+    projection: Object.freeze(['discriminated-result', 'typed-throw']),
+  })
   const failureByIidom = new Map()
   for (const member of registry.members ?? []) {
     if (member?.idiom === null || member?.idiom === undefined) continue
+    const allowed = IDIOM_FAILURE_SEMANTICS[member.idiom]
+    if (allowed !== undefined) {
+      if (!allowed.includes(member.failureSemantics)) {
+        errors.push(`members: idiom ${JSON.stringify(member.idiom)} declares failureSemantics ${JSON.stringify(member.failureSemantics)} outside ${JSON.stringify(allowed)}`)
+      }
+      continue
+    }
     const previous = failureByIidom.get(member.idiom)
     if (previous === undefined) failureByIidom.set(member.idiom, member.failureSemantics)
     else if (previous !== member.failureSemantics) {
       errors.push(`members: idiom ${JSON.stringify(member.idiom)} carries conflicting failureSemantics ${JSON.stringify(previous)} and ${JSON.stringify(member.failureSemantics)}`)
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Observation, registration, capability and conflict rules
+  // -------------------------------------------------------------------------
+  const shippedPaths = new Set(
+    (registry.members ?? [])
+      .filter((member) => member?.status !== 'removed')
+      .map((member) => `${member.runtime}|${member.publicPath}`),
+  )
+  for (const member of registry.members ?? []) {
+    if (member?.status === 'removed') continue
+    const path = member?.publicPath
+    if (typeof path !== 'string') continue
+    const shape = typeof member.currentShape === 'string' ? member.currentShape : ''
+    // Observation leaves are projections; their subject form and current()
+    // call shape are declared on the row.
+    if (path.endsWith('.observe')) {
+      if (member.idiom !== 'projection') {
+        errors.push(`members: observation leaf ${JSON.stringify(path)} must be a projection, got ${JSON.stringify(member.idiom)}`)
+      }
+      // The subject form is recorded on the row (the wording differs per
+      // member: options object, bare subject, zero-argument, filters, ...).
+      if (!/(\{|bare|zero-argument|single subject|subscription|options|filters|name|id|resource|agent|session)/.test(shape)) {
+        errors.push(`members: observation leaf ${JSON.stringify(path)} must record its subject form in currentShape`)
+      }
+      if (member.callShape === null || member.callShape === undefined) {
+        errors.push(`members: observation leaf ${JSON.stringify(path)} must declare callShape`)
+      }
+    }
+    // A registered observation handle row names the four-member contract.
+    if (path.endsWith('.observe.handle')) {
+      if (!shippedPaths.has(`${member.runtime}|${path.slice(0, -'.handle'.length)}`)) continue
+      for (const token of ['current()', 'subscribe', 'dispose', 'epoch']) {
+        if (!shape.includes(token)) {
+          errors.push(`members: observation handle ${JSON.stringify(path)} must register the four-member contract (missing ${JSON.stringify(token)})`)
+        }
+      }
+    }
+    // Facade-owned register rows answer the standard handle or carry a fully
+    // registered official passthrough exception: the row must state the
+    // handle contract (a handle row ships) or present a six-item exception.
+    if (member.idiom === 'policy' || member.idiom === 'resourceRegistry') {
+      const exceptions = Array.isArray(member.idiomExceptions) ? member.idiomExceptions : []
+      if (exceptions.length === 0 && !IDIOM_ENTRY_ALLOWANCES.has(path)) {
+        const handleShips = shippedPaths.has(`${member.runtime}|${path}.handle`)
+        if (!handleShips && !/(dispose|handle)/.test(shape)) {
+          errors.push(`members: register row ${JSON.stringify(path)} must answer the standard handle (no handle row, no dispose in currentShape and no registered exception)`)
+        }
+      }
+    }
+    // An officially adjudicated conflict is never declared latest-wins.
+    if (member.conflictRule === 'latest-wins'
+      && /official authority decides|adjudicated by the official|official behavior/i.test(shape)) {
+      errors.push(`members: ${JSON.stringify(path)} is adjudicated by the official authority and must not declare conflictRule "latest-wins"`)
+    }
+    // A registration member answers the closed registration conflict
+    // vocabulary, not a concurrency strategy.
+    if (REGISTRATION_IDIOMS.has(member.idiom) && !REGISTRATION_CONFLICT_RULES.includes(member.conflictRule)) {
+      errors.push(`members: registration member ${JSON.stringify(path)} must declare a registration conflictRule (one of ${REGISTRATION_CONFLICT_RULES.join(' | ')}), saw ${JSON.stringify(member.conflictRule)}`)
+    }
+  }
+  // Every namespace record names an availability member that ships on its side.
+  for (const record of registry.namespaces ?? []) {
+    const availabilityMember = record?.availabilityMember
+    if (typeof availabilityMember !== 'string') continue
+    if (!shippedPaths.has(`${record.runtime}|${availabilityMember}`)) {
+      errors.push(`namespaces: ${JSON.stringify(record.namespace)} names availability member ${JSON.stringify(availabilityMember)} that is not registered`)
     }
   }
 

@@ -57,11 +57,16 @@ test('capabilities.require throws a typed unavailable error for missing capabili
   )
 })
 
-test('capabilities.get rejects unknown capability paths with a typed error', () => {
+test('capabilities.get answers unknown capability paths with the unknown result', () => {
   const { service } = createService()
+  const descriptor = service.capabilities.get('no.such.capability')
+  assert.equal(descriptor.capability, 'no.such.capability')
+  assert.equal(descriptor.status, 'unavailable')
+  assert.equal(descriptor.reason, 'unknown capability')
+  // `require` keeps the typed throw for unknown paths.
   assert.throws(
-    () => service.capabilities.get('no.such.capability'),
-    (error) => error instanceof PluginApiCapabilityUnavailableError && error.capability === 'no.such.capability',
+    () => service.capabilities.require(['no.such.capability']),
+    (error) => error instanceof PluginApiCapabilityUnavailableError,
   )
 })
 

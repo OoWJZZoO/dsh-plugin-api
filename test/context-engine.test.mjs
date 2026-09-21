@@ -406,9 +406,13 @@ test('inspect applies audience envelopes (default deny) and redaction fail-close
 test('observer epoch: listeners receive frozen snapshots and stale listeners are silenced after dispose', () => {
   const engine = makeEngine()
   const seen = []
-  const sub = engine.observe((snapshot) => seen.push(snapshot))
-  assert.equal(sub.ok, true)
-  assert.equal(typeof sub.disposer, 'function')
+  const handle = engine.observe()
+  assert.deepEqual(Object.keys(handle).sort(), ['current', 'dispose', 'epoch', 'subscribe'])
+  assert.ok(Object.isFrozen(handle))
+  // the read face before any delivery answers a degraded frame, never a throw
+  assert.equal(handle.current().ok, false)
+  const off = handle.subscribe((snapshot) => seen.push(snapshot))
+  assert.equal(typeof off, 'function')
   engine.contribute(spec({ id: 'section', sectionKey: 'a' }))
   engine.intakeEvidence({
     sessionId: 'session-1',
@@ -421,8 +425,12 @@ test('observer epoch: listeners receive frozen snapshots and stale listeners are
   assert.ok(seen.some((snapshot) => snapshot.kind === 'evidence'))
   assert.ok(seen.some((snapshot) => snapshot.kind === 'node-state' && snapshot.state === 'sent'))
   assert.ok(seen.every((snapshot) => Object.isFrozen(snapshot)))
+  // the latest delivered frame is the read face
+  assert.equal(handle.current().ok, undefined)
+  assert.ok(handle.current().kind !== undefined)
   const before = seen.length
-  sub.disposer()
+  assert.equal(handle.dispose().code, 'revoked')
+  assert.equal(handle.dispose().code, 'stale')
   engine.recordMapping({
     sessionId: 'session-1',
     oldNodeIds: ['section'],
@@ -432,9 +440,12 @@ test('observer epoch: listeners receive frozen snapshots and stale listeners are
     observedAt: '2026-08-26T10:00:00.000Z',
   })
   assert.equal(seen.length, before)
+  assert.equal(handle.current().ok, false)
+  // a released handle answers no-op unsubscribe functions, not throws
+  assert.equal(typeof handle.subscribe(() => {}), 'function')
   // a throwing listener never escapes ingestion
   const throwing = makeEngine()
-  throwing.observe(() => { throw new Error('listener exploded') })
+  throwing.observe().subscribe(() => { throw new Error('listener exploded') })
   throwing.contribute(spec({ id: 'section', sectionKey: 'a' }))
   throwing.intakeEvidence({
     sessionId: 'session-1',

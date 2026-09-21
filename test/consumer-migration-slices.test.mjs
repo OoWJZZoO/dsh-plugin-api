@@ -158,7 +158,7 @@ test('slice A: a plugin-private event becomes a defined event with the same payl
   const bus = createEventsBus({ ctx, catalog: coreCatalog })
   const publisher = bus.define({ name: 'plugin-a.custom' })
   const seen = []
-  const disposer = bus.observe('plugin-a.custom').subscribe((payload) => seen.push(payload))
+  const disposer = bus.observe('plugin-a.custom').handle.subscribe((payload) => seen.push(payload))
   publisher.emit({ kind: 'ping', n: 1 })
   await new Promise((resolve) => setImmediate(resolve))
   assert.deepEqual(seen, [{ kind: 'ping', n: 1 }], 'the defined event carries the original payload')

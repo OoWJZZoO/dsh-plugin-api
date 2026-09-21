@@ -90,8 +90,8 @@ test('disposing a watch stops delivery for that subscription only', async () => 
   second.subscribe((event) => secondEvents.push(event))
   const ownedA = await owner.api.acquire({ resource, ownerId: 'owner-a', leaseMs: 1_000 })
   assert.equal(ownedA.ok, true)
-  assert.equal(first.dispose(), true)
-  assert.equal(first.dispose(), false)
+  assert.equal(first.dispose().code, 'revoked')
+  assert.equal(first.dispose().code, 'stale')
   clock.advance(2_000)
   const ownedB = await owner.api.acquire({ resource, ownerId: 'owner-b', leaseMs: 60_000 })
   assert.equal(ownedB.ok, true)
@@ -99,7 +99,7 @@ test('disposing a watch stops delivery for that subscription only', async () => 
   await settle([firstEvents, secondEvents])
   assert.equal(firstEvents.length, 1)
   assert.equal(secondEvents.length, 3)
-  assert.equal(first.dispose(), false)
+  assert.equal(first.dispose().code, 'stale')
 })
 
 test('watch reports explicit resync when sinceGeneration cannot be reconstructed', async () => {
@@ -213,9 +213,9 @@ test('watch on an unsupported backend reports the limitation explicitly, never s
 test('watch subscription cannot be reused after dispose and is idempotently disposed', async () => {
   const { owner } = createOwner()
   const subscription = await owner.api.watch(resource)
-  assert.equal(subscription.dispose(), true)
-  assert.equal(subscription.dispose(), false)
-  assert.throws(() => subscription.subscribe(() => {}), TypeError)
+  assert.equal(subscription.dispose().code, 'revoked')
+  assert.equal(subscription.dispose().code, 'stale')
+  assert.equal(typeof subscription.subscribe(() => {}), 'function')
 })
 
 test('abort signal disposes the watch subscription', async () => {

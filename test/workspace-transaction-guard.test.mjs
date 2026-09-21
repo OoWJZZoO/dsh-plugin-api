@@ -81,6 +81,19 @@ test('healthy apply mounts the workspaceTransactions facade after coordination a
   assert.equal(got.found, true)
   // memory registry is labeled non-durable on the availability projection
   assert.equal(state.pluginApi.workspaces.availability().status, 'active')
+  // The domain publishes its availability as a frozen record, and the public
+  // probe answers it verbatim: the status is normalized onto the shared
+  // vocabulary while every domain detail field survives.
+  const transactions = wt.availability()
+  assert.equal(Object.isFrozen(transactions), true)
+  assert.equal(transactions.status, 'active')
+  assert.equal(transactions.scope, 'process')
+  assert.equal(transactions.durability, 'memory')
+  assert.equal(transactions.backend.id, 'memory')
+  assert.match(transactions.epoch, /^epoch:/)
+  assert.equal(transactions.operations.prepare, 'available')
+  // the memory registry cannot recover: the per-operation detail says so
+  assert.equal(transactions.operations.recover, 'unsupported')
 })
 
 test('workspaceTransactions typed results keep other facade surfaces intact', async () => {

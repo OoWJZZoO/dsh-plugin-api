@@ -198,7 +198,6 @@ const CLIENT_LEAF_TARGETS = new Map([
   ['connection.get', 'test/client-bundle.test.mjs'],
   ['remotes.observe', 'test/client-remote-events.test.mjs'],
   ['remotes.dispatch', 'test/client-remote-events.test.mjs'],
-  ['slots.list', 'test/official-passthrough-client-root.test.mjs'],
   ['slots.observe', 'test/official-passthrough-client-root.test.mjs'],
   ['lifecycle.observe', 'test/client-generation-rebind.test.mjs'],
   ['lifecycle.list', 'test/client-generation-rebind.test.mjs'],

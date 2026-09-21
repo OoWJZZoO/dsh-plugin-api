@@ -119,20 +119,19 @@ function defaultResolveStream(ctx) {
 }
 
 /**
- * Default host snapshot resolver: the attention hub exposes its whole-hub
- * redacted snapshot through the mounted facade; the exact access path is
- * fixed at the integration wave. When the hub is not resolvable the route
- * still forwards live deltas (no snapshot seed).
+ * Default host snapshot resolver: the whole-hub redacted snapshot seed is an
+ * internal cross-component seam published by the attention feature under a
+ * symbol — deliberately not a public member, because it bypasses the caller
+ * scope. When the seed is not published the route still forwards live deltas
+ * (no snapshot seed).
  */
 function defaultResolveSnapshot(ctx) {
   try {
-    const pluginApi = ctx.get('pluginApi')
-    const hub = pluginApi && pluginApi.attention && typeof pluginApi.attention.hubSnapshot === 'function'
-      ? pluginApi.attention
-      : undefined
-    if (hub !== undefined) return (kind) => hub.hubSnapshot(kind)
+    const g = typeof globalThis !== 'undefined' ? globalThis : {}
+    const seed = g[Symbol.for('dsh-plugin-api.attention.snapshot-seed')]
+    if (typeof seed === 'function') return (kind) => seed(kind)
   } catch {
-    // facade absent
+    // seed resolution must never break the forwarding route
   }
   return null
 }

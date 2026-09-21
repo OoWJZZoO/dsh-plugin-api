@@ -33,6 +33,7 @@ secret 信息也可以由插件提出提升申请，但是否允许必须由用�
 - policy 冲突时，用户/profile 对 secret 的禁止优先；对非 secret 内容，插件注册的决定按 feature 自身声明的顺序、priority 和 scope 收敛，不引入中央审批器。
 - 脱敏不是简单的"去掉关键字"：二进制、嵌套对象、日志、异常 cause、MCP resource 等都需定义覆盖范围；feature design 必须写清脱敏覆盖边界。
 - 可见性声明是 API 形状的一部分：feature 的 requirements 必须逐条标明受众（模型可见 / UI 可见 / diagnostic 可见 / redacted）。
+- **公共读面必须按调用者范围过滤**：作用于整 hub / 全量集合、不接受调用者参数的聚合读面不得出现在公共面。跨组件内部缝经内部通道（`Symbol.for` 键或非枚举成员）传递，内部缝**不登记**为公共成员、不占用公共成员名；消费方经内部缝取得数据时，原有裁剪与脱敏语义（含 fail-closed 的跨受众裁剪）必须保持不变。
 
 ## 4. client 半身受众（browser-half audience）
 

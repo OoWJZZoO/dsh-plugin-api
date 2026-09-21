@@ -111,7 +111,7 @@ test('subtraction: renamed/merged/split/migrated old paths are absent while thei
     'sessions.channels.auth.register': 'function',
     'sessions.channels.auth.pairingProvider.register': 'function', 'sessions.channels.redaction.register': 'function',
     'tools.restrict.register': 'function', 'tools.guard.register': 'function', 'tools.list': 'function',
-    'tools.presentation.register': 'function', 'tools.executionMode.register': 'function',
+    'tools.presentation.register': 'function', 'tools.executionMode.get': 'function',
     'tools.discovery.list': 'function', 'tools.discovery.audit.list': 'function',
     'skills.activation.register': 'function', 'skills.activation.policy.register': 'function',
     'skills.activation.exposure.list': 'function', 'skills.activation.audit.list': 'function',

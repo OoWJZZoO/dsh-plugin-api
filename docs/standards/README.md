@@ -15,14 +15,14 @@
 |---|---|---|
 | `capability-strategy.md` | 能力分类、通道上限与 `services.*` | A/B/C/R 分类、方案一/二/三、安全不变量、R1–R8 硬性规则、已交付 replacement 装配表、组件 owner 与客户端半面判定（§10）、`services.*` 定位与成员分级（含官方存在性口径例外）、runtime-specific availability、公共面减法 |
 | `api-shape.md` | 语义三面 | projection / policy registry / durable mutation 边界、数据流单向、一面原则、底座与公开面分离、smell 判据 |
-| `api-idioms.md` | 公共成员 idiom | 八类 idiom、统一词汇（身份双角色、generation/seq/epoch、dispose 结果、availability detail、失败呈现分界、同步/异步声明）、标准入口/handle/失败语义、扩展成员与六项例外的边界、事件归属与生产权模型、成员级 registry 与机械校验 |
-| `public-api-shape.md` | 公共 namespace 与成员形状 | bounded context 组织、host/client 领域树（随 registry 刷新）、namespace 放置与层级预算、capability registry、公共面减法、public contract registry |
+| `api-idioms.md` | 公共成员 idiom | 八类 idiom、统一词汇（身份双角色、generation/seq/epoch、dispose 结果、availability 聚合与 detail、失败呈现分界、同步/异步声明）、观察入口入参合同与事件面信封、官方动词透传判定规则、注册冲突词表、标准入口/handle/失败语义、扩展成员与六项例外的边界、事件归属与生产权模型、成员级 registry 与机械校验 |
+| `public-api-shape.md` | 公共 namespace 与成员形状 | bounded context 组织、host/client 领域树（随 registry 刷新）、namespace 放置与层级预算、同 path 同形规则与 capability 解析、命名分工、capability registry、公共面减法、public contract registry |
 | `composition-and-authority.md` | 组合与 authority | 兼容四层、composition mode、Composable Profile、owner/key/generation/disposer（含调用者身份与资源所属者双角色）、authority closure、静态 claim 与 preflight、策略/Transform/事件与 producer 判定、失败语义 |
-| `domain-composition.md` | 领域组合最低要求 | 各公共领域 owner、冲突、顺序、资源与 authority 的最低约束（含 `events` 的 producer 归属模型） |
+| `domain-composition.md` | 领域组合最低要求 | 各公共领域 owner、冲突、顺序、资源与 authority 的最低约束（含 `events` 的 producer 归属模型、availability 聚合口径与 settings 释放边界） |
 | `ordering.md` | 多插件排序 | 固定 priority vocabulary、注册顺序、领域 reducer 与插件责任边界 |
 | `identity-and-lifecycle.md` | 身份与生命周期 | executionId 自生成、owner-specific generation token + owner-local revision、统一终态词汇、handle 生命周期面（`status()` / `lifecycleState` / `dispose()`） |
 | `durable-state-and-scope.md` | 持久状态与作用域 | session / workspace / profile 分层、durable mutation 契约、operation 能力声明与 retry 边界、插件私有 storage |
-| `visibility-and-redaction.md` | 可见性与脱敏 | 默认最小暴露、policy 显式提升、client 半身受众、脱敏覆盖边界 |
+| `visibility-and-redaction.md` | 可见性与脱敏 | 默认最小暴露、policy 显式提升、公共读面调用者范围过滤与内部缝、client 半身受众、脱敏覆盖边界 |
 | `concurrency-and-cancellation.md` | 并发与取消 | AbortSignal 传播、终态裁决、stale result 隔离、disposer 所有权、并发策略与 retry 边界 |
 | `versioning-and-protocols.md` | 版本与协议 | `<A>-<B>.<C>.<D>` 模型、包装配与 runtime 检查、第三方协商、wire/durable 合同、安装模式与装配等价性 |
 
