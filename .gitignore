@@ -8,5 +8,6 @@ coverage/
 .dsh/
 .codex/
 .zcode/
+.zcodeignore
 .worktree/
 .worktrees/
