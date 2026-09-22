@@ -96,7 +96,9 @@ pluginApi.llm.routing.observe({ session })        // 原 on/once 已并入 obser
 pluginApi.llm.routing.wait(session, options?)
 pluginApi.llm.routing.policies.register(...)       // 原 routePolicy 面（复数 policies）
 pluginApi.llm.routing.candidates.register/list
-pluginApi.llm.routing.health.observe / get / history / circuitPolicy.register / probe.register
+pluginApi.llm.routing.health.report / get / history / circuitPolicy.register / probe.register
+                                                  // report = 健康证据上报（mutation 惯用判别式结果 { ok, code, commitState, entry }）；
+                                                  // 原 health.observe 是证据写入而非订阅，已改名（旧 path 记为 removed + 映射）
 pluginApi.llm.routing.circuit.inspect / decisions.get / decisions.history
 pluginApi.llm.routing.availability // { status: 'active' | 'degraded' | 'unavailable', reason?: string }
 

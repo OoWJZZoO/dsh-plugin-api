@@ -2176,7 +2176,7 @@
     },
     {
       "publicPath": "llm.routing.health.observe",
-      "targetPath": "llm.routing.health.observe",
+      "targetPath": "llm.routing.health.report",
       "capability": "llm.routing.health",
       "kind": "leaf",
       "idiom": "projection",
@@ -2199,8 +2199,42 @@
       "availabilityShape": "namespace availability()",
       "concurrency": null,
       "reducer": "none",
-      "currentShape": "health subscription",
-      "migrationAction": "retain",
+      "currentShape": "the owner's health evidence verb was exposed under the observation name; the member writes one evidence record and answers that record, so the observation reading was wrong and the entry is renamed to llm.routing.health.report",
+      "migrationAction": "rename",
+      "status": "removed",
+      "verification": [
+        "member-inventory",
+        "registry-validation"
+      ],
+      "callShape": "not-applicable"
+    },
+    {
+      "publicPath": "llm.routing.health.report",
+      "targetPath": "llm.routing.health.report",
+      "capability": "llm.routing.health",
+      "kind": "leaf",
+      "idiom": "mutation",
+      "idiomExceptions": [],
+      "eventSemantics": null,
+      "semanticFace": null,
+      "effect": "mutate",
+      "composition": "exclusive",
+      "runtime": "host",
+      "implementationChannel": "facade",
+      "authority": "llm domain authority",
+      "scope": "facade",
+      "resourceKey": "route key",
+      "identitySource": "caller plugin context",
+      "conflictRule": "not-applicable",
+      "lifecycle": "committed fact; reversal via explicit compensation",
+      "failureSemantics": "discriminated-result",
+      "idempotency": "terminal-idempotent",
+      "retryLayer": null,
+      "availabilityShape": "namespace availability()",
+      "concurrency": null,
+      "reducer": "none",
+      "currentShape": "llm.routing.health.report(scope, outcome, evidence) records one health observation for a route scope and answers the frozen mutation result { ok, code: 'committed', commitState: 'committed', entry } carrying the written evidence record; the member writes evidence and never subscribes, so the observe name is not reused for it",
+      "migrationAction": null,
       "status": "advanced",
       "verification": [
         "member-inventory",
@@ -21553,7 +21587,7 @@
       "oldPath": "llm.routing.health.probe",
       "targetPath": null,
       "action": "delete",
-      "relation": "replaced by probe registry plus health.observe; probe execution is caller-driven and the facade has no automatic scheduler"
+      "relation": "replaced by probe registry plus the health evidence ingest (llm.routing.health.report); probe execution is caller-driven and the facade has no automatic scheduler"
     },
     {
       "oldPath": "llm.routing.health.startProbe",
@@ -22355,9 +22389,9 @@
     },
     {
       "oldPath": "llm.routing.health.observe",
-      "targetPath": "llm.routing.health.observe",
-      "action": "retain",
-      "relation": "standard projection observe handle"
+      "targetPath": "llm.routing.health.report",
+      "action": "rename",
+      "relation": "the health evidence ingest is a mutation-class domain verb; report names what the member does, while observe stays reserved for projection subscriptions"
     },
     {
       "oldPath": "llm.routing.health.get",
@@ -23931,7 +23965,8 @@
     "slots.list": "removed",
     "slots.declaration": "removed",
     "tools.executionMode.register": "removed",
-    "attention.hubSnapshot": "removed"
+    "attention.hubSnapshot": "removed",
+    "llm.routing.health.observe": "removed"
   },
   "inventory": {
     "completedAt": "Task 1.4, Stage 4",
@@ -24803,7 +24838,7 @@
         "llm.routing.health.circuitPolicy.register",
         "llm.routing.health.get",
         "llm.routing.health.history",
-        "llm.routing.health.observe",
+        "llm.routing.health.report",
         "llm.routing.health.probe.register"
       ],
       "status": "renamed",

@@ -5,7 +5,7 @@
 > 本表由 canonical registry 的 `members` **机械派生**（`scripts/convergence-verify.mjs` 逐字核对 idiom/effect/composition/runtime/authority/availabilityShape/currentShape），registry 是唯一事实源（Req 12.1），本表不得手工偏离；字段值不截断，以便逐字比对。
 > Req 2.1 的其余字段（owner、失败呈现、handle 形状、旧路径处理）在 registry 同名行的 `authority`/`failureSemantics`/`identitySource`/`currentShape` 与 `oldToTargetMapping` 中登记，本表以同源引用呈现。
 
-共 572 行（registry `members` 全量）。
+共 573 行（registry `members` 全量）。
 
 | publicPath | runtime | idiom | effect | composition | scope | authority | conflictRule | concurrency | availabilityShape | currentShape |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -65,7 +65,8 @@
 | llm.routing.policies.register | host | policy | decide | ordered | facade | llm domain authority | owner-conflict | latest-wins | namespace availability() | register(spec) returns the shared frozen handle; the registration table is keyed by (owner, id) and supports an injected caller-identity resolver, and the facade derives the caller identity and forwards it as the registration caller binding, so a definition never declares its owner |
 | llm.routing.candidates.register | host | resourceRegistry | register | additive | facade | llm domain authority | owner-conflict | latest-wins | namespace availability() | register(spec) returns the shared frozen handle; the registration table is keyed by (owner, id) and supports an injected caller-identity resolver, and the facade derives the caller identity and forwards it as the registration caller binding, so a definition never declares its owner |
 | llm.routing.candidates.list | host | projection | read | pure | facade | llm domain authority | not-applicable | — | namespace availability() | candidate query |
-| llm.routing.health.observe | host | projection | subscribe | pure | facade | llm domain authority | not-applicable | — | namespace availability() | health subscription |
+| llm.routing.health.observe | host | projection | subscribe | pure | facade | llm domain authority | not-applicable | — | namespace availability() | the owner's health evidence verb was exposed under the observation name; the member writes one evidence record and answers that record, so the observation reading was wrong and the entry is renamed to llm.routing.health.report |
+| llm.routing.health.report | host | mutation | mutate | exclusive | facade | llm domain authority | not-applicable | — | namespace availability() | llm.routing.health.report(scope, outcome, evidence) records one health observation for a route scope and answers the frozen mutation result { ok, code: 'committed', commitState: 'committed', entry } carrying the written evidence record; the member writes evidence and never subscribes, so the observe name is not reused for it |
 | llm.routing.health.get | host | projection | read | pure | facade | llm domain authority | not-applicable | — | namespace availability() | health view query |
 | llm.routing.health.history | host | projection | read | pure | facade | llm domain authority | not-applicable | — | namespace availability() | health history query |
 | llm.routing.health.registerCircuitPolicy | host | policy | decide | ordered | facade | llm domain authority | owner-conflict | latest-wins | namespace availability() | circuit policy registration |
