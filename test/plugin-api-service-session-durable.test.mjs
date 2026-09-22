@@ -6,6 +6,7 @@ import {
   PluginApiInactiveError,
 } from '../lib/errors.js'
 import { createPluginApiService } from '../lib/plugin-api-service.js'
+import { createSessionDurableFacade } from '../lib/session-durable-feature.js'
 
 const DURABLE_METHODS = [
   'isDurableEventType',
@@ -135,6 +136,52 @@ test('published durable epoch stays unavailable until the registry activates it'
   assert.equal(service.sessions.durable.appendMessage(), 'append')
   assert.equal(service.resetSessionDurable(epoch), true)
   assertFeatureDisabled(() => service.sessions.durable.appendMessage())
+})
+
+test('the assembled durable facade keeps the observation forwarding target wired', () => {
+  const registry = createFeatureRegistry()
+  const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
+  const service = new ServiceClass({ reflect: { provide() {} } })
+  const activeApi = {
+    onDurable: () => 'on',
+    onceDurable: () => 'once',
+    observeDurable: (subject) => Object.freeze({ code: 'observed', subject }),
+  }
+  const facade = createSessionDurableFacade({
+    activeApi,
+    Session: class Session {},
+    sessions: {},
+    contracts: {},
+    logger: {},
+  })
+  assert.equal(typeof facade.observeDurable, 'function', 'the facade carries the observation forwarding target')
+  service.mountFeature('sessionDurable', { facade, closeEpoch() {} })
+  registry.mount('sessionDurable')
+
+  const subject = { targetSession: 'session-1', kind: 'approval/asked' }
+  const handle = service.sessions.durable.observe(subject)
+  assert.equal(handle.code, 'observed', 'the public entry reaches the real forwarding target')
+  assert.deepEqual(handle.subject, subject)
+})
+
+test('a durable facade without the observation target answers typed disabled', () => {
+  const registry = createFeatureRegistry()
+  const ServiceClass = createPluginApiService({ apiVersion: '0.1', registry, coreActive: true })
+  const service = new ServiceClass({ reflect: { provide() {} } })
+  const facade = {
+    durableEventTypes: Object.freeze([]),
+    list: () => Object.freeze([]),
+    isDurableEventType: () => false,
+    getDurableEventDescriptor: () => undefined,
+    onDurable: () => 'on',
+    onceDurable: () => 'once',
+    appendMessage: () => 'append',
+  }
+  service.mountFeature('sessionDurable', { facade, closeEpoch() {} })
+  registry.mount('sessionDurable')
+  // A missing forwarding target is a typed disabled failure, never a bare
+  // TypeError through the public observation entry.
+  assertFeatureDisabled(() => service.sessions.durable.observe({}))
 })
 
 test('durable reset revokes retained session facades and closes an epoch once', () => {

@@ -79,9 +79,14 @@ test('secret fields are denied unless an explicit secret policy is present', () 
 
 test('registration validates, deduplicates ids and returns identity-bound disposers', () => {
   const visibility = createExecutionVisibility()
-  assert.throws(() => visibility.register({ id: '', ownerId: 'o', filter: () => true }), TypeError)
+  const typedInvalid = (error) => error.code === 'EXECUTION_VISIBILITY_REGISTRATION_INVALID'
+  // Registration failures are typed (the public member is a policy entry):
+  // a missing spec never escapes as a bare TypeError.
+  assert.throws(() => visibility.register(), typedInvalid)
+  assert.throws(() => visibility.register(null), typedInvalid)
+  assert.throws(() => visibility.register({ id: '', ownerId: 'o', filter: () => true }), typedInvalid)
   const first = visibility.register({ id: 'same', ownerId: 'o', filter: () => true })
-  assert.throws(() => visibility.register({ id: 'same', ownerId: 'o2', filter: () => true }), TypeError)
+  assert.throws(() => visibility.register({ id: 'same', ownerId: 'o2', filter: () => true }), typedInvalid)
   assert.equal(first(), true)
   // A disposed registration cannot be re-disposed.
   assert.equal(first(), false)

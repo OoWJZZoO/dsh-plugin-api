@@ -104,3 +104,13 @@ test('auth: the registration handle removes its registration', () => {
   assert.ok(!auth.hasVerifier())
   assert.equal(handle.dispose().code, 'stale', 'disposal is idempotent')
 })
+
+test('auth: a missing or non-object registration spec fails typed', () => {
+  const auth = createAuthRegistry()
+  const specInvalid = (error) => error.code === 'PLUGIN_API_CHANNEL_AUTH_SPEC_INVALID'
+  for (const spec of [undefined, null, 'spec', 42]) {
+    assert.throws(() => auth.registerVerifier(spec), specInvalid, `registerVerifier(${String(spec)})`)
+    assert.throws(() => auth.registerPairingProvider(spec), specInvalid, `registerPairingProvider(${String(spec)})`)
+    assert.throws(() => auth.registerAuthorizer(spec), specInvalid, `registerAuthorizer(${String(spec)})`)
+  }
+})

@@ -127,3 +127,16 @@ test('a namespace without its official service refuses the observation instead o
     'the observation is refused with the namespace typed state, never a silent dead handle')
   await dispose()
 })
+
+test('lifecycle.register answers a typed failure for an illegal declaration', async () => {
+  const { ctx } = bootFixture()
+  const dispose = apply(ctx)
+  const api = ctx.get('pluginApi')
+  await settleAll()
+  const typed = (error) => error.code === 'PLUGIN_API_CLIENT_LIFECYCLE_INVALID_INPUT'
+  assert.throws(() => api.lifecycle.register(), typed, 'a missing declaration')
+  assert.throws(() => api.lifecycle.register(null), typed, 'a null declaration')
+  assert.throws(() => api.lifecycle.register({}), typed, 'a declaration without faceId')
+  assert.throws(() => api.lifecycle.register({ faceId: 'face', scope: 'client', kind: 'nope' }), typed, 'an unknown face kind')
+  await dispose()
+})

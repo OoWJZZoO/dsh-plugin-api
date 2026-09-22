@@ -140,3 +140,15 @@ test('mounted facade: no scheduler/poller side effect and memory registry report
   const history = await tasks.history('neg-task')
   assert.equal(history.ok, true)
 })
+
+test('mounted facade: an illegal register spec answers the discriminated result', async () => {
+  const { ctx, state } = createContext()
+  apply(ctx)
+  const tasks = state.pluginApi.tasks
+  for (const spec of [null, 'spec', 42, []]) {
+    const outcome = await tasks.register(spec)
+    assert.equal(outcome.ok, false, `register(${JSON.stringify(spec)}) answers a discriminated result`)
+    assert.equal(outcome.code, 'invalid-input')
+    assert.equal(outcome.action, 'register')
+  }
+})

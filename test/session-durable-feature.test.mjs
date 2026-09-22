@@ -10,6 +10,7 @@ import {
   createDurableEpochRegistrationOwner,
   createDurableObservationHub,
   createSessionDurableApi,
+  createSessionDurableFacade,
   appendMessage,
   preflightSurfaceMessageAppend,
 } from '../lib/session-durable-feature.js'
@@ -253,6 +254,25 @@ test('durable observation argument failures do not subscribe', () => {
   assertCode('unsupported-durable-kind', () => api.onDurable(session, 'user/message', () => {}))
   assertCode('invalid-listener', () => api.onDurable(session, 'approval/policy', null))
   assert.equal(eventsApi.feeds.length, 0)
+})
+
+test('the facade factory carries the real observation target into the composition', () => {
+  const { api, session } = createDurableApi()
+  const facade = createSessionDurableFacade({
+    activeApi: api,
+    Session,
+    sessions: { get: () => session },
+    contracts: durableContracts,
+    logger: {},
+  })
+  assert.equal(facade.observeDurable, api.observeDurable, 'the facade forwards to the module implementation')
+  assert.equal(facade.onDurable, api.onDurable)
+  assert.equal(facade.onceDurable, api.onceDurable)
+
+  const handle = facade.observeDurable({ targetSession: session, kind: 'approval/policy' })
+  assert.equal(Object.isFrozen(handle), true)
+  for (const member of ['current', 'subscribe', 'dispose', 'epoch']) assert.ok(member in handle)
+  assert.equal(handle.dispose().ok, true)
 })
 
 test('observeDurable answers the standard projection handle over the deferred durable stream', () => {
