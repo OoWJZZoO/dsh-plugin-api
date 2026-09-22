@@ -5,6 +5,8 @@
 > 公共契约现状注（2026-09-15，M11 续做）：本账本中 `sessions.channels` 的目标 path 已被 M11 的成员映射取代——`sessions.channels.fetchEvents` 的现行目标是 `sessions.channels.history`（事件帧读取按 api-idioms §3.1 改用查询动词），`sessions.channels.list` 记为 `removed`；官方快照读面 `observe` 的现行目标是 `sessions.channels.current`，而 `sessions.channels.observe` 现承载标准观察 handle。旧 path 一律保留 removed 行与 `oldToTargetMapping` 条目，本账本的历史措辞不改写。
 >
 > 公共契约现状注（2026-09-21，M11 batch-2）：本文中出现的 `slots.list` / `slots.declaration` 已由 `slots.inspect` 取代，`tools.executionMode.register` 已由 `tools.executionMode.get` 取代，`attention.hubSnapshot` 已内部化（内部符号缝 `dsh-plugin-api.attention.snapshot-seed`）；观察入口统一为「单一 subject + 标准四成员 handle + 判别式 dispose」，host `events.observe` 现回答判别式信封，`settings.register` 现回答标准资源 handle。本注只做指针映射，不改写本文的验收边界表述。
+>
+> 公共契约现状注（2026-09-22，M11 追加修补）：本文作为探针执行替代路径提及的 `llm.routing.health.observe` 现为 `llm.routing.health.report`（该成员是健康证据写入，按 mutation 惯用判别式结果收场；`observe` 名称保留给投影订阅），旧 path 在 canonical registry 记为 `removed` + `oldToTargetMapping`。本注只做指针映射，不改写本文的验收边界表述。
 
 本账本记录公共面减法（Wave 7）执行的每个迁移处置与能力守恒证据。核对基线：
 M8 当时的迁移处置与能力守恒基线；其长期规则已合并至

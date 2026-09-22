@@ -24,17 +24,16 @@
 - client `sessions.interactions.availability` / `sessions.selection.availability`：**误报**。两者是按 `callShape: async` 声明的异步成员（`lib/client-sessions-interactions.js`），等待后的答案是合规的冻结三值描述符（`status` / `reason?` / `sources?`）；复核中「返回 `{}`」的观测来自探针未 `await`（`JSON.stringify(Promise)` 即 `{}`）。本轮不涉代码改动。
 - 观察入口对「非法但可解读的裸主题」的宽松接受（如 `executions.observe(42)` 返回降级 handle）：不构成裸 `TypeError`，且登记已写明裸主题便捷形态；收紧口径会改变已登记的可接受入参集合，超出 ANY 边界，**不纳入本轮**（如需收紧，另立 spec 批次）。
 
-## §3 开放项（ANY 边界外，需授权后另批处置）
+## §3 健康证据面（`llm.routing.health.observe`）——已由人类授权处置（见 §7）
 
-**`llm.routing.health.observe`（host）——登记与实现相反，暂不修改。**
+**复核事实（2026-09-22，第一轮）**：登记为 `idiom: projection` / `effect: subscribe`，`currentShape` 只写 `health subscription`，且在册 22 个 `.observe` 叶中是**唯一**未声明 handle 的一条；实际实现是健康证据**上报动词** `health.observe(scope, outcome, evidence)`，返回冻结记录 `{ scope, outcome, source, observedAt, reason }`，没有 `current` / `subscribe` / `dispose`（`packages/agent-loop/lib/route-policy.js` 的 `createHealthOwner.observe`，经 `lib/plugin-api-service.js` 转发）。
 
-- 事实：登记为 `idiom: projection` / `effect: subscribe`，`currentShape` 只写 `health subscription`，且在册 22 个 `.observe` 叶中是**唯一**未声明 handle 的一条；实际实现是健康证据**上报动词** `health.observe(scope, outcome, evidence)`，返回冻结记录 `{ scope, outcome, source, observedAt, reason }`，没有 `current` / `subscribe` / `dispose`（`packages/agent-loop/lib/route-policy.js` 的 `createHealthOwner.observe`，经 `lib/plugin-api-service.js` 原样转发）。
-- 为什么不在本轮修：这是**公共面形状决策**（改名退役、或改造为真正的观察入口、或收窄为内部缝），涉及 registry 行、`oldToTargetMapping` / `statusByPath`、能力矩阵、树图与分册措辞；按 AGENTS §3.0.2，ANY 不得改动已交付的验收边界与公共形状。batch-2 `design.md` §2.9-4 已明文把它排除在核验范围外，重开需要人类授权（milestone 范围决策）。
-- 备选处置（供授权时取舍）：① 改名为领域动词（如 `llm.routing.health.record`，走 `removed` + mapping，与其他改名同型）；② 保留名字但改造为真观察入口（新增能力，须走 SPEC1→SPEC3）；③ 降级为内部缝并从公共面移除。推荐 ①：语义诚实的代价最小，且不新增能力。
+**处置（第二轮，2026-09-22，人类明确授权放开 ANY 边界）**：采用备选 ① 改名——公共成员收敛为 `llm.routing.health.report`，并按 mutation 惯用形状（冻结判别式结果 `{ ok, code: 'committed', commitState: 'committed', entry }`）收场；旧 path 保留 `removed` 行 + `oldToTargetMapping` + `statusByPath`。逐项执行与证据见 §7。
 
 ## §4 边界与不变量
 
 - 不新增公共能力、不新增顶层 namespace、不新增 R 点；R1–R6 全部是既有成员的失败呈现或装配修复，不改成员名、不改成功路径形状、不改 registry 行。
+- §7 的健康面改名是**人类明确授权**的公共形状修订（改名 + 成功形状收口），不属于 R1–R6 的修补面；其 registry 与生成物变更清单见 §7.1。
 - 版本冻结字段零步进；官方包文件零修改；`lib/client.js` 只经 `npm run build:client` 重建并核对 `--check`。
 - 失败呈现收敛方向：注册类（policy / resourceRegistry）一律 typed throw，异步面与判别式面维持既有 `{ ok:false, code }` 形状；任何公共入口不得抛裸 `TypeError`。
 - R1 的修复必须可被装配级断言取证：不得再以「桩 facade + 未接线模块」两侧分离的测试充当证据。
@@ -90,5 +89,26 @@
 
 ### 6.4 未纳入本轮
 
-- §3 的开放项 `llm.routing.health.observe`：需公共形状决策，未修改。
-- §2 末条的「非法但可解读裸主题的宽松接受」（如 `executions.observe(42)` 返回降级 handle）：不构成裸 `TypeError`，收紧会改变已登记的可接受入参集合，超出 ANY 边界，未修改。
+- §3 的健康证据面由第二轮的 §7 处置（不在 R1–R6 内）。
+- §2 末条的「非法但可解读裸主题的宽松接受」（如 `executions.observe(42)` 返回降级 handle）：不构成裸 `TypeError`，收紧会改变已登记的可接受入参集合，未修改。
+
+## §7 追加修补（第二轮：健康证据面改名收口，2026-09-22）
+
+人类授权放开 ANY 的公共形状边界后执行：把 §3 的成员从观察面移出，改名为领域动词并按 mutation 形状收场——不新增能力、不重画领域树，只做改名、形状对齐与登记同步。
+
+### 7.1 改动
+
+| 面 | 改动 |
+|---|---|
+| 门面实现 | `lib/plugin-api-service.js`：三处 routing 面（禁用面、条件转发面、公共 `_routingSurface`）统一把 `health.observe` 换成 `health.report`，并新增 `healthReportMember` 统一套 mutation 判别式结果 `{ ok, code: 'committed', commitState: 'committed', entry }`；routing owner（R 包 `packages/agent-loop`）自身 API 不改 |
+| registry | 新增成员行 `llm.routing.health.report`（`idiom: mutation` / `effect: mutate` / `failureSemantics: discriminated-result` / `callShape: sync`）；旧行改为 `status: removed` + `migrationAction: rename` + `targetPath` 指向新名 + `callShape: not-applicable` + 说明性 `currentShape`；`statusByPath` 记 `llm.routing.health.observe = removed`；`oldToTargetMapping` 的 identity 条目改为 rename；能力簇 `llm.routing.health` 的 `targetPaths` 换为现行名；另有 1 条 delete 叙述同步为现行名 |
+| 生成物 | `lib/capability-matrix.js` 经 `capability-matrix-sync` 重新生成；`public-member-table.md`（M10 convergence 的机械投影）经 `convergence-table-sync` 重新生成 |
+| 文档 | `README.md` 成员清单改为 `health.report` 并注明其为证据上报（mutation 形状）；`plugin-api-policy-enforcement-closure/delivery-report.md` 与 batch-2 `design.md` §2.9-4 追加公共契约现状注 |
+| 测试 | `test/route-policy-facade.test.mjs`：断言改为 `health.report`，并断言 `health.observe` 为 `undefined`（`observe` 只留给投影订阅）；新增用例断言 report 的冻结判别式结果、`entry` 载荷与 owner 退役后的 typed 拒绝 |
+
+### 7.2 验证
+
+- `npm test`：**3621 / 3621** 通过。
+- `scripts/registry-validate.mjs` → `registry valid`；`convergence-verify` → 573 member rows / 37 behavior rows / 37 fully linked；`convergence-table-sync --check` → 表与 registry 一致；`capability-matrix-sync --check` → in sync；`build:client:check` 一致（本轮未触客户端源）；`git diff --check` 干净。
+- 独立扫描复核：`llm.routing.health.report` 的非法输入为 typed/判别式；在册 `.observe` 叶不再包含任何非观察成员。
+- 边界：不新增能力；不新增六项例外（该成员始终未消耗例外，改名不改变例外净额）；版本冻结字段零步进；`packages/**` 零改动（owner API 未动）；无新增 R 点。

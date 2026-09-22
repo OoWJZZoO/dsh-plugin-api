@@ -3,6 +3,8 @@
 > 本文是 `docs/specs/plugin-api-policy-enforcement-closure/` feature 的 Stage 4 交付报告，与 `policy-inventory.json`（构建期/测试期数据，非运行时状态）、canonical registry（`docs/specs/plugin-api-m7-public-contract-refactor/public-contract.registry.json`）与 `docs/specs/plugin-api-features/feature-list.md` §7 登记保持一致。验证引用一律指向本仓库测试与制品路径，不指向外部。
 >
 > 版本冻结：runtime `0.1.0-rc.6`、主包及全部辅助/聚合包 `0.1.0-rc.6-0.1.0`、`dsh.api 0.1`。本 feature 全程未步进任何版本字段。
+>
+> 公共契约现状注（2026-09-22）：`policy-inventory.json` 的 `reclassifiedShapes` 叙述中作为守恒目标提及的 `llm.routing.health.observe` 现为 `llm.routing.health.report`（该成员是健康证据写入，属 mutation 惯用形状；`observe` 名称保留给投影订阅）。旧 path 在 canonical registry 记 `removed` + `oldToTargetMapping`。本注只做指针映射，不改写本文与 inventory 的验收边界表述。
 
 ## 1. Policy disposition 清单（policy-inventory.json `inventory`）
 
